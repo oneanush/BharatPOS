@@ -1,9 +1,8 @@
 /* ============================================================
-  bharatpos.js — Full corrected script
-  - Removes old stockList usage
-  - Uses productList grid on billing.html only
-  - Live add-to-cart, + / - / remove, checkout/invoice
-  - Product CRUD, export/import, theme
+  bharatpos.js — Full script for Bharat POS
+  Updated: prefix search matching and non-intrusive search results
+  plus universal barcode Enter handler (no scanner UI here).
+  Scanner live logic lives in billing-bharat-pos.html.
   ============================================================ */
 
 /* -------------------------
@@ -46,7 +45,7 @@ function addProduct() {
   const stockEl = document.getElementById('productStock');
   const taxEl = document.getElementById('productTax');
   const catEl = document.getElementById('productCategory');
-  const barcodeEl = document.getElementById('productBarcode'); // new field
+  const barcodeEl = document.getElementById('productBarcode');
 
   if (!nameEl || !priceEl || !stockEl || !catEl) {
     alert('Product form missing fields');
@@ -58,7 +57,7 @@ function addProduct() {
   const stock = parseInt(stockEl.value);
   const taxPercent = parseFloat(taxEl?.value) || 0;
   const category = catEl.value.trim() || 'General';
-  const barcode = barcodeEl?.value.trim() || ''; // new barcode value
+  const barcode = barcodeEl?.value.trim() || '';
 
   if (!name || isNaN(price) || isNaN(stock)) {
     alert('Enter valid product info');
@@ -82,7 +81,7 @@ function addProduct() {
       stock,
       taxPercent,
       category,
-      barcode // new property
+      barcode
     });
   }
   if (!barcode) {
@@ -122,7 +121,7 @@ function filterByCategory(cat){
     const qty = Number(p.stock||0);
     const disabled = qty <= 0 ? 'disabled' : '';
     return `<button class="prod-btn" data-id="${p.id}" ${disabled}>
-              <div class="prod-name">${p.name}</div>
+              <div class="prod-name">${escapeHTML(p.name)}</div>
               <div class="prod-qty">×${qty}</div>
             </button>`;
   }).join('');
@@ -239,8 +238,9 @@ function toggleTheme(){
   applyTheme();
 })();
 
-
-
+/* -------------------------
+   Billing page logic
+   ------------------------- */
 (function billingEverything(){
   if(!window.location.href.includes('billing.html')) return;
 
@@ -298,7 +298,7 @@ function toggleTheme(){
       taxTotal += tax;
 
       html += `<tr>
-        <td>${it.name}</td>
+        <td>${escapeHTML(it.name)}</td>
         <td>${qty}</td>
         <td>₹${price.toFixed(2)}</td>
         <td>₹${tax.toFixed(2)}</td>
@@ -351,7 +351,7 @@ function toggleTheme(){
   }
   window.renderCart = renderCart;
 
-  // ----------------- Product grid -----------------
+  // ----------------- Product grid (prefix matching) -----------------
   let activeCategory = null;
   let searchQuery = '';
 
@@ -361,14 +361,17 @@ function toggleTheme(){
 
     let products = getProducts();
     if(activeCategory) products = products.filter(p=>p.category === activeCategory);
-    if(searchQuery) products = products.filter(p=>p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    if(searchQuery) {
+      const q = searchQuery.toLowerCase();
+      products = products.filter(p => (p.name || '').toLowerCase().startsWith(q));
+    }
 
     if(!products.length){ productList.innerHTML='<div class="small">No products</div>'; return; }
 
     productList.innerHTML = products.map(p=>{
       const qty = Number(p.stock||0), disabled = qty<=0?'disabled':'';
       return `<button class="prod-btn" ${disabled} data-id="${p.id}">
-                <div class="prod-name">${p.name}</div>
+                <div class="prod-name">${escapeHTML(p.name)}</div>
                 <div class="prod-qty">×${qty}</div>
               </button>`;
     }).join('');
@@ -387,8 +390,7 @@ function toggleTheme(){
     renderProductGrid();
   };
 
-  // ----------------- Search -----------------
-  // Debounce helper
+  // ----------------- Search results (non-intrusive) -----------------
   function debounce(fn, wait){
     let t;
     return function(...args){
@@ -397,21 +399,21 @@ function toggleTheme(){
     };
   }
 
-  // Render compact search results below the search input without interrupting other UI
   function renderSearchResults(query){
     const resultsBox = document.getElementById('searchResults');
     if(!resultsBox) return;
     const q = (query || '').trim().toLowerCase();
     if(!q){
-      resultsBox.innerHTML = ''; // hide when empty
+      resultsBox.innerHTML = '';
       resultsBox.style.display = 'none';
       return;
     }
 
     const products = getProducts();
-    // match by name or barcode
     const matches = products.filter(p => {
-      return (p.name || '').toLowerCase().includes(q) || (String(p.barcode||'')).toLowerCase().includes(q);
+      const name = (p.name || '').toLowerCase();
+      const barcode = String(p.barcode || '').toLowerCase();
+      return name.startsWith(q) || barcode.startsWith(q);
     }).slice(0, 8);
 
     if(!matches.length){
@@ -420,19 +422,17 @@ function toggleTheme(){
       return;
     }
 
-    // Build result cards - compact list
     const html = matches.map(p=>{
       const price = Number(p.price||0);
       const stock = Number(p.stock||0);
       const tax = Number(p.taxPercent||0);
-      // button calls existing addToBill for consistent behaviour
-      return `<div class="search-result" style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(p.name || 'Unnamed')}</div>
-          <div class="small" style="color:#444;margin-top:4px">Price: ₹${price.toFixed(2)} • Stock: ${stock} • Tax: ${tax}%</div>
+      return `<div class="search-result">
+        <div class="info">
+          <div class="title">${escapeHTML(p.name || 'Unnamed')}</div>
+          <div class="meta">Price: ₹${price.toFixed(2)} • Stock: ${stock} • Tax: ${tax}%</div>
         </div>
-        <div style="margin-left:8px;flex:0 0 auto">
-          <button class="search-add-btn" data-id="${p.id}" style="background:#007bff;color:#fff;border:none;padding:6px 8px;border-radius:6px;cursor:pointer">Add</button>
+        <div>
+          <button class="search-add-btn" data-id="${p.id}">Add</button>
         </div>
       </div>`;
     }).join('');
@@ -440,30 +440,18 @@ function toggleTheme(){
     resultsBox.innerHTML = html;
     resultsBox.style.display = 'block';
 
-    // attach handlers
     resultsBox.querySelectorAll('.search-add-btn').forEach(btn=>{
       btn.onclick = ()=>{
         const id = btn.dataset.id;
         if(!id) return;
-        // use existing addToBill (it checks stock)
         if (typeof window.addToBill === 'function') {
           window.addToBill(id);
-          // optional: provide brief feedback
           btn.textContent = 'Added';
           btn.disabled = true;
           setTimeout(()=>{ btn.textContent = 'Add'; btn.disabled = false; }, 600);
         }
-        // keep results visible in case user wants to add more
       };
     });
-  }
-
-  // small helper to escape HTML for safe insertion
-  function escapeHTML(str) {
-    if (str === undefined || str === null) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
   }
 
   const debouncedRenderSearchResults = debounce(renderSearchResults, 160);
@@ -472,47 +460,40 @@ function toggleTheme(){
   if(searchInput){
     searchInput.addEventListener('input', ()=>{
       searchQuery = searchInput.value.trim();
-      // grid update continues to work as before
-      renderProductGrid();
-      // additional, non-intrusive search result pane:
+      renderProductGrid(); // grid uses prefix matching now
       debouncedRenderSearchResults(searchQuery);
     });
 
-    // Keyboard: Enter adds top matching product if any (non-intrusive)
+    // Enter: add top prefix-matching product
     searchInput.addEventListener('keydown', (e)=>{
       if (e.key === 'Enter') {
         const q = searchInput.value.trim().toLowerCase();
         if (!q) return;
         const products = getProducts();
         const matches = products.filter(p => {
-          return (p.name || '').toLowerCase().includes(q) || (String(p.barcode||'')).toLowerCase().includes(q);
+          const name = (p.name || '').toLowerCase();
+          const barcode = String(p.barcode || '').toLowerCase();
+          return name.startsWith(q) || barcode.startsWith(q);
         });
         if (matches && matches.length) {
-          // add first match using same addToBill logic
           if (typeof window.addToBill === 'function') {
             window.addToBill(matches[0].id);
-            // clear search box if you want (keeps user's flow)
-            // searchInput.value = '';
-            // document.getElementById('searchResults').innerHTML = '';
           } else {
-            // redirect to billing with temp id (rare)
             localStorage.setItem('temp_add_product_id', matches[0].id);
             window.location.href = 'billing.html';
           }
-          // prevent form submit bubbling if inside a form
           e.preventDefault();
         }
       } else if (e.key === 'Escape') {
-        // hide search results quickly
         const resultsBox = document.getElementById('searchResults');
         if (resultsBox) { resultsBox.innerHTML = ''; resultsBox.style.display = 'none'; }
       }
     });
 
-    // click outside search results closes it
+    // click outside closes results
     document.addEventListener('click', (ev) => {
       const resultsBox = document.getElementById('searchResults');
-      if (!resultsBox || !resultsBox.style || resultsBox.style.display === 'none') return;
+      if (!resultsBox || resultsBox.style.display === 'none') return;
       const target = ev.target;
       const isInsideSearch = target === searchInput || searchInput.contains(target);
       const isInsideResults = resultsBox.contains(target);
@@ -525,7 +506,6 @@ function toggleTheme(){
 
   // ----------------- Checkout -----------------
   window.completeSale = function(){
-
     loadFromStorage();
     if(!billItems.length){ alert('Cart empty'); return; }
 
@@ -542,7 +522,7 @@ function toggleTheme(){
       <div><b>Invoice:</b>${sale.invoiceNo}<br><b>Date:</b>${new Date(sale.date).toLocaleString()}<br><b>Customer:</b>${sale.customer}</div>
       <table style="width:100%;margin-top:8px;border-collapse:collapse">
         <tr><th>Item</th><th>Qty</th><th>Price</th><th>Tax</th><th>Total</th></tr>
-        ${sale.items.map(it=>`<tr><td>${it.name}</td><td>${it.qty}</td><td>₹${it.price.toFixed(2)}</td><td>₹${it.taxAmount.toFixed(2)}</td><td>₹${(it.price*it.qty+it.taxAmount).toFixed(2)}</td></tr>`).join('')}
+        ${sale.items.map(it=>`<tr><td>${escapeHTML(it.name)}</td><td>${it.qty}</td><td>₹${it.price.toFixed(2)}</td><td>₹${it.taxAmount.toFixed(2)}</td><td>₹${(it.price*it.qty+it.taxAmount).toFixed(2)}</td></tr>`).join('')}
       </table>
       <div style="text-align:right;margin-top:8px"><b>Grand Total: ₹${sale.total.toFixed(2)}</b></div>`;
     }
@@ -554,16 +534,13 @@ function toggleTheme(){
   document.addEventListener('DOMContentLoaded', ()=>{
     renderProductGrid();
     renderCart();
-   
   });
-
 })();
 
 /* -------------------------
-   Universal barcode enter-key handler
-   - Works across pages where #barcodeInput exists.
-   - If scanned barcode matches a product -> add to bill (if billing)
-   - Otherwise redirect to products.html with temp_new_barcode filled.
+   Universal barcode Enter-key handler
+   - If barcode matches product -> add to bill (if billing page).
+   - If not found -> redirect to products.html with temp_new_barcode filled.
    ------------------------- */
 document.addEventListener('DOMContentLoaded', () => {
   const barcodeInput = document.getElementById('barcodeInput');
@@ -578,23 +555,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const products = getProducts();
       const found = products.find(p => String(p.barcode) === String(code));
       if (found) {
-        // If billing page is open, prefer its addToBill
         if (typeof window.addToBill === 'function') {
           window.addToBill(found.id);
         } else {
-          // If not on billing page, navigate to billing and pre-select product by id
-          // Save the product id temporarily so billing can pick it up (if billing uses it)
           localStorage.setItem('temp_add_product_id', found.id);
           window.location.href = 'billing.html';
         }
       } else {
-        // Not found -> go directly to products page to add a new product; barcode prefilled
         localStorage.setItem('temp_new_barcode', String(code));
         window.location.href = 'products.html';
       }
     } catch (err) {
       console.error('Barcode processing error', err);
-      // fallback: redirect to products page to let user add barcode
       localStorage.setItem('temp_new_barcode', String(code));
       window.location.href = 'products.html';
     } finally {
@@ -602,3 +574,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/* -------------------------
+   Utility
+   ------------------------- */
+function escapeHTML(str) {
+  if (str === undefined || str === null) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* -------------------------
+   attachProductGridHandlers helper (used by filterByCategory)
+   ------------------------- */
+function attachProductGridHandlers() {
+  const productList = document.getElementById('productList');
+  if (!productList) return;
+  productList.querySelectorAll('.prod-btn').forEach(btn=>{
+    const pid = btn.dataset.id;
+    btn.onclick = ()=>window.addToBill(pid);
+  });
+}
