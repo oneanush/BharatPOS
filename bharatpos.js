@@ -435,12 +435,9 @@ function toggleTheme(){
 
 })();
 
-/* -------------------------
-   Universal barcode enter-key handler
-   - Works across pages where #barcodeInput exists.
-   - If scanned barcode matches a product -> add to bill (if billing)
-   - Otherwise redirect to products.html with temp_new_barcode filled.
-   ------------------------- */
+// (Replace the universal barcode Enter-key handler area near the bottom of bharatpos.js with the snippet below)
+// This keeps Enter-key behavior but avoids auto-filling productSearch and uses the same product lookup logic.
+
 document.addEventListener('DOMContentLoaded', () => {
   const barcodeInput = document.getElementById('barcodeInput');
   if (!barcodeInput) return;
@@ -454,12 +451,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const products = getProducts();
       const found = products.find(p => String(p.barcode) === String(code));
       if (found) {
-        // If billing page is open, prefer its addToBill
         if (typeof window.addToBill === 'function') {
           window.addToBill(found.id);
         } else {
-          // If not on billing page, navigate to billing and pre-select product by id
-          // Save the product id temporarily so billing can pick it up (if billing uses it)
           localStorage.setItem('temp_add_product_id', found.id);
           window.location.href = 'billing.html';
         }
@@ -470,7 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Barcode processing error', err);
-      // fallback: redirect to products page to let user add barcode
       localStorage.setItem('temp_new_barcode', String(code));
       window.location.href = 'products.html';
     } finally {
