@@ -43,7 +43,8 @@
 <div class="container">
   <div class="card">
     <h3>Add Product</h3>
-    <form id="productForm" onsubmit="event.preventDefault(); addProduct();">
+    <!-- changed onsubmit to call local handler so we can ensure the UI re-renders after addProduct() -->
+    <form id="productForm" onsubmit="handleAddProduct(event);">
       <div class="form-row"><input id="productName" placeholder="Product name"></div>
       <div class="form-row"><input id="productPrice" type="number" step="0.01" placeholder="Price"></div>
       <div class="form-row"><input id="productStock" type="number" placeholder="Stock"></div>
@@ -96,7 +97,7 @@ if (temp) {
 }
  });
 </script>
-  </script>
+
 <script>
 function loadUser(){
   const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
@@ -128,6 +129,48 @@ if (nbc) {
   localStorage.removeItem("temp_new_barcode");
 }
 
+</script>
+
+<script>
+/*
+  handleAddProduct ensures the UI is updated immediately after a product is added.
+  It calls addProduct() (defined in bharatpos.js). If addProduct returns a Promise it will await it;
+  otherwise it proceeds synchronously. After a successful add it calls renderProducts()
+  so the newly added product shows without a manual refresh.
+
+  Minimal and safe: does not change how addProduct() works — only ensures the product list UI is refreshed.
+*/
+async function handleAddProduct(event){
+  if(event && event.preventDefault) event.preventDefault();
+
+  try {
+    // Call the existing addProduct function from bharatpos.js.
+    // It may be synchronous or async; awaiting handles both.
+    await addProduct();
+
+    // Re-render product list so new product appears immediately.
+    renderProducts();
+
+    // Optionally reset form fields (keeps existing behavior minimal)
+    const form = document.getElementById('productForm');
+    if(form) {
+      // Only clear inputs that are not barcode (in case barcode was prefilled by scanner)
+      document.getElementById('productName').value = '';
+      document.getElementById('productPrice').value = '';
+      document.getElementById('productStock').value = '';
+      document.getElementById('productTax').value = '';
+      document.getElementById('productCategory').value = '';
+      // keep productBarcode untouched if you want to preserve scanning flow; uncomment to clear:
+      // document.getElementById('productBarcode').value = '';
+    }
+
+    // Optionally give feedback to user
+    // alert('Product saved');
+  } catch (err) {
+    console.error('Error adding product:', err);
+    alert('Failed to add product. See console for details.');
+  }
+}
 </script>
 </body>
 </html>
