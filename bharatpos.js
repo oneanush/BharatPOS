@@ -1,6 +1,3 @@
-
-
-
 /* ============================================================
   bharatpos.js — Full corrected script
   - Removes old stockList usage
@@ -391,11 +388,138 @@ function toggleTheme(){
   };
 
   // ----------------- Search -----------------
+  // Debounce helper
+  function debounce(fn, wait){
+    let t;
+    return function(...args){
+      clearTimeout(t);
+      t = setTimeout(()=>fn.apply(this,args), wait);
+    };
+  }
+
+  // Render compact search results below the search input without interrupting other UI
+  function renderSearchResults(query){
+    const resultsBox = document.getElementById('searchResults');
+    if(!resultsBox) return;
+    const q = (query || '').trim().toLowerCase();
+    if(!q){
+      resultsBox.innerHTML = ''; // hide when empty
+      resultsBox.style.display = 'none';
+      return;
+    }
+
+    const products = getProducts();
+    // match by name or barcode
+    const matches = products.filter(p => {
+      return (p.name || '').toLowerCase().includes(q) || (String(p.barcode||'')).toLowerCase().includes(q);
+    }).slice(0, 8);
+
+    if(!matches.length){
+      resultsBox.innerHTML = `<div class="small" style="padding:8px">No matches</div>`;
+      resultsBox.style.display = 'block';
+      return;
+    }
+
+    // Build result cards - compact list
+    const html = matches.map(p=>{
+      const price = Number(p.price||0);
+      const stock = Number(p.stock||0);
+      const tax = Number(p.taxPercent||0);
+      // button calls existing addToBill for consistent behaviour
+      return `<div class="search-result" style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(p.name || 'Unnamed')}</div>
+          <div class="small" style="color:#444;margin-top:4px">Price: ₹${price.toFixed(2)} • Stock: ${stock} • Tax: ${tax}%</div>
+        </div>
+        <div style="margin-left:8px;flex:0 0 auto">
+          <button class="search-add-btn" data-id="${p.id}" style="background:#007bff;color:#fff;border:none;padding:6px 8px;border-radius:6px;cursor:pointer">Add</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    resultsBox.innerHTML = html;
+    resultsBox.style.display = 'block';
+
+    // attach handlers
+    resultsBox.querySelectorAll('.search-add-btn').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.dataset.id;
+        if(!id) return;
+        // use existing addToBill (it checks stock)
+        if (typeof window.addToBill === 'function') {
+          window.addToBill(id);
+          // optional: provide brief feedback
+          btn.textContent = 'Added';
+          btn.disabled = true;
+          setTimeout(()=>{ btn.textContent = 'Add'; btn.disabled = false; }, 600);
+        }
+        // keep results visible in case user wants to add more
+      };
+    });
+  }
+
+  // small helper to escape HTML for safe insertion
+  function escapeHTML(str) {
+    if (str === undefined || str === null) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  const debouncedRenderSearchResults = debounce(renderSearchResults, 160);
+
   const searchInput = document.getElementById('productSearch');
   if(searchInput){
     searchInput.addEventListener('input', ()=>{
       searchQuery = searchInput.value.trim();
+      // grid update continues to work as before
       renderProductGrid();
+      // additional, non-intrusive search result pane:
+      debouncedRenderSearchResults(searchQuery);
+    });
+
+    // Keyboard: Enter adds top matching product if any (non-intrusive)
+    searchInput.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter') {
+        const q = searchInput.value.trim().toLowerCase();
+        if (!q) return;
+        const products = getProducts();
+        const matches = products.filter(p => {
+          return (p.name || '').toLowerCase().includes(q) || (String(p.barcode||'')).toLowerCase().includes(q);
+        });
+        if (matches && matches.length) {
+          // add first match using same addToBill logic
+          if (typeof window.addToBill === 'function') {
+            window.addToBill(matches[0].id);
+            // clear search box if you want (keeps user's flow)
+            // searchInput.value = '';
+            // document.getElementById('searchResults').innerHTML = '';
+          } else {
+            // redirect to billing with temp id (rare)
+            localStorage.setItem('temp_add_product_id', matches[0].id);
+            window.location.href = 'billing.html';
+          }
+          // prevent form submit bubbling if inside a form
+          e.preventDefault();
+        }
+      } else if (e.key === 'Escape') {
+        // hide search results quickly
+        const resultsBox = document.getElementById('searchResults');
+        if (resultsBox) { resultsBox.innerHTML = ''; resultsBox.style.display = 'none'; }
+      }
+    });
+
+    // click outside search results closes it
+    document.addEventListener('click', (ev) => {
+      const resultsBox = document.getElementById('searchResults');
+      if (!resultsBox || !resultsBox.style || resultsBox.style.display === 'none') return;
+      const target = ev.target;
+      const isInsideSearch = target === searchInput || searchInput.contains(target);
+      const isInsideResults = resultsBox.contains(target);
+      if (!isInsideSearch && !isInsideResults) {
+        resultsBox.innerHTML = '';
+        resultsBox.style.display = 'none';
+      }
     });
   }
 
@@ -435,9 +559,12 @@ function toggleTheme(){
 
 })();
 
-// (Replace the universal barcode Enter-key handler area near the bottom of bharatpos.js with the snippet below)
-// This keeps Enter-key behavior but avoids auto-filling productSearch and uses the same product lookup logic.
-
+/* -------------------------
+   Universal barcode enter-key handler
+   - Works across pages where #barcodeInput exists.
+   - If scanned barcode matches a product -> add to bill (if billing)
+   - Otherwise redirect to products.html with temp_new_barcode filled.
+   ------------------------- */
 document.addEventListener('DOMContentLoaded', () => {
   const barcodeInput = document.getElementById('barcodeInput');
   if (!barcodeInput) return;
@@ -451,9 +578,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const products = getProducts();
       const found = products.find(p => String(p.barcode) === String(code));
       if (found) {
+        // If billing page is open, prefer its addToBill
         if (typeof window.addToBill === 'function') {
           window.addToBill(found.id);
         } else {
+          // If not on billing page, navigate to billing and pre-select product by id
+          // Save the product id temporarily so billing can pick it up (if billing uses it)
           localStorage.setItem('temp_add_product_id', found.id);
           window.location.href = 'billing.html';
         }
@@ -464,6 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Barcode processing error', err);
+      // fallback: redirect to products page to let user add barcode
       localStorage.setItem('temp_new_barcode', String(code));
       window.location.href = 'products.html';
     } finally {
