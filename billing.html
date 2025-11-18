@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
 <head>
@@ -202,7 +201,6 @@
     const openBtn = document.getElementById("openCamera");
     const stopBtn = document.getElementById("stopCamera");
     const barcodeInput = document.getElementById("barcodeInput");
-    const productSearch = document.getElementById("productSearch");
     const detectedCodeEl = document.getElementById("detectedCode");
 
     let scanning = false;
@@ -221,24 +219,46 @@
 
       detectedCodeEl.textContent = "Scanned: " + code;
       // Fill hidden barcodeInput for backward compatibility
-      barcodeInput.value = code;
-      // Dispatch input/change so any existing listeners react
-      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
-      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+      if (barcodeInput) {
+        barcodeInput.value = code;
+        barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
 
-      // Also put code into productSearch (common pattern in this app)
-      if (productSearch) {
-        productSearch.value = code;
-        productSearch.dispatchEvent(new Event('input', { bubbles: true }));
+      // Lookup product by barcode and either add to cart (if found) or redirect to products.html
+      try {
+        if (typeof getProducts === 'function') {
+          const products = getProducts() || [];
+          const found = products.find(p => String(p.barcode) === String(code));
+          if (found) {
+            // add to bill using the billing function
+            if (typeof window.addToBill === 'function') {
+              window.addToBill(found.id);
+            } else {
+              // fallback: populate search so cashier may find it (rare)
+              const ps = document.getElementById('productSearch');
+              if (ps) { ps.value = found.name; ps.dispatchEvent(new Event('input', { bubbles: true })); }
+            }
+            return;
+          } else {
+            // Not found: send user to product entry page with barcode prefilled
+            localStorage.setItem('temp_new_barcode', String(code));
+            window.location.href = 'products.html';
+            return;
+          }
+        } else {
+          // If getProducts isn't available, keep backward compatibility and fill search input only
+          const ps = document.getElementById('productSearch');
+          if (ps) { ps.value = code; ps.dispatchEvent(new Event('input', { bubbles: true })); }
+        }
+      } catch (e) {
+        console.warn('Barcode handling lookup failed', e);
       }
 
       // If your app exposes a handler function, call it (optional)
       if (typeof window.onBarcodeScanned === 'function') {
         try { window.onBarcodeScanned(code); } catch (e) { console.warn(e); }
       }
-
-      // Option: stop scanner after a successful read — uncomment if desired
-      // stopScanner();
     }
 
     // QUAGGA initialization
@@ -391,7 +411,3 @@
   </script>
 </body>
 </html>
-
-
-
-
