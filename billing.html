@@ -141,7 +141,7 @@
   </div>
 
   <!-- Scanner UI -->
-  <div id="scannerContainer" style="width:100%; max-width:500px; height:350px; border:1px solid #ccc; margin-bottom:6px;"></div>
+  <div id="scannerContainer" style="width:100%; max-width:600px; height:200px; border:1px solid #ccc; margin-bottom:6px;"></div>
   <div style="margin-bottom:6px;">
     <button id="openCamera">Start Scanner</button>
     <button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
@@ -306,8 +306,8 @@ document.addEventListener("DOMContentLoaded", () => {
         type: "LiveStream",
         target: scannerContainer,
         constraints: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 200 },
+          height: { ideal: 600 },
           facingMode: "environment"
         }
       },
@@ -487,6 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
