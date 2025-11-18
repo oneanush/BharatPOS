@@ -231,50 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return rec.count;
   }
 
-  function acceptCode(code) {
-    // prevent immediate-repeat acceptance
-    const now = Date.now();
-    if (code === lastAccepted && (now - (lastAccepted?.time || 0)) < DUPLICATE_TIMEOUT) return;
-    lastAccepted = { code, time: now };
-
-    detectedCodeEl.textContent = "Confirmed: " + code;
-
-    // fill hidden input for backward compatibility
-    if (barcodeInput) {
-      barcodeInput.value = code;
-      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
-      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    // lookup product and add to cart OR redirect to product page
-    try {
-      if (typeof getProducts === 'function') {
-        const products = getProducts() || [];
-        const found = products.find(p => String(p.barcode) === String(code));
-        if (found) {
-          if (typeof window.addToBill === 'function') {
-            window.addToBill(found.id);
-            return;
-          } else {
-            localStorage.setItem('temp_add_product_id', found.id);
-            window.location.href = 'billing.html';
-            return;
-          }
-        } else {
-          // not found -> go to products page with barcode prefilled
-          localStorage.setItem('temp_new_barcode', String(code));
-          window.location.href = 'products.html';
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Product lookup failed after scan', e);
-    }
-
-    // If we reach here, just display code (no breaking of other features)
-    const ps = document.getElementById('productSearch');
-    if (ps) { ps.value = ''; } // do not auto-fill productSearch with barcode
-  }
+ 
 
   function handleScannedCandidate(code) {
     if (!code) return;
@@ -487,6 +444,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
