@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
 <head>
@@ -5,7 +6,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Billing - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
-
 
   <style>
     table { width:100%; border-collapse: collapse; margin: 6px 0; }
@@ -23,23 +23,19 @@
 
     /* Billing layout */
     .billing-container { display: flex; gap: 16px; justify-content:center; align-items:flex-start; flex-wrap: wrap; }
-/* Remove independent scroll from billing container */
-.billing-container {
-  max-height: none !important;  /* remove any height restriction */
-  overflow: visible !important;  /* let content flow naturally */
-}
-
-/* Optional: remove scroll from cart as well */
-.cart-section {
-  max-height: none !important;
-  overflow: visible !important;
-}
-
-/* If stock/product grid had its own scroll */
-#stockScrollBox {
-  max-height: none !important;
-  overflow: visible !important;
-}
+    /* Remove independent scroll from billing container */
+    .billing-container {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    .cart-section {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    #stockScrollBox {
+      max-height: none !important;
+      overflow: visible !important;
+    }
 
     /* Product Grid */
     #productGridWrap {
@@ -48,24 +44,23 @@
       max-width: 1200px;
     }
     #categoryFilters { display:flex; gap:6px; flex-wrap:wrap;margin-bottom:10px; }
- #categoryFilters button {
-  display: inline-flex;    /* horizontal alignment inside flex container */
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;     /* prevent wrapping inside button */
-  padding: 6px 12px;
-  background-color: #0b5ed7;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.2s;
-  font-size: 13px;
-}
-
-#categoryFilters button:hover {
-  background-color: #0740a0;
-}
+    #categoryFilters button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 6px 12px;
+      background-color: #0b5ed7;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 13px;
+    }
+    #categoryFilters button:hover {
+      background-color: #0740a0;
+    }
 
     #productList {
       display: grid;
@@ -123,6 +118,10 @@
       transition: 0.2s;
     }
     #categoryFilters button:hover { background:#005fcc; transform: scale(1.05); }
+
+    /* Scanner UI */
+    #scannerContainer { display:flex; align-items:center; justify-content:center; background:#000; color:#fff; }
+    #detectedCode { margin-top:6px; font-weight:700; }
   </style>
 </head>
 
@@ -141,11 +140,17 @@
       <a href="products.html">Products</a>
     </div>
   </div>
-<div id="scannerContainer" style="width:50%; max-width:500px; height:250px; border:2px solid #ccc; margin-bottom:6px;"></div>
-<button id="openCamera">Start Scanner</button>
-<button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
 
+  <!-- Scanner UI -->
+  <div id="scannerContainer" style="width:100%; max-width:500px; height:350px; border:1px solid #ccc; margin-bottom:6px;"></div>
+  <div style="margin-bottom:6px;">
+    <button id="openCamera">Start Scanner</button>
+    <button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
+    <span id="detectedCode" class="small"></span>
+  </div>
 
+  <!-- Hidden input (keeps backward compatibility with code that expects a barcodeInput element) -->
+  <input id="barcodeInput" class="hidden" autocomplete="off">
 
   <div class="stock-scroll">
     <div id="productGridWrap">
@@ -159,8 +164,7 @@
       <div class="card">
         <h3>Billing</h3>
         <div class="form-row">
-<input type="text" id="productSearch" placeholder="Search product...">
-
+          <input type="text" id="productSearch" placeholder="Search product...">
           <input id="custName" placeholder="Customer name (optional)">
         </div>
         <div id="searchResults" class="card"></div>
@@ -171,7 +175,7 @@
         <div id="cartList"></div>
         <div class="form-row">
          <input id="discount" type="number" placeholder="Discount INR (optional)" value="" 
-       oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
+           oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
         </div>
         <div class="total" id="grandTotal">Total: ₹0</div>
         <div class="form-row"><button onclick="completeSale()">Checkout & Print</button></div>
@@ -189,74 +193,204 @@
   </div>
 
   <script src="bharatpos.js"></script>
-<script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const scannerContainer = document.getElementById("scannerContainer");
-  const openBtn = document.getElementById("openCamera");
-  const stopBtn = document.getElementById("stopCamera");
-  const barcodeInput = document.getElementById("barcodeInput");
+  <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 
-  let scanning = false;
+  <script>
+  // Scanner script — improved for Android camera usage
+  document.addEventListener("DOMContentLoaded", () => {
+    const scannerContainer = document.getElementById("scannerContainer");
+    const openBtn = document.getElementById("openCamera");
+    const stopBtn = document.getElementById("stopCamera");
+    const barcodeInput = document.getElementById("barcodeInput");
+    const productSearch = document.getElementById("productSearch");
+    const detectedCodeEl = document.getElementById("detectedCode");
 
-  function startScanner() {
-    if (scanning) return;
-    scanning = true;
-    stopBtn.style.display = "inline-block";
+    let scanning = false;
+    let lastResult = null;
+    let lastTime = 0;
+    const DUPLICATE_TIMEOUT = 1500; // ms
 
-    Quagga.init({
-      inputStream: {
-        name: "Live",
-        type: "LiveStream",
-        target: scannerContainer,
-        constraints: {
-          width: 200,
-          height:350,
-          facingMode: "environment"
-        }
-      },
-      decoder: {
-        readers: ["code_128_reader","ean_reader","ean_8_reader","upc_reader"]
-      },
-      locate: true
-    }, function(err) {
-      if (err) {
-        console.error(err);
-        alert("Camera failed: " + err);
-        scanning = false;
-        stopBtn.style.display = "none";
+    // Generic handler when a barcode is read
+    function handleScannedCode(code) {
+      const now = Date.now();
+      if (!code) return;
+      // avoid duplicates quickly repeating
+      if (code === lastResult && (now - lastTime) < DUPLICATE_TIMEOUT) return;
+      lastResult = code;
+      lastTime = now;
+
+      detectedCodeEl.textContent = "Scanned: " + code;
+      // Fill hidden barcodeInput for backward compatibility
+      barcodeInput.value = code;
+      // Dispatch input/change so any existing listeners react
+      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // Also put code into productSearch (common pattern in this app)
+      if (productSearch) {
+        productSearch.value = code;
+        productSearch.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      // If your app exposes a handler function, call it (optional)
+      if (typeof window.onBarcodeScanned === 'function') {
+        try { window.onBarcodeScanned(code); } catch (e) { console.warn(e); }
+      }
+
+      // Option: stop scanner after a successful read — uncomment if desired
+      // stopScanner();
+    }
+
+    // QUAGGA initialization
+    function startQuagga() {
+      if (scanning) return;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Camera API not supported on this browser.");
         return;
       }
-      Quagga.start();
+
+      scanning = true;
+      stopBtn.style.display = "inline-block";
+
+      // Quagga configuration tuned for mobile camera
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: scannerContainer,
+          constraints: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "environment"
+          }
+        },
+        locator: {
+          patchSize: "medium",
+          halfSample: true
+        },
+        numOfWorkers: navigator.hardwareConcurrency ? Math.max(1, Math.min(4, navigator.hardwareConcurrency - 1)) : 2,
+        decoder: {
+          readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"] // common retail readers
+        },
+        locate: true
+      }, function(err) {
+        if (err) {
+          console.error("Quagga init error:", err);
+          alert("Camera start failed: " + (err.message || err));
+          scanning = false;
+          stopBtn.style.display = "none";
+          return;
+        }
+        Quagga.start();
+      });
+
+      // Debounced/guarded onDetected
+      Quagga.onDetected(onQuaggaDetected);
+      Quagga.onProcessed(function(result) {
+        // optional: could draw bounding boxes on a canvas here
+      });
+    }
+
+    function onQuaggaDetected(data) {
+      // data may be null; protect against that
+      try {
+        if (!data || !data.codeResult) return;
+        const code = data.codeResult.code;
+        handleScannedCode(code);
+      } catch (e) {
+        console.error("onDetected error:", e);
+      }
+    }
+
+    function stopScanner() {
+      if (!scanning) return;
+      // remove handlers to avoid duplicate listeners if restarted
+      try {
+        Quagga.offDetected(onQuaggaDetected);
+      } catch (e) {}
+      try {
+        Quagga.stop();
+      } catch (e) {}
+      scanning = false;
+      stopBtn.style.display = "none";
+      // clear the live stream container so camera UI is removed
+      scannerContainer.innerHTML = "";
+      detectedCodeEl.textContent = "";
+      lastResult = null;
+    }
+
+    // Fallback to native BarcodeDetector (if available) — usually faster and more reliable on modern Android Chrome
+    async function startBarcodeDetectorFallback() {
+      if (!('BarcodeDetector' in window)) {
+        // no fallback available
+        alert("Quagga failed and BarcodeDetector is not available in this browser.");
+        return;
+      }
+
+      const formats = ['ean_13','ean_8','upc_a','upc_e','code_128']; // adjust as needed
+      const detector = new BarcodeDetector({ formats });
+      const video = document.createElement('video');
+      video.style.width = "100%";
+      video.style.height = "100%";
+      scannerContainer.innerHTML = "";
+      scannerContainer.appendChild(video);
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        video.srcObject = stream;
+        await video.play();
+      } catch (err) {
+        console.error("Camera fallback error:", err);
+        alert("Camera access error: " + err.message);
+        return;
+      }
+
+      scanning = true;
+      stopBtn.style.display = "inline-block";
+
+      const tick = async () => {
+        if (!scanning) {
+          if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+          }
+          return;
+        }
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes && barcodes.length) {
+            // use first barcode
+            handleScannedCode(barcodes[0].rawValue || barcodes[0].raw);
+          }
+        } catch (err) {
+          console.warn("Detector error:", err);
+        }
+        requestAnimationFrame(tick);
+      };
+      tick();
+    }
+
+    // Try Quagga; if it fails during init or start, you can call the fallback
+    openBtn.addEventListener('click', async () => {
+      // Must be triggered by user gesture to allow getUserMedia
+      // Try Quagga first
+      try {
+        startQuagga();
+      } catch (e) {
+        console.warn("Quagga start thrown:", e);
+        // fallback
+        startBarcodeDetectorFallback();
+      }
     });
 
-    Quagga.onDetected((data) => {
-      const code = data.codeResult.code;
-      console.log("Detected barcode:", code);
+    stopBtn.addEventListener('click', stopScanner);
 
-      barcodeInput.value = code;
-      barcodeInput.dispatchEvent(new KeyboardEvent("keypress", { key: "Enter" }));
-
-      // Optional: stop after first detection
-      // stopScanner();
-    });
-  }
-
-  function stopScanner() {
-    if (!scanning) return;
-    Quagga.stop();
-    scanning = false;
-    stopBtn.style.display = "none";
-    scannerContainer.innerHTML = "";
-  }
-
-  openBtn.addEventListener("click", startScanner);
-  stopBtn.addEventListener("click", stopScanner);
-});
-</script>
+    // Expose handler for other app code (optional)
+    window.onBarcodeScanned = window.onBarcodeScanned || null;
+  });
+  </script>
 </body>
 </html>
-
 
 
 
