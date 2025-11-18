@@ -22,6 +22,20 @@
 # billing app for small retailer
 # dukkan samhalne wala app
 # shop inventory manager 
-
+# Free shop manager software download with crack
+# Best free shop manager software download with crack
+# Free offline POS software download for Windows 10
+# Vyapar
+# retail7 POS
+#  free zoho pos
+# free odoo pos
+# Free offline POS software download Android
+# Offline POS system free download
+# odo pos free
+# Kirana billing app
+# billing app for kirana store
+# billing app for store
+# Inventrova billing app
 # 
 # 
+ 
