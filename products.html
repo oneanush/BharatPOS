@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Products - Bharat POS</title>
+  <link rel="stylesheet" href="bharatpos.css">
+  <script src="bharatpos.js" defer></script>
+</head>
+<body>
+<nav>
+   <a href="sales.html">Sales</a>
+  <a href="settings.html">Settings</a>
+ <a href="index.html">About</a>
+<div id="profileName" class="profile-name" ></div>
+
+</nav>
+<style>
+.profile-name {
+  font-weight: 700;
+  color: #ffccrr;
+  margin-left: 12px;
+  margin-right: 5px;
+  padding: 6px 10px;
+  border: 1px solid #ffcc00;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+}
+
+
+</style>
+
+
+ <div class="header">
+    <div class="brand">🛰️ Bharat POS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="billing.html">billing</a>
+     
+    </div>
+  </div>
+
+
+<div class="container">
+  <div class="card">
+    <h3>Add Product</h3>
+    <form id="productForm" onsubmit="event.preventDefault(); addProduct();">
+      <div class="form-row"><input id="productName" placeholder="Product name"></div>
+      <div class="form-row"><input id="productPrice" type="number" step="0.01" placeholder="Price"></div>
+      <div class="form-row"><input id="productStock" type="number" placeholder="Stock"></div>
+      <div class="form-row"><input id="productTax" type="number" placeholder="Tax % (optional)"></div>
+      <div class="form-row"><input id="productCategory" placeholder="Category (optional)"></div>
+<label>Barcode:</label>
+<input type="text" id="productBarcode" placeholder="Enter / Scan Barcode">
+
+      <div class="form-row"><button type="submit">Save Product</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Products</h3>
+    <div id="productsList"></div>
+  </div>
+</div>
+
+<script>
+  // simple renderer used by bharatpos.js
+  function renderProducts(){
+    const products = getProducts();
+    if(products.length===0) { document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; return;}
+    let html = '<table><tr><th>Name</th><th>Price</th><th>Stock</th><th>Tax %</th><th>category</th><th>Action</th></tr>';
+    products.forEach(p=>{
+    html += `
+<tr>
+  <td>${p.name}</td>
+  <td>${p.price}</td>
+  <td>${p.stock}</td>
+  <td>${p.taxPercent}%</td>
+ <td>${p.category}</td>
+
+  <td>
+    <button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button>
+  </td>
+</tr>`;
+
+    });
+    html += '</table>';
+    document.getElementById('productsList').innerHTML = html;
+  }
+
+  // initial render
+  document.addEventListener('DOMContentLoaded', ()=>{ renderProducts();const temp = localStorage.getItem("temp_new_barcode");
+if (temp) {
+  const barcodeField = document.getElementById("productBarcode");
+  if (barcodeField) barcodeField.value = temp;
+  localStorage.removeItem("temp_new_barcode");
+}
+ });
+</script>
+  </script>
+<script>
+function loadUser(){
+  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+  if(data.name){
+    document.getElementById('profileName').textContent = "👤 " + data.name;
+  } else {
+    document.getElementById('profileName').textContent = "👤 Guest";
+  }
+}
+loadUser();
+</script>
+<script>
+// confirm and delete product
+function deleteProductConfirm(pid){
+  if(!confirm("Are you sure you want to delete this product?")) return;
+  let products = getProducts();
+  products = products.filter(p => p.id !== pid);
+  saveProducts(products);
+  renderProducts(); // re-render after deletion
+  alert("Product deleted successfully!");
+}
+</script>
+<script>
+const nbc = localStorage.getItem("temp_new_barcode");
+if (nbc) {
+  const bcEl = document.getElementById("productBarcode");
+  if (bcEl) bcEl.value = nbc;
+
+  localStorage.removeItem("temp_new_barcode");
+}
+
+</script>
+</body>
+</html>

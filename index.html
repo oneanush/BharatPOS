@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome • BharatPOS</title>
+
+
+<style>
+.get started-btn {
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid #ffcc00;
+  padding: 14px 20px;
+  font-size: 18px;
+  width: 100%;
+  border-radius: 15px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 10px;
+  transition: 0.3s ease-in-out;
+  letter-spacing: 1px;
+  backdrop-filter: blur(4px);
+  text-transform: uppercase;
+  box-shadow: 0 0 10px rgba(255,204,0,0.25);
+}
+
+.get started-btn:hover {
+  background: #ffcc00;
+  color: #000;
+  border-color: #ffdd44;
+  box-shadow: 0 0 15px rgba(255,204,0,0.6), 0 0 25px rgba(255,204,0,0.3);
+  transform: translateY(-2px);
+}
+.get started-btn {
+  position: absolute;  /* allow positioning */
+  top: 20px;
+  right: 20px;         /* move to right */
+  width: auto;         /* remove full width */
+  padding: 10px 18px;  /* normal button size */
+  z-index: 999;
+}
+
+
+
+
+
+/* BELOW INTRO IMAGE CONTAINER */
+.below-intro {
+  width: 100%;
+  padding: 30px 0;
+  background: linear-gradient(135deg, #004d99, #0b5ed7); /* same gradient as hero */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* IMAGE STYLING */
+.below-intro-img {
+  width: 80%;
+  max-width: 900px;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  display: block;
+}
+
+  body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #f4f6fb;
+  }
+
+  .hero {
+    height: 100vh;
+    background: linear-gradient(135deg, #004d99, #0b5ed7);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .hero-box {
+    max-width: 650px;
+    background: rgba(255,255,255,0.1);
+    padding: 40px 32px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+    backdrop-filter: blur(6px);
+  }
+
+  .flag {
+    font-size: 50px;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 40px;
+    margin: 5px 0 10px;
+    font-weight: 800;
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-top: 0;
+    color: #ffe066;
+  }
+
+  p {
+    font-size: 15px;
+    line-height: 1.5;
+    margin-top: 12px;
+    margin-bottom: 20px;
+  }
+
+  .info-box {
+    background: #ffffff;
+    color: #000;
+    padding: 18px 20px;
+    border-radius: 14px;
+    text-align: left;
+    margin: 20px 0;
+    border-left: 7px solid #004d99;
+  }
+
+  .info-box strong {
+    font-size: 16px;
+  }
+
+  .get-started {
+    background: #ffcc00;
+    color: #000;
+    border: none;
+    padding: 14px 20px;
+    font-size: 18px;
+    width: 100%;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: bold;
+  }
+
+  .get-started:hover {
+    background: #ffdd44;
+  }
+
+  .contact {
+    margin-top: 18px;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .footer-text {
+    margin-top: 5px;
+    font-size: 12px;
+    opacity: 0.8;
+  }
+</style>
+</head> 
+
+<section class="below-intro" align="center">
+ <img src="in.png" alt="Retail theme" class="below-intro-img">
+  </section>
+
+
+<section class="below-intro" align="center">
+ <img src="2in.png" alt="Retail theme" class="below-intro-img">
+  </section>
+
+<body>
+<body class="intro-page">
+<div class="hero">
+  <div class="hero-box">
+
+   
+
+    <h1>BharatPOS</h1>
+    <h2>India’s Own POS System</h2>
+
+    <p>
+      A modern Point-of-Sale designed specially for India’s small retailers.  
+      Access it from your phone or laptop — fast, simple, and powerful.
+    </p>
+
+    <div class="info-box">
+      <strong>Why BharatPOS?</strong><br><br>
+      ✔ Easy Billing & Invoicing<br>
+      ✔ Full Inventory Control<br>
+      ✔ Tax Added Automatically<br>
+      ✔ Sales Tracking & Reports<br>
+      ✔ Works on Mobile & Laptop
+    </div>
+
+    <button class="get-started" onclick="gologin()">GET STARTED ➜</button>
+  
+    <div class="contact">📞 9997844000 • www.bharatpos.com</div>
+    <div class="footer-text">Designed by Studio Shodwe</div>
+       </div>
+</div>
+<script>
+function gologin() {
+  window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>

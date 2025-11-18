@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login • BharatPOS</title>
+
+<style>
+/* ----------------- Body ----------------- */
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: linear-gradient(135deg,#004d99,#0b5ed7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: white;
+}
+
+/* ----------------- Form Box ----------------- */
+.form-box {
+  background: rgba(255,255,255,0.15);
+  padding: 32px 28px;
+  border-radius: 18px;
+  width: 90%;
+  max-width: 420px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+}
+
+/* ----------------- Heading ----------------- */
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffeb99;
+}
+
+/* ----------------- Inputs & Selects ----------------- */
+input, select {
+  width: 100%;
+  padding: 12px 10px;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+/* ----------------- Button ----------------- */
+button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px;
+  background: #ffcc00;
+  color: black;
+  font-size: 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 0.3s;
+}
+button:hover {
+  background: #ffdd44;
+}
+
+/* ----------------- Mobile tweak ----------------- */
+@media (max-width: 480px){
+  .form-box { padding: 24px 20px; }
+  h2 { font-size: 22px; }
+  input, select { font-size: 14px; padding: 10px; }
+  button { font-size: 16px; padding: 12px; }
+}
+</style>
+</head>
+
+<body>
+<div class="form-box">
+  <h2>Retailer Login / Register</h2>
+
+  <form id="loginForm">
+    <input type="text" id="retailerName" placeholder="Retailer Name" required>
+
+    <input type="tel" id="mobile" placeholder="Mobile Number (10 digits)" maxlength="10" pattern="[0-9]{10}" required>
+
+    <select id="country">
+      <option>India</option>
+      <option>America</option>
+      <option>Other</option>
+      <option>Russia</option>
+    </select>
+
+    <select id="state" required>
+      <option value="">Select State</option>
+      <option>Uttar Pradesh</option>
+      <option>Delhi</option>
+      <option>Maharashtra</option>
+      <option>Rajasthan</option>
+      <option>Haryana</option>
+    </select>
+
+    <select id="type">
+      <option>Retailer</option>
+      <option>Wholesaler</option>
+    </select>
+
+    <button type="submit">Continue</button>
+  </form>
+</div>
+
+
+<script>
+// ----------------- Form Submission -----------------
+document.getElementById('loginForm').addEventListener('submit', function(e){
+  e.preventDefault(); // prevent default form submission
+// Validate mobile number
+
+  const name = document.getElementById('retailerName').value.trim();
+  const mobile = document.getElementById('mobile').value.trim();
+  const country = document.getElementById('country').value;
+  const state = document.getElementById('state').value;
+  const type = document.getElementById('type').value;
+
+  // Validation
+  if(!name || !mobile || !state){
+    alert("Please fill all required fields correctly!");
+    return;
+  }
+
+
+// Validate mobile number
+if(!/^[0-9]{10}$/.test(mobile)){
+  alert("Enter a valid 10-digit mobile number!");
+  return;
+}
+
+  // Save to localStorage
+  const data = { name, mobile, country, state, type };
+  localStorage.setItem('bharatpos_user', JSON.stringify(data));
+
+  alert("Registration Successful!");
+  window.location.href = "products.html"; // redirect
+});
+</script>
+
+</body>
+</html>

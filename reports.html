@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reports - Bharat POS</title>
+  <link rel="stylesheet" href="bharatpos.css">
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="settings.html">Settings</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">🛰️ Bharat POS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="billing.html">Billing</a>
+    </div>
+  </div>
+
+  <!-- Main container -->
+  <div class="container">
+    <div class="card" id="reportCards"></div>
+
+    <div class="card">
+      <h3>Top Products</h3>
+      <div id="topProducts"></div>
+    </div>
+  </div>
+
+  <div class="footer">Built by Utkarsh — BharatPOS</div>
+
+  <!-- BharatPOS JS -->
+  <script src="bharatpos.js"></script>
+
+  <script>
+    // -------------------------
+    // Helper: format currency
+    // -------------------------
+    function formatCurrency(n){ return '₹' + Number(n || 0).toFixed(2); }
+
+    // -------------------------
+    // Aggregate sales data
+    // -------------------------
+    function aggregateSales(){
+      const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+      let totalRevenue = 0, totalSales = sales.length;
+      const productCount = {};
+      let bestProductName = '—', bestProductQty = 0;
+
+      sales.forEach(sale => {
+        totalRevenue += Number(sale.total || 0);
+        (sale.items || []).forEach(it => {
+          productCount[it.name] = (productCount[it.name] || 0) + Number(it.qty || 0);
+        });
+      });
+
+      for(const [name, qty] of Object.entries(productCount)){
+        if(qty > bestProductQty){
+          bestProductQty = qty;
+          bestProductName = name;
+        }
+      }
+
+      return { totalRevenue, totalSales, bestProductName, bestProductQty };
+    }
+
+    // -------------------------
+    // Render reports
+    // -------------------------
+    function renderReports(){
+      const summary = aggregateSales();
+      document.getElementById('reportCards').innerHTML = `
+        <div><b>Total Revenue:</b> ${formatCurrency(summary.totalRevenue)}</div>
+        <div><b>Total Sales:</b> ${summary.totalSales}</div>
+        <div><b>Best Product:</b> ${summary.bestProductName} (${summary.bestProductQty})</div>
+      `;
+
+      // Top products list
+      const prodCount = {};
+      JSON.parse(localStorage.getItem('bharatpos_sales') || '[]').forEach(sale=>{
+        (sale.items || []).forEach(it=>{
+          prodCount[it.name] = (prodCount[it.name] || 0) + Number(it.qty || 0);
+        });
+      });
+      const topProductsArr = Object.entries(prodCount).sort((a,b)=>b[1]-a[1]);
+      const topProductsEl = document.getElementById('topProducts');
+     // Enhanced Top Products display
+if(topProductsArr.length === 0){
+  topProductsEl.innerHTML = '<div class="small">No data</div>';
+} else {
+  // Determine max qty for relative width
+  const maxQty = Math.max(...topProductsArr.map(x=>x[1]));
+  topProductsEl.innerHTML = topProductsArr.map(x=>{
+    const name = x[0], qty = x[1];
+    const barWidth = maxQty ? (qty / maxQty * 100) : 0;
+    return `
+      <div class="top-product-card">
+        <div class="top-product-name">${name}</div>
+
+<div class="top-product-bar-wrap">
+       
+          <div class="top-product-bar" style="width:${barWidth}%;"></div>
+        </div>
+        <div class="top-product-qty">-${qty}</div>
+      </div>
+    `;
+  }).join('');
+}
+}
+    // -------------------------
+    // Run after DOM is ready
+    // -------------------------
+    document.addEventListener('DOMContentLoaded', renderReports);
+  </script>
+
+</body>
+</html>

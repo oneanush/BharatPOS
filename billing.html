@@ -1,0 +1,258 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Billing - Bharat POS</title>
+  <link rel="stylesheet" href="bharatpos.css">
+
+
+  <style>
+    table { width:100%; border-collapse: collapse; margin: 6px 0; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    .total { margin-top: 6px; font-weight: bold; }
+    .card { padding: 12px; margin-bottom: 12px; background: #f7f7f7; border-radius: 6px; }
+    .form-row { margin-top: 8px; display: flex; gap: 6px; }
+    .small { font-size: 0.85em; color: #555; }
+    button { padding: 4px 8px; cursor: pointer; }
+    .hidden { display:none; }
+    nav a { margin-right: 12px; }
+    .header { display:flex; justify-content: space-between; align-items:center; margin-bottom:12px; }
+    .brand { font-weight:bold; font-size:1.2em; }
+    .nav a { margin-left:8px; }
+
+    /* Billing layout */
+    .billing-container { display: flex; gap: 16px; justify-content:center; align-items:flex-start; flex-wrap: wrap; }
+/* Remove independent scroll from billing container */
+.billing-container {
+  max-height: none !important;  /* remove any height restriction */
+  overflow: visible !important;  /* let content flow naturally */
+}
+
+/* Optional: remove scroll from cart as well */
+.cart-section {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* If stock/product grid had its own scroll */
+#stockScrollBox {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+    /* Product Grid */
+    #productGridWrap {
+      width: 90%;
+      margin: 6px auto;
+      max-width: 1200px;
+    }
+    #categoryFilters { display:flex; gap:6px; flex-wrap:wrap;margin-bottom:10px; }
+ #categoryFilters button {
+  display: inline-flex;    /* horizontal alignment inside flex container */
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;     /* prevent wrapping inside button */
+  padding: 6px 12px;
+  background-color: #0b5ed7;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 13px;
+}
+
+#categoryFilters button:hover {
+  background-color: #0740a0;
+}
+
+    #productList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: 8px;
+      align-items: start;
+    }
+    .prod-btn {
+      aspect-ratio: 1/1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:6px;
+      font-size:12px;
+      border-radius:8px;
+      border:1px solid #ccc;
+      background: linear-gradient(180deg,#ffffff,#f0f6ff);
+      cursor:pointer;
+      overflow:hidden;
+      transition: 0.15s;
+    }
+    .prod-btn:active { transform: scale(0.97); }
+    .prod-name { font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
+    .prod-qty { font-size:11px; color:#333; opacity:0.8; margin-top:4px; }
+
+    /* Scroll only on stock/product section */
+    .stock-scroll {
+      max-height: 50vh;
+      overflow-y: auto;
+      padding: 6px;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+
+    /* Cart section smaller */
+    .cart-section { flex: 0.9; max-width:650px; min-width:320px; }
+
+    /* responsive tweak */
+    @media (max-width:700px){
+      #productGridWrap{ width: 96%; }
+      .billing-container{  align-items:center; flex-direction:column; }
+      .cart-section{ width:96%; max-width: none; }
+    }
+
+    /* Category buttons */
+    #categoryFilters button {
+      padding:4px 10px;
+      border-radius:6px;
+      border:none;
+      background:#0077ff;
+      color:#fff;
+      font-weight:600;
+      cursor:pointer;
+      transition: 0.2s;
+    }
+    #categoryFilters button:hover { background:#005fcc; transform: scale(1.05); }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <a href="sales.html">Sales</a>
+    <a href="reports.html">Reports</a>
+    <a href="settings.html">Settings</a>
+    <a href="index.html">About</a>
+  </nav>
+
+  <div class="header">
+    <div class="brand">🛰️ Bharat POS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="products.html">Products</a>
+    </div>
+  </div>
+<div id="scannerContainer" style="width:30%; max-width:500px; height:50px; border:1px solid #ccc; margin-bottom:6px;"></div>
+<button id="openCamera">Start Scanner</button>
+<button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
+
+
+
+  <div class="stock-scroll">
+    <div id="productGridWrap">
+      <h3 style="text-align:center;margin:6px 0;">Available Products</h3>
+      <div id="categoryFilters"></div>
+      <div id="productList" role="list"></div>
+    </div>
+  </div>
+  <div class="billing-container">
+    <div class="cart-section">
+      <div class="card">
+        <h3>Billing</h3>
+        <div class="form-row">
+<input type="text" id="productSearch" placeholder="Search product...">
+
+          <input id="custName" placeholder="Customer name (optional)">
+        </div>
+        <div id="searchResults" class="card"></div>
+      </div>
+
+      <div class="card">
+        <h3>Cart</h3>
+        <div id="cartList"></div>
+        <div class="form-row">
+         <input id="discount" type="number" placeholder="Discount INR (optional)" value="" 
+       oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
+        </div>
+        <div class="total" id="grandTotal">Total: ₹0</div>
+        <div class="form-row"><button onclick="completeSale()">Checkout & Print</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div id="invoiceModal" class="card hidden" style="max-width:700px;margin:20px auto">
+    <div id="invoiceContent"></div>
+    <div style="text-align:right;margin-top:8px">
+      <button onclick="window.print()">Print</button>
+      <button onclick="closeInvoice()">Close</button>
+    </div>
+  </div>
+
+  <script src="bharatpos.js"></script>
+<script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const scannerContainer = document.getElementById("scannerContainer");
+  const openBtn = document.getElementById("openCamera");
+  const stopBtn = document.getElementById("stopCamera");
+  const barcodeInput = document.getElementById("barcodeInput");
+
+  let scanning = false;
+
+  function startScanner() {
+    if (scanning) return;
+    scanning = true;
+    stopBtn.style.display = "inline-block";
+
+    Quagga.init({
+      inputStream: {
+        name: "Live",
+        type: "LiveStream",
+        target: scannerContainer,
+        constraints: {
+          width: 100,
+          height:30,
+          facingMode: "environment"
+        }
+      },
+      decoder: {
+        readers: ["code_128_reader","ean_reader","ean_8_reader","upc_reader"]
+      },
+      locate: true
+    }, function(err) {
+      if (err) {
+        console.error(err);
+        alert("Camera failed: " + err);
+        scanning = false;
+        stopBtn.style.display = "none";
+        return;
+      }
+      Quagga.start();
+    });
+
+    Quagga.onDetected((data) => {
+      const code = data.codeResult.code;
+      console.log("Detected barcode:", code);
+
+      barcodeInput.value = code;
+      barcodeInput.dispatchEvent(new KeyboardEvent("keypress", { key: "Enter" }));
+
+      // Optional: stop after first detection
+      // stopScanner();
+    });
+  }
+
+  function stopScanner() {
+    if (!scanning) return;
+    Quagga.stop();
+    scanning = false;
+    stopBtn.style.display = "none";
+    scannerContainer.innerHTML = "";
+  }
+
+  openBtn.addEventListener("click", startScanner);
+  stopBtn.addEventListener("click", stopScanner);
+});
+</script>
+</body>
+</html>

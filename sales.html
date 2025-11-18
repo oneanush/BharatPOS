@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sales - BharatPOS</title>
+  <link rel="stylesheet" href="bharatpos.css">
+  <script src="bharatpos.js" defer></script>
+</head>
+
+<body>
+  <!-- Top Navigation -->
+  <nav>
+    <a href="products.html">Products</a>
+    <a href="reports.html">Reports</a>
+    <a href="settings.html">Settings</a>
+    <a href="index.html">About</a>
+  </nav>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">🛰️ BharatPOS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="billing.html">Billing</a>
+    </div>
+  </div>
+
+  <!-- Sales Container -->
+  <div class="container">
+    <div class="card">
+      <h3>Sales History</h3>
+      <div style="display:flex;gap:8px; margin-bottom:10px;">
+        <button onclick="downloadSalesCSV()">Export CSV</button>
+        <button onclick="clearSales()" style="background:#dc3545; color:#fff;">Clear old sales</button>
+      </div>
+      <div class="small" style="margin-bottom:8px;">
+        Sales older than 2 years are automatically removed. Recent sales are protected.
+      </div>
+      <div id="salesList"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- Helper to get sales from localStorage ---
+    function getSales() {
+      return JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+    }
+
+    // --- Helper to format currency ---
+    function formatCurrency(val) {
+      return '₹' + Number(val).toFixed(2);
+    }
+
+    // --- Automatically prune sales older than 2 years ---
+    function pruneOldSales() {
+      const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const sales = getSales();
+      const recentSales = sales.filter(s => now - new Date(s.date).getTime() <= TWO_YEARS_MS);
+      localStorage.setItem('bharatpos_sales', JSON.stringify(recentSales));
+      return recentSales;
+    }
+
+    // --- Render Sales Table ---
+    function renderSales() {
+      const arr = pruneOldSales().slice().reverse(); // prune first
+      const container = document.getElementById('salesList');
+
+      if(arr.length === 0) {
+        container.innerHTML = '<div class="small">No sales yet</div>';
+        return;
+      }
+
+      let html = '<table><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Amount</th><th>Action</th></tr>';
+      arr.forEach(s => {
+        html += `<tr>
+          <td>${s.invoiceNo}</td>
+          <td>${new Date(s.date).toLocaleString()}</td>
+          <td>${s.customer}</td>
+          <td>${formatCurrency(s.total)}</td>
+          <td><button onclick='viewSale("${s.invoiceNo}")'>View</button></td>
+        </tr>`;
+      });
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    // --- View Single Sale Invoice ---
+    function viewSale(inv) {
+      const sale = getSales().find(s => s.invoiceNo === inv);
+      if(!sale) return alert('Invoice not found');
+
+      let html = `<h3>Invoice ${sale.invoiceNo}</h3>
+        <div>${new Date(sale.date).toLocaleString()} | ${sale.customer}</div>
+        <table>
+          <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>`;
+      
+      sale.items.forEach(it => {
+        html += `<tr>
+          <td>${it.name}</td>
+          <td>${it.qty}</td>
+          <td>${formatCurrency(it.price)}</td>
+          <td>${formatCurrency(it.qty * it.price)}</td>
+        </tr>`;
+      });
+
+      html += `</table><div class="total">Total: ${formatCurrency(sale.total)}</div>`;
+
+      const win = window.open('', '_blank');
+      win.document.write(`
+        <html>
+          <head>
+            <title>Invoice ${sale.invoiceNo}</title>
+            <link rel="stylesheet" href="bharatpos.css">
+          </head>
+          <body>${html}</body>
+        </html>
+      `);
+      win.document.close();
+    }
+
+    // --- CSV Download Helper ---
+    function downloadCSV(data, filename = 'data.csv') {
+      if(!data || data.length === 0) return alert('No data to export');
+
+      const headers = Object.keys(data[0]);
+      const rows = data.map(row => headers.map(h => `"${row[h]}"`).join(','));
+
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // --- Export Sales as CSV ---
+    function downloadSalesCSV() {
+      const sales = getSales();
+      if(sales.length === 0) return alert('No sales to export');
+
+      const rows = [];
+      sales.forEach(s => {
+        s.items.forEach(it => {
+          rows.push({
+            Invoice: s.invoiceNo,
+            Date: new Date(s.date).toLocaleString(),
+            Customer: s.customer,
+            Item: it.name,
+            Qty: it.qty,
+            Price: it.price,
+            Total: s.total
+          });
+        });
+      });
+
+      downloadCSV(rows, 'bharatpos_sales_' + Date.now() + '.csv');
+    }
+
+    // --- Clear Old Sales Only ---
+    function clearSales() {
+      if(!confirm('Clear all sales older than 2 years?')) return;
+
+      const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+
+      let sales = getSales();
+      sales = sales.filter(s => now - new Date(s.date).getTime() <= TWO_YEARS_MS);
+
+      localStorage.setItem('bharatpos_sales', JSON.stringify(sales));
+      renderSales();
+      alert('Old sales cleared. Recent sales are protected.');
+    }
+
+    // --- Initial Render ---
+    renderSales();
+  </script>
+</body>
+</html>

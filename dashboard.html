@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bharat POS — Dashboard</title>
+  <link rel="stylesheet" href="bharatpos.css">
+  <script src="bharatpos.js"></script>
+
+
+
+</head>
+<nav>
+
+ <a href="products.html">Products</a>
+  <a href="reports.html">Reports</a>
+  <a href="settings.html">Settings</a>
+  <a href="index.html">About</a>
+<div id="profileName" class="profile-name" ></div>
+</nav>
+
+
+
+<style>
+.profile-name {
+  font-weight: 700;
+  color: #ffccrr;
+  margin-left: 12px;
+  margin-right: 5px;
+  padding: 6px 10px;
+  border: 1px solid #ffcc00;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+}
+
+
+</style>
+
+
+
+<body>
+  <div class="header">
+    <div class="brand">🛰️ Bharat POS</div>
+    <div class="nav">
+      <a href="billing.html">Billing</a>
+      <a href="sales.html">Sales</a>
+     
+    </div>
+  </div>
+
+
+  <div class="container">
+    <div class="card">
+   
+      <h3>Quick Summary</h3>
+      <div id="summary"></div>
+    </div>
+<div> <button class="reset-btn" onclick="resetSales()">Reset</button></div>
+
+    <div class="card">
+      <h3>Low stock items</h3>
+      <div id="lowstock"></div>
+    </div>
+  </div>
+
+  <div class="footer">Built by Utkarsh — BharatPOS</div>
+
+  <script>
+    // render summary
+    function render(){
+      const agg = aggregateSales();
+      document.getElementById('summary').innerHTML = `
+        <div><b>Total Revenue:</b> ${formatCurrency(agg.totalRevenue || 0)}</div>
+        <div><b>Total Sales:</b> ${agg.totalSales}</div>
+        <div><b>Best Seller:</b> ${agg.bestProductName || '—'} (${agg.bestProductQty})</div>
+      `;
+      const low = getProducts().filter(p=>p.stock <= 5);
+      if(low.length===0) document.getElementById('lowstock').innerHTML = '<div class="small">No low stock items</div>';
+      else document.getElementById('lowstock').innerHTML = low.map(p=>`<div class="small">${p.name} — <span class="lowstock">${p.stock}</span></div>`).join('');
+    }
+    render();
+  </script>
+<script>
+function loadUser(){
+  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+  if(data.name){
+    document.getElementById('profileName').textContent = "👤 " + data.name;
+  } else {
+    document.getElementById('profileName').textContent = "👤 Guest";
+  }
+}
+loadUser();
+</script>
+<script>
+function resetSales() {
+  if(confirm("⚠ Are you sure you want to delete all sales records? This action cannot be undone.")){
+    localStorage.setItem('bharatpos_sales', '[]');
+    alert("All sales data has been cleared.");
+    location.reload();
+  }
+}
+</script>
+<script>
+  // -------------------------
+  // Dashboard rendering
+  // -------------------------
+  function renderDashboard() {
+    const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+    const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+
+    // --- Quick Summary ---
+    let totalRevenue = 0, totalSales = sales.length;
+    const productSalesCount = {}; // track sold qty per product
+    sales.forEach(sale => {
+      totalRevenue += Number(sale.total || 0);
+      (sale.items || []).forEach(it => {
+        if (!productSalesCount[it.name]) productSalesCount[it.name] = 0;
+        productSalesCount[it.name] += Number(it.qty || 0);
+      });
+    });
+
+    // Best seller
+    let bestProductName = '—', bestProductQty = 0;
+    for (const [name, qty] of Object.entries(productSalesCount)) {
+      if (qty > bestProductQty) { bestProductName = name; bestProductQty = qty; }
+    }
+
+    document.getElementById('summary').innerHTML = `
+      <div><b>Total Revenue:</b> ${formatCurrency(totalRevenue)}</div>
+      <div><b>Total Sales:</b> ${totalSales}</div>
+      <div><b>Best Seller:</b> ${bestProductName} (${bestProductQty})</div>
+    `;
+
+    // --- Low Stock Items ---
+    const lowStockItems = products.filter(p => Number(p.stock || 0) <= 5);
+    const lowStockContainer = document.getElementById('lowstock');
+    if (lowStockItems.length === 0) {
+      lowStockContainer.innerHTML = '<div class="small">No low stock items</div>';
+    } else {
+      lowStockContainer.innerHTML = lowStockItems
+        .map(p => `<div class="small">${p.name} — <span class="lowstock">${p.stock}</span></div>`)
+        .join('');
+    }
+  }
+
+  renderDashboard();
+
+  // -------------------------
+  // User Profile
+  // -------------------------
+  function loadUser() {
+    const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    document.getElementById('profileName').textContent = data.name ? "👤 " + data.name : "👤 Guest";
+  }
+  loadUser();
+
+  // -------------------------
+  // Reset Sales
+  // -------------------------
+  function resetSales() {
+    if (confirm("⚠ Are you sure you want to delete all sales records? This action cannot be undone.")) {
+      localStorage.setItem('bharatpos_sales', '[]');
+      alert("All sales data has been cleared.");
+      renderDashboard();
+    }
+  }
+</script>
+
+
+
+</body>
+</html>

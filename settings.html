@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings - Bharat POS</title>
+  <link rel="stylesheet" href="bharatpos.css">
+  <script src="bharatpos.js" defer></script>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">🛰️ Bharat POS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="products.html">Products</a>
+      <a href="billing.html">Billing</a>
+      <a href="sales.html">Sales</a>
+      <a href="report.html">Report</a>
+      <a href="settings.html">Settings</a>
+      <a href="index.html">About</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h3>Settings</h3>
+      
+      <div class="form-row">
+        <button onclick="exportAll()">Export all (JSON)</button>
+      </div>
+
+      <div class="form-row">
+        <input type="file" id="importFile">
+        <button onclick="doImport()">Import file</button>
+      </div>
+
+      <div class="form-row">
+        <button onclick="if(confirm('Clear ALL data?')){ localStorage.clear(); alert('Cleared'); }" style="background:#dc3545">
+          Reset All Data
+        </button>
+      </div>
+
+      <div class="form-row">
+        <button onclick="toggleTheme()">Toggle Theme</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function doImport() {
+      const f = document.getElementById('importFile').files[0];
+      if (!f) return alert('Choose file');
+      importAllFile(f, function(err, msg) { 
+        if (err) alert('Import error'); 
+        else { alert(msg); location.reload(); } 
+      });
+    }
+  </script>
+
+</body>
+</html>
+
