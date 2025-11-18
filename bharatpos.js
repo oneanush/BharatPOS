@@ -1,7 +1,6 @@
 
 
 
-
 /* ============================================================
   bharatpos.js — Full corrected script
   - Removes old stockList usage
@@ -89,10 +88,10 @@ function addProduct() {
       barcode // new property
     });
   }
-if (!barcode) {
-  alert("Scan barcode first");
-  return;
-}
+  if (!barcode) {
+    alert("Scan barcode first");
+    return;
+  }
 
   saveProducts(products);
 
@@ -436,192 +435,46 @@ function toggleTheme(){
 
 })();
 
+/* -------------------------
+   Universal barcode enter-key handler
+   - Works across pages where #barcodeInput exists.
+   - If scanned barcode matches a product -> add to bill (if billing)
+   - Otherwise redirect to products.html with temp_new_barcode filled.
+   ------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const barcodeInput = document.getElementById('barcodeInput');
+  if (!barcodeInput) return;
 
-
-
-
-
-const barcodeInput = document.getElementById("barcodeInput");
-
-barcodeInput.addEventListener("keypress", function (e) {
-  if (e.key === "Enter") {
+  barcodeInput.addEventListener('keypress', function (e) {
+    if (e.key !== 'Enter') return;
     const code = barcodeInput.value.trim();
     if (!code) return;
 
-    const products = JSON.parse(localStorage.getItem("bharatpos_products")) || [];
-    const found = products.find(p => p.barcode == code);
-
-    if (found) {
-      addToCart(found.id);        // existing function = OK
-    } else {
-      if (confirm("Product not found. Add it now?")) {
-        // open product page and auto fill barcode
-        localStorage.setItem("temp_new_barcode", code);
-        window.location.href = "products.html";
-      }
-    }
-
-    barcodeInput.value = "";
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function sanitizeInput(str) {
-  return str.replace(/[<>]/g, ''); // remove < and >
-}
-
-const customerName = sanitizeInput(input.value);
-
-
-
-
-
-
-
-
-
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-
-document.getElementById("openCamera").addEventListener("click", async () => {
- 
-  const videoElement = document.getElementById("preview");
-  videoElement.style.display = "block";
-
-  const result = await codeReader.decodeOnceFromVideoDevice(null, 'preview');
-  barcodeInput.value = result.text;
-  videoElement.style.display = "none";
-  codeReader.reset();
-});
-
-
-document.addEventListener("DOMContentLoaded", () => {
-
-  const barcodeInput = document.getElementById("barcodeInput");
-  const camBtn = document.getElementById("openCamera");
-  const video = document.getElementById("preview");
-
-  // Barcode input by typing
-  if (barcodeInput) {
-    barcodeInput.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") {
-        const code = barcodeInput.value.trim();
-        if (!code) return;
-
-        const products = getProducts();
-        const found = products.find(p => p.barcode == code);
-
-        if (found) {
+    try {
+      const products = getProducts();
+      const found = products.find(p => String(p.barcode) === String(code));
+      if (found) {
+        // If billing page is open, prefer its addToBill
+        if (typeof window.addToBill === 'function') {
           window.addToBill(found.id);
         } else {
-          if (confirm("Product not found! Add new product?")) {
-            localStorage.setItem("temp_new_barcode", code);
-            window.location.href = "products.html";
-          }
+          // If not on billing page, navigate to billing and pre-select product by id
+          // Save the product id temporarily so billing can pick it up (if billing uses it)
+          localStorage.setItem('temp_add_product_id', found.id);
+          window.location.href = 'billing.html';
         }
-        barcodeInput.value = "";
+      } else {
+        // Not found -> go directly to products page to add a new product; barcode prefilled
+        localStorage.setItem('temp_new_barcode', String(code));
+        window.location.href = 'products.html';
       }
-    });
-  }
-
-  // Stop button
-  const stopBtn = document.createElement("button");
-  stopBtn.textContent = "Stop Scanner";
-  stopBtn.style.display = "none";
-  stopBtn.style.marginTop = "6px";
-  stopBtn.style.padding = "6px 10px";
-  stopBtn.style.background = "#d9534f";
-  stopBtn.style.color = "#fff";
-  stopBtn.style.borderRadius = "6px";
-  camBtn.insertAdjacentElement("afterend", stopBtn);
-
-  let scanningActive = false;
-
-  if (camBtn && video && barcodeInput) {
-
-    camBtn.addEventListener("click", () => {
-      scanningActive = true;
-      stopBtn.style.display = "inline-block";
-      video.style.display = "block";
-
-      Quagga.init({
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: video,
-          constraints: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: "environment"
-          }
-        },
-        decoder: {
-          readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader"]
-        },
-        locate: true
-      }, function(err) {
-        if (err) {
-          console.error(err);
-          alert("Camera initialization failed: " + err);
-          video.style.display = "none";
-          stopBtn.style.display = "none";
-          return;
-        }
-        Quagga.start();
-      });
-
-      Quagga.onDetected(function(result) {
-        if (!scanningActive) return;
-        if (result && result.codeResult && result.codeResult.code) {
-          console.log("Detected barcode:", result.codeResult.code);
-          barcodeInput.value = result.codeResult.code;
-          barcodeInput.dispatchEvent(new KeyboardEvent("keypress", { key: "Enter" }));
-
-          // Optional beep feedback
-          try { new Audio("beep.mp3").play(); } catch(e){}
-
-          // Stop scanner automatically after detection (optional)
-          scanningActive = false;
-          Quagga.stop();
-          video.style.display = "none";
-          stopBtn.style.display = "none";
-        }
-      });
-    });
-
-    stopBtn.addEventListener("click", () => {
-      scanningActive = false;
-      Quagga.stop();
-      video.style.display = "none";
-      stopBtn.style.display = "none";
-    });
-  }
-
+    } catch (err) {
+      console.error('Barcode processing error', err);
+      // fallback: redirect to products page to let user add barcode
+      localStorage.setItem('temp_new_barcode', String(code));
+      window.location.href = 'products.html';
+    } finally {
+      barcodeInput.value = '';
+    }
+  });
 });
