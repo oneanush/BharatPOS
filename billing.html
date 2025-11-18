@@ -22,9 +22,19 @@
 
     /* Billing layout */
     .billing-container { display: flex; gap: 16px; justify-content:center; align-items:flex-start; flex-wrap: wrap; }
-    .billing-container { max-height: none !important; overflow: visible !important; }
-    .cart-section { max-height: none !important; overflow: visible !important; }
-    #stockScrollBox { max-height: none !important; overflow: visible !important; }
+    /* Remove independent scroll from billing container */
+    .billing-container {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    .cart-section {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    #stockScrollBox {
+      max-height: none !important;
+      overflow: visible !important;
+    }
 
     /* Product Grid */
     #productGridWrap {
@@ -47,7 +57,9 @@
       transition: 0.2s;
       font-size: 13px;
     }
-    #categoryFilters button:hover { background-color: #0740a0; }
+    #categoryFilters button:hover {
+      background-color: #0740a0;
+    }
 
     #productList {
       display: grid;
@@ -109,15 +121,6 @@
     /* Scanner UI */
     #scannerContainer { display:flex; align-items:center; justify-content:center; background:#000; color:#fff; }
     #detectedCode { margin-top:6px; font-weight:700; }
-
-    /* Search results pane */
-    #searchResults { display:none; margin-top:8px; border-radius:6px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.08); overflow:hidden; max-width:100%; }
-    .search-result { padding:8px; border-bottom:1px solid #eee; display:flex; align-items:center; gap:8px; }
-    .search-result .info { flex:1; min-width:0; }
-    .search-result .info .title { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .search-result .meta { font-size:12px; color:#444; margin-top:4px; }
-    .search-add-btn { background:#007bff; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
-    .search-add-btn[disabled] { opacity:0.6; cursor:default; }
   </style>
 </head>
 
@@ -138,14 +141,14 @@
   </div>
 
   <!-- Scanner UI -->
-  <div id="scannerContainer" style="width:100%; max-width:600px; height:200px; border:1px solid #ccc; margin-bottom:6px;"></div>
+  <div id="scannerContainer" style="width:100%; max-width:500px; height:350px; border:1px solid #ccc; margin-bottom:6px;"></div>
   <div style="margin-bottom:6px;">
     <button id="openCamera">Start Scanner</button>
     <button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
     <span id="detectedCode" class="small"></span>
   </div>
 
-  <!-- Hidden input (backward compatibility) -->
+  <!-- Hidden input (keeps backward compatibility with code that expects a barcodeInput element) -->
   <input id="barcodeInput" class="hidden" autocomplete="off">
 
   <div class="stock-scroll">
@@ -159,11 +162,11 @@
     <div class="cart-section">
       <div class="card">
         <h3>Billing</h3>
-        <div class="form-row" style="flex-direction:column;align-items:stretch">
-          <input type="text" id="productSearch" placeholder="Search product..." style="width:100%;">
-          <div id="searchResults"></div>
-          <input id="custName" placeholder="Customer name (optional)" style="margin-top:8px">
+        <div class="form-row">
+          <input type="text" id="productSearch" placeholder="Search product...">
+          <input id="custName" placeholder="Customer name (optional)">
         </div>
+        <div id="searchResults" class="card"></div>
       </div>
 
       <div class="card">
@@ -191,225 +194,299 @@
   <script src="bharatpos.js"></script>
   <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 
-  <script>
-  // Scanner script with consensus + cooldown to avoid repeated adds
-  document.addEventListener("DOMContentLoaded", () => {
-    const scannerContainer = document.getElementById("scannerContainer");
-    const openBtn = document.getElementById("openCamera");
-    const stopBtn = document.getElementById("stopCamera");
-    const barcodeInput = document.getElementById("barcodeInput");
-    const detectedCodeEl = document.getElementById("detectedCode");
+ <!-- (replace the <script> ... scanner script ... </script> block in billing-bharat-pos.html with this updated script) -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const scannerContainer = document.getElementById("scannerContainer");
+  const openBtn = document.getElementById("openCamera");
+  const stopBtn = document.getElementById("stopCamera");
+  const barcodeInput = document.getElementById("barcodeInput");
+  const detectedCodeEl = document.getElementById("detectedCode");
 
-    let scanning = false;
-    let lastAccepted = null;
-    const DUPLICATE_TIMEOUT = 1500; // ms
+  let scanning = false;
+  let lastAccepted = null;
+  const DUPLICATE_TIMEOUT = 1500; // ms
 
-    // Consensus settings
-    const REQUIRED_CONFIRMS = 3;
-    const WINDOW_MS = 1200;
-    const SCAN_COOLDOWN_MS = 1200; // lock after accept to prevent continuous adds
-    let scanLocked = false;
+  // Consensus settings: require this many consistent reads within WINDOW_MS
+  const REQUIRED_CONFIRMS = 3;
+  const WINDOW_MS = 1200;
 
-    // sliding counts map
-    const readCounts = new Map();
+  // sliding counts: { code: {count, lastSeen} }
+  const readCounts = new Map();
 
-    function nowMs() { return Date.now(); }
-    function registerRead(code) {
-      const now = nowMs();
-      const rec = readCounts.get(code) || { count: 0, lastSeen: now };
-      if (now - rec.lastSeen > WINDOW_MS) rec.count = 0;
-      rec.count += 1;
-      rec.lastSeen = now;
-      readCounts.set(code, rec);
-      // prune
-      for (const [k, v] of readCounts.entries()) {
-        if (now - v.lastSeen > WINDOW_MS) readCounts.delete(k);
-      }
-      return rec.count;
+  function registerRead(code) {
+    const now = Date.now();
+    const rec = readCounts.get(code) || { count: 0, lastSeen: now };
+    // reset count if last seen too long ago
+    if (now - rec.lastSeen > WINDOW_MS) rec.count = 0;
+    rec.count += 1;
+    rec.lastSeen = now;
+    readCounts.set(code, rec);
+
+    // prune old entries
+    for (const [k, v] of readCounts.entries()) {
+      if (now - v.lastSeen > WINDOW_MS) readCounts.delete(k);
     }
 
-    function acceptCode(code) {
-      const now = nowMs();
-      if (lastAccepted && code === lastAccepted.code && (now - lastAccepted.time) < DUPLICATE_TIMEOUT) return;
-      lastAccepted = { code, time: now };
+    return rec.count;
+  }
 
-      detectedCodeEl.textContent = "Confirmed: " + code;
+  function acceptCode(code) {
+    // prevent immediate-repeat acceptance
+    const now = Date.now();
+    if (code === lastAccepted && (now - (lastAccepted?.time || 0)) < DUPLICATE_TIMEOUT) return;
+    lastAccepted = { code, time: now };
 
-      if (barcodeInput) {
-        barcodeInput.value = code;
-        barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
-        barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+    detectedCodeEl.textContent = "Confirmed: " + code;
 
-      try {
-        if (typeof getProducts === 'function') {
-          const products = getProducts() || [];
-          const found = products.find(p => String(p.barcode) === String(code));
-          if (found) {
-            if (typeof window.addToBill === 'function') {
-              window.addToBill(found.id);
-              return;
-            } else {
-              localStorage.setItem('temp_add_product_id', found.id);
-              window.location.href = 'billing.html';
-              return;
-            }
+    // fill hidden input for backward compatibility
+    if (barcodeInput) {
+      barcodeInput.value = code;
+      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // lookup product and add to cart OR redirect to product page
+    try {
+      if (typeof getProducts === 'function') {
+        const products = getProducts() || [];
+        const found = products.find(p => String(p.barcode) === String(code));
+        if (found) {
+          if (typeof window.addToBill === 'function') {
+            window.addToBill(found.id);
+            return;
           } else {
-            localStorage.setItem('temp_new_barcode', String(code));
-            window.location.href = 'products.html';
+            localStorage.setItem('temp_add_product_id', found.id);
+            window.location.href = 'billing.html';
             return;
           }
-        }
-      } catch (e) {
-        console.warn('Product lookup failed after scan', e);
-      }
-    }
-
-    function handleScannedCandidate(code) {
-      if (!code) return;
-      if (scanLocked) return;
-      const count = registerRead(code);
-      detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
-      if (count >= REQUIRED_CONFIRMS) {
-        acceptCode(code);
-        // engage short cooldown to avoid repeated adds while barcode remains in frame
-        scanLocked = true;
-        setTimeout(() => { scanLocked = false; }, SCAN_COOLDOWN_MS);
-        readCounts.clear();
-      }
-    }
-
-    // Quagga init (fallback if BarcodeDetector not available)
-    function startQuagga() {
-      if (scanning) return;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Camera API not supported on this browser.");
-        return;
-      }
-      scanning = true;
-      stopBtn.style.display = "inline-block";
-
-      Quagga.init({
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: scannerContainer,
-          constraints: {
-            width: { ideal: 200  },
-            height: { ideal: 600 },
-            facingMode: "environment"
-          }
-        },
-        locator: {
-          patchSize: "large",
-          halfSample: false
-        },
-        numOfWorkers: navigator.hardwareConcurrency ? Math.max(1, Math.min(4, navigator.hardwareConcurrency - 1)) : 2,
-        decoder: {
-          readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]
-        },
-        locate: true
-      }, function(err) {
-        if (err) {
-          console.error("Quagga init error:", err);
-          scanning = false;
-          stopBtn.style.display = "none";
-          // try native fallback
-          startBarcodeDetectorFallback();
+        } else {
+          // not found -> go to products page with barcode prefilled
+          localStorage.setItem('temp_new_barcode', String(code));
+          window.location.href = 'products.html';
           return;
         }
-        Quagga.start();
-      });
-
-      Quagga.onDetected(function(result) {
-        try {
-          if (!result || !result.codeResult) return;
-          const code = result.codeResult.code;
-          handleScannedCandidate(code);
-        } catch (e) {
-          console.error("onDetected error:", e);
-        }
-      });
+      }
+    } catch (e) {
+      console.warn('Product lookup failed after scan', e);
     }
 
-    function stopScanner() {
-      if (!scanning) return;
-      try { Quagga.offDetected(); } catch(e) {}
-      try { Quagga.stop(); } catch(e) {}
-      scanning = false;
-      stopBtn.style.display = "none";
-      scannerContainer.innerHTML = "";
-      detectedCodeEl.textContent = "";
+    // If we reach here, just display code (no breaking of other features)
+    const ps = document.getElementById('productSearch');
+    if (ps) { ps.value = ''; } // do not auto-fill productSearch with barcode
+  }
+
+  function handleScannedCandidate(code) {
+    if (!code) return;
+    const count = registerRead(code);
+    // update UI with intermediate status
+    detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
+
+    if (count >= REQUIRED_CONFIRMS) {
+      acceptCode(code);
+      // clear read counts so we don't accept again immediately
       readCounts.clear();
-      lastAccepted = null;
-      scanLocked = false;
+    }
+  }
+
+  // QUAGGA initialization (used as fallback if no native BarcodeDetector)
+  function startQuagga() {
+    if (scanning) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Camera API not supported on this browser.");
+      return;
     }
 
-    async function startBarcodeDetectorFallback() {
-      if (!('BarcodeDetector' in window)) {
-        alert("Quagga failed and BarcodeDetector is not available in this browser.");
+    scanning = true;
+    stopBtn.style.display = "inline-block";
+
+    Quagga.init({
+      inputStream: {
+        name: "Live",
+        type: "LiveStream",
+        target: scannerContainer,
+        constraints: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "environment"
+        }
+      },
+      // improve accuracy: larger patch and full sampling (slower but more accurate)
+      locator: {
+        patchSize: "large",
+        halfSample: false
+      },
+      numOfWorkers: navigator.hardwareConcurrency ? Math.max(1, Math.min(4, navigator.hardwareConcurrency - 1)) : 2,
+      decoder: {
+        readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]
+      },
+      locate: true
+    }, function(err) {
+      if (err) {
+        console.error("Quagga init error:", err);
+        scanning = false;
+        stopBtn.style.display = "none";
+        // if Quagga fails, try native fallback
+        startBarcodeDetectorFallback();
         return;
       }
-      const formats = ['ean_13','ean_8','upc_a','upc_e','code_128'];
-      const detector = new BarcodeDetector({ formats });
-      const video = document.createElement('video');
-      video.style.width = "100%";
-      video.style.height = "100%";
-      scannerContainer.innerHTML = "";
-      scannerContainer.appendChild(video);
-
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-        video.srcObject = stream;
-        await video.play();
-      } catch (err) {
-        console.error("Camera fallback error:", err);
-        alert("Camera access error: " + err.message);
-        return;
-      }
-
-      scanning = true;
-      stopBtn.style.display = "inline-block";
-
-      const tick = async () => {
-        if (!scanning) {
-          if (stream) stream.getTracks().forEach(t => t.stop());
-          return;
-        }
-        try {
-          const barcodes = await detector.detect(video);
-          if (barcodes && barcodes.length) {
-            const raw = barcodes[0].rawValue || barcodes[0].raw;
-            handleScannedCandidate(raw);
-          }
-        } catch (err) {
-          console.warn("Detector error:", err);
-        }
-        requestAnimationFrame(tick);
-      };
-      tick();
-    }
-
-    // Start scanner - prefer native BarcodeDetector
-    openBtn.addEventListener('click', async () => {
-      if (scanning) return;
-      if ('BarcodeDetector' in window) {
-        await startBarcodeDetectorFallback();
-      } else {
-        startQuagga();
-      }
+      Quagga.start();
     });
 
-    stopBtn.addEventListener('click', stopScanner);
+    Quagga.onDetected(function(result) {
+      try {
+        if (!result || !result.codeResult) return;
+        const code = result.codeResult.code;
+        // Only accept if result has good structure - do not auto-insert into productSearch
+        handleScannedCandidate(code);
+      } catch (e) {
+        console.error("onDetected error:", e);
+      }
+    });
+  }
 
-    // expose hook if needed
-    window.onBarcodeScanned = window.onBarcodeScanned || null;
+  function stopScanner() {
+    if (!scanning) return;
+    try { Quagga.offDetected(); } catch (e) {}
+    try { Quagga.stop(); } catch (e) {}
+    // if using native stream we will stop when scanning flag cleared
+    scanning = false;
+    stopBtn.style.display = "none";
+    scannerContainer.innerHTML = "";
+    detectedCodeEl.textContent = "";
+    readCounts.clear();
+    lastAccepted = null;
+  }
+
+  // Prefer native BarcodeDetector when available (better accuracy on modern Chrome/Android)
+  async function startBarcodeDetectorFallback() {
+    if (!('BarcodeDetector' in window)) {
+      // nothing available
+      alert("No barcode scanner available in this browser.");
+      return;
+    }
+
+    const formats = ['ean_13','ean_8','upc_a','upc_e','code_128'];
+    const detector = new BarcodeDetector({ formats });
+    const video = document.createElement('video');
+    video.style.width = "100%";
+    video.style.height = "100%";
+    scannerContainer.innerHTML = "";
+    scannerContainer.appendChild(video);
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      video.srcObject = stream;
+      await video.play();
+    } catch (err) {
+      console.error("Camera fallback error:", err);
+      alert("Camera access error: " + err.message);
+      return;
+    }
+
+    scanning = true;
+    stopBtn.style.display = "inline-block";
+
+    const tick = async () => {
+      if (!scanning) {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        return;
+      }
+      try {
+        const barcodes = await detector.detect(video);
+        if (barcodes && barcodes.length) {
+          // use the first barcode; don't immediately accept — run through consensus
+          const raw = barcodes[0].rawValue || barcodes[0].raw;
+          handleScannedCandidate(raw);
+        }
+      } catch (err) {
+        console.warn("Detector error:", err);
+      }
+      requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  // Start scanner: prefer native detector, else Quagga
+  openBtn.addEventListener('click', async () => {
+    if (scanning) return;
+    if ('BarcodeDetector' in window) {
+      // prefer native when available
+      await startBarcodeDetectorFallback();
+    } else {
+      startQuagga();
+    }
   });
-  </script>
+
+  stopBtn.addEventListener('click', stopScanner);
+
+});
+</script>
+  
+<script>
+  // add near the top of the scanner script (or inside the DOMContentLoaded block)
+  const SCAN_COOLDOWN_MS = 1200; // don't accept same/similar scans during this cooldown
+  let scanLocked = false;
+
+  function handleScannedCandidate(code) {
+    if (!code) return;
+    // prevent processing while in cooldown
+    if (scanLocked) return;
+    const count = registerRead(code);
+    // update UI with intermediate status
+    detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
+
+    if (count >= REQUIRED_CONFIRMS) {
+      acceptCode(code);
+      // engage a short cooldown to avoid duplicate adds while camera still sees the code
+      scanLocked = true;
+      setTimeout(() => { scanLocked = false; }, SCAN_COOLDOWN_MS);
+      // clear read counts after accepting
+      readCounts.clear();
+    }
+  }
+
+  function acceptCode(code) {
+    // prevent immediate-repeat acceptance
+    const now = Date.now();
+    if (code === lastAccepted && (now - (lastAccepted?.time || 0)) < DUPLICATE_TIMEOUT) return;
+    lastAccepted = { code, time: now };
+
+    detectedCodeEl.textContent = "Confirmed: " + code;
+
+    if (barcodeInput) {
+      barcodeInput.value = code;
+      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    try {
+      if (typeof getProducts === 'function') {
+        const products = getProducts() || [];
+        const found = products.find(p => String(p.barcode) === String(code));
+        if (found) {
+          if (typeof window.addToBill === 'function') {
+            window.addToBill(found.id);
+            return;
+          } else {
+            localStorage.setItem('temp_add_product_id', found.id);
+            window.location.href = 'billing.html';
+            return;
+          }
+        } else {
+          localStorage.setItem('temp_new_barcode', String(code));
+          window.location.href = 'products.html';
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Barcode handling lookup failed', e);
+    }
+  }
+</script>
 </body>
 </html>
-
 
 
 
