@@ -195,6 +195,7 @@
   <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 
  <!-- (replace the <script> ... scanner script ... </script> block in billing-bharat-pos.html with this updated script) -->
+<!-- Place in billing.html after Quagga import and DOM elements -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const scannerContainer = document.getElementById("scannerContainer");
@@ -205,58 +206,80 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let scanning = false;
   let lastAccepted = null;
-  const DUPLICATE_TIMEOUT = 1500; // ms
-
-  // Consensus settings: require this many consistent reads within WINDOW_MS
+  let scanLocked = false;
+  const SCAN_COOLDOWN_MS = 1500;
+  const DUPLICATE_TIMEOUT = 1500;
   const REQUIRED_CONFIRMS = 3;
   const WINDOW_MS = 1200;
-
-  // sliding counts: { code: {count, lastSeen} }
   const readCounts = new Map();
 
   function registerRead(code) {
     const now = Date.now();
     const rec = readCounts.get(code) || { count: 0, lastSeen: now };
-    // reset count if last seen too long ago
     if (now - rec.lastSeen > WINDOW_MS) rec.count = 0;
     rec.count += 1;
     rec.lastSeen = now;
     readCounts.set(code, rec);
-
-    // prune old entries
     for (const [k, v] of readCounts.entries()) {
       if (now - v.lastSeen > WINDOW_MS) readCounts.delete(k);
     }
-
     return rec.count;
   }
 
- 
-
   function handleScannedCandidate(code) {
-    if (!code) return;
+    if (!code || scanLocked) return;
     const count = registerRead(code);
-    // update UI with intermediate status
     detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
-
     if (count >= REQUIRED_CONFIRMS) {
       acceptCode(code);
-      // clear read counts so we don't accept again immediately
+      scanLocked = true;
+      setTimeout(() => { scanLocked = false; }, SCAN_COOLDOWN_MS);
       readCounts.clear();
     }
   }
 
-  // QUAGGA initialization (used as fallback if no native BarcodeDetector)
+  function acceptCode(code) {
+    const now = Date.now();
+    if (lastAccepted && lastAccepted.code === code && now - lastAccepted.time < DUPLICATE_TIMEOUT) return;
+    lastAccepted = { code, time: now };
+    detectedCodeEl.textContent = "Confirmed: " + code;
+    if (barcodeInput) {
+      barcodeInput.value = code;
+      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    try {
+      if (typeof getProducts === 'function') {
+        const products = getProducts() || [];
+        const found = products.find(p => String(p.barcode) === String(code));
+        if (found) {
+          if (typeof window.addToBill === 'function') {
+            window.addToBill(found.id);
+            return;
+          } else {
+            localStorage.setItem('temp_add_product_id', found.id);
+            window.location.href = 'billing.html';
+            return;
+          }
+        } else {
+          localStorage.setItem('temp_new_barcode', String(code));
+          window.location.href = 'products.html';
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Barcode handling lookup failed', e);
+    }
+  }
+
   function startQuagga() {
     if (scanning) return;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Camera API not supported on this browser.");
       return;
     }
-
     scanning = true;
     stopBtn.style.display = "inline-block";
-
     Quagga.init({
       inputStream: {
         name: "Live",
@@ -268,11 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
           facingMode: "environment"
         }
       },
-      // improve accuracy: larger patch and full sampling (slower but more accurate)
-      locator: {
-        patchSize: "large",
-        halfSample: false
-      },
+      locator: { patchSize: "large", halfSample: false },
       numOfWorkers: navigator.hardwareConcurrency ? Math.max(1, Math.min(4, navigator.hardwareConcurrency - 1)) : 2,
       decoder: {
         readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]
@@ -283,7 +302,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Quagga init error:", err);
         scanning = false;
         stopBtn.style.display = "none";
-        // if Quagga fails, try native fallback
         startBarcodeDetectorFallback();
         return;
       }
@@ -294,7 +312,6 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         if (!result || !result.codeResult) return;
         const code = result.codeResult.code;
-        // Only accept if result has good structure - do not auto-insert into productSearch
         handleScannedCandidate(code);
       } catch (e) {
         console.error("onDetected error:", e);
@@ -306,7 +323,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!scanning) return;
     try { Quagga.offDetected(); } catch (e) {}
     try { Quagga.stop(); } catch (e) {}
-    // if using native stream we will stop when scanning flag cleared
     scanning = false;
     stopBtn.style.display = "none";
     scannerContainer.innerHTML = "";
@@ -314,76 +330,12 @@ document.addEventListener("DOMContentLoaded", () => {
     readCounts.clear();
     lastAccepted = null;
   }
-/** 
- * PATCH for billing.html scanner: prevent infinite adding, debounce, 
- * and ensure products page gets the right temp barcode.
- * 
- * Place inside the barcode scanner logic (after let lastAccepted = null;), 
- * replacing your previous handleScannedCandidate and acceptCode.
- */
-const SCAN_COOLDOWN_MS = 1500;  // ms between allowed adds
-let scanLocked = false;
-let lastAccepted = null;
 
-function handleScannedCandidate(code) {
-  if (!code || scanLocked) return;
-
-  const count = registerRead(code);
-  detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
-
-  if (count >= REQUIRED_CONFIRMS) {
-    acceptCode(code);
-    scanLocked = true;
-    setTimeout(() => { scanLocked = false; }, SCAN_COOLDOWN_MS);
-    readCounts.clear();
-  }
-}
-
-function acceptCode(code) {
-  // If recently accepted, ignore
-  if (lastAccepted && lastAccepted.code === code && Date.now() - lastAccepted.time < SCAN_COOLDOWN_MS) {
-    return;
-  }
-  lastAccepted = { code, time: Date.now() };
-
-  detectedCodeEl.textContent = "Confirmed: " + code;
-  if (barcodeInput) {
-    barcodeInput.value = code;
-    barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
-    barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-  // Product check & redirect logic
-  try {
-    if (typeof getProducts === 'function') {
-      const products = getProducts() || [];
-      const found = products.find(p => String(p.barcode) === String(code));
-      if (found) {
-        if (typeof window.addToBill === 'function') {
-          window.addToBill(found.id);
-          return;
-        } else {
-          localStorage.setItem('temp_add_product_id', found.id);
-          window.location.href = 'billing.html';
-          return;
-        }
-      } else {
-        localStorage.setItem('temp_new_barcode', String(code));
-        window.location.href = 'products.html';
-        return;
-      }
-    }
-  } catch (e) {
-    console.warn('Barcode handling lookup failed', e);
-  }
-}
-  // Prefer native BarcodeDetector when available (better accuracy on modern Chrome/Android)
   async function startBarcodeDetectorFallback() {
     if (!('BarcodeDetector' in window)) {
-      // nothing available
       alert("No barcode scanner available in this browser.");
       return;
     }
-
     const formats = ['ean_13','ean_8','upc_a','upc_e','code_128'];
     const detector = new BarcodeDetector({ formats });
     const video = document.createElement('video');
@@ -414,7 +366,6 @@ function acceptCode(code) {
       try {
         const barcodes = await detector.detect(video);
         if (barcodes && barcodes.length) {
-          // use the first barcode; don't immediately accept — run through consensus
           const raw = barcodes[0].rawValue || barcodes[0].raw;
           handleScannedCandidate(raw);
         }
@@ -426,11 +377,9 @@ function acceptCode(code) {
     tick();
   }
 
-  // Start scanner: prefer native detector, else Quagga
   openBtn.addEventListener('click', async () => {
     if (scanning) return;
     if ('BarcodeDetector' in window) {
-      // prefer native when available
       await startBarcodeDetectorFallback();
     } else {
       startQuagga();
@@ -438,13 +387,12 @@ function acceptCode(code) {
   });
 
   stopBtn.addEventListener('click', stopScanner);
-
 });
 </script>
-  
 
 </body>
 </html>
+
 
 
 
