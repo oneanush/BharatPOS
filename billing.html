@@ -314,7 +314,68 @@ document.addEventListener("DOMContentLoaded", () => {
     readCounts.clear();
     lastAccepted = null;
   }
+/** 
+ * PATCH for billing.html scanner: prevent infinite adding, debounce, 
+ * and ensure products page gets the right temp barcode.
+ * 
+ * Place inside the barcode scanner logic (after let lastAccepted = null;), 
+ * replacing your previous handleScannedCandidate and acceptCode.
+ */
+const SCAN_COOLDOWN_MS = 1500;  // ms between allowed adds
+let scanLocked = false;
+let lastAccepted = null;
 
+function handleScannedCandidate(code) {
+  if (!code || scanLocked) return;
+
+  const count = registerRead(code);
+  detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
+
+  if (count >= REQUIRED_CONFIRMS) {
+    acceptCode(code);
+    scanLocked = true;
+    setTimeout(() => { scanLocked = false; }, SCAN_COOLDOWN_MS);
+    readCounts.clear();
+  }
+}
+
+function acceptCode(code) {
+  // If recently accepted, ignore
+  if (lastAccepted && lastAccepted.code === code && Date.now() - lastAccepted.time < SCAN_COOLDOWN_MS) {
+    return;
+  }
+  lastAccepted = { code, time: Date.now() };
+
+  detectedCodeEl.textContent = "Confirmed: " + code;
+  if (barcodeInput) {
+    barcodeInput.value = code;
+    barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  // Product check & redirect logic
+  try {
+    if (typeof getProducts === 'function') {
+      const products = getProducts() || [];
+      const found = products.find(p => String(p.barcode) === String(code));
+      if (found) {
+        if (typeof window.addToBill === 'function') {
+          window.addToBill(found.id);
+          return;
+        } else {
+          localStorage.setItem('temp_add_product_id', found.id);
+          window.location.href = 'billing.html';
+          return;
+        }
+      } else {
+        localStorage.setItem('temp_new_barcode', String(code));
+        window.location.href = 'products.html';
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Barcode handling lookup failed', e);
+  }
+}
   // Prefer native BarcodeDetector when available (better accuracy on modern Chrome/Android)
   async function startBarcodeDetectorFallback() {
     if (!('BarcodeDetector' in window)) {
@@ -444,6 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
