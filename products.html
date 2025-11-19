@@ -51,7 +51,7 @@
       <div class="form-row"><input id="productTax" type="number" placeholder="Tax % (optional)"></div>
       <div class="form-row"><input id="productCategory" placeholder="Category (optional)"></div>
 <label>Barcode:</label>
-<input type="text" id="productBarcode" placeholder="Enter / Scan Barcode">
+<input type="text" id="productBarcode" placeholder="Enter Barcode">
 
       <div class="form-row"><button type="submit">Save Product</button></div>
     </form>
@@ -172,5 +172,20 @@ async function handleAddProduct(event){
   }
 }
 </script>
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const barcodeInput = document.getElementById("barcodeInput") || document.getElementById("newProductBarcode");
+  if (!barcodeInput) return;
+
+  const tempCode = localStorage.getItem('temp_new_barcode');
+  if (tempCode) {
+    barcodeInput.value = tempCode;   // fill the input
+    barcodeInput.focus();             // optional: focus on input
+    localStorage.removeItem('temp_new_barcode'); // clear after use
+  }
+});
+</script>
+
 </body>
 </html>
+
