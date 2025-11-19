@@ -172,20 +172,23 @@ async function handleAddProduct(event){
   }
 }
 </script>
-  <script>
+<script>
+// This runs only on products.html and ensures the barcode is correctly prefilled as soon as DOM is ready.
 document.addEventListener("DOMContentLoaded", () => {
-  const barcodeInput = document.getElementById("barcodeInput") || document.getElementById("newProductBarcode");
-  if (!barcodeInput) return;
-
-  const tempCode = localStorage.getItem('temp_new_barcode');
-  if (tempCode) {
-    barcodeInput.value = tempCode;   // fill the input
-    barcodeInput.focus();             // optional: focus on input
-    localStorage.removeItem('temp_new_barcode'); // clear after use
+  // Only do this if we're on the correct page
+  const barcode = localStorage.getItem("temp_new_barcode");
+  if (barcode) {
+    const barcodeField = document.getElementById("productBarcode");
+    if (barcodeField) {
+      barcodeField.value = barcode;
+      barcodeField.focus();  // Optional: focus for easier user entry
+    }
+    localStorage.removeItem("temp_new_barcode");
   }
 });
 </script>
 
 </body>
 </html>
+
 
