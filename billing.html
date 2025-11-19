@@ -442,69 +442,10 @@ function acceptCode(code) {
 });
 </script>
   
-<script>
-  // add near the top of the scanner script (or inside the DOMContentLoaded block)
-  const SCAN_COOLDOWN_MS = 1200; // don't accept same/similar scans during this cooldown
-  let scanLocked = false;
 
-  function handleScannedCandidate(code) {
-    if (!code) return;
-    // prevent processing while in cooldown
-    if (scanLocked) return;
-    const count = registerRead(code);
-    // update UI with intermediate status
-    detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
-
-    if (count >= REQUIRED_CONFIRMS) {
-      acceptCode(code);
-      // engage a short cooldown to avoid duplicate adds while camera still sees the code
-      scanLocked = true;
-      setTimeout(() => { scanLocked = false; }, SCAN_COOLDOWN_MS);
-      // clear read counts after accepting
-      readCounts.clear();
-    }
-  }
-
-  function acceptCode(code) {
-    // prevent immediate-repeat acceptance
-    const now = Date.now();
-    if (code === lastAccepted && (now - (lastAccepted?.time || 0)) < DUPLICATE_TIMEOUT) return;
-    lastAccepted = { code, time: now };
-
-    detectedCodeEl.textContent = "Confirmed: " + code;
-
-    if (barcodeInput) {
-      barcodeInput.value = code;
-      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
-      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    try {
-      if (typeof getProducts === 'function') {
-        const products = getProducts() || [];
-        const found = products.find(p => String(p.barcode) === String(code));
-        if (found) {
-          if (typeof window.addToBill === 'function') {
-            window.addToBill(found.id);
-            return;
-          } else {
-            localStorage.setItem('temp_add_product_id', found.id);
-            window.location.href = 'billing.html';
-            return;
-          }
-        } else {
-          localStorage.setItem('temp_new_barcode', String(code));
-          window.location.href = 'products.html';
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Barcode handling lookup failed', e);
-    }
-  }
-</script>
 </body>
 </html>
+
 
 
 
