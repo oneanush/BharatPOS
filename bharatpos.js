@@ -84,10 +84,7 @@ function addProduct() {
       barcode
     });
   }
-  if (!barcode) {
-    alert("Scan barcode first");
-    return;
-  }
+ 
 
   saveProducts(products);
 
@@ -596,3 +593,4 @@ function attachProductGridHandlers() {
     btn.onclick = ()=>window.addToBill(pid);
   });
 }
+
