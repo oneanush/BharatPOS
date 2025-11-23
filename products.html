@@ -1,19 +1,21 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Products - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
   <script src="bharatpos.js" defer></script>
 </head>
 <body>
-<nav>
-   <a href="sales.html">Sales</a>
-  <a href="settings.html">Settings</a>
- <a href="index.html">About</a>
-<div id="profileName" class="profile-name" ></div>
 
+<nav>
+  <a href="sales.html">Sales</a>
+  <a href="settings.html">Settings</a>
+  <a href="index.html">About</a>
+  <div id="profileName" class="profile-name"></div>
 </nav>
+
 <style>
 .profile-name {
   font-weight: 700;
@@ -25,184 +27,164 @@
   border-radius: 8px;
   background: rgba(255,255,255,0.1);
 }
-
-
 </style>
 
-
- <div class="header">
-    <div class="brand">🛰️ Bharat POS</div>
-    <div class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="billing.html">billing</a>
-     
-    </div>
+<div class="header">
+  <div class="brand">🛰️ Bharat POS</div>
+  <div class="nav">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="billing.html">Billing</a>
   </div>
-
+</div>
 
 <div class="container">
+
+  <!-- ADD PRODUCT CARD -->
   <div class="card">
     <h3>Add Product</h3>
-    <!-- changed onsubmit to call local handler so we can ensure the UI re-renders after addProduct() -->
-    <form id="productForm" onsubmit="handleAddProduct(event);">
-      <div class="form-row"><input id="productName" placeholder="Product name"></div>
-      <div class="form-row"><input id="productPrice" type="number" step="0.01" placeholder="Price"></div>
-      <div class="form-row"><input id="productStock" type="number" placeholder="Stock"></div>
-      <div class="form-row"><input id="productTax" type="number" placeholder="Tax % (optional)"></div>
-      <div class="form-row"><input id="productCategory" placeholder="Category (optional)"></div>
-<label>Barcode:</label>
-<input type="text" id="productBarcode" placeholder="Enter Barcode">
 
-      <div class="form-row"><button type="submit">Save Product</button></div>
+    <form id="productForm" onsubmit="handleAddProduct(event);">
+
+      <div class="form-row">
+        <input id="productName" placeholder="Product Name">
+      </div>
+
+      <div class="form-row">
+        <input id="productMRP" type="number" step="0.01" placeholder="MRP">
+      </div>
+
+      <div class="form-row">
+        <input id="brand" placeholder="Brand">
+      </div>
+
+      <div class="form-row">
+        <input id="productStock" type="number" placeholder="Stock">
+      </div>
+
+      <div class="form-row">
+        <input id="productCategory" placeholder="Category (optional)">
+      </div>
+
+      <label>Barcode:</label>
+      <input id="productBarcode" placeholder="Enter Barcode">
+
+      <div class="form-row">
+        <button type="submit">Save Product</button>
+      </div>
+
     </form>
   </div>
 
+  <!-- PRODUCT LIST CARD -->
   <div class="card">
     <h3>Products</h3>
     <div id="productsList"></div>
   </div>
+
 </div>
 
 <script>
-  // simple renderer used by bharatpos.js
-  function renderProducts(){
-    const products = getProducts();
-    if(products.length===0) { document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; return;}
-    let html = '<table><tr><th>Name</th><th>Price</th><th>Stock</th><th>Tax %</th><th>category</th><th>Action</th></tr>';
-    products.forEach(p=>{
-    html += `
-<tr>
-  <td>${p.name}</td>
-  <td>${p.price}</td>
-  <td>${p.stock}</td>
-  <td>${p.taxPercent}%</td>
- <td>${p.category}</td>
-
-  <td>
-    <button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button>
-  </td>
-</tr>`;
-
-    });
-    html += '</table>';
-    document.getElementById('productsList').innerHTML = html;
+/* RENDER PRODUCTS TABLE */
+function renderProducts(){
+  const products = getProducts();
+  if(products.length === 0){
+    document.getElementById('productsList').innerHTML = '<div class="small">No products</div>';
+    return;
   }
 
-  // initial render
-  document.addEventListener('DOMContentLoaded', ()=>{ renderProducts();const temp = localStorage.getItem("temp_new_barcode");
-if (temp) {
-  const barcodeField = document.getElementById("productBarcode");
-  if (barcodeField) barcodeField.value = temp;
-  localStorage.removeItem("temp_new_barcode");
+  let html = `
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>MRP</th>
+      <th>Stock</th>
+      <th>Brand</th>
+      <th>Category</th>
+      <th>Action</th>
+    </tr>`;
+
+  products.forEach(p => {
+    html += `
+    <tr>
+      <td>${p.name}</td>
+      <td>${p.price}</td>
+      <td>${p.stock}</td>
+      <td>${p.brand || '-'}</td>
+      <td>${p.category || '-'}</td>
+      <td>
+        <button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button>
+      </td>
+    </tr>`;
+  });
+
+  html += '</table>';
+  document.getElementById('productsList').innerHTML = html;
 }
- });
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderProducts();
+
+  // barcode auto-fill from scanner → product page
+  const temp = localStorage.getItem("temp_new_barcode");
+  if (temp) {
+    document.getElementById("productBarcode").value = temp;
+    localStorage.removeItem("temp_new_barcode");
+  }
+
+  // advanced scanner auto-fill (name, brand, mrp)
+  const data = JSON.parse(localStorage.getItem("newProductData") || "{}");
+
+  if (data.barcode) document.getElementById("productBarcode").value = data.barcode;
+  if (data.name) document.getElementById("productName").value = data.name;
+  if (data.mrp) document.getElementById("productMRP").value = data.mrp;
+  if (data.brand) document.getElementById("brand").value = data.brand;
+
+  localStorage.removeItem("newProductData");
+});
 </script>
 
 <script>
+// PROFILE NAME LOAD
 function loadUser(){
   const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  if(data.name){
-    document.getElementById('profileName').textContent = "👤 " + data.name;
-  } else {
-    document.getElementById('profileName').textContent = "👤 Guest";
-  }
+  document.getElementById('profileName').textContent =
+    data.name ? "👤 " + data.name : "👤 Guest";
 }
 loadUser();
 </script>
+
 <script>
-// confirm and delete product
+// DELETE PRODUCT
 function deleteProductConfirm(pid){
   if(!confirm("Are you sure you want to delete this product?")) return;
-  let products = getProducts();
-  products = products.filter(p => p.id !== pid);
+  let products = getProducts().filter(p => p.id !== pid);
   saveProducts(products);
-  renderProducts(); // re-render after deletion
+  renderProducts();
   alert("Product deleted successfully!");
 }
 </script>
-<script>
-const nbc = localStorage.getItem("temp_new_barcode");
-if (nbc) {
-  const bcEl = document.getElementById("productBarcode");
-  if (bcEl) bcEl.value = nbc;
-
-  localStorage.removeItem("temp_new_barcode");
-}
-
-</script>
 
 <script>
-/*
-  handleAddProduct ensures the UI is updated immediately after a product is added.
-  It calls addProduct() (defined in bharatpos.js). If addProduct returns a Promise it will await it;
-  otherwise it proceeds synchronously. After a successful add it calls renderProducts()
-  so the newly added product shows without a manual refresh.
-
-  Minimal and safe: does not change how addProduct() works — only ensures the product list UI is refreshed.
-*/
+/* HANDLE SAVE PRODUCT */
 async function handleAddProduct(event){
-  if(event && event.preventDefault) event.preventDefault();
+  event.preventDefault();
 
-  try {
-    // Call the existing addProduct function from bharatpos.js.
-    // It may be synchronous or async; awaiting handles both.
-    await addProduct();
+  await addProduct();   // from bharatpos.js
+  renderProducts();     // update UI
 
-    // Re-render product list so new product appears immediately.
-    renderProducts();
-
-    // Optionally reset form fields (keeps existing behavior minimal)
-    const form = document.getElementById('productForm');
-    if(form) {
-      // Only clear inputs that are not barcode (in case barcode was prefilled by scanner)
-      document.getElementById('productName').value = '';
-      document.getElementById('productPrice').value = '';
-      document.getElementById('productStock').value = '';
-      document.getElementById('productTax').value = '';
-      document.getElementById('productCategory').value = '';
-      // keep productBarcode untouched if you want to preserve scanning flow; uncomment to clear:
-      // document.getElementById('productBarcode').value = '';
-    }
-
-    // Optionally give feedback to user
-    // alert('Product saved');
-  } catch (err) {
-    console.error('Error adding product:', err);
-    alert('Failed to add product. See console for details.');
-  }
+  document.getElementById('productName').value = '';
+  document.getElementById('productMRP').value = '';
+  document.getElementById('brand').value = '';
+  document.getElementById('productStock').value = '';
+  document.getElementById('productCategory').value = '';
+  // keep barcode after scan
 }
-</script>
-<script>
-// This runs only on products.html and ensures the barcode is correctly prefilled as soon as DOM is ready.
-document.addEventListener("DOMContentLoaded", () => {
-  // Only do this if we're on the correct page
-  const barcode = localStorage.getItem("temp_new_barcode");
-  if (barcode) {
-    const barcodeField = document.getElementById("productBarcode");
-    if (barcodeField) {
-      barcodeField.value = barcode;
-      barcodeField.focus();  // Optional: focus for easier user entry
-    }
-    localStorage.removeItem("temp_new_barcode");
-  }
-});
-</script>
-<script>
-window.onload = function () {
-    let data = JSON.parse(localStorage.getItem("newProductData") || "{}");
-
-    if (data.barcode) document.getElementById("barcode").value = data.barcode;
-    if (data.name) document.getElementById("productName").value = data.name;
-    if (data.mrp) document.getElementById("mrp").value = data.mrp;
-    if (data.brand) document.getElementById("brand").value = data.brand;
-
-    // Clear after use so it doesn't auto-fill again
-    localStorage.removeItem("newProductData");
-};
 </script>
 
 </body>
 </html>
+
+
 
 
 
