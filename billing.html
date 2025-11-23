@@ -262,19 +262,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
           }
         } else {
-         fetchProductFromAPI(code).then(product => {
-    if (product) {
-        localStorage.setItem("auto_name", product.name);
-        localStorage.setItem("auto_brand", product.brand);
-        localStorage.setItem("auto_mrp", product.mrp);
-        localStorage.setItem("auto_barcode", product.barcode);
-    } else {
-        localStorage.setItem("auto_barcode", code);
-    }
-
-    window.location.href = "products.html";
-});
-
+          localStorage.setItem('temp_new_barcode', String(code));
+          window.location.href = 'products.html';
           return;
         }
       }
@@ -401,44 +390,15 @@ document.addEventListener("DOMContentLoaded", () => {
   stopBtn.addEventListener('click', stopScanner);
 });
 </script>
-<script>
-async function fetchProductFromAPI(barcode) {
-    const API_KEY = "YOUR_API_KEY_HERE";  // ← replace with your key
-
-    try {
-        const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "user_key": API_KEY
-            }
-        });
-
-        const data = await response.json();
-
-        if (!data.items || data.items.length === 0) {
-            console.log("API: No product found");
-            return null;
-        }
-
-        const item = data.items[0];
-
-        return {
-            name: item.title || "",
-            brand: item.brand || "",
-            mrp: item.lowest_recorded_price || item.highest_recorded_price || "",
-            barcode: barcode
-        };
-
-    } catch (err) {
-        console.error("API Fetch error:", err);
-        return null;
-    }
-}
-</script>
 
 </body>
 </html>
+
+
+
+
+
+
 
 
 
