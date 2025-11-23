@@ -632,4 +632,297 @@ function attachProductGridHandlers() {
   });
 })();
 
+/******************************************
+  UPC/OPENFOOD FETCH + AUTOFILL + CACHE
+  Paste this at the end of bharatpos.js (after other functions)
+******************************************/
+
+// CACHE helpers - store API results to reduce requests
+const UPC_CACHE_KEY = 'upc_cache_v1';
+function readUpcCache(){
+  try { return JSON.parse(localStorage.getItem(UPC_CACHE_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function writeUpcCache(obj){ localStorage.setItem(UPC_CACHE_KEY, JSON.stringify(obj)); }
+
+// MAIN fetcher: try OpenFoodFacts then UPCItemDB
+async function fetchProductData(barcode){
+  barcode = String(barcode || '').trim();
+  if(!barcode) return { found:false };
+
+  // 1) cache check
+  const cache = readUpcCache();
+  if(cache[barcode]) {
+    // Ensure cached object shape
+    return { found:true, source:'cache', ...cache[barcode] };
+  }
+
+  // Normalized result object
+  const result = { found:false, name:'', brand:'', mrp:'', image:'', source:'' };
+
+  // Helper to save to cache
+  const saveAndReturn = (r) => {
+    try {
+      const cache2 = readUpcCache();
+      cache2[barcode] = { name: r.name||'', brand: r.brand||'', mrp: r.mrp||'', image: r.image||'', source: r.source||'' , ts: Date.now() };
+      writeUpcCache(cache2);
+    } catch(e){ console.warn('cache save failed', e); }
+    return { found:true, ...r };
+  };
+
+  // --- Try OpenFoodFacts (food/beauty) ---
+  try {
+    // try general OpenProduct (food)
+    let url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`;
+    let resp = await fetch(url);
+    if (resp && resp.ok) {
+      const data = await resp.json();
+      if (data && data.status === 1 && data.product) {
+        result.name = data.product.product_name || data.product.generic_name || '';
+        result.brand = data.product.brands || (data.product.brands_tags && data.product.brands_tags[0]) || '';
+        // price field is not standardized: try price or stores_tags or nutriments fields
+        result.mrp = data.product.price || data.product.stores || data.product.stores_tags?.[0] || '';
+        result.image = data.product.image_small_url || data.product.image_url || '';
+        result.source = 'openfoodfacts';
+        return saveAndReturn(result);
+      }
+    }
+  } catch (e) {
+    console.warn('OpenFoodFacts error', e);
+  }
+
+  // --- Try OpenBeautyFacts (cosmetics) as second fallback ---
+  try {
+    let urlB = `https://world.openbeautyfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`;
+    let respB = await fetch(urlB);
+    if (respB && respB.ok) {
+      const dataB = await respB.json();
+      if (dataB && dataB.status === 1 && dataB.product) {
+        result.name = dataB.product.product_name || '';
+        result.brand = dataB.product.brands || '';
+        result.mrp = dataB.product.price || '';
+        result.image = dataB.product.image_small_url || dataB.product.image_url || '';
+        result.source = 'openbeauty';
+        return saveAndReturn(result);
+      }
+    }
+  } catch (e) {
+    console.warn('OpenBeautyFacts error', e);
+  }
+
+  // --- Try UPCItemDB trial API (100 requests/day) as general fallback ---
+  // trial endpoint doesn't require a key: /prod/trial/lookup?upc=
+  try {
+    const upcUrl = `https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(barcode)}`;
+    const r2 = await fetch(upcUrl);
+    if (r2 && r2.ok) {
+      const j2 = await r2.json();
+      if (j2 && j2.code === 'OK' && j2.total && j2.total > 0 && j2.items && j2.items.length) {
+        const it = j2.items[0];
+        // item fields: title, brand, offers (price), images, category
+        result.name = it.title || it.description || '';
+        result.brand = it.brand || (it.category ? it.category.split('›')?.[0]?.trim() : '');
+        // mrp: try offers -> lowest_recorded_price or offers[0].price
+        result.mrp = (it.offers && it.offers[0] && (it.offers[0].price || it.offers[0].currency)) || (it.lowest_recorded_price || '');
+        // sometimes price is like "₹199" or 199. Keep raw.
+        result.image = (it.images && it.images[0]) || '';
+        result.source = 'upcitemdb';
+        return saveAndReturn(result);
+      } else {
+        // if trial limit reached the response may differ - just continue to manual
+        console.warn('UPCItemDB: no items or trial limit reached', j2);
+      }
+    }
+  } catch (e) {
+    console.warn('UPCItemDB error', e);
+  }
+
+  // nothing found
+  return { found:false };
+}
+
+// CENTRAL handler to call when a barcode is unknown (scanner's acceptCode or Enter handler)
+async function handleUnknownBarcodeAndFetch(code) {
+  try {
+    if(!code) return;
+    code = String(code).trim();
+    // Quick UI: set product barcode input on product page if exists
+    try {
+      const pb = document.getElementById('productBarcode') || document.getElementById('barcodeInput');
+      if(pb) pb.value = code;
+    } catch(e){}
+
+    // check local products first (maybe added earlier)
+    const products = getProducts();
+    const foundLocal = products.find(p => String(p.barcode) === String(code));
+    if (foundLocal) {
+      // if we're on billing page - add to bill
+      if (window.location.href.includes('billing.html') && typeof window.addToBill === 'function') {
+        window.addToBill(foundLocal.id);
+        return;
+      }
+      // otherwise redirect to products page with selection
+      localStorage.setItem('temp_add_product_id', foundLocal.id);
+      window.location.href = 'products.html';
+      return;
+    }
+
+    // Not in local DB: fetch via APIs
+    const apiResult = await fetchProductData(code);
+
+    if (apiResult && apiResult.found) {
+      // prepare newProductData object consumed by products page auto-fill
+      const newProductData = {
+        barcode: code,
+        name: apiResult.name || '',
+        brand: apiResult.brand || '',
+        mrp: apiResult.mrp || '',
+        image: apiResult.image || '',
+        source: apiResult.source || ''
+      };
+      localStorage.setItem('newProductData', JSON.stringify(newProductData));
+
+      // If we are on billing page: optionally auto-add to products & cart
+      if (window.location.href.includes('billing.html')) {
+        // If settings say autoAddScanned -> create product and add to bill
+        const settings = getSettings();
+        if (settings.autoAddScanned === true) {
+          const prodName = newProductData.name || ('Product ' + code);
+          const prodPrice = parseFloat(String(newProductData.mrp || '0').replace(/[^\d.]/g,'')) || 0;
+          const prod = {
+            id: uid('p'),
+            name: prodName,
+            price: prodPrice,
+            stock: 1000, // large initial stock for billing convenience
+            taxPercent: 0,
+            category: 'General',
+            barcode: code,
+            brand: newProductData.brand || ''
+          };
+          const pArr = getProducts();
+          pArr.unshift(prod);
+          saveProducts(pArr);
+          // add to bill
+          if (typeof window.addToBill === 'function') {
+            window.addToBill(prod.id);
+          }
+          // cleanup newProductData
+          localStorage.removeItem('newProductData');
+          return;
+        } else {
+          // Not auto-adding: open products page so user can review & save
+          window.location.href = 'products.html';
+          return;
+        }
+      }
+
+      // If on products page: stay so the product form will auto-fill (products.html reads newProductData)
+      if (window.location.href.includes('products.html')) {
+        // the products.html DOMContentLoaded handler reads newProductData only at load,
+        // so we reload to force auto-fill, or directly set fields if they exist now.
+        const nameEl = document.getElementById('productName');
+        const mrpEl = document.getElementById('productMRP') || document.getElementById('productPrice');
+        const brandEl = document.getElementById('brand') || document.getElementById('productBrand');
+        const barcodeEl = document.getElementById('productBarcode');
+        if (nameEl) nameEl.value = newProductData.name || '';
+        if (mrpEl) mrpEl.value = newProductData.mrp || '';
+        if (brandEl) brandEl.value = newProductData.brand || '';
+        if (barcodeEl) barcodeEl.value = newProductData.barcode || '';
+        // leave newProductData in localStorage for persistence
+        return;
+      }
+
+      // default fallback: go to products page to let user confirm and save
+      window.location.href = 'products.html';
+      return;
+    } else {
+      // Not found in any API: store temp barcode and go to products page for manual entry
+      localStorage.setItem('temp_new_barcode', String(code));
+      window.location.href = 'products.html';
+      return;
+    }
+  } catch (err) {
+    console.error('handleUnknownBarcodeAndFetch error', err);
+    // fallback behavior
+    localStorage.setItem('temp_new_barcode', String(code));
+    window.location.href = 'products.html';
+  }
+}
+
+// -----------------------------
+// Adaptation: make addProduct read productMRP & brand if present in DOM
+// (This keeps compatibility with your product.html that has productMRP and brand IDs)
+const _origAddProduct = addProduct;
+function addProduct_withMRP() {
+  // Try to map productMRP -> productPrice for internal storage
+  const mrpEl = document.getElementById('productMRP');
+  if (mrpEl) {
+    // if your addProduct uses #productPrice, copy MRP value there so original code works
+    const priceEl = document.getElementById('productPrice');
+    if (!priceEl) {
+      // create a hidden price input so existing code finds it (minimal change)
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.id = 'productPrice';
+      hidden.value = mrpEl.value;
+      document.getElementById('productForm')?.appendChild(hidden);
+    } else {
+      priceEl.value = mrpEl.value;
+    }
+  }
+
+  // Map brand -> productBrand or productBrand -> productBrand expected id
+  const brandEl = document.getElementById('brand');
+  if (brandEl) {
+    let pb = document.getElementById('productBrand');
+    if (!pb) {
+      const h = document.createElement('input');
+      h.type = 'hidden';
+      h.id = 'productBrand';
+      h.value = brandEl.value;
+      document.getElementById('productForm')?.appendChild(h);
+    } else {
+      pb.value = brandEl.value;
+    }
+  }
+
+  // now call original addProduct logic (which reads productPrice, etc.)
+  try {
+    return _origAddProduct();
+  } catch (e) {
+    console.warn('fallback addProduct failed, trying orig', e);
+    // fallback: try original if available
+    return _origAddProduct();
+  }
+}
+// Replace addProduct in global scope so product.html's handleAddProduct triggers this updated version
+window.addProduct = addProduct_withMRP;
+
+// -----------------------------
+// Hook universal Enter-key barcode handler to call fetch if not found locally.
+// We will patch existing handler by wrapping its 'not found' branch to call handleUnknownBarcodeAndFetch.
+// If your file already has barcodeInput keypress logic, it will still work — this is a safety net.
+
+// Find barcode input and attach a supplementary listener
+document.addEventListener('DOMContentLoaded', ()=>{
+  const barcodeInput = document.getElementById('barcodeInput') || document.getElementById('productBarcode');
+  if (!barcodeInput) return;
+  // don't duplicate listeners
+  barcodeInput.addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    const code = String(barcodeInput.value || '').trim();
+    if (!code) return;
+    // If local product exists, existing logic already handles it. Otherwise call our fetch handler.
+    const products = getProducts();
+    const found = products.find(p => String(p.barcode) === String(code));
+    if (!found) {
+      e.preventDefault();
+      await handleUnknownBarcodeAndFetch(code);
+      // clear input
+      barcodeInput.value = '';
+    }
+  });
+});
+
+
 
