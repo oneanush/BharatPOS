@@ -42,6 +42,10 @@
           Reset All Data
         </button>
       </div>
+<label>Upload UPI QR Code:</label>
+<input type="file" id="qrUpload" accept="image/*">
+
+<img id="qrPreview" style="width:120px; margin-top:10px; display:none;">
 
       <div class="form-row">
         <button onclick="toggleTheme()">Toggle Theme</button>
@@ -58,9 +62,37 @@
         else { alert(msg); location.reload(); } 
       });
     }
+    
+const qrUpload = document.getElementById("qrUpload");
+const qrPreview = document.getElementById("qrPreview");
+
+qrUpload.addEventListener("change", function() {
+    const file = this.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = function() {
+        localStorage.setItem("upiQR", reader.result); 
+        qrPreview.src = reader.result;
+        qrPreview.style.display = "block";
+        alert("QR Code Saved Successfully");
+    };
+});
+
+// Load saved QR on settings page refresh
+window.onload = function() {
+    const storedQR = localStorage.getItem("upiQR");
+    if (storedQR) {
+        qrPreview.src = storedQR;
+        qrPreview.style.display = "block";
+    }
+};
+
+
   </script>
 
 </body>
 </html>
+
 
 
