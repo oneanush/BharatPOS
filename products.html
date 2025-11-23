@@ -8,35 +8,32 @@
   <script src="bharatpos.js" defer></script>
 </head>
 <body>
+
+<!-- ================= BARCODE AUTO FILL SCRIPT ================ -->
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
-    const barcodeField = document.getElementById("barcode");
-    const nameField = document.getElementById("productName");
-    const mrpField = document.getElementById("mrp");
 
-    // 1. Get barcode passed from billing
+    const barcodeField = document.getElementById("productBarcode");
+    const nameField = document.getElementById("productName");
+    const mrpField = document.getElementById("productMRP");
+
     const scanned = localStorage.getItem("temp_new_barcode");
 
     if (scanned) {
         barcodeField.value = scanned;
-
-        // remove storage so it does not repeat
         localStorage.removeItem("temp_new_barcode");
 
-        // 2. AUTO FETCH product details
         try {
             const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${scanned}`;
             const res = await fetch(url);
             const data = await res.json();
 
-            if (data && data.items && data.items.length > 0) {
+            if (data?.items?.length > 0) {
                 const item = data.items[0];
 
-                // Auto fill name
                 if (item.title) nameField.value = item.title;
 
-                // Auto fill MRP / price
-                if (item.offers && item.offers.length > 0) {
+                if (item.offers?.length > 0) {
                     mrpField.value = item.offers[0].price || "";
                 } else if (item.lowest_recorded_price) {
                     mrpField.value = item.lowest_recorded_price;
@@ -49,6 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 
+<!-- ================= NAVIGATION BAR ================ -->
 <nav>
   <a href="sales.html">Sales</a>
   <a href="settings.html">Settings</a>
@@ -59,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 <style>
 .profile-name {
   font-weight: 700;
-  color: #ffccrr;
+  color: #ffcc00;
   margin-left: 12px;
   margin-right: 5px;
   padding: 6px 10px;
@@ -69,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 }
 </style>
 
+<!-- ================= HEADER ================ -->
 <div class="header">
   <div class="brand">🛰️ Bharat POS</div>
   <div class="nav">
@@ -77,9 +76,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </div>
 
+<!-- ================= MAIN WRAPPER ================ -->
 <div class="container">
 
-  <!-- ADD PRODUCT CARD -->
+  <!-- ---------------- ADD PRODUCT ---------------- -->
   <div class="card">
     <h3>Add Product</h3>
 
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     </form>
   </div>
 
-  <!-- PRODUCT LIST CARD -->
+  <!-- ---------------- PRODUCT LIST ---------------- -->
   <div class="card">
     <h3>Products</h3>
     <div id="productsList"></div>
@@ -123,12 +123,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 </div>
 
+<!-- ================= RENDER PRODUCT TABLE ================ -->
 <script>
-/* RENDER PRODUCTS TABLE */
 function renderProducts(){
   const products = getProducts();
   if(products.length === 0){
-    document.getElementById('productsList').innerHTML = '<div class="small">No products</div>';
+    document.getElementById('productsList').innerHTML =
+      '<div class="small">No products</div>';
     return;
   }
 
@@ -164,14 +165,6 @@ function renderProducts(){
 document.addEventListener('DOMContentLoaded', () => {
   renderProducts();
 
-  // barcode auto-fill from scanner → product page
-  const temp = localStorage.getItem("temp_new_barcode");
-  if (temp) {
-    document.getElementById("productBarcode").value = temp;
-    localStorage.removeItem("temp_new_barcode");
-  }
-
-  // advanced scanner auto-fill (name, brand, mrp)
   const data = JSON.parse(localStorage.getItem("newProductData") || "{}");
 
   if (data.barcode) document.getElementById("productBarcode").value = data.barcode;
@@ -183,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<!-- ================= PROFILE NAME ================ -->
 <script>
-// PROFILE NAME LOAD
 function loadUser(){
   const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
   document.getElementById('profileName').textContent =
@@ -193,8 +186,8 @@ function loadUser(){
 loadUser();
 </script>
 
+<!-- ================= DELETE PRODUCT ================ -->
 <script>
-// DELETE PRODUCT
 function deleteProductConfirm(pid){
   if(!confirm("Are you sure you want to delete this product?")) return;
   let products = getProducts().filter(p => p.id !== pid);
@@ -204,46 +197,8 @@ function deleteProductConfirm(pid){
 }
 </script>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const data = JSON.parse(localStorage.getItem("newProductData") || "{}");
-
-  if (data.barcode) document.getElementById("productBarcode").value = data.barcode;
-  if (data.name) document.getElementById("productName").value = data.name;
-  if (data.mrp) document.getElementById("productMRP").value = data.mrp;
-  if (data.brand) document.getElementById("brand").value = data.brand;
-
-  localStorage.removeItem("newProductData");
-});
-
-
-if (localStorage.getItem("auto_barcode")) {
-    document.getElementById("barcode").value =
-        localStorage.getItem("auto_barcode");
-
-    if (localStorage.getItem("auto_name"))
-        document.getElementById("name").value =
-            localStorage.getItem("auto_name");
-
-    if (localStorage.getItem("auto_brand"))
-        document.getElementById("brand").value =
-            localStorage.getItem("auto_brand");
-
-    if (localStorage.getItem("auto_mrp"))
-        document.getElementById("mrp").value =
-            localStorage.getItem("auto_mrp");
-
-    // Clear memory
-    localStorage.removeItem("auto_barcode");
-    localStorage.removeItem("auto_name");
-    localStorage.removeItem("auto_brand");
-    localStorage.removeItem("auto_mrp");
-}
-</script>
 </body>
 </html>
-
-
 
 
 
