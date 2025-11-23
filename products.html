@@ -1,3 +1,6 @@
+
+
+
 <!doctype html>
 <html>
 <head>
@@ -6,47 +9,110 @@
   <title>Products - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
   <script src="bharatpos.js" defer></script>
+  <style>
+    .debug-box {
+      background:#fff9e6;
+      border:1px solid #ffd580;
+      padding:8px;
+      margin:8px 0;
+      border-radius:6px;
+      font-size:13px;
+    }
+  </style>
 </head>
 <body>
 
-<!-- ================= BARCODE AUTO FILL SCRIPT ================ -->
+<!-- SINGLE DOM-READY SCRIPT (handles all autofill cases) -->
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  // IDs used in this page (must match inputs)
+  const idBarcode = 'productBarcode';
+  const idName = 'productName';
+  const idMRP = 'productMRP';
+  const idBrand = 'brand';
 
-    const barcodeField = document.getElementById("productBarcode");
-    const nameField = document.getElementById("productName");
-    const mrpField = document.getElementById("productMRP");
-
-    const scanned = localStorage.getItem("temp_new_barcode");
-
-    if (scanned) {
-        barcodeField.value = scanned;
-        localStorage.removeItem("temp_new_barcode");
-
-        try {
-            const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${scanned}`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if (data?.items?.length > 0) {
-                const item = data.items[0];
-
-                if (item.title) nameField.value = item.title;
-
-                if (item.offers?.length > 0) {
-                    mrpField.value = item.offers[0].price || "";
-                } else if (item.lowest_recorded_price) {
-                    mrpField.value = item.lowest_recorded_price;
-                }
-            }
-        } catch (err) {
-            console.log("API error:", err);
-        }
+  // helpers
+  const setIfPresent = (elId, value) => {
+    const el = document.getElementById(elId);
+    if (!el) return false;
+    if (value !== undefined && value !== null && String(value) !== '') {
+      el.value = value;
+      return true;
     }
+    return false;
+  };
+
+  // debug UI
+  const debugBox = document.createElement('div');
+  debugBox.className = 'debug-box';
+  debugBox.id = 'autoFillDebug';
+  debugBox.textContent = 'Auto-fill status: waiting...';
+  // insert debug box near top
+  document.body.insertBefore(debugBox, document.body.firstChild.nextSibling);
+
+  // 1. Try the "auto_" keys that your billing script sets
+  const auto_barcode = localStorage.getItem('auto_barcode');
+  const auto_name = localStorage.getItem('auto_name');
+  const auto_mrp = localStorage.getItem('auto_mrp');
+  const auto_brand = localStorage.getItem('auto_brand');
+
+  if (auto_barcode || auto_name || auto_mrp || auto_brand) {
+    const used = [];
+    if (auto_barcode && setIfPresent(idBarcode, auto_barcode)) used.push('auto_barcode');
+    if (auto_name && setIfPresent(idName, auto_name)) used.push('auto_name');
+    if (auto_mrp && setIfPresent(idMRP, auto_mrp)) used.push('auto_mrp');
+    if (auto_brand && setIfPresent(idBrand, auto_brand)) used.push('auto_brand');
+
+    // Clear them so they don't auto-fill again by mistake
+    localStorage.removeItem('auto_barcode');
+    localStorage.removeItem('auto_name');
+    localStorage.removeItem('auto_mrp');
+    localStorage.removeItem('auto_brand');
+
+    debugBox.textContent = 'Auto-filled from billing keys: ' + (used.length ? used.join(', ') : 'none (keys present but fields missing)');
+    // renderProducts will run later (or we call it manually below)
+  } else {
+    // 2. Fallback: older key names (temp_new_barcode / newProductData)
+    const temp = localStorage.getItem('temp_new_barcode');
+    const newProdRaw = localStorage.getItem('newProductData');
+
+    if (newProdRaw) {
+      try {
+        const obj = JSON.parse(newProdRaw);
+        const used = [];
+        if (obj.barcode && setIfPresent(idBarcode, obj.barcode)) used.push('newProductData.barcode');
+        if (obj.name && setIfPresent(idName, obj.name)) used.push('newProductData.name');
+        if (obj.mrp && setIfPresent(idMRP, obj.mrp)) used.push('newProductData.mrp');
+        if (obj.brand && setIfPresent(idBrand, obj.brand)) used.push('newProductData.brand');
+        // clear it
+        localStorage.removeItem('newProductData');
+        debugBox.textContent = 'Auto-filled from newProductData: ' + (used.length ? used.join(', ') : 'none');
+      } catch (e) {
+        console.warn('Invalid JSON in newProductData', e);
+        localStorage.removeItem('newProductData');
+        debugBox.textContent = 'newProductData malformed - removed';
+      }
+    } else if (temp) {
+      // only barcode present
+      const filled = setIfPresent(idBarcode, temp);
+      localStorage.removeItem('temp_new_barcode');
+      debugBox.textContent = filled ? 'Auto-filled barcode from temp_new_barcode' : 'temp_new_barcode present but input missing';
+    } else {
+      debugBox.textContent = 'No auto-fill data found in localStorage';
+    }
+  }
+
+  // Render product list (if function exists in bharatpos.js)
+  if (typeof renderProducts === 'function') {
+    try { renderProducts(); } catch(e) { console.warn('renderProducts error', e); }
+  }
+
+  // ---------- Manual test helper (use in console) ----------
+  // Run: localStorage.setItem('auto_barcode','012345678901'); location.reload();
 });
 </script>
 
-<!-- ================= NAVIGATION BAR ================ -->
+<!-- NAV -->
 <nav>
   <a href="sales.html">Sales</a>
   <a href="settings.html">Settings</a>
@@ -55,19 +121,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 </nav>
 
 <style>
-.profile-name {
-  font-weight: 700;
-  color: #ffcc00;
-  margin-left: 12px;
-  margin-right: 5px;
-  padding: 6px 10px;
-  border: 1px solid #ffcc00;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.1);
-}
+.profile-name { font-weight:700; color:#ffcc00; margin-left:12px; padding:6px 10px; border-radius:8px; }
+.container { padding: 12px; }
+.card { padding:12px; margin:12px 0; background:#f7f7f7; border-radius:8px; }
 </style>
 
-<!-- ================= HEADER ================ -->
 <div class="header">
   <div class="brand">🛰️ Bharat POS</div>
   <div class="nav">
@@ -76,42 +134,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </div>
 
-<!-- ================= MAIN WRAPPER ================ -->
 <div class="container">
 
-  <!-- ---------------- ADD PRODUCT ---------------- -->
   <div class="card">
     <h3>Add Product</h3>
-
     <form id="productForm" onsubmit="handleAddProduct(event);">
-
-      <div class="form-row">
-        <input id="productName" placeholder="Product Name">
-      </div>
-
-      <div class="form-row">
-        <input id="productMRP" type="number" step="0.01" placeholder="MRP">
-      </div>
-
-      <div class="form-row">
-        <input id="brand" placeholder="Brand">
-      </div>
-
-      <div class="form-row">
-        <input id="productStock" type="number" placeholder="Stock">
-      </div>
+      <div class="form-row"><input id="productName" placeholder="Product Name"></div>
+      <div class="form-row"><input id="productMRP" type="number" step="0.01" placeholder="MRP"></div>
+      <div class="form-row"><input id="brand" placeholder="Brand"></div>
+      <div class="form-row"><input id="productStock" type="number" placeholder="Stock"></div>
+      <div class="form-row"><input id="productCategory" placeholder="Category (optional)"></div>
 
       <label>Barcode:</label>
       <input id="productBarcode" placeholder="Enter Barcode">
 
-      <div class="form-row">
-        <button type="submit">Save Product</button>
-      </div>
-
+      <div class="form-row"><button type="submit">Save Product</button></div>
     </form>
   </div>
 
-  <!-- ---------------- PRODUCT LIST ---------------- -->
   <div class="card">
     <h3>Products</h3>
     <div id="productsList"></div>
@@ -119,160 +159,48 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 </div>
 
-<!-- ================= RENDER PRODUCT TABLE ================ -->
 <script>
+/* Render products table (uses getProducts from bharatpos.js) */
 function renderProducts(){
-  const products = getProducts();
-  if(products.length === 0){
-    document.getElementById('productsList').innerHTML =
-      '<div class="small">No products</div>';
+  const products = (typeof getProducts === 'function') ? getProducts() : [];
+  if(!products || products.length === 0){
+    document.getElementById('productsList').innerHTML = '<div class="small">No products</div>';
     return;
   }
-
-  let html = `
-  <table>
-    <tr>
-      <th>Name</th>
-      <th>MRP</th>
-      <th>Stock</th>
-      <th>Brand</th>
-      <th>Category</th>
-      <th>Action</th>
-    </tr>`;
-
-  products.forEach(p => {
-    html += `
-    <tr>
-      <td>${p.name}</td>
-      <td>${p.price}</td>
-      <td>${p.stock}</td>
-      <td>${p.brand || '-'}</td>
-      <td>${p.category || '-'}</td>
-      <td>
-        <button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button>
-      </td>
-    </tr>`;
+  let html = '<table><tr><th>Name</th><th>MRP</th><th>Stock</th><th>Brand</th><th>Category</th><th>Action</th></tr>';
+  products.forEach(p=>{
+    html += `<tr>
+      <td>${p.name}</td><td>${p.price}</td><td>${p.stock}</td><td>${p.brand||'-'}</td><td>${p.category||'-'}</td>
+      <td><button onclick="deleteProductConfirm('${p.id}')">Delete</button></td></tr>`;
   });
-
   html += '</table>';
   document.getElementById('productsList').innerHTML = html;
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderProducts();
-
-  const data = JSON.parse(localStorage.getItem("newProductData") || "{}");
-
-  if (data.barcode) document.getElementById("productBarcode").value = data.barcode;
-  if (data.name) document.getElementById("productName").value = data.name;
-  if (data.mrp) document.getElementById("productMRP").value = data.mrp;
-  if (data.brand) document.getElementById("brand").value = data.brand;
-
-  localStorage.removeItem("newProductData");
-});
 </script>
 
-<!-- ================= PROFILE NAME ================ -->
 <script>
+// PROFILE
 function loadUser(){
-  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  document.getElementById('profileName').textContent =
-    data.name ? "👤 " + data.name : "👤 Guest";
+  const data = JSON.parse(localStorage.getItem('bharatpos_user')||'{}');
+  document.getElementById('profileName').textContent = data.name ? '👤 ' + data.name : '👤 Guest';
 }
 loadUser();
-</script>
 
-<!-- ================= DELETE PRODUCT ================ -->
-<script>
+// delete helper (uses saveProducts/getProducts from bharatpos.js)
 function deleteProductConfirm(pid){
-  if(!confirm("Are you sure you want to delete this product?")) return;
-  let products = getProducts().filter(p => p.id !== pid);
-  saveProducts(products);
-  renderProducts();
-  alert("Product deleted successfully!");
-}
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-
-    /* --------------------------
-       1. Load Profile
-    --------------------------- */
-    const profile = JSON.parse(localStorage.getItem("bharatpos_user") || "{}");
-    document.getElementById("profileName").textContent =
-        profile.name ? "👤 " + profile.name : "👤 Guest";
-
-    /* --------------------------
-       2. Render Products
-    --------------------------- */
-    if (typeof renderProducts === "function") renderProducts();
-
-    /* --------------------------
-       3. BARCODE SCANNED FROM BILLING PAGE
-    --------------------------- */
-    const scanned = localStorage.getItem("temp_new_barcode");
-
-    if (scanned) {
-        // fill the barcode
-        const fieldBarcode = document.getElementById("productBarcode");
-        fieldBarcode.value = scanned;
-
-        // clear after use
-        localStorage.removeItem("temp_new_barcode");
-
-        // fetch item details
-        await fetchProductFromAPI(scanned);
-    }
-
-    /* --------------------------
-       4. If advanced scanner data exists
-    --------------------------- */
-    const adv = JSON.parse(localStorage.getItem("newProductData") || "{}");
-
-    if (adv.barcode) document.getElementById("productBarcode").value = adv.barcode;
-    if (adv.name)    document.getElementById("productName").value = adv.name;
-    if (adv.mrp)     document.getElementById("productMRP").value = adv.mrp;
-    if (adv.brand)   document.getElementById("brand").value = adv.brand;
-
-    localStorage.removeItem("newProductData");
-});
-
-
-/* ==============================
-   API FETCH FUNCTION
-============================== */
-async function fetchProductFromAPI(barcode) {
-    const nameField  = document.getElementById("productName");
-    const mrpField   = document.getElementById("productMRP");
-    const brandField = document.getElementById("brand");
-
-    try {
-        const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`;
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!data.items || !data.items.length) return;
-
-        const item = data.items[0];
-
-        if (item.title) nameField.value = item.title;
-        if (item.brand) brandField.value = item.brand;
-
-        if (item.offers && item.offers.length > 0)
-            mrpField.value = item.offers[0].price || "";
-        else if (item.lowest_recorded_price)
-            mrpField.value = item.lowest_recorded_price;
-
-    } catch (err) {
-        console.log("API Error:", err);
-    }
+  if(!confirm('Are you sure?')) return;
+  if (typeof getProducts === 'function' && typeof saveProducts === 'function') {
+    let products = getProducts().filter(p=>p.id!==pid);
+    saveProducts(products);
+    renderProducts();
+  } else {
+    alert('save/get product functions missing.');
+  }
 }
 </script>
 
 </body>
 </html>
-
-
 
 
 
