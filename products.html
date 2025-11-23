@@ -1,403 +1,195 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Billing - Bharat POS</title>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Products - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
-
-  <style>
-    table { width:100%; border-collapse: collapse; margin: 6px 0; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    .total { margin-top: 6px; font-weight: bold; }
-    .card { padding: 12px; margin-bottom: 12px; background: #f7f7f7; border-radius: 6px; }
-    .form-row { margin-top: 8px; display: flex; gap: 6px; }
-    .small { font-size: 0.85em; color: #555; }
-    button { padding: 4px 8px; cursor: pointer; }
-    .hidden { display:none; }
-    nav a { margin-right: 12px; }
-    .header { display:flex; justify-content: space-between; align-items:center; margin-bottom:12px; }
-    .brand { font-weight:bold; font-size:1.2em; }
-    .nav a { margin-left:8px; }
-
-    /* Billing layout */
-    .billing-container { display: flex; gap: 16px; justify-content:center; align-items:flex-start; flex-wrap: wrap; }
-    /* Remove independent scroll from billing container */
-    .billing-container {
-      max-height: none !important;
-      overflow: visible !important;
-    }
-    .cart-section {
-      max-height: none !important;
-      overflow: visible !important;
-    }
-    #stockScrollBox {
-      max-height: none !important;
-      overflow: visible !important;
-    }
-
-    /* Product Grid */
-    #productGridWrap {
-      width: 90%;
-      margin: 6px auto;
-      max-width: 1200px;
-    }
-    #categoryFilters { display:flex; gap:6px; flex-wrap:wrap;margin-bottom:10px; }
-    #categoryFilters button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-      padding: 6px 12px;
-      background-color: #0b5ed7;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.2s;
-      font-size: 13px;
-    }
-    #categoryFilters button:hover {
-      background-color: #0740a0;
-    }
-
-    #productList {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-      gap: 8px;
-      align-items: start;
-    }
-    .prod-btn {
-      aspect-ratio: 1/1;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      padding:6px;
-      font-size:12px;
-      border-radius:8px;
-      border:1px solid #ccc;
-      background: linear-gradient(180deg,#ffffff,#f0f6ff);
-      cursor:pointer;
-      overflow:hidden;
-      transition: 0.15s;
-    }
-    .prod-btn:active { transform: scale(0.97); }
-    .prod-name { font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
-    .prod-qty { font-size:11px; color:#333; opacity:0.8; margin-top:4px; }
-
-    /* Scroll only on stock/product section */
-    .stock-scroll {
-      max-height: 50vh;
-      overflow-y: auto;
-      padding: 6px;
-      border-radius: 8px;
-      background: #f9f9f9;
-    }
-
-    /* Cart section smaller */
-    .cart-section { flex: 0.9; max-width:650px; min-width:320px; }
-
-    /* responsive tweak */
-    @media (max-width:700px){
-      #productGridWrap{ width: 96%; }
-      .billing-container{  align-items:center; flex-direction:column; }
-      .cart-section{ width:96%; max-width: none; }
-    }
-
-    /* Category buttons */
-    #categoryFilters button {
-      padding:4px 10px;
-      border-radius:6px;
-      border:none;
-      background:#0077ff;
-      color:#fff;
-      font-weight:600;
-      cursor:pointer;
-      transition: 0.2s;
-    }
-    #categoryFilters button:hover { background:#005fcc; transform: scale(1.05); }
-
-    /* Scanner UI */
-    #scannerContainer { display:flex; align-items:center; justify-content:center; background:#000; color:#fff; }
-    #detectedCode { margin-top:6px; font-weight:700; }
-  </style>
+  <script src="bharatpos.js" defer></script>
 </head>
-
 <body>
-  <nav>
-    <a href="sales.html">Sales</a>
-    <a href="reports.html">Reports</a>
-    <a href="settings.html">Settings</a>
-    <a href="index.html">About</a>
-  </nav>
+<nav>
+   <a href="sales.html">Sales</a>
+  <a href="settings.html">Settings</a>
+ <a href="index.html">About</a>
+<div id="profileName" class="profile-name" ></div>
 
-  <div class="header">
+</nav>
+<style>
+.profile-name {
+  font-weight: 700;
+  color: #ffccrr;
+  margin-left: 12px;
+  margin-right: 5px;
+  padding: 6px 10px;
+  border: 1px solid #ffcc00;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+}
+
+
+</style>
+
+
+ <div class="header">
     <div class="brand">🛰️ Bharat POS</div>
     <div class="nav">
       <a href="dashboard.html">Dashboard</a>
-      <a href="products.html">Products</a>
+      <a href="billing.html">billing</a>
+     
     </div>
   </div>
 
-  <!-- Scanner UI -->
-  <div id="scannerContainer" style="width:70%; max-width:600px; height:200px; border:1px solid #ccc; margin-bottom:6px;"></div>
-  <div style="margin-bottom:6px;">
-    <button id="openCamera">Start Scanner</button>
-    <button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
-    <span id="detectedCode" class="small"></span>
+
+<div class="container">
+  <div class="card">
+    <h3>Add Product</h3>
+    <!-- changed onsubmit to call local handler so we can ensure the UI re-renders after addProduct() -->
+    <form id="productForm" onsubmit="handleAddProduct(event);">
+      <div class="form-row"><input id="productName" placeholder="Product name"></div>
+      <div class="form-row"><input id="productPrice" type="number" step="0.01" placeholder="Price"></div>
+      <div class="form-row"><input id="productStock" type="number" placeholder="Stock"></div>
+      <div class="form-row"><input id="productTax" type="number" placeholder="Tax % (optional)"></div>
+      <div class="form-row"><input id="productCategory" placeholder="Category (optional)"></div>
+<label>Barcode:</label>
+<input type="text" id="productBarcode" placeholder="Enter Barcode">
+
+      <div class="form-row"><button type="submit">Save Product</button></div>
+    </form>
   </div>
 
-  <!-- Hidden input (keeps backward compatibility with code that expects a barcodeInput element) -->
-  <input id="barcodeInput" class="hidden" autocomplete="off">
-
-  <div class="stock-scroll">
-    <div id="productGridWrap">
-      <h3 style="text-align:center;margin:6px 0;">Available Products</h3>
-      <div id="categoryFilters"></div>
-      <div id="productList" role="list"></div>
-    </div>
+  <div class="card">
+    <h3>Products</h3>
+    <div id="productsList"></div>
   </div>
-  <div class="billing-container">
-    <div class="cart-section">
-      <div class="card">
-        <h3>Billing</h3>
-        <div class="form-row">
-          <input type="text" id="productSearch" placeholder="Search product...">
-          <input id="custName" placeholder="Customer name (optional)">
-        </div>
-        <div id="searchResults" class="card"></div>
-      </div>
+</div>
 
-      <div class="card">
-        <h3>Cart</h3>
-        <div id="cartList"></div>
-        <div class="form-row">
-         <input id="discount" type="number" placeholder="Discount INR (optional)" value="" 
-           oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
-        </div>
-        <div class="total" id="grandTotal">Total: ₹0</div>
-        <div class="form-row"><button onclick="completeSale()">Checkout & Print</button></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Invoice Modal -->
-  <div id="invoiceModal" class="card hidden" style="max-width:700px;margin:20px auto">
-    <div id="invoiceContent"></div>
-    <div style="text-align:right;margin-top:8px">
-      <button onclick="window.print()">Print</button>
-      <button onclick="closeInvoice()">Close</button>
-    </div>
-  </div>
-
-  <script src="bharatpos.js"></script>
-  <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
-
- <!-- (replace the <script> ... scanner script ... </script> block in billing-bharat-pos.html with this updated script) -->
-<!-- Place in billing.html after Quagga import and DOM elements -->
 <script>
+  // simple renderer used by bharatpos.js
+  function renderProducts(){
+    const products = getProducts();
+    if(products.length===0) { document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; return;}
+    let html = '<table><tr><th>Name</th><th>Price</th><th>Stock</th><th>Tax %</th><th>category</th><th>Action</th></tr>';
+    products.forEach(p=>{
+    html += `
+<tr>
+  <td>${p.name}</td>
+  <td>${p.price}</td>
+  <td>${p.stock}</td>
+  <td>${p.taxPercent}%</td>
+ <td>${p.category}</td>
+
+  <td>
+    <button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button>
+  </td>
+</tr>`;
+
+    });
+    html += '</table>';
+    document.getElementById('productsList').innerHTML = html;
+  }
+
+  // initial render
+  document.addEventListener('DOMContentLoaded', ()=>{ renderProducts();const temp = localStorage.getItem("temp_new_barcode");
+if (temp) {
+  const barcodeField = document.getElementById("productBarcode");
+  if (barcodeField) barcodeField.value = temp;
+  localStorage.removeItem("temp_new_barcode");
+}
+ });
+</script>
+
+<script>
+function loadUser(){
+  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+  if(data.name){
+    document.getElementById('profileName').textContent = "👤 " + data.name;
+  } else {
+    document.getElementById('profileName').textContent = "👤 Guest";
+  }
+}
+loadUser();
+</script>
+<script>
+// confirm and delete product
+function deleteProductConfirm(pid){
+  if(!confirm("Are you sure you want to delete this product?")) return;
+  let products = getProducts();
+  products = products.filter(p => p.id !== pid);
+  saveProducts(products);
+  renderProducts(); // re-render after deletion
+  alert("Product deleted successfully!");
+}
+</script>
+<script>
+const nbc = localStorage.getItem("temp_new_barcode");
+if (nbc) {
+  const bcEl = document.getElementById("productBarcode");
+  if (bcEl) bcEl.value = nbc;
+
+  localStorage.removeItem("temp_new_barcode");
+}
+
+</script>
+
+<script>
+/*
+  handleAddProduct ensures the UI is updated immediately after a product is added.
+  It calls addProduct() (defined in bharatpos.js). If addProduct returns a Promise it will await it;
+  otherwise it proceeds synchronously. After a successful add it calls renderProducts()
+  so the newly added product shows without a manual refresh.
+
+  Minimal and safe: does not change how addProduct() works — only ensures the product list UI is refreshed.
+*/
+async function handleAddProduct(event){
+  if(event && event.preventDefault) event.preventDefault();
+
+  try {
+    // Call the existing addProduct function from bharatpos.js.
+    // It may be synchronous or async; awaiting handles both.
+    await addProduct();
+
+    // Re-render product list so new product appears immediately.
+    renderProducts();
+
+    // Optionally reset form fields (keeps existing behavior minimal)
+    const form = document.getElementById('productForm');
+    if(form) {
+      // Only clear inputs that are not barcode (in case barcode was prefilled by scanner)
+      document.getElementById('productName').value = '';
+      document.getElementById('productPrice').value = '';
+      document.getElementById('productStock').value = '';
+      document.getElementById('productTax').value = '';
+      document.getElementById('productCategory').value = '';
+      // keep productBarcode untouched if you want to preserve scanning flow; uncomment to clear:
+      // document.getElementById('productBarcode').value = '';
+    }
+
+    // Optionally give feedback to user
+    // alert('Product saved');
+  } catch (err) {
+    console.error('Error adding product:', err);
+    alert('Failed to add product. See console for details.');
+  }
+}
+</script>
+<script>
+// This runs only on products.html and ensures the barcode is correctly prefilled as soon as DOM is ready.
 document.addEventListener("DOMContentLoaded", () => {
-  const scannerContainer = document.getElementById("scannerContainer");
-  const openBtn = document.getElementById("openCamera");
-  const stopBtn = document.getElementById("stopCamera");
-  const barcodeInput = document.getElementById("barcodeInput");
-  const detectedCodeEl = document.getElementById("detectedCode");
-
-  let scanning = false;
-  let lastAccepted = null;
-  let scanLocked = false;
-  const SCAN_COOLDOWN_MS = 1500;
-  const DUPLICATE_TIMEOUT = 1500;
-  const REQUIRED_CONFIRMS = 3;
-  const WINDOW_MS = 1200;
-  const readCounts = new Map();
-
-  function registerRead(code) {
-    const now = Date.now();
-    const rec = readCounts.get(code) || { count: 0, lastSeen: now };
-    if (now - rec.lastSeen > WINDOW_MS) rec.count = 0;
-    rec.count += 1;
-    rec.lastSeen = now;
-    readCounts.set(code, rec);
-    for (const [k, v] of readCounts.entries()) {
-      if (now - v.lastSeen > WINDOW_MS) readCounts.delete(k);
+  // Only do this if we're on the correct page
+  const barcode = localStorage.getItem("temp_new_barcode");
+  if (barcode) {
+    const barcodeField = document.getElementById("productBarcode");
+    if (barcodeField) {
+      barcodeField.value = barcode;
+      barcodeField.focus();  // Optional: focus for easier user entry
     }
-    return rec.count;
+    localStorage.removeItem("temp_new_barcode");
   }
-
-  function handleScannedCandidate(code) {
-    if (!code || scanLocked) return;
-    const count = registerRead(code);
-    detectedCodeEl.textContent = `Detected (${count}/${REQUIRED_CONFIRMS}): ${code}`;
-    if (count >= REQUIRED_CONFIRMS) {
-      acceptCode(code);
-      scanLocked = true;
-      setTimeout(() => { scanLocked = false; }, SCAN_COOLDOWN_MS);
-      readCounts.clear();
-    }
-  }
-
-  function acceptCode(code) {
-    const now = Date.now();
-    if (lastAccepted && lastAccepted.code === code && now - lastAccepted.time < DUPLICATE_TIMEOUT) return;
-    lastAccepted = { code, time: now };
-    detectedCodeEl.textContent = "Confirmed: " + code;
-    if (barcodeInput) {
-      barcodeInput.value = code;
-      barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
-      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    try {
-      if (typeof getProducts === 'function') {
-        const products = getProducts() || [];
-        const found = products.find(p => String(p.barcode) === String(code));
-        if (found) {
-          if (typeof window.addToBill === 'function') {
-            window.addToBill(found.id);
-            return;
-          } else {
-            localStorage.setItem('temp_add_product_id', found.id);
-            window.location.href = 'billing.html';
-            return;
-          }
-        } else {
-          localStorage.setItem('temp_new_barcode', String(code));
-          window.location.href = 'products.html';
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Barcode handling lookup failed', e);
-    }
-  }
-
-  function startQuagga() {
-    if (scanning) return;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert("Camera API not supported on this browser.");
-      return;
-    }
-    scanning = true;
-    stopBtn.style.display = "inline-block";
-    Quagga.init({
-      inputStream: {
-        name: "Live",
-        type: "LiveStream",
-        target: scannerContainer,
-        constraints: {
-          width: { ideal: 600 },
-          height: { ideal: 180 },
-           aspectRatio: { ideal: 3.3 },
-          facingMode: "environment"
-        }
-      },
-      locator: { patchSize: "large", halfSample: false },
-      numOfWorkers: navigator.hardwareConcurrency ? Math.max(1, Math.min(4, navigator.hardwareConcurrency - 1)) : 2,
-      decoder: {
-        readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]
-      },
-      locate: true
-    }, function(err) {
-      if (err) {
-        console.error("Quagga init error:", err);
-        scanning = false;
-        stopBtn.style.display = "none";
-        startBarcodeDetectorFallback();
-        return;
-      }
-      Quagga.start();
-    });
-
-    Quagga.onDetected(function(result) {
-      try {
-        if (!result || !result.codeResult) return;
-        const code = result.codeResult.code;
-        handleScannedCandidate(code);
-      } catch (e) {
-        console.error("onDetected error:", e);
-      }
-    });
-  }
-
-  function stopScanner() {
-    if (!scanning) return;
-    try { Quagga.offDetected(); } catch (e) {}
-    try { Quagga.stop(); } catch (e) {}
-    scanning = false;
-    stopBtn.style.display = "none";
-    scannerContainer.innerHTML = "";
-    detectedCodeEl.textContent = "";
-    readCounts.clear();
-    lastAccepted = null;
-  }
-
-  async function startBarcodeDetectorFallback() {
-    if (!('BarcodeDetector' in window)) {
-      alert("No barcode scanner available in this browser.");
-      return;
-    }
-    const formats = ['ean_13','ean_8','upc_a','upc_e','code_128'];
-    const detector = new BarcodeDetector({ formats });
-    const video = document.createElement('video');
-    video.style.width = "100%";
-    video.style.height = "100%";
-    scannerContainer.innerHTML = "";
-    scannerContainer.appendChild(video);
-
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-      video.srcObject = stream;
-      await video.play();
-    } catch (err) {
-      console.error("Camera fallback error:", err);
-      alert("Camera access error: " + err.message);
-      return;
-    }
-
-    scanning = true;
-    stopBtn.style.display = "inline-block";
-
-    const tick = async () => {
-      if (!scanning) {
-        if (stream) stream.getTracks().forEach(t => t.stop());
-        return;
-      }
-      try {
-        const barcodes = await detector.detect(video);
-        if (barcodes && barcodes.length) {
-          const raw = barcodes[0].rawValue || barcodes[0].raw;
-          handleScannedCandidate(raw);
-        }
-      } catch (err) {
-        console.warn("Detector error:", err);
-      }
-      requestAnimationFrame(tick);
-    };
-    tick();
-  }
-
-  openBtn.addEventListener('click', async () => {
-    if (scanning) return;
-    if ('BarcodeDetector' in window) {
-      await startBarcodeDetectorFallback();
-    } else {
-      startQuagga();
-    }
-  });
-
-  stopBtn.addEventListener('click', stopScanner);
 });
 </script>
 
 </body>
 </html>
-
-
-
-
-
 
 
 
