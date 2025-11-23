@@ -187,8 +187,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
+<script>
+window.onload = function () {
+    let data = JSON.parse(localStorage.getItem("newProductData") || "{}");
+
+    if (data.barcode) document.getElementById("barcode").value = data.barcode;
+    if (data.name) document.getElementById("productName").value = data.name;
+    if (data.mrp) document.getElementById("mrp").value = data.mrp;
+    if (data.brand) document.getElementById("brand").value = data.brand;
+
+    // Clear after use so it doesn't auto-fill again
+    localStorage.removeItem("newProductData");
+};
+</script>
 
 </body>
 </html>
+
 
 
