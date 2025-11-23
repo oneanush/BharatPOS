@@ -121,6 +121,7 @@
     /* Scanner UI */
     #scannerContainer { display:flex; align-items:center; justify-content:center; background:#000; color:#fff; }
     #detectedCode { margin-top:6px; font-weight:700; }
+    #scannerToast { margin-top:6px; font-size:13px; color:#0b2b4a; }
   </style>
 </head>
 
@@ -146,6 +147,7 @@
     <button id="openCamera">Start Scanner</button>
     <button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
     <span id="detectedCode" class="small"></span>
+    <div id="scannerToast" class="small">Scanner idle</div>
   </div>
 
   <!-- Hidden input (keeps backward compatibility with code that expects a barcodeInput element) -->
@@ -194,24 +196,40 @@
   <script src="bharatpos.js"></script>
   <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 
- <!-- (replace the <script> ... scanner script ... </script> block in billing-bharat-pos.html with this updated script) -->
-<!-- Place in billing.html after Quagga import and DOM elements -->
 <script>
+/* ============================
+   Scanner + UPC auto-fill redirect
+   - integrates with your existing bharatpos.js functions:
+     getProducts(), addToBill(id), etc.
+   - if product unknown, it calls UPCItemDB and redirects to products.html
+     where the product add form will be auto-filled.
+   ============================ */
+
 document.addEventListener("DOMContentLoaded", () => {
   const scannerContainer = document.getElementById("scannerContainer");
   const openBtn = document.getElementById("openCamera");
   const stopBtn = document.getElementById("stopCamera");
   const barcodeInput = document.getElementById("barcodeInput");
   const detectedCodeEl = document.getElementById("detectedCode");
+  const toastEl = document.getElementById("scannerToast");
 
   let scanning = false;
   let lastAccepted = null;
   let scanLocked = false;
-  const SCAN_COOLDOWN_MS = 1500;
+  const SCAN_COOLDOWN_MS = 1200;
   const DUPLICATE_TIMEOUT = 1500;
-  const REQUIRED_CONFIRMS = 3;
+  const REQUIRED_CONFIRMS = 3;    // require 3 consistent reads within window
   const WINDOW_MS = 1200;
   const readCounts = new Map();
+
+  // UPC lookup endpoint
+  const UPC_API_TRIAL = "https://api.upcitemdb.com/prod/trial/lookup?upc=";
+
+  function toast(msg){
+    if(!toastEl) return;
+    toastEl.textContent = msg;
+    setTimeout(()=> { if(toastEl) toastEl.textContent=''; }, 2800);
+  }
 
   function registerRead(code) {
     const now = Date.now();
@@ -220,7 +238,8 @@ document.addEventListener("DOMContentLoaded", () => {
     rec.count += 1;
     rec.lastSeen = now;
     readCounts.set(code, rec);
-    for (const [k, v] of readCounts.entries()) {
+    // cleanup old entries
+    for (const [k, v] of Array.from(readCounts.entries())) {
       if (now - v.lastSeen > WINDOW_MS) readCounts.delete(k);
     }
     return rec.count;
@@ -238,57 +257,103 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function acceptCode(code) {
+  // main acceptance: check local inventory first; if not found fetch UPC API and redirect to add-product
+  async function acceptCode(code) {
     const now = Date.now();
     if (lastAccepted && lastAccepted.code === code && now - lastAccepted.time < DUPLICATE_TIMEOUT) return;
     lastAccepted = { code, time: now };
     detectedCodeEl.textContent = "Confirmed: " + code;
+
+    // set the hidden barcode input for compatibility
     if (barcodeInput) {
       barcodeInput.value = code;
       barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
       barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
+
     try {
+      // check in local products
       if (typeof getProducts === 'function') {
         const products = getProducts() || [];
-        const found = products.find(p => String(p.barcode) === String(code));
+        const found = products.find(p => String(p.barcode) === String(code) || String(p.upc) === String(code));
         if (found) {
+          // product exists -> add to bill
+          toast('Product found locally — adding to cart');
           if (typeof window.addToBill === 'function') {
             window.addToBill(found.id);
             return;
-          } else {
-            localStorage.setItem('temp_add_product_id', found.id);
-            window.location.href = 'billing.html';
-            return;
           }
-        } else {
-          localStorage.setItem('temp_new_barcode', String(code));
-          window.location.href = 'products.html';
-          return;
         }
       }
-    } catch (e) {
-      console.warn('Barcode handling lookup failed', e);
+
+      // not found locally -> fetch from UPCItemDB trial
+      toast('Not found locally — fetching details from UPC database...');
+      let res = await fetch(UPC_API_TRIAL + encodeURIComponent(code));
+      if (!res.ok) {
+        // server error / rate limit
+        console.warn('UPC API returned status', res.status);
+        // still redirect user to products page with barcode so they can add manually
+        localStorage.setItem('temp_new_barcode', String(code));
+        toast('UPC lookup failed; opening product add screen');
+        window.location.href = 'products.html';
+        return;
+      }
+      const data = await res.json();
+
+      // build the newProductData object safely
+      const newProductData = { barcode: String(code), name: '', mrp: '', brand: '', rawApi: data };
+
+      if (data && data.code === 'OK' && Array.isArray(data.items) && data.items.length > 0) {
+        const item = data.items[0];
+        newProductData.name = (item.title || item.description || '').trim();
+        // try offers -> price
+        if (item.offers && item.offers.length) {
+          const p = item.offers.find(o => o.price !== undefined && o.price !== null);
+          if (p) newProductData.mrp = p.price;
+        }
+        newProductData.brand = item.brand || item.manufacturer || '';
+      } else {
+        // not found in DB
+        newProductData.name = '';
+      }
+
+      // save to localStorage for products page to pick up
+      localStorage.setItem('newProductData', JSON.stringify(newProductData));
+      toast('Opening Add Product page (auto-filled)');
+
+      // redirect to products page where add-product UI will auto-fill
+      window.location.href = 'products.html';
+    } catch (err) {
+      console.error('acceptCode error', err);
+      localStorage.setItem('temp_new_barcode', String(code));
+      toast('Unexpected error — opening product page for manual add');
+      window.location.href = 'products.html';
     }
   }
 
+  // Quagga + BarcodeDetector fallback setup (keeps your existing preferences)
+  let codeReader = null;
+  let quaggaActive = false;
+
   function startQuagga() {
-    if (scanning) return;
+    if (quaggaActive) return;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Camera API not supported on this browser.");
       return;
     }
-    scanning = true;
+    quaggaActive = true;
     stopBtn.style.display = "inline-block";
+    toast('Camera scan started');
+
     Quagga.init({
       inputStream: {
         name: "Live",
         type: "LiveStream",
         target: scannerContainer,
         constraints: {
-          width: { ideal: 600 },
-          height: { ideal: 180 },
-           aspectRatio: { ideal: 3.3 },
+          width: { ideal: 800 },
+          height: { ideal: 300 },
+          aspectRatio: { ideal: 2.6 },
           facingMode: "environment"
         }
       },
@@ -301,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, function(err) {
       if (err) {
         console.error("Quagga init error:", err);
-        scanning = false;
+        quaggaActive = false;
         stopBtn.style.display = "none";
         startBarcodeDetectorFallback();
         return;
@@ -320,16 +385,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function stopScanner() {
-    if (!scanning) return;
+  function stopQuagga() {
+    if (!quaggaActive) return;
     try { Quagga.offDetected(); } catch (e) {}
     try { Quagga.stop(); } catch (e) {}
-    scanning = false;
+    quaggaActive = false;
     stopBtn.style.display = "none";
     scannerContainer.innerHTML = "";
     detectedCodeEl.textContent = "";
     readCounts.clear();
     lastAccepted = null;
+    toast('Scanner stopped');
   }
 
   async function startBarcodeDetectorFallback() {
@@ -356,11 +422,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    scanning = true;
+    quaggaActive = true;
     stopBtn.style.display = "inline-block";
+    toast('Camera scan started (fallback)');
 
     const tick = async () => {
-      if (!scanning) {
+      if (!quaggaActive) {
         if (stream) stream.getTracks().forEach(t => t.stop());
         return;
       }
@@ -379,7 +446,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   openBtn.addEventListener('click', async () => {
-    if (scanning) return;
+    if (quaggaActive) return;
     if ('BarcodeDetector' in window) {
       await startBarcodeDetectorFallback();
     } else {
@@ -387,13 +454,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  stopBtn.addEventListener('click', stopScanner);
+  stopBtn.addEventListener('click', () => {
+    if ('BarcodeDetector' in window && quaggaActive) {
+      // stop manual stream if running
+      quaggaActive = false;
+      scannerContainer.innerHTML = "";
+      stopBtn.style.display = "none";
+      toast('Scanner stopped');
+    } else {
+      stopQuagga();
+    }
+  });
+
+  // Expose handleScannedCandidate to other modules if needed
+  window.handleScannedCandidate = handleScannedCandidate;
 });
 </script>
 
 </body>
 </html>
-
 
 
 
