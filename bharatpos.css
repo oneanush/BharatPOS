@@ -666,3 +666,36 @@ body:not(.intro-page)::after {
   border-radius:8px;
 }
 
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    z-index: 9999;
+}
+
+.global-logo {
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;    /* makes it circular */
+    object-fit: cover;     /* prevents distortion */
+}
+
+.header-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 10;
+}
+
+.app-header {
+    background: transparent; /* or white if needed */
+}
+
+
+
