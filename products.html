@@ -192,9 +192,86 @@ function deleteProductConfirm(pid){
   alert("Product deleted successfully!");
 }
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+
+    /* --------------------------
+       1. Load Profile
+    --------------------------- */
+    const profile = JSON.parse(localStorage.getItem("bharatpos_user") || "{}");
+    document.getElementById("profileName").textContent =
+        profile.name ? "👤 " + profile.name : "👤 Guest";
+
+    /* --------------------------
+       2. Render Products
+    --------------------------- */
+    if (typeof renderProducts === "function") renderProducts();
+
+    /* --------------------------
+       3. BARCODE SCANNED FROM BILLING PAGE
+    --------------------------- */
+    const scanned = localStorage.getItem("temp_new_barcode");
+
+    if (scanned) {
+        // fill the barcode
+        const fieldBarcode = document.getElementById("productBarcode");
+        fieldBarcode.value = scanned;
+
+        // clear after use
+        localStorage.removeItem("temp_new_barcode");
+
+        // fetch item details
+        await fetchProductFromAPI(scanned);
+    }
+
+    /* --------------------------
+       4. If advanced scanner data exists
+    --------------------------- */
+    const adv = JSON.parse(localStorage.getItem("newProductData") || "{}");
+
+    if (adv.barcode) document.getElementById("productBarcode").value = adv.barcode;
+    if (adv.name)    document.getElementById("productName").value = adv.name;
+    if (adv.mrp)     document.getElementById("productMRP").value = adv.mrp;
+    if (adv.brand)   document.getElementById("brand").value = adv.brand;
+
+    localStorage.removeItem("newProductData");
+});
+
+
+/* ==============================
+   API FETCH FUNCTION
+============================== */
+async function fetchProductFromAPI(barcode) {
+    const nameField  = document.getElementById("productName");
+    const mrpField   = document.getElementById("productMRP");
+    const brandField = document.getElementById("brand");
+
+    try {
+        const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.items || !data.items.length) return;
+
+        const item = data.items[0];
+
+        if (item.title) nameField.value = item.title;
+        if (item.brand) brandField.value = item.brand;
+
+        if (item.offers && item.offers.length > 0)
+            mrpField.value = item.offers[0].price || "";
+        else if (item.lowest_recorded_price)
+            mrpField.value = item.lowest_recorded_price;
+
+    } catch (err) {
+        console.log("API Error:", err);
+    }
+}
+</script>
 
 </body>
 </html>
+
 
 
 
