@@ -470,9 +470,52 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleScannedCandidate = handleScannedCandidate;
 });
 </script>
+<script>
+async function onBarcodeDetected(barcode) {
+    // Save barcode alone for fallback
+    localStorage.setItem("temp_new_barcode", barcode);
+
+    try {
+        // Fetch details from OpenFoodFacts API
+        const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data || !data.product) {
+            console.log("No product found for this barcode");
+            window.location.href = "products.html";
+            return;
+        }
+
+        // Extract fields
+        const name = data.product.product_name || "";
+        const brand = data.product.brands || "";
+        const mrp = data.product.price || ""; // many products don’t include price
+
+        // Prepare object
+        const obj = {
+            barcode,
+            name,
+            brand,
+            mrp
+        };
+
+        // Save to localStorage so product page can read it
+        localStorage.setItem("newProductData", JSON.stringify(obj));
+
+        // Move to product page
+        window.location.href = "products.html";
+
+    } catch (err) {
+        console.error("Error fetching product details:", err);
+        window.location.href = "products.html";
+    }
+}
+</script>
 
 </body>
 </html>
+
 
 
 
