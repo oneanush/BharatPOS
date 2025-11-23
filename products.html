@@ -165,24 +165,22 @@ function deleteProductConfirm(pid){
 </script>
 
 <script>
-/* HANDLE SAVE PRODUCT */
-async function handleAddProduct(event){
-  event.preventDefault();
+document.addEventListener("DOMContentLoaded", () => {
+  const data = JSON.parse(localStorage.getItem("newProductData") || "{}");
 
-  await addProduct();   // from bharatpos.js
-  renderProducts();     // update UI
+  if (data.barcode) document.getElementById("productBarcode").value = data.barcode;
+  if (data.name) document.getElementById("productName").value = data.name;
+  if (data.mrp) document.getElementById("productMRP").value = data.mrp;
+  if (data.brand) document.getElementById("brand").value = data.brand;
 
-  document.getElementById('productName').value = '';
-  document.getElementById('productMRP').value = '';
-  document.getElementById('brand').value = '';
-  document.getElementById('productStock').value = '';
-  document.getElementById('productCategory').value = '';
-  // keep barcode after scan
-}
+  localStorage.removeItem("newProductData");
+});
 </script>
+
 
 </body>
 </html>
+
 
 
 
