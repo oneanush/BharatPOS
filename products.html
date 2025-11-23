@@ -175,11 +175,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   localStorage.removeItem("newProductData");
 });
+
+
+if (localStorage.getItem("auto_barcode")) {
+    document.getElementById("barcode").value =
+        localStorage.getItem("auto_barcode");
+
+    if (localStorage.getItem("auto_name"))
+        document.getElementById("name").value =
+            localStorage.getItem("auto_name");
+
+    if (localStorage.getItem("auto_brand"))
+        document.getElementById("brand").value =
+            localStorage.getItem("auto_brand");
+
+    if (localStorage.getItem("auto_mrp"))
+        document.getElementById("mrp").value =
+            localStorage.getItem("auto_mrp");
+
+    // Clear memory
+    localStorage.removeItem("auto_barcode");
+    localStorage.removeItem("auto_name");
+    localStorage.removeItem("auto_brand");
+    localStorage.removeItem("auto_mrp");
+}
 </script>
-
-
 </body>
 </html>
+
 
 
 
