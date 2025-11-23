@@ -924,5 +924,30 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 });
 
+async function fetchProductData(barcode) {
+    const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.items || data.items.length === 0) {
+            return null;
+        }
+
+        const item = data.items[0];
+
+        return {
+            name: item.title || "",
+            brand: item.brand || "",
+            mrp: item.lowest_recorded_price || ""
+        };
+
+    } catch (err) {
+        console.error("API Error:", err);
+        return null;
+    }
+}
+
 
 
