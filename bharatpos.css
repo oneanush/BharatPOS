@@ -700,3 +700,12 @@ body:not(.intro-page)::after {
 
 
 
+.scanner-box input{
+  width:100%;
+  padding:10px;
+  font-size:18px;
+  margin-bottom:10px;
+  border:2px solid #0b5ed7;
+  border-radius:8px;
+}
+
