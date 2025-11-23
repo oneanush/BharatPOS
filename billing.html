@@ -187,6 +187,11 @@
   <!-- Invoice Modal -->
   <div id="invoiceModal" class="card hidden" style="max-width:700px;margin:20px auto">
     <div id="invoiceContent"></div>
+    <div style="text-align:center; margin-top:10px;">
+    <img id="invoiceQR" style="width:120px; display:none;">
+    <p style="font-size:13px;margin:0;">Scan to Pay</p>
+</div>
+
     <div style="text-align:right;margin-top:8px">
       <button onclick="window.print()">Print</button>
       <button onclick="closeInvoice()">Close</button>
@@ -391,10 +396,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   stopBtn.addEventListener('click', stopScanner);
 });
+  const invoiceQR = document.getElementById("invoiceQR");
+const storedQR = localStorage.getItem("upiQR");
+
+if (storedQR) {
+    invoiceQR.src = storedQR;
+    invoiceQR.style.display = "block";
+} else {
+    invoiceQR.style.display = "none";
+}
+
+
 </script>
 
 </body>
 </html>
+
 
 
 
