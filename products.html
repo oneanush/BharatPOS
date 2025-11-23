@@ -8,6 +8,46 @@
   <script src="bharatpos.js" defer></script>
 </head>
 <body>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const barcodeField = document.getElementById("barcode");
+    const nameField = document.getElementById("productName");
+    const mrpField = document.getElementById("mrp");
+
+    // 1. Get barcode passed from billing
+    const scanned = localStorage.getItem("temp_new_barcode");
+
+    if (scanned) {
+        barcodeField.value = scanned;
+
+        // remove storage so it does not repeat
+        localStorage.removeItem("temp_new_barcode");
+
+        // 2. AUTO FETCH product details
+        try {
+            const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${scanned}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data && data.items && data.items.length > 0) {
+                const item = data.items[0];
+
+                // Auto fill name
+                if (item.title) nameField.value = item.title;
+
+                // Auto fill MRP / price
+                if (item.offers && item.offers.length > 0) {
+                    mrpField.value = item.offers[0].price || "";
+                } else if (item.lowest_recorded_price) {
+                    mrpField.value = item.lowest_recorded_price;
+                }
+            }
+        } catch (err) {
+            console.log("API error:", err);
+        }
+    }
+});
+</script>
 
 <nav>
   <a href="sales.html">Sales</a>
@@ -202,6 +242,7 @@ if (localStorage.getItem("auto_barcode")) {
 </script>
 </body>
 </html>
+
 
 
 
