@@ -250,41 +250,9 @@ document.addEventListener("DOMContentLoaded", () => {
     barcodeScanInterval = null;
   }
 
-  // Start camera: show video, enable barcode + product details scanning
-  startBtn.addEventListener('click', async () => {
-    // Try to request camera, show errors if not available
-    try {
-      let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio:false });
-      cameraStream = stream;
-      video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        video.play();
-        showVideo(true);
-        if ('BarcodeDetector' in window) startBarcodeScan();
-      }
-    } catch (err) {
-      camError.textContent = "Camera access denied or unavailable: " + err.message + ". Make sure you're using HTTPS and have given camera permission.";
-      camError.style.display = "block";
-      showVideo(false);
-    }
-  });
-
-  stopBtn.addEventListener('click', () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(t => t.stop());
-      cameraStream = null;
-      video.srcObject = null;
-    }
-    showVideo(false);
-    loader.classList.remove("active");
-    fieldsBox.style.display = "none";
-    stopBarcodeScan();
-  });
-
-  // ---- AI Product Details with Gemini (enhanced prompt + output parsing) ----
- // Call your Node.js proxy backend, NOT Google endpoint!
-async function aiDetectProductDetails(imageDataUrl) {
-  const prompt = `
+  // --- Gemini AI detection via backend proxy ---
+  async function aiDetectProductDetails(imageDataUrl) {
+    const prompt = `
 You are an expert AI for extracting product information from real-world Indian retail packaging and FMCG labels.
 
 Your goal: Analyze the product image and reason visually (do NOT require explicit text like "name:") to infer:
@@ -301,25 +269,24 @@ Output only this JSON object, with Hindi or other scripts transliterated as need
 {"name":"...", "brand":"...", "price":"...", "barcode":"...", "category":"...", "tax":"..."}
 
 If a field is completely missing, use empty string "".
-  `;
-  const resp = await fetch('http://localhost:5185/gemini-predict', {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageDataUrl, prompt })
-  });}
-  return await resp.json();
+    `;
+    const resp = await fetch('http://localhost:5185/gemini-predict', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageDataUrl, prompt })
+    });
+    const result = await resp.json();
 
-
-    const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text 
-      || result?.predictions?.[0]?.content?.text 
-      || "";
+    const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text
+              || result?.predictions?.[0]?.content?.text
+              || "";
     try {
       const jsonStrMatch = text.match(/{[\s\S]*}/);
       if (!jsonStrMatch) throw new Error("No JSON found in AI output");
       const data = JSON.parse(jsonStrMatch[0]);
       return data;
     } catch(e) {
-      return {};
+      return {}; // Fallback if no JSON was found
     }
   }
 
@@ -378,6 +345,7 @@ If a field is completely missing, use empty string "".
 </script>
 </body>
 </html>
+
 
 
 
