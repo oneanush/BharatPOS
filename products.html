@@ -368,11 +368,57 @@ If unknown, use empty string "".
     if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
     stopBarcodeScan();
   });
+  console.log("=== Starting AI Detection ===");
+console.log("Camera active:", !!cameraStream);
+console.log("Video readyState:", video.readyState);
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+console.log("Canvas size:", canvas.width, canvas.height);
+
+const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+console.log("Image Data URL length:", dataUrl.length);
+
+// Test backend
+try {
+    console.log("Sending POST to backend...");
+    const resp = await fetch("http://localhost:5185/gemini-predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            instances: [{
+                prompt: "Test request from Bharat POS",
+                image: dataUrl
+            }]
+        })
+    });
+
+    console.log("Backend response status:", resp.status);
+
+    const text = await resp.text();
+    console.log("Raw backend response:", text);
+
+    // Try parse JSON
+    let result = {};
+    try {
+        result = JSON.parse(text);
+    } catch (e) {
+        console.error("JSON Parse Error:", e);
+    }
+
+    console.log("Final parsed result:", result);
+
+} catch (err) {
+    console.error("AI detection failed:", err);
+}
+
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
