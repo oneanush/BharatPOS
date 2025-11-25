@@ -250,9 +250,36 @@ document.addEventListener("DOMContentLoaded", () => {
     barcodeScanInterval = null;
   }
 
-  startBtn.addEventListener('click', async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio:false });
+startBtn.addEventListener('click', async () => {
+  try {
+    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+
+    const constraints = isMobile
+      ? { video: { facingMode: { ideal: "environment" } }, audio: false }
+      : { video: true, audio: false };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    cameraStream = stream;
+    video.srcObject = stream;
+
+    video.onloadedmetadata = () => {
+      video.play();
+      showVideo(true);
+
+      if ('BarcodeDetector' in window) startBarcodeScan();
+    };
+
+  } catch(err) {
+    const camError = document.getElementById('aiCamError');
+    if (camError) {
+      camError.textContent = "Camera error: " + err.message;
+      camError.style.display = "block";
+    }
+    showVideo(false);
+  }
+});
+
       cameraStream = stream;
       video.srcObject = stream;
       video.onloadedmetadata = () => {
@@ -418,6 +445,7 @@ try {
 
 </body>
 </html>
+
 
 
 
