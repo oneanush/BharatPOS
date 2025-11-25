@@ -280,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---- AI Product Details with Gemini (smart prompt + output parsing) ----
   async function aiDetectProductDetails(imageDataUrl) {
     const endpoint = "https://asia-south1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0257924792/locations/asia-south1/publishers/google/models/gemini-3-pro:predict";
-    const apiKey = "YOUR_API_KEY_HERE"; // <-- Replace with your actual API key
+    const apiKey = "AIzaSyCZcdjSy6exAUpSW2WPHu8BdY2010RtSAg"; // <-- Replace with your actual API key
     const payload = {
       instances: [{
         prompt: "You are an AI assistant for Indian retail. Extract and output in JSON as { name, brand, price, barcode, category, tax } from the image of the product label or packaging.",
@@ -367,6 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
