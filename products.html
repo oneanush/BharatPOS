@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---- AI Product Details with Gemini (enhanced prompt + output parsing) ----
   async function aiDetectProductDetails(imageDataUrl) {
-    const endpoint = "https://asia-south1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0257924792/locations/asia-south1/publishers/google/models/gemini-1.5-flash:predict";
+    const endpoint = "https://asia-south1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0257924792/locations/asia-south1/publishers/google/models/gemini-3-pro:predict";
     const apiKey = "AIzaSyCZcdjSy6exAUpSW2WPHu8BdY2010RtSAg"; // <-- Replace with your actual API key
     const payload = {
       instances: [{
@@ -383,4 +383,5 @@ If a field is completely missing, use empty string "".
 </script>
 </body>
 </html>
+
 
