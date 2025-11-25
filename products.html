@@ -117,91 +117,6 @@
 </div>
 
 <script>
-function renderProducts(){
-  const products = getProducts();
-  if(products.length===0) { document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; return;}
-  let html = '<table><tr><th>Name</th><th>Brand</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Barcode</th><th>Action</th></tr>';
-  products.forEach(p=>{
-    html += `
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.brand || ''}</td>
-        <td>${p.price}</td>
-        <td>${p.stock}</td>
-        <td>${p.taxPercent}%</td>
-        <td>${p.category}</td>
-        <td>${p.barcode || ''}</td>
-        <td>
-          <button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button>
-        </td>
-      </tr>`;
-  });
-  html += '</table>';
-  document.getElementById('productsList').innerHTML = html;
-}
-document.addEventListener('DOMContentLoaded', ()=>{
-  renderProducts();
-  const temp = localStorage.getItem("temp_new_barcode");
-  if (temp) {
-    const barcodeField = document.getElementById("productBarcode");
-    if (barcodeField) barcodeField.value = temp;
-    localStorage.removeItem("temp_new_barcode");
-  }
-});
-
-function loadUser(){
-  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  if(data.name){
-    document.getElementById('profileName').textContent = "👤 " + data.name;
-  } else {
-    document.getElementById('profileName').textContent = "👤 Guest";
-  }
-}
-loadUser();
-
-function deleteProductConfirm(pid){
-  if(!confirm("Are you sure you want to delete this product?")) return;
-  let products = getProducts();
-  products = products.filter(p => p.id !== pid);
-  saveProducts(products);
-  renderProducts();
-  alert("Product deleted successfully!");
-}
-
-async function handleAddProduct(event){
-  if(event && event.preventDefault) event.preventDefault();
-  try {
-    await addProduct();
-    renderProducts();
-    const form = document.getElementById('productForm');
-    if(form) {
-      document.getElementById('productName').value = '';
-      document.getElementById('productBrand').value = '';
-      document.getElementById('productPrice').value = '';
-      document.getElementById('productStock').value = '';
-      document.getElementById('productTax').value = '';
-      document.getElementById('productCategory').value = '';
-    }
-  } catch (err) {
-    console.error('Error adding product:', err);
-    alert('Failed to add product. See console for details.');
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const barcode = localStorage.getItem("temp_new_barcode");
-  if (barcode) {
-    const barcodeField = document.getElementById("productBarcode");
-    if (barcodeField) {
-      barcodeField.value = barcode;
-      barcodeField.focus();
-    }
-    localStorage.removeItem("temp_new_barcode");
-  }
-});
-</script>
-
-<script>
 (function() {
   const startBtn = document.getElementById('aiStartBtn');
   const stopBtn = document.getElementById('aiStopBtn');
@@ -250,9 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
     barcodeScanInterval = null;
   }
 
-  // Start camera: show video, enable barcode + product details scanning
   startBtn.addEventListener('click', async () => {
-    // Try to request camera, show errors if not available
     try {
       let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio:false });
       cameraStream = stream;
@@ -281,34 +194,31 @@ document.addEventListener("DOMContentLoaded", () => {
     stopBarcodeScan();
   });
 
-  // ---- AI Product Details with Gemini (enhanced prompt + output parsing) ----
+  // ---- AI Product Details with Local Gemini Backend ----
   async function aiDetectProductDetails(imageDataUrl) {
-    const endpoint = "https://asia-south1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0257924792/locations/asia-south1/publishers/google/models/gemini-3-pro:predict";
-    const apiKey = "YOUR_API_KEY_HERE"; // <-- Replace with your actual API key
+    const endpoint = "http://localhost:5185/gemini-predict";
     const payload = {
       instances: [{
         prompt: `
 You are an expert AI for extracting product information from real-world Indian retail packaging and FMCG labels.
 
-Your goal: Analyze the product image and reason visually (do NOT require explicit text like "name:") to infer:
-- name: The main product name shown aesthetically or as the largest central text/logo (e.g., "Vaseline" on a jar/tube)
-- brand: The manufacturer, parent company, or any branding (e.g. "Unilever", "HUL", "Dabur"). Look for logos, small print, or typical Indian branding cues.
-- price: Any visible MRP, written as 'xx INR', ignoring offers/discounts.
-- barcode: Any readable barcode numbers. If not shown, leave blank.
-- category: The likely Indian retail product category (e.g., cosmetics, food, beverage, medicine, stationary)
-- tax: Visible GST, VAT, or Tax percentage (%)
+Your goal: Analyze the product image and reason visually to infer:
+- name: main product name
+- brand: manufacturer or branding
+- price: visible MRP in INR
+- barcode: any readable barcode numbers
+- category: likely product category (cosmetics, food, etc.)
+- tax: visible GST, VAT, or Tax %
 
-You must use all visible design, shape, branding, size, and textual clues. If fields are ambiguous, make the *most logical guess*.
-
-Output only this JSON object, with Hindi or other scripts transliterated as needed:
+Output only this JSON:
 {"name":"...", "brand":"...", "price":"...", "barcode":"...", "category":"...", "tax":"..."}
 
-If a field is completely missing, use empty string "".
+If a field is missing, use "".
         `,
         image: imageDataUrl
       }]
     };
-    const resp = await fetch(`${endpoint}?key=${apiKey}`, {
+    const resp = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -342,30 +252,13 @@ If a field is completely missing, use empty string "".
 
       fieldsBox.innerHTML = "";
       let infos = [];
-      if (result.name) {
-        document.getElementById('productName').value = result.name;
-        infos.push("<b>Name:</b> " + result.name);
-      }
-      if (result.brand) {
-        document.getElementById('productBrand').value = result.brand;
-        infos.push("<b>Brand:</b> " + result.brand);
-      }
-      if (result.price) {
-        document.getElementById('productPrice').value = result.price;
-        infos.push("<b>Price:</b> " + result.price);
-      }
-      if (result.category) {
-        document.getElementById('productCategory').value = result.category;
-        infos.push("<b>Category:</b> " + result.category);
-      }
-      if (result.tax !== undefined) {
-        document.getElementById('productTax').value = result.tax;
-        infos.push("<b>Tax %:</b> " + result.tax);
-      }
-      if (result.barcode) {
-        document.getElementById('productBarcode').value = result.barcode;
-        infos.push("<b>Barcode:</b> " + result.barcode);
-      }
+      if (result.name) { document.getElementById('productName').value = result.name; infos.push("<b>Name:</b> " + result.name); }
+      if (result.brand) { document.getElementById('productBrand').value = result.brand; infos.push("<b>Brand:</b> " + result.brand); }
+      if (result.price) { document.getElementById('productPrice').value = result.price; infos.push("<b>Price:</b> " + result.price); }
+      if (result.category) { document.getElementById('productCategory').value = result.category; infos.push("<b>Category:</b> " + result.category); }
+      if (result.tax !== undefined) { document.getElementById('productTax').value = result.tax; infos.push("<b>Tax %:</b> " + result.tax); }
+      if (result.barcode) { document.getElementById('productBarcode').value = result.barcode; infos.push("<b>Barcode:</b> " + result.barcode); }
+
       fieldsBox.innerHTML = infos.length ? infos.join("\n") : "<span class='ai-error'>No details detected.</span>";
       fieldsBox.style.display = "block";
     } catch (err) {
@@ -381,8 +274,10 @@ If a field is completely missing, use empty string "".
   });
 })();
 </script>
+
 </body>
 </html>
+
 
 
 
