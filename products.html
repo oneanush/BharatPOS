@@ -115,7 +115,6 @@
     <div id="productsList"></div>
   </div>
 </div>
-
 <script>
 (function() {
   const startBtn = document.getElementById('aiStartBtn');
@@ -139,7 +138,6 @@
     camError.style.display = 'none';
   }
 
-  // --- LIVE BARCODE DETECTION ---
   async function startBarcodeScan() {
     if (!('BarcodeDetector' in window)) return;
     const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128'] });
@@ -156,7 +154,7 @@
           fieldsBox.style.display = "block";
           fieldsBox.innerHTML = `<b>Barcode:</b> ${barcodes[0].rawValue}`;
         }
-      } catch (e) { /* Ignore */ }
+      } catch (e) {}
     }, 700);
   }
 
@@ -176,7 +174,7 @@
         if ('BarcodeDetector' in window) startBarcodeScan();
       }
     } catch (err) {
-      camError.textContent = "Camera access denied or unavailable: " + err.message + ". Make sure you're using HTTPS and have given camera permission.";
+      camError.textContent = "Camera access denied or unavailable: " + err.message;
       camError.style.display = "block";
       showVideo(false);
     }
@@ -194,52 +192,43 @@
     stopBarcodeScan();
   });
 
-  // ---- AI Product Details with Local Gemini Backend ----
   async function aiDetectProductDetails(imageDataUrl) {
-    const endpoint = "http://localhost:5185/gemini-predict";
-    const payload = {
-      instances: [{
-        prompt: `
-You are an expert AI for extracting product information from real-world Indian retail packaging and FMCG labels.
-
-Your goal: Analyze the product image and reason visually to infer:
-- name: main product name
-- brand: manufacturer or branding
-- price: visible MRP in INR
-- barcode: any readable barcode numbers
-- category: likely product category (cosmetics, food, etc.)
-- tax: visible GST, VAT, or Tax %
-
-Output only this JSON:
-{"name":"...", "brand":"...", "price":"...", "barcode":"...", "category":"...", "tax":"..."}
-
-If a field is missing, use "".
-        `,
-        image: imageDataUrl
-      }]
-    };
-    const resp = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const result = await resp.json();
-
-    const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text 
-      || result?.predictions?.[0]?.content?.text 
-      || "";
     try {
-      const jsonStrMatch = text.match(/{[\s\S]*}/);
-      if (!jsonStrMatch) throw new Error("No JSON found in AI output");
-      const data = JSON.parse(jsonStrMatch[0]);
-      return data;
-    } catch(e) {
+      const endpoint = "http://localhost:5185/gemini-predict";
+      const payload = {
+        instances: [{
+          prompt: `
+You are an expert AI for extracting product information from Indian retail product labels.
+Output JSON only: {"name":"...", "brand":"...", "price":"...", "barcode":"...", "category":"...", "tax":"..."}
+If unknown, use "".
+          `,
+          image: imageDataUrl
+        }]
+      };
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await resp.json();
+      const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text
+        || result?.predictions?.[0]?.content?.text
+        || "";
+      const match = text.match(/{[\s\S]*}/);
+      if (!match) return {};
+      return JSON.parse(match[0]);
+    } catch (err) {
+      console.error("AI detection failed:", err);
       return {};
     }
   }
 
   detectBtn.addEventListener('click', async () => {
-    if (!cameraStream) { fieldsBox.innerHTML = "<span class='ai-error'>No camera started.</span>"; fieldsBox.style.display="block"; return; }
+    if (!cameraStream) {
+      fieldsBox.innerHTML = "<span class='ai-error'>No camera started.</span>";
+      fieldsBox.style.display="block";
+      return;
+    }
     loader.classList.add("active");
     fieldsBox.style.display = "none";
     try {
@@ -251,7 +240,7 @@ If a field is missing, use "".
       const result = await aiDetectProductDetails(dataUrl);
 
       fieldsBox.innerHTML = "";
-      let infos = [];
+      const infos = [];
       if (result.name) { document.getElementById('productName').value = result.name; infos.push("<b>Name:</b> " + result.name); }
       if (result.brand) { document.getElementById('productBrand').value = result.brand; infos.push("<b>Brand:</b> " + result.brand); }
       if (result.price) { document.getElementById('productPrice').value = result.price; infos.push("<b>Price:</b> " + result.price); }
@@ -259,13 +248,15 @@ If a field is missing, use "".
       if (result.tax !== undefined) { document.getElementById('productTax').value = result.tax; infos.push("<b>Tax %:</b> " + result.tax); }
       if (result.barcode) { document.getElementById('productBarcode').value = result.barcode; infos.push("<b>Barcode:</b> " + result.barcode); }
 
-      fieldsBox.innerHTML = infos.length ? infos.join("\n") : "<span class='ai-error'>No details detected.</span>";
+      fieldsBox.innerHTML = infos.length ? infos.join("\n") : "<span class='ai-error'>No details detected. You can still add the product manually.</span>";
       fieldsBox.style.display = "block";
     } catch (err) {
-      fieldsBox.innerHTML = "<span class='ai-error'>Detection error.</span>";
+      console.error("AI detect error:", err);
+      fieldsBox.innerHTML = "<span class='ai-error'>Detection error. You can still add the product manually.</span>";
       fieldsBox.style.display = "block";
+    } finally {
+      loader.classList.remove("active");
     }
-    loader.classList.remove("active");
   });
 
   window.addEventListener("beforeunload", () => {
@@ -275,8 +266,11 @@ If a field is missing, use "".
 })();
 </script>
 
+
+
 </body>
 </html>
+
 
 
 
