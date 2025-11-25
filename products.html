@@ -280,19 +280,7 @@ startBtn.addEventListener('click', async () => {
   }
 });
 
-      cameraStream = stream;
-      video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        video.play();
-        showVideo(true);
-        if ('BarcodeDetector' in window) startBarcodeScan();
-      };
-    } catch(err) {
-      camError.textContent = "Camera error: " + err.message;
-      camError.style.display = "block";
-      showVideo(false);
-    }
-  });
+  
 
   stopBtn.addEventListener('click', () => {
     if (cameraStream) {
@@ -445,6 +433,7 @@ try {
 
 </body>
 </html>
+
 
 
 
