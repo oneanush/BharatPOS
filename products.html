@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
 <head>
@@ -35,6 +34,9 @@
     }
     .ai-error {
       color: #dc3545; font-weight: bold;
+    }
+    .ai-cam-error {
+      color: #e72929; font-weight: bold; padding: 5px; display: block;
     }
   </style>
 </head>
@@ -73,10 +75,10 @@
     <h3>AI Product Scanner</h3>
     <div>
       <div class="ai-video-container" id="aiVideoPreview">
-        <!-- Live video stream will appear here -->
         <video id="aiScannerVideo" autoplay muted playsinline style="width:100%;height:100%;display:none;border-radius:10px;background:#000;"></video>
         <canvas id="aiScannerCanvas" style="display:none;"></canvas>
         <span id="aiVideoPlaceholder" style="width:100%;text-align:center;color:#b5ccff;">Camera inactive</span>
+        <span id="aiCamError" class="ai-cam-error" style="display:none;"></span>
       </div>
       <div class="ai-scanner-controls">
         <button type="button" id="aiStartBtn">Start Camera</button>
@@ -87,7 +89,7 @@
       <div id="aiDetectedFields" class="ai-detected-fields" style="display:none;"></div>
     </div>
     <div style="font-size:13px;color:#555;margin-top:7px;">
-      Show the label/packaging flatly and clearly. <br>
+      Show the label/packaging flatly and clearly.<br>
       <b>Detected fields (barcode, brand, name, price, tax) auto-fill below.</b>
     </div>
   </div>
@@ -179,7 +181,6 @@ async function handleAddProduct(event){
       document.getElementById('productStock').value = '';
       document.getElementById('productTax').value = '';
       document.getElementById('productCategory').value = '';
-      // document.getElementById('productBarcode').value = '';
     }
   } catch (err) {
     console.error('Error adding product:', err);
@@ -200,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
-<!-- ********* ADVANCED AI + BARCODE SCANNER ********* -->
 <script>
 (function() {
   const startBtn = document.getElementById('aiStartBtn');
@@ -211,6 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const placeholder = document.getElementById('aiVideoPlaceholder');
   const loader = document.getElementById('aiLoader');
   const fieldsBox = document.getElementById('aiDetectedFields');
+  const camError = document.getElementById('aiCamError');
   let cameraStream = null;
   let barcodeScanInterval = null;
 
@@ -220,11 +221,12 @@ document.addEventListener("DOMContentLoaded", () => {
     detectBtn.style.display = active ? 'inline-block' : 'none';
     stopBtn.style.display = active ? 'inline-block' : 'none';
     startBtn.style.display = active ? 'none' : 'inline-block';
+    camError.style.display = 'none';
   }
 
   // --- LIVE BARCODE DETECTION ---
   async function startBarcodeScan() {
-    if (!('BarcodeDetector' in window)) return; // fallback possible for QuaggaJS if needed
+    if (!('BarcodeDetector' in window)) return;
     const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128'] });
     barcodeScanInterval = setInterval(async () => {
       if (!cameraStream || video.readyState !== video.HAVE_ENOUGH_DATA) return;
@@ -235,13 +237,12 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const barcodes = await detector.detect(canvas);
         if (barcodes.length) {
-          // Fill barcode field if detected
           document.getElementById('productBarcode').value = barcodes[0].rawValue;
           fieldsBox.style.display = "block";
           fieldsBox.innerHTML = `<b>Barcode:</b> ${barcodes[0].rawValue}`;
         }
       } catch (e) { /* Ignore */ }
-    }, 700); // scan every 700 ms
+    }, 700);
   }
 
   function stopBarcodeScan() {
@@ -251,16 +252,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Start camera: show video, enable barcode + product details scanning
   startBtn.addEventListener('click', async () => {
-    if (cameraStream) return;
+    // Try to request camera, show errors if not available
     try {
       let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio:false });
       cameraStream = stream;
       video.srcObject = stream;
-      video.play();
-      showVideo(true);
-      if ('BarcodeDetector' in window) startBarcodeScan();
+      video.onloadedmetadata = () => {
+        video.play();
+        showVideo(true);
+        if ('BarcodeDetector' in window) startBarcodeScan();
+      }
     } catch (err) {
-      alert("Camera access denied or unavailable: " + err.message);
+      camError.textContent = "Camera access denied or unavailable: " + err.message + ". Make sure you're using HTTPS and have given camera permission.";
+      camError.style.display = "block";
       showVideo(false);
     }
   });
@@ -277,29 +281,31 @@ document.addEventListener("DOMContentLoaded", () => {
     stopBarcodeScan();
   });
 
-  // ---- AI Product Details with Gemini (smart prompt + output parsing) ----
+  // ---- AI Product Details with Gemini (enhanced prompt + output parsing) ----
   async function aiDetectProductDetails(imageDataUrl) {
     const endpoint = "https://asia-south1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0257924792/locations/asia-south1/publishers/google/models/gemini-3-pro:predict";
     const apiKey = "AIzaSyCZcdjSy6exAUpSW2WPHu8BdY2010RtSAg"; // <-- Replace with your actual API key
     const payload = {
       instances: [{
-      prompt: `
-You are an expert product information extraction AI for Indian retail.
-From this product's packaging image, extract the following fields wherever possible:
+        prompt: `
+You are an expert AI for extracting product information from real-world Indian retail packaging and FMCG labels.
 
-- name: (the product name, such as "Vaseline")
-- brand: (the manufacturer or brand, such as "Unilever")
-- price: (the MRP or visible price, format as Indian rupees, eg. "90 INR")
-- barcode: (any visible numerical barcode, if present)
-- category: (typical store category, eg., cosmetics, snacks, etc)
-- tax: (tax percent or GST if visible)
+Your goal: Analyze the product image and reason visually (do NOT require explicit text like "name:") to infer:
+- name: The main product name shown aesthetically or as the largest central text/logo (e.g., "Vaseline" on a jar/tube)
+- brand: The manufacturer, parent company, or any branding (e.g. "Unilever", "HUL", "Dabur"). Look for logos, small print, or typical Indian branding cues.
+- price: Any visible MRP, written as 'xx INR', ignoring offers/discounts.
+- barcode: Any readable barcode numbers. If not shown, leave blank.
+- category: The likely Indian retail product category (e.g., cosmetics, food, beverage, medicine, stationary)
+- tax: Visible GST, VAT, or Tax percentage (%)
 
-Return only the JSON object with detected fields, and nothing else.
-If any field is not visible, leave it blank.
-Example response:
-{"name": "...", "brand": "...", "price": "...", "barcode": "...", "category": "...", "tax": "..."}
+You must use all visible design, shape, branding, size, and textual clues. If fields are ambiguous, make the *most logical guess*.
 
-`    image: imageDataUrl
+Output only this JSON object, with Hindi or other scripts transliterated as needed:
+{"name":"...", "brand":"...", "price":"...", "barcode":"...", "category":"...", "tax":"..."}
+
+If a field is completely missing, use empty string "".
+        `,
+        image: imageDataUrl
       }]
     };
     const resp = await fetch(`${endpoint}?key=${apiKey}`, {
@@ -309,12 +315,10 @@ Example response:
     });
     const result = await resp.json();
 
-    // Gemini will likely reply with text "{"name":..., ...}" in candidates/content
     const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text 
       || result?.predictions?.[0]?.content?.text 
       || "";
     try {
-      // Extract only the JSON object from the output text if possible
       const jsonStrMatch = text.match(/{[\s\S]*}/);
       if (!jsonStrMatch) throw new Error("No JSON found in AI output");
       const data = JSON.parse(jsonStrMatch[0]);
@@ -325,22 +329,19 @@ Example response:
   }
 
   detectBtn.addEventListener('click', async () => {
-    if (!cameraStream) return;
+    if (!cameraStream) { fieldsBox.innerHTML = "<span class='ai-error'>No camera started.</span>"; fieldsBox.style.display="block"; return; }
     loader.classList.add("active");
     fieldsBox.style.display = "none";
     try {
-      // Take snapshot from video
       canvas.width = video.videoWidth || 400;
       canvas.height = video.videoHeight || 200;
       canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
       let dataUrl = canvas.toDataURL("image/jpeg", 0.8);
 
-      // Call Gemini 3 Pro
       const result = await aiDetectProductDetails(dataUrl);
 
       fieldsBox.innerHTML = "";
       let infos = [];
-      // Fill fields if detected
       if (result.name) {
         document.getElementById('productName').value = result.name;
         infos.push("<b>Name:</b> " + result.name);
@@ -382,12 +383,3 @@ Example response:
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
