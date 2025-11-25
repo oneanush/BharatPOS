@@ -282,12 +282,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ---- AI Product Details with Gemini (enhanced prompt + output parsing) ----
-  async function aiDetectProductDetails(imageDataUrl) {
-    const endpoint = "https://asia-south1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0257924792/locations/asia-south1/publishers/google/models/gemini-3-pro:predict";
-    const apiKey = "AIzaSyB9ySsjqUrv8ATndzlvSZuFUXMNWJC5dQM"; // <-- Replace with your actual API key
-    const payload = {
-      instances: [{
-        prompt: `
+ // Call your Node.js proxy backend, NOT Google endpoint!
+async function aiDetectProductDetails(imageDataUrl) {
+  const prompt = `
 You are an expert AI for extracting product information from real-world Indian retail packaging and FMCG labels.
 
 Your goal: Analyze the product image and reason visually (do NOT require explicit text like "name:") to infer:
@@ -304,16 +301,14 @@ Output only this JSON object, with Hindi or other scripts transliterated as need
 {"name":"...", "brand":"...", "price":"...", "barcode":"...", "category":"...", "tax":"..."}
 
 If a field is completely missing, use empty string "".
-        `,
-        image: imageDataUrl
-      }]
-    };
-    const resp = await fetch(`${endpoint}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const result = await resp.json();
+  `;
+  const resp = await fetch('http://localhost:5185/gemini-predict', {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageDataUrl, prompt })
+  });
+  return await resp.json();
+
 
     const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text 
       || result?.predictions?.[0]?.content?.text 
@@ -383,6 +378,7 @@ If a field is completely missing, use empty string "".
 </script>
 </body>
 </html>
+
 
 
 
