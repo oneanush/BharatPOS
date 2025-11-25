@@ -343,8 +343,23 @@ If a field is completely missing, use empty string "".
   });
 })();
 </script>
+  <button id="camBtn">Open Camera</button>
+<video id="camVideo" style="width:300px;height:180px;" autoplay></video>
+<span id="camError"></span>
+<script>
+document.getElementById('camBtn').onclick = async () => {
+  try {
+    let stream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById('camVideo').srcObject = stream;
+    document.getElementById('camError').textContent = "Camera started!";
+  } catch (e) {
+    document.getElementById('camError').textContent = "Error: "+e.message;
+  }
+};
+</script>
 </body>
 </html>
+
 
 
 
