@@ -283,8 +283,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const apiKey = "AIzaSyCZcdjSy6exAUpSW2WPHu8BdY2010RtSAg"; // <-- Replace with your actual API key
     const payload = {
       instances: [{
-        prompt: "You are an AI assistant for Indian retail. Extract and output in JSON as { name, brand, price, barcode, category, tax } from the image of the product label or packaging.",
-        image: imageDataUrl
+      prompt: `
+You are an expert product information extraction AI for Indian retail.
+From this product's packaging image, extract the following fields wherever possible:
+
+- name: (the product name, such as "Vaseline")
+- brand: (the manufacturer or brand, such as "Unilever")
+- price: (the MRP or visible price, format as Indian rupees, eg. "90 INR")
+- barcode: (any visible numerical barcode, if present)
+- category: (typical store category, eg., cosmetics, snacks, etc)
+- tax: (tax percent or GST if visible)
+
+Return only the JSON object with detected fields, and nothing else.
+If any field is not visible, leave it blank.
+Example response:
+{"name": "...", "brand": "...", "price": "...", "barcode": "...", "category": "...", "tax": "..."}
+
+`    image: imageDataUrl
       }]
     };
     const resp = await fetch(`${endpoint}?key=${apiKey}`, {
@@ -367,6 +382,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
