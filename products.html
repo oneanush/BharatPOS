@@ -278,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---- AI Product Details with Gemini (smart prompt + output parsing) ----
   async function aiDetectProductDetails(imageDataUrl) {
-    const localbackend = "http://localhost:5185/gemini-predict";
+    const endpoint = "http://localhost:5185/gemini-predict";
     const apiKey = "AIzaSyB9ySsjqUrv8ATndzlvSZuFUXMNWJC5dQM"; // <-- Replace with your actual API key
     const payload = {
       instances: [{
@@ -366,6 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
