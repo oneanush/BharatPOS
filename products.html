@@ -83,6 +83,9 @@
         <button type="button" id="aiDetectBtn" style="display:none;">Detect Product Details</button>
         <span id="aiLoader" class="ai-loader"><span>Detecting...</span></span>
       </div>
+      <!-- insert this inside the AI card, e.g. right under the controls -->
+<div id="aiCamError" class="ai-error" style="display:none;margin-top:6px;"></div>
+
       <div id="aiDetectedFields" class="ai-detected-fields" style="display:none;"></div>
     </div>
     <div style="font-size:13px;color:#555;margin-top:7px;">
@@ -202,18 +205,22 @@ document.addEventListener("DOMContentLoaded", () => {
 <!-- ********* ADVANCED AI + BARCODE SCANNER ********* -->
 <script>
 (function() {
-  const startBtn = document.getElementById('aiStartBtn');
-  const stopBtn = document.getElementById('aiStopBtn');
+  // UI elements
+  const startBtn  = document.getElementById('aiStartBtn');
+  const stopBtn   = document.getElementById('aiStopBtn');
   const detectBtn = document.getElementById('aiDetectBtn');
-  const video = document.getElementById('aiScannerVideo');
-  const canvas = document.getElementById('aiScannerCanvas');
+  const video     = document.getElementById('aiScannerVideo');
+  const canvas    = document.getElementById('aiScannerCanvas');
   const placeholder = document.getElementById('aiVideoPlaceholder');
-  const loader = document.getElementById('aiLoader');
+  const loader    = document.getElementById('aiLoader');
   const fieldsBox = document.getElementById('aiDetectedFields');
-  const camError = document.getElementById('aiCamError');
+  const camError  = document.getElementById('aiCamError');
 
   let cameraStream = null;
   let barcodeScanInterval = null;
+
+  // Small safe helper
+  function log(...args){ console.log('[AI Scanner]', ...args); }
 
   function showVideo(active) {
     video.style.display = active ? 'block' : 'none';
@@ -221,27 +228,61 @@ document.addEventListener("DOMContentLoaded", () => {
     detectBtn.style.display = active ? 'inline-block' : 'none';
     stopBtn.style.display = active ? 'inline-block' : 'none';
     startBtn.style.display = active ? 'none' : 'inline-block';
-    camError.style.display = 'none';
+    if(camError) camError.style.display = 'none';
+  }
+
+  // Robust camera starter: try back camera (exact) then fallback
+  async function startCamera() {
+    // prefer exact environment, otherwise fallback to any camera
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+    } catch (err) {
+      // fallback to any camera
+      log('Exact environment camera failed, falling back to any camera:', err && err.message);
+      return await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
   }
 
   async function startBarcodeScan() {
-    if (!('BarcodeDetector' in window)) return;
+    if (!('BarcodeDetector' in window)) {
+      log('BarcodeDetector not supported in this browser.');
+      return;
+    }
+
+    // stop previous interval if any
+    stopBarcodeScan();
+
     const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128'] });
+
     barcodeScanInterval = setInterval(async () => {
-      if (!cameraStream || video.readyState !== video.HAVE_ENOUGH_DATA) return;
-      canvas.width = video.videoWidth || 400;
-      canvas.height = video.videoHeight || 200;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       try {
+        if (!cameraStream || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+        // ensure correct canvas size from actual video
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
         const barcodes = await detector.detect(canvas);
-        if (barcodes.length) {
-          const barcodeVal = barcodes[0].rawValue;
-          document.getElementById('productBarcode').value = barcodeVal;
-          fieldsBox.style.display = "block";
-          fieldsBox.innerHTML = `<b>Barcode detected:</b> ${barcodeVal}`;
+        if (barcodes && barcodes.length) {
+          const barcodeVal = barcodes[0].rawValue || barcodes[0].displayValue || '';
+          if (barcodeVal) {
+            const barcodeField = document.getElementById('productBarcode');
+            if (barcodeField) barcodeField.value = barcodeVal;
+            fieldsBox.style.display = "block";
+            fieldsBox.innerHTML = `<b>Barcode detected:</b> ${barcodeVal}`;
+            log('Barcode detected:', barcodeVal);
+            // optional: stop scanning after detection
+            // stopBarcodeScan();
+          }
         }
-      } catch(e) {}
+      } catch (err) {
+        // some browsers may throw if detector fails; just log
+        console.warn('Barcode scan error:', err);
+      }
     }, 700);
   }
 
@@ -250,51 +291,53 @@ document.addEventListener("DOMContentLoaded", () => {
     barcodeScanInterval = null;
   }
 
-startBtn.addEventListener('click', async () => {
-  try {
-    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+  // START button handler
+  startBtn.addEventListener('click', async () => {
+    try {
+      // clear previous errors
+      if (camError) { camError.style.display = 'none'; camError.textContent = ''; }
+      log('Requesting camera...');
+      const stream = await startCamera();
+      cameraStream = stream;
+      video.srcObject = stream;
 
-    const constraints = isMobile
-      ? { video: { facingMode: { ideal: "environment" } }, audio: false }
-      : { video: true, audio: false };
-
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-    cameraStream = stream;
-    video.srcObject = stream;
-
-    video.onloadedmetadata = () => {
-      video.play();
-      showVideo(true);
-
-      if ('BarcodeDetector' in window) startBarcodeScan();
-    };
-
-  } catch(err) {
-    const camError = document.getElementById('aiCamError');
-    if (camError) {
-      camError.textContent = "Camera error: " + err.message;
-      camError.style.display = "block";
+      video.onloadedmetadata = () => {
+        // ensure video has size before using it
+        try { video.play(); } catch(e){ /* play might be automatic */ }
+        showVideo(true);
+        // start barcode scanning when ready
+        if ('BarcodeDetector' in window) startBarcodeScan();
+        else log('BarcodeDetector API not available - barcode scanning disabled');
+        log('Camera started. video size:', video.videoWidth, 'x', video.videoHeight);
+      };
+    } catch (err) {
+      log('Camera start failed:', err);
+      if (camError) {
+        camError.textContent = 'Camera error: ' + (err && err.message ? err.message : String(err));
+        camError.style.display = 'block';
+      }
+      showVideo(false);
     }
-    showVideo(false);
-  }
-});
-
-  
-
-  stopBtn.addEventListener('click', () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(t => t.stop());
-      cameraStream = null;
-      video.srcObject = null;
-    }
-    showVideo(false);
-    loader.classList.remove("active");
-    fieldsBox.style.display = "none";
-    stopBarcodeScan();
   });
 
-  // --- AI Detection via Local Gemini Backend ---
+  // STOP button handler
+  stopBtn.addEventListener('click', () => {
+    try {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+        video.srcObject = null;
+      }
+    } finally {
+      showVideo(false);
+      loader.classList.remove("active");
+      fieldsBox.style.display = "none";
+      stopBarcodeScan();
+      log('Camera stopped by user');
+    }
+  });
+
+  // AI backend detection (safe and verbose)
   async function aiDetectProductDetails(imageDataUrl) {
     try {
       const endpoint = "http://localhost:5185/gemini-predict";
@@ -309,20 +352,46 @@ If unknown, use empty string "".
           image: imageDataUrl
         }]
       };
+      log('Sending image to backend, size:', imageDataUrl.length);
       const resp = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        // credentials: 'omit' // adjust if needed
       });
-      const result = await resp.json();
-      const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text
-        || result?.predictions?.[0]?.content?.text
-        || "";
+      log('Backend status:', resp.status);
+      const bodyText = await resp.text();
+      log('Backend raw response:', bodyText);
+
+      // try parse body as JSON
+      let result = {};
+      try { result = JSON.parse(bodyText); } catch(e) { /* not JSON? continue */ }
+
+      // try to find text in common Gemini shapes
+      let text = '';
+      if (result?.predictions?.[0]?.candidates?.[0]?.content?.text) {
+        text = result.predictions[0].candidates[0].content.text;
+      } else if (result?.predictions?.[0]?.content?.text) {
+        text = result.predictions[0].content.text;
+      } else if (typeof bodyText === 'string') {
+        text = bodyText;
+      }
+
       const match = text.match(/{[\s\S]*}/);
-      if (!match) return {};
-      return JSON.parse(match[0]);
+      if (!match) {
+        log('No JSON block found in backend output.');
+        return {};
+      }
+      try {
+        const parsed = JSON.parse(match[0]);
+        log('Parsed JSON from backend:', parsed);
+        return parsed;
+      } catch (e) {
+        log('JSON parse error for matched block:', e);
+        return {};
+      }
     } catch (err) {
-      console.error("AI detection failed:", err);
+      console.error('AI detection failed:', err);
       return {};
     }
   }
@@ -330,9 +399,10 @@ If unknown, use empty string "".
   function highlightField(inputId, isDetected) {
     const el = document.getElementById(inputId);
     if (!el) return;
-    el.style.borderColor = isDetected ? "#0082cd" : "#dc3545"; // blue if detected, red if missing
+    el.style.borderColor = isDetected ? "#0082cd" : "#dc3545";
   }
 
+  // Detect button handler
   detectBtn.addEventListener('click', async () => {
     if (!cameraStream) {
       fieldsBox.innerHTML = "<span class='ai-error'>Camera not started.</span>";
@@ -343,34 +413,68 @@ If unknown, use empty string "".
     fieldsBox.style.display = "none";
 
     try {
-      canvas.width = video.videoWidth || 400;
-      canvas.height = video.videoHeight || 200;
+      // ensure video size updated
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 360;
       canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
       const result = await aiDetectProductDetails(dataUrl);
 
-      // Reset highlights
-      ['productName','productBrand','productPrice','productCategory','productTax','productBarcode'].forEach(id => highlightField(id,false));
+      // Reset highlights first
+      ['productName','productBrand','productPrice','productCategory','productTax','productBarcode']
+        .forEach(id => highlightField(id,false));
 
       const infos = [];
 
-      if (result.name) { document.getElementById('productName').value = result.name; highlightField('productName',true); infos.push("<b>Name:</b> " + result.name); }
-      if (result.brand) { document.getElementById('productBrand').value = result.brand; highlightField('productBrand',true); infos.push("<b>Brand:</b> " + result.brand); }
-      if (result.price) { document.getElementById('productPrice').value = result.price; highlightField('productPrice',true); infos.push("<b>Price:</b> " + result.price); }
-      if (result.category) { document.getElementById('productCategory').value = result.category; highlightField('productCategory',true); infos.push("<b>Category:</b> " + result.category); }
-      if (result.tax !== undefined) { document.getElementById('productTax').value = result.tax; highlightField('productTax',true); infos.push("<b>Tax %:</b> " + result.tax); }
-      if (result.barcode) { document.getElementById('productBarcode').value = result.barcode; highlightField('productBarcode',true); infos.push("<b>Barcode:</b> " + result.barcode); }
+      if (result.name) {
+        const el = document.getElementById('productName');
+        if (el) el.value = result.name;
+        highlightField('productName', true);
+        infos.push("<b>Name:</b> " + result.name);
+      }
+      if (result.brand) {
+        const el = document.getElementById('productBrand');
+        if (el) el.value = result.brand;
+        highlightField('productBrand', true);
+        infos.push("<b>Brand:</b> " + result.brand);
+      }
+      if (result.price) {
+        const el = document.getElementById('productPrice');
+        if (el) el.value = result.price;
+        highlightField('productPrice', true);
+        infos.push("<b>Price:</b> " + result.price);
+      }
+      if (result.category) {
+        const el = document.getElementById('productCategory');
+        if (el) el.value = result.category;
+        highlightField('productCategory', true);
+        infos.push("<b>Category:</b> " + result.category);
+      }
+      if (result.tax !== undefined && result.tax !== null && result.tax !== "") {
+        const el = document.getElementById('productTax');
+        if (el) el.value = result.tax;
+        highlightField('productTax', true);
+        infos.push("<b>Tax %:</b> " + result.tax);
+      }
+      if (result.barcode) {
+        const el = document.getElementById('productBarcode');
+        if (el) el.value = result.barcode;
+        highlightField('productBarcode', true);
+        infos.push("<b>Barcode:</b> " + result.barcode);
+      }
 
-      // Highlight missing fields in red
-      ['productName','productBrand','productPrice','productCategory','productTax','productBarcode'].forEach(id => {
-        if (!document.getElementById(id).value) highlightField(id,false);
-      });
+      // Highlight missing fields in red (UX)
+      ['productName','productBrand','productPrice','productCategory','productTax','productBarcode']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.value) highlightField(id,false);
+        });
 
       fieldsBox.innerHTML = infos.length ? infos.join("\n") : "<span class='ai-error'>No details detected. You can still add manually.</span>";
       fieldsBox.style.display = "block";
 
-    } catch(err) {
+    } catch (err) {
       console.error("AI detection error:", err);
       fieldsBox.innerHTML = "<span class='ai-error'>Detection failed. Manual input still possible.</span>";
       fieldsBox.style.display = "block";
@@ -379,15 +483,19 @@ If unknown, use empty string "".
     }
   });
 
+  // cleanup on page unload
   window.addEventListener("beforeunload", () => {
     if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
     stopBarcodeScan();
   });
+
 })();
 </script>
 
+
 </body>
 </html>
+
 
 
 
