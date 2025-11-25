@@ -210,6 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const placeholder = document.getElementById('aiVideoPlaceholder');
   const loader = document.getElementById('aiLoader');
   const fieldsBox = document.getElementById('aiDetectedFields');
+  const camError = document.getElementById('aiCamError');
+
   let cameraStream = null;
   let barcodeScanInterval = null;
 
@@ -219,11 +221,11 @@ document.addEventListener("DOMContentLoaded", () => {
     detectBtn.style.display = active ? 'inline-block' : 'none';
     stopBtn.style.display = active ? 'inline-block' : 'none';
     startBtn.style.display = active ? 'none' : 'inline-block';
+    camError.style.display = 'none';
   }
 
-  // --- LIVE BARCODE DETECTION ---
   async function startBarcodeScan() {
-    if (!('BarcodeDetector' in window)) return; // fallback possible for QuaggaJS if needed
+    if (!('BarcodeDetector' in window)) return;
     const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128'] });
     barcodeScanInterval = setInterval(async () => {
       if (!cameraStream || video.readyState !== video.HAVE_ENOUGH_DATA) return;
@@ -234,13 +236,13 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const barcodes = await detector.detect(canvas);
         if (barcodes.length) {
-          // Fill barcode field if detected
-          document.getElementById('productBarcode').value = barcodes[0].rawValue;
+          const barcodeVal = barcodes[0].rawValue;
+          document.getElementById('productBarcode').value = barcodeVal;
           fieldsBox.style.display = "block";
-          fieldsBox.innerHTML = `<b>Barcode:</b> ${barcodes[0].rawValue}`;
+          fieldsBox.innerHTML = `<b>Barcode detected:</b> ${barcodeVal}`;
         }
-      } catch (e) { /* Ignore */ }
-    }, 700); // scan every 700 ms
+      } catch(e) {}
+    }, 700);
   }
 
   function stopBarcodeScan() {
@@ -248,18 +250,19 @@ document.addEventListener("DOMContentLoaded", () => {
     barcodeScanInterval = null;
   }
 
-  // Start camera: show video, enable barcode + product details scanning
   startBtn.addEventListener('click', async () => {
-    if (cameraStream) return;
     try {
-      let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio:false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio:false });
       cameraStream = stream;
       video.srcObject = stream;
-      video.play();
-      showVideo(true);
-      if ('BarcodeDetector' in window) startBarcodeScan();
-    } catch (err) {
-      alert("Camera access denied or unavailable: " + err.message);
+      video.onloadedmetadata = () => {
+        video.play();
+        showVideo(true);
+        if ('BarcodeDetector' in window) startBarcodeScan();
+      };
+    } catch(err) {
+      camError.textContent = "Camera error: " + err.message;
+      camError.style.display = "block";
       showVideo(false);
     }
   });
@@ -276,86 +279,89 @@ document.addEventListener("DOMContentLoaded", () => {
     stopBarcodeScan();
   });
 
-  // ---- AI Product Details with Gemini (smart prompt + output parsing) ----
+  // --- AI Detection via Local Gemini Backend ---
   async function aiDetectProductDetails(imageDataUrl) {
-    const endpoint = "http://localhost:5185/gemini-predict";
-    const apiKey = "AIzaSyB9ySsjqUrv8ATndzlvSZuFUXMNWJC5dQM"; // <-- Replace with your actual API key
-    const payload = {
-      instances: [{
-        prompt: "You are an AI assistant for Indian retail. Extract and output in JSON as { name, brand, price, barcode, category, tax } from the image of the product label or packaging.",
-        image: imageDataUrl
-      }]
-    };
-    const resp = await fetch(`${endpoint}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const result = await resp.json();
-
-    // Gemini will likely reply with text "{"name":..., ...}" in candidates/content
-    const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text 
-      || result?.predictions?.[0]?.content?.text 
-      || "";
     try {
-      // Extract only the JSON object from the output text if possible
-      const jsonStrMatch = text.match(/{[\s\S]*}/);
-      if (!jsonStrMatch) throw new Error("No JSON found in AI output");
-      const data = JSON.parse(jsonStrMatch[0]);
-      return data;
-    } catch(e) {
+      const endpoint = "http://localhost:5185/gemini-predict";
+      const payload = {
+        instances: [{
+          prompt: `
+You are an expert AI for extracting product information from Indian retail labels.
+Detect and output ONLY JSON:
+{"name":"...", "brand":"...", "price":"...", "barcode":"...", "category":"...", "tax":"..."}
+If unknown, use empty string "".
+          `,
+          image: imageDataUrl
+        }]
+      };
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await resp.json();
+      const text = result?.predictions?.[0]?.candidates?.[0]?.content?.text
+        || result?.predictions?.[0]?.content?.text
+        || "";
+      const match = text.match(/{[\s\S]*}/);
+      if (!match) return {};
+      return JSON.parse(match[0]);
+    } catch (err) {
+      console.error("AI detection failed:", err);
       return {};
     }
   }
 
+  function highlightField(inputId, isDetected) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    el.style.borderColor = isDetected ? "#0082cd" : "#dc3545"; // blue if detected, red if missing
+  }
+
   detectBtn.addEventListener('click', async () => {
-    if (!cameraStream) return;
+    if (!cameraStream) {
+      fieldsBox.innerHTML = "<span class='ai-error'>Camera not started.</span>";
+      fieldsBox.style.display = "block";
+      return;
+    }
     loader.classList.add("active");
     fieldsBox.style.display = "none";
+
     try {
-      // Take snapshot from video
       canvas.width = video.videoWidth || 400;
       canvas.height = video.videoHeight || 200;
       canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-      let dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
-      // Call Gemini 3 Pro
       const result = await aiDetectProductDetails(dataUrl);
 
-      fieldsBox.innerHTML = "";
-      let infos = [];
-      // Fill fields if detected
-      if (result.name) {
-        document.getElementById('productName').value = result.name;
-        infos.push("<b>Name:</b> " + result.name);
-      }
-      if (result.brand) {
-        document.getElementById('productBrand').value = result.brand;
-        infos.push("<b>Brand:</b> " + result.brand);
-      }
-      if (result.price) {
-        document.getElementById('productPrice').value = result.price;
-        infos.push("<b>Price:</b> " + result.price);
-      }
-      if (result.category) {
-        document.getElementById('productCategory').value = result.category;
-        infos.push("<b>Category:</b> " + result.category);
-      }
-      if (result.tax !== undefined) {
-        document.getElementById('productTax').value = result.tax;
-        infos.push("<b>Tax %:</b> " + result.tax);
-      }
-      if (result.barcode) {
-        document.getElementById('productBarcode').value = result.barcode;
-        infos.push("<b>Barcode:</b> " + result.barcode);
-      }
-      fieldsBox.innerHTML = infos.length ? infos.join("\n") : "<span class='ai-error'>No details detected.</span>";
+      // Reset highlights
+      ['productName','productBrand','productPrice','productCategory','productTax','productBarcode'].forEach(id => highlightField(id,false));
+
+      const infos = [];
+
+      if (result.name) { document.getElementById('productName').value = result.name; highlightField('productName',true); infos.push("<b>Name:</b> " + result.name); }
+      if (result.brand) { document.getElementById('productBrand').value = result.brand; highlightField('productBrand',true); infos.push("<b>Brand:</b> " + result.brand); }
+      if (result.price) { document.getElementById('productPrice').value = result.price; highlightField('productPrice',true); infos.push("<b>Price:</b> " + result.price); }
+      if (result.category) { document.getElementById('productCategory').value = result.category; highlightField('productCategory',true); infos.push("<b>Category:</b> " + result.category); }
+      if (result.tax !== undefined) { document.getElementById('productTax').value = result.tax; highlightField('productTax',true); infos.push("<b>Tax %:</b> " + result.tax); }
+      if (result.barcode) { document.getElementById('productBarcode').value = result.barcode; highlightField('productBarcode',true); infos.push("<b>Barcode:</b> " + result.barcode); }
+
+      // Highlight missing fields in red
+      ['productName','productBrand','productPrice','productCategory','productTax','productBarcode'].forEach(id => {
+        if (!document.getElementById(id).value) highlightField(id,false);
+      });
+
+      fieldsBox.innerHTML = infos.length ? infos.join("\n") : "<span class='ai-error'>No details detected. You can still add manually.</span>";
       fieldsBox.style.display = "block";
-    } catch (err) {
-      fieldsBox.innerHTML = "<span class='ai-error'>Detection error.</span>";
+
+    } catch(err) {
+      console.error("AI detection error:", err);
+      fieldsBox.innerHTML = "<span class='ai-error'>Detection failed. Manual input still possible.</span>";
       fieldsBox.style.display = "block";
+    } finally {
+      loader.classList.remove("active");
     }
-    loader.classList.remove("active");
   });
 
   window.addEventListener("beforeunload", () => {
@@ -364,8 +370,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 })();
 </script>
+
 </body>
 </html>
+
 
 
 
