@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Business Advice - Bharat POS</title>
+  <link rel="stylesheet" href="bharatpos.css">
+  <style>
+    .ai-container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .ai-card {
+      background: var(--card-bg, #fff);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .ai-card h3 {
+      margin-top: 0;
+    }
+    .ai-output {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f5f7fa;
+      border-radius: 6px;
+      min-height: 120px;
+      white-space: pre-line;
+    }
+    .ai-btn {
+      margin-top: 10px;
+      padding: 10px 18px;
+      font-size: 15px;
+      background: #0d6efd;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .ai-btn:hover {
+      background: #0b5ed7;
+    }
+    .ai-prompt {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      margin-top: 10px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="global-header"><img src="logo.png" class="global-logo"></div>
+    <div class="brand">Bharat POS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="products.html">Products</a>
+      <a href="billing.html">Billing</a>
+      <a href="sales.html">Sales</a>
+      <a href="report.html">Report</a>
+      <a href="settings.html">Settings</a>
+      <a href="ai.html">AI</a>
+    </div>
+  </div>
+
+  <div class="ai-container">
+    <div class="ai-card">
+      <h3>🤖 AI Business Consultation</h3>
+      <p>This AI automatically analyses your sales, products and stock data.
+         You can also type a question below (optional).</p>
+
+      <!-- Optional prompt -->
+      <textarea id="aiPrompt" class="ai-prompt" rows="2" placeholder="Ask a question about your shop (optional)"></textarea>
+
+      <button class="ai-btn" onclick="getAIAdvice()">Get AI Advice</button>
+
+      <div id="aiOutput" class="ai-output">AI advice will appear here...</div>
+    </div>
+  </div>
+<script>
+  function collectPOSData() {
+    return {
+      settings: JSON.parse(localStorage.getItem("settings")) || {},
+      sales: JSON.parse(localStorage.getItem("sales")) || [],
+      products: JSON.parse(localStorage.getItem("products")) || [],
+      bills: JSON.parse(localStorage.getItem("bills")) || 0
+    };
+  }
+
+  function getAIAdvice() {
+    const aiOutput = document.getElementById("aiOutput");
+    aiOutput.innerText = "⏳ Analysing your business data...";
+
+    const data = collectPOSData();
+
+    const promptBox = document.getElementById("aiPrompt");
+    data.prompt = promptBox ? promptBox.value.trim() : "";
+
+   fetch("http://127.0.0.1:5185/ai-business-consult", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    sales: 50000,
+    bills: 120,
+    lowStock: ["Rice", "Oil"],
+    highStock: ["Soap"],
+    prompt: "How can I increase profit?"
+  })
+})
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        aiOutput.innerText = result.advice;
+      } else {
+        aiOutput.innerText = "AI could not generate advice.";
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      aiOutput.innerText = "Server connected but AI failed.";
+    });
+  }
+</script>
+
+  
+</body>
+</html>
