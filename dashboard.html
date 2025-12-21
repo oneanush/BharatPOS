@@ -78,7 +78,7 @@
 <div class="footer">Built by Utkarsh — BharatPOS</div>
 
 <script>
-  const API_BASE = 'https://passenger-julie-loved-reproduced.trycloudflare.com';
+  const API_BASE = 'http://127.0.0.1:5185';
 
   function formatCurrency(num){ return '₹' + Number(num || 0).toLocaleString('en-IN'); }
   function safeParse(json, fallback) { try { return JSON.parse(json); } catch(e) { return fallback; } }
@@ -195,5 +195,4 @@
 </script>
 </body>
 </html>
-
 
