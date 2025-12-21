@@ -5,8 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Products - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
-  <script src="quagga.js"></script> <!-- Quagga must be loaded first -->
+  <!-- We will dynamically load Quagga only if needed -->
   <script src="bharatpos.js" defer></script>
+  <style>
+    .status { margin-top:8px; font-size:13px; color:#222; }
+    #barcodePreview img { max-width:100%; height:auto; border:1px solid #ddd; border-radius:6px; display:block; margin-bottom:6px;}
+    #decoderStatus { padding:8px; background:#fafafa; border-radius:6px; border:1px solid #eee; font-size:13px; color:#333; }
+    .controls { margin:10px 0; }
+    .controls button { margin-right:8px; }
+  </style>
 </head>
 <body>
 <nav>
@@ -15,19 +22,6 @@
    <a href="index.html">About</a>
    <div id="profileName" class="profile-name"></div>
 </nav>
-
-<style>
-.profile-name {
-  font-weight: 700;
-  color: #ffcc00;
-  margin-left: 12px;
-  margin-right: 5px;
-  padding: 6px 10px;
-  border: 1px solid #ffcc00;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.1);
-}
-</style>
 
 <div class="header">
   <div class="global-header"> <img src="logo.png" class="global-logo"> </div>
@@ -38,18 +32,20 @@
   </div>
 </div>
 
-<!-- AI Camera Scan -->
-<div class="form-row">
-  <button type="button" onclick="startLiveScan()">📷 Start AI Scan</button>
-  <button type="button" onclick="stopLiveScan()">⛔ Stop</button>
-  <button type="button" onclick="resetAIScan()">🔄 Scan Next Product</button>
+<div class="form-row controls">
+  <button id="startBtn" type="button">📷 Start AI Scan</button>
+  <button id="stopBtn" type="button">⛔ Stop</button>
+  <button id="resetBtn" type="button">🔄 Scan Next Product</button>
+  <button id="manualDecodeBtn" type="button">🔎 Try decode now</button>
 </div>
 
 <video id="cameraPreview" autoplay playsinline style="width:80%;display:none;"></video>
 <canvas id="captureCanvas" style="display:none;"></canvas>
-<div id="barcodePreview" style="width:100%; height:300px;"></div>
 
-<div class="main-container">
+<div id="barcodePreview" style="width:100%; height:auto; margin-top:8px;"></div>
+<div id="decoderStatus" class="status">Decoder: initializing...</div>
+
+<div class="main-container" style="margin-top:14px">
   <div class="card">
     <h3>Add Product</h3>
     <form id="productForm" onsubmit="handleAddProduct(event);">
@@ -65,26 +61,66 @@
     </form>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-top:12px">
     <h3>Products</h3>
     <div id="productsList"></div>
   </div>
 </div>
 
 <script>
-/* ------------------------ USER PROFILE & PRODUCT LIST ------------------------ */
+/* ===========================
+   Config
+   =========================== */
+// Use your Cloudflare server base
+const API_BASE = 'https://passenger-julie-loved-reproduced.trycloudflare.com';
+
+// ============================
+// State & helpers
+// ============================
+let cameraStream = null;
+let captureInterval = null;
+let scanLocked = false;
+let barcodeDecodeInProgress = false;
+let lastDetectedBarcode = null;
+let decoderEngine = null; // 'native' or 'quagga'
+let quaggaLoaded = false;
+let quaggaLoadPromise = null;
+
+function buildUrl(endpoint) {
+  if (!endpoint) return API_BASE || '';
+  const ep = endpoint.replace(/^\//,'');
+  if (!API_BASE) return '/' + ep;
+  const normalizedBase = API_BASE.replace(/\/+$/,'');
+  if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
+  return normalizedBase + '/' + ep;
+}
+
+function logStatus(text, isError) {
+  const el = document.getElementById('decoderStatus');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? '#a33' : '#222';
+}
+
+// safe parse & storage helpers from before (kept minimal)
+function getProducts() {
+  try { return JSON.parse(localStorage.getItem('bharatpos_products')||'[]'); } catch(e){ return []; }
+}
+function saveProducts(arr){ try { localStorage.setItem('bharatpos_products', JSON.stringify(arr)); } catch(e){ console.warn(e); } }
+
+/* ===========================
+   Product list & form handlers (kept as original)
+   =========================== */
 function loadUser(){
   const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  document.getElementById('profileName').textContent = data.name ? "👤 " + data.name : "👤 Guest";
+  const el = document.getElementById('profileName');
+  if (el) el.textContent = data.name ? "👤 " + data.name : "👤 Guest";
 }
 loadUser();
 
 function renderProducts(){
   const products = getProducts();
-  if(products.length===0) { 
-    document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; 
-    return;
-  }
+  if(products.length===0) { document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; return; }
   let html = '<table><tr><th>Name</th><th>Qty/Unit</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr>';
   products.forEach(p=>{
     html += `<tr>
@@ -92,24 +128,15 @@ function renderProducts(){
       <td>${p.quantity || '-'}</td>
       <td>${p.price}</td>
       <td>${p.stock}</td>
-      <td>${p.taxPercent}%</td>
-      <td>${p.category}</td>
+      <td>${p.taxPercent || ''}%</td>
+      <td>${p.category || ''}</td>
       <td><button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button></td>
     </tr>`;
   });
   html += '</table>';
   document.getElementById('productsList').innerHTML = html;
 }
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  renderProducts();
-  const temp = localStorage.getItem("temp_new_barcode");
-  if (temp) {
-    const barcodeField = document.getElementById("productBarcode");
-    if (barcodeField) barcodeField.value = temp;
-    localStorage.removeItem("temp_new_barcode");
-  }
-});
+renderProducts();
 
 function deleteProductConfirm(pid){
   if(!confirm("Are you sure you want to delete this product?")) return;
@@ -123,269 +150,353 @@ function deleteProductConfirm(pid){
 async function handleAddProduct(event){
   if(event && event.preventDefault) event.preventDefault();
   try {
-    const qtyValue = document.getElementById('productQuantity').value;
-    await addProduct(); // from bharatpos.js
-    let products = getProducts();
-    if(products.length > 0){
-      let lastProduct = products[products.length - 1];
-      lastProduct.quantity = qtyValue;
-      saveProducts(products);
-    }
+    const name = document.getElementById('productName').value.trim();
+    const quantity = document.getElementById('productQuantity').value.trim();
+    const price = document.getElementById('productPrice').value.trim();
+    const stock = document.getElementById('productStock').value.trim();
+    const tax = document.getElementById('productTax').value.trim();
+    const category = document.getElementById('productCategory').value.trim();
+    const barcode = document.getElementById('productBarcode').value.trim();
+
+    if(!name) return alert('Product name required');
+
+    const products = getProducts();
+    const newProduct = {
+      id: 'p_' + Date.now(),
+      name,
+      quantity,
+      price,
+      stock,
+      taxPercent: tax,
+      category,
+      barcode
+    };
+    products.push(newProduct);
+    saveProducts(products);
     renderProducts();
+
     // Reset form
-    const form = document.getElementById('productForm');
-    if(form){
-      document.getElementById('productName').value = '';
-      document.getElementById('productQuantity').value = '';
-      document.getElementById('productPrice').value = '';
-      document.getElementById('productStock').value = '';
-      document.getElementById('productTax').value = '';
-      document.getElementById('productCategory').value = '';
-    }
+    document.getElementById('productName').value = '';
+    document.getElementById('productQuantity').value = '';
+    document.getElementById('productPrice').value = '';
+    document.getElementById('productStock').value = '';
+    document.getElementById('productTax').value = '';
+    document.getElementById('productCategory').value = '';
+    document.getElementById('productBarcode').value = '';
+    lastDetectedBarcode = null;
+
+    alert('Product saved');
   } catch(err){
     console.error('Error adding product:', err);
     alert('Failed to add product. See console.');
   }
 }
-</script>
 
-<script>
-/* ------------------------ AI + BARCODE SCANNER (SIMULTANEOUS) ------------------------ */
-// Configure API base to your Cloudflare server (no trailing slash)
-const API_BASE = 'https://passenger-julie-loved-reproduced.trycloudflare.com';
+/* ===========================
+   Decoder engine: native first, Quagga fallback
+   =========================== */
+async function ensureDecoderEngine() {
+  if (decoderEngine) return decoderEngine;
+  // Native BarcodeDetector
+  if ('BarcodeDetector' in window) {
+    try {
+      // choose formats widely used
+      const formats = ['ean_13','ean_8','upc_e','upc_a','code_128','code_39','qr_code'];
+      // create detector
+      window._nativeDetector = new BarcodeDetector({ formats });
+      decoderEngine = 'native';
+      logStatus('Decoder: native BarcodeDetector ready');
+      console.log('Decoder engine: native');
+      return decoderEngine;
+    } catch (e) {
+      console.warn('BarcodeDetector creation failed:', e);
+      // fall through to quagga
+    }
+  }
 
-// Build URL helper to avoid doubling endpoints
-function buildUrl(endpoint) {
-  if (!endpoint) return API_BASE || '';
-  const ep = endpoint.replace(/^\//,'');
-  if (!API_BASE) return '/' + ep;
-  const normalizedBase = API_BASE.replace(/\/+$/,'');
-  if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
-  return normalizedBase + '/' + ep;
+  // Quagga fallback: load dynamically if not already loaded
+  if (quaggaLoaded) {
+    decoderEngine = 'quagga';
+    logStatus('Decoder: Quagga ready');
+    return decoderEngine;
+  }
+  if (!quaggaLoadPromise) {
+    logStatus('Decoder: loading Quagga (fallback)...');
+    quaggaLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/quagga/dist/quagga.min.js';
+      s.onload = () => {
+        quaggaLoaded = true;
+        decoderEngine = 'quagga';
+        logStatus('Decoder: Quagga loaded');
+        console.log('Quagga loaded');
+        resolve('quagga');
+      };
+      s.onerror = (err) => {
+        console.error('Failed to load Quagga:', err);
+        logStatus('Decoder: failed to load Quagga', true);
+        reject(err);
+      };
+      document.head.appendChild(s);
+    });
+  }
+  return quaggaLoadPromise;
 }
 
-let cameraStream = null;
-let scanInterval = null;
-let scanLocked = false;            // prevents overlapping AI requests
-let barcodeDecodeInProgress = false; // prevents overlapping barcode decodeSingle calls
-let lastDetectedBarcode = null;   // remember last barcode to avoid repeated fills
-
-// Start live camera + periodic AI captures
+/* ===========================
+   Capture loop: AI + barcode decode (shared frames)
+   =========================== */
 async function startLiveScan() {
   if (cameraStream) return;
-  const video = document.getElementById("cameraPreview");
-  if (!video) return console.error("❌ cameraPreview missing");
-  video.style.display = "block";
+  const video = document.getElementById('cameraPreview');
+  if (!video) return console.error('cameraPreview missing');
 
   try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); // single stream
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     video.srcObject = cameraStream;
-  } catch(err) {
-    console.error("Could not access camera:", err);
-    alert("Could not access camera. Check permissions.");
+    video.style.display = 'block';
+  } catch (err) {
+    console.error('Camera access error', err);
+    alert('Could not access camera. Check permissions.');
     return;
   }
 
-  // periodic capture every 2.5s (adjust as needed)
-  scanInterval = setInterval(()=>{ if(!scanLocked) captureAndScan(); },2500);
+  // ensure decoder ready (load fallback if needed)
+  ensureDecoderEngine().catch(e => {
+    console.warn('Decoder engine error', e);
+  });
+
+  // capture every 2s (adjustable)
+  captureInterval = setInterval(() => {
+    if (!scanLocked) captureAndScan();
+  }, 2000);
+
+  logStatus('Live scan started — capturing frames');
 }
 
 function stopLiveScan() {
-  if(scanInterval) {
-    clearInterval(scanInterval);
-    scanInterval = null;
+  if (captureInterval) { clearInterval(captureInterval); captureInterval = null; }
+  if (cameraStream) {
+    try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){ console.warn(e); }
+    cameraStream = null;
   }
-
-  // We are not using Quagga.start (live) by default, so just ensure no workers running
+  const video = document.getElementById('cameraPreview');
+  if (video) { video.style.display = 'none'; try { video.srcObject = null; } catch(e){} }
+  logStatus('Live scan stopped');
   barcodeDecodeInProgress = false;
-
-  if(cameraStream){
-    try {
-      cameraStream.getTracks().forEach(t=>t.stop());
-    } catch(e){ console.warn('Error stopping camera tracks', e); }
-    cameraStream=null;
-  }
-
-  const video = document.getElementById("cameraPreview");
-  if(video) {
-    video.style.display="none";
-    try { video.srcObject = null; } catch(e) {}
-  }
-
-  // clear barcode preview area
-  const barcodePreview = document.getElementById('barcodePreview');
-  if(barcodePreview) barcodePreview.innerHTML = '';
 }
 
-// capture current frame and send to AI product-scan endpoint
-async function captureAndScan(){
-  const video = document.getElementById("cameraPreview");
-  const canvas = document.getElementById("captureCanvas");
-  if(!video || !canvas) return console.error("❌ video or canvas missing");
+/* capture frame -> run barcode decode and AI request concurrently */
+async function captureAndScan() {
+  const video = document.getElementById('cameraPreview');
+  const canvas = document.getElementById('captureCanvas');
+  if (!video || !canvas) return;
 
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   const vw = video.videoWidth || 640;
   const vh = video.videoHeight || 480;
   canvas.width = vw;
   canvas.height = vh;
-  ctx.drawImage(video,0,0,vw,vh);
+  ctx.drawImage(video, 0, 0, vw, vh);
 
-  // use JPEG for AI (smaller)
-  const base64 = canvas.toDataURL("image/jpeg",0.8).split(",")[1];
+  // show preview image for debugging
+  try {
+    const preview = document.getElementById('barcodePreview');
+    const dataUrl = canvas.toDataURL('image/png');
+    if (preview) preview.innerHTML = `<img src="${dataUrl}" alt="frame preview">`;
+  } catch(e){ console.warn('preview error', e); }
 
-  // Start barcode detection on this same frame (non-blocking)
-  attemptBarcodeDecodeFromCanvas(canvas);
+  // start barcode decode (non-blocking)
+  attemptDecodeFromCanvas(canvas).catch(e => {
+    console.warn('attemptDecodeFromCanvas error', e);
+  });
 
-  // Lock AI request so we don't flood
+  // AI request: lock so multiple frames not flooded
   scanLocked = true;
-
-  try{
+  try {
+    const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     const url = buildUrl('/ai-product-scan');
     const res = await fetch(url, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64: base64 })
     });
 
-    if(!res.ok){
-      const txt = await res.text().catch(()=>null);
-      console.warn('AI product scan server error', res.status, txt);
+    if (!res.ok) {
+      const t = await res.text().catch(()=>null);
+      console.warn('AI product scan server error', res.status, t);
+      logStatus('AI product-scan returned error: ' + res.status, true);
       return;
     }
 
     const data = await res.json();
-    console.log("🧠 AI scan data:", data);
-
-    if(data && data.success && hasLogicalData(data.product)){
+    console.log('AI scan data', data);
+    if (data && data.success && data.product) {
       fillProductFromAI(data.product);
-      // Note: we intentionally keep the live camera running so barcode decoding can continue.
-      // If you prefer to stop camera after AI detection, call stopLiveScan() here.
+      logStatus('AI: product data filled');
     } else {
-      // no valid product data found — continue scanning
-      console.log('AI returned no valid product data');
+      logStatus('AI: no product data found (continuing)');
     }
-  }catch(e){ 
-    console.error("❌ AI scan error:", e);
+  } catch (e) {
+    console.error('AI scan failed', e);
+    logStatus('AI scan failed (see console)', true);
   } finally {
-    scanLocked=false;
+    scanLocked = false;
   }
 }
 
-// Attempt to decode barcode using Quagga.decodeSingle on the canvas image.
-// This avoids opening Quagga LiveStream and uses the same captured frame.
-function attemptBarcodeDecodeFromCanvas(canvas) {
-  if (barcodeDecodeInProgress) return; // avoid overlapping decodes
-  // If the barcode input is already filled with a value we detected earlier, skip decode
-  const currentBarcode = document.getElementById("productBarcode")?.value;
-  if (currentBarcode && currentBarcode === lastDetectedBarcode) return;
-
-  // Convert canvas to dataURL (PNG typically better for Quagga decoding)
-  let dataUrl;
-  try {
-    dataUrl = canvas.toDataURL('image/png');
-  } catch(e) {
-    console.warn('Could not get canvas dataURL for barcode decode', e);
-    return;
-  }
+/* ===========================
+   attemptDecodeFromCanvas: uses native detector if available otherwise Quagga
+   Returns a Promise that resolves with detected code or null
+   =========================== */
+async function attemptDecodeFromCanvas(canvas) {
+  if (!canvas) return null;
+  if (barcodeDecodeInProgress) return null;
+  // If barcode already present and same as last, skip
+  const currentValue = document.getElementById('productBarcode')?.value;
+  if (currentValue && currentValue === lastDetectedBarcode) return null;
 
   barcodeDecodeInProgress = true;
+  logStatus('Decoding barcode from current frame...');
+  let detected = null;
 
-  // Quagga.decodeSingle uses the provided src image and runs decoding on it.
-  // Set numOfWorkers: 0 if WebWorker creation causes issues in your environment.
   try {
-    Quagga.decodeSingle({
-      src: dataUrl,
-      numOfWorkers: 0, // disable workers to avoid cross-origin worker issues, change to >0 if ok
-      locate: true,
-      inputStream: {
-        size: 800 // set resolution to aid detection
-      },
-      decoder: {
-        readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]
-      }
-    }, function(result) {
+    await ensureDecoderEngine();
+
+    if (decoderEngine === 'native' && window._nativeDetector) {
       try {
-        if (result && result.codeResult && result.codeResult.code) {
-          const code = result.codeResult.code;
-          console.log('📦 Quagga decodeSingle found barcode:', code);
-          const barcodeField = document.getElementById("productBarcode");
-          if (barcodeField) {
-            barcodeField.value = code;
-            lastDetectedBarcode = code;
-          }
-          // Optionally show the barcodePreview with the detected code
-          const preview = document.getElementById('barcodePreview');
-          if (preview) preview.innerHTML = `<div style="padding:8px;background:#eef;border-radius:6px">Detected barcode: <b>${code}</b></div>`;
+        // createImageBitmap is efficient for detector
+        const bitmap = await createImageBitmap(canvas);
+        const results = await window._nativeDetector.detect(bitmap);
+        if (results && results.length) {
+          detected = results[0].rawValue || (results[0].value && results[0].value.rawValue) || null;
+          console.log('Native detector result', results);
         } else {
-          // no barcode found in this frame
-          //console.log('No barcode in frame');
+          console.log('Native detector: no barcode in this frame');
         }
-      } catch(e) {
-        console.warn('Error handling Quagga result', e);
-      } finally {
-        barcodeDecodeInProgress = false;
+      } catch (e) {
+        console.warn('Native detector failed', e);
       }
-    });
-  } catch(e) {
-    console.warn('Quagga.decodeSingle threw error', e);
+    }
+
+    // if nothing found and we have Quagga loaded, try decodeSingle
+    if ((!detected) && (typeof Quagga !== 'undefined')) {
+      const dataUrl = canvas.toDataURL('image/png');
+      // show preview image already set by captureAndScan
+      // Use decodeSingle with workers disabled for compatibility
+      await new Promise((resolve) => {
+        try {
+          Quagga.decodeSingle({
+            src: dataUrl,
+            numOfWorkers: 0,
+            locate: true,
+            inputStream: { size: 1200 },
+            decoder: { readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader","code_39_reader"] }
+          }, function(result) {
+            console.log('Quagga decodeSingle result', result);
+            if (result && result.codeResult && result.codeResult.code) {
+              detected = result.codeResult.code;
+            }
+            resolve();
+          });
+        } catch (err) {
+          console.warn('Quagga.decodeSingle threw', err);
+          resolve();
+        }
+      });
+    }
+
+    if (detected) {
+      const barcodeField = document.getElementById('productBarcode');
+      if (barcodeField && barcodeField.value !== detected) {
+        barcodeField.value = detected;
+        lastDetectedBarcode = detected;
+        logStatus('Barcode detected: ' + detected);
+        // also show small confirmation in preview area
+        const preview = document.getElementById('barcodePreview');
+        if (preview) {
+          const msg = document.createElement('div');
+          msg.style.padding = '6px';
+          msg.style.background = '#e8f5e9';
+          msg.style.borderRadius = '6px';
+          msg.style.marginTop = '6px';
+          msg.innerHTML = 'Detected barcode: <b>' + detected + '</b>';
+          preview.appendChild(msg);
+        }
+      } else if (detected) {
+        logStatus('Barcode detected but already present: ' + detected);
+      }
+    } else {
+      logStatus('No barcode detected in this frame');
+    }
+  } catch (err) {
+    console.warn('attemptDecodeFromCanvas error', err);
+    logStatus('Decoder error (check console)', true);
+  } finally {
     barcodeDecodeInProgress = false;
+    return detected;
   }
 }
 
-function hasLogicalData(p){ return p && typeof p.name==="string" && p.name.length>2; }
+/* ===========================
+   Helper: fill product fields from AI result
+   =========================== */
+function hasLogicalData(p){ return p && typeof p.name === 'string' && p.name.length > 1; }
+function fillProductFromAI(product) {
+  try {
+    const nameEl = document.getElementById('productName');
+    const qtyEl = document.getElementById('productQuantity');
+    const priceEl = document.getElementById('productPrice');
+    const catEl = document.getElementById('productCategory');
+    if(!nameEl || !priceEl || !catEl) return console.error('missing inputs');
 
-function fillProductFromAI(product){
-  const nameEl=document.getElementById("productName");
-  const qtyEl=document.getElementById("productQuantity");
-  const priceEl=document.getElementById("productPrice");
-  const catEl=document.getElementById("productCategory");
-
-  if(!nameEl || !priceEl || !catEl) return console.error("❌ missing input fields");
-
-  nameEl.value = product.name || "";
-  if(qtyEl) qtyEl.value = product.quantity || "";
-  priceEl.value = product.price || "";
-  catEl.value = product.category || "";
-
-  console.log("✅ FILLED VALUES:", {name:nameEl.value,quantity:qtyEl?.value,price:priceEl.value,category:catEl.value});
+    if (product.name) nameEl.value = product.name;
+    if (product.quantity && qtyEl) qtyEl.value = product.quantity;
+    if (product.price) priceEl.value = product.price;
+    if (product.category) catEl.value = product.category;
+    // don't overwrite barcode if already filled by decoder (AI may not be accurate)
+    if (product.barcode && (!document.getElementById('productBarcode').value)) {
+      document.getElementById('productBarcode').value = product.barcode;
+      lastDetectedBarcode = product.barcode;
+    }
+    console.log('Filled from AI:', product);
+  } catch (e) {
+    console.warn('fillProductFromAI error', e);
+  }
 }
 
-function resetAIScan(){
-  scanLocked=false;
+/* ===========================
+   Buttons and manual decode
+   =========================== */
+document.getElementById('startBtn').addEventListener('click', startLiveScan);
+document.getElementById('stopBtn').addEventListener('click', stopLiveScan);
+document.getElementById('resetBtn').addEventListener('click', () => {
   stopLiveScan();
-  document.getElementById("productName").value="";
-  document.getElementById("productQuantity").value="";
-  document.getElementById("productPrice").value="";
-  document.getElementById("productCategory").value="";
-  document.getElementById("productBarcode").value="";
+  document.getElementById('productName').value = '';
+  document.getElementById('productQuantity').value = '';
+  document.getElementById('productPrice').value = '';
+  document.getElementById('productCategory').value = '';
+  document.getElementById('productBarcode').value = '';
   lastDetectedBarcode = null;
   startLiveScan();
-}
+});
+document.getElementById('manualDecodeBtn').addEventListener('click', async () => {
+  const canvas = document.getElementById('captureCanvas');
+  if (!canvas) return alert('No camera frame available. Start camera first.');
+  logStatus('Manual decode triggered');
+  const r = await attemptDecodeFromCanvas(canvas);
+  if (!r) alert('No barcode found in current frame. See preview and try again.');
+});
 
-/* ------------------------------------------------------------------
-  NOTE: Old approach (Quagga LiveStream) is retained below as a fallback,
-  but it's NOT used by default in the simultaneous flow because
-  Quagga.start requests camera access again and can conflict with the
-  existing getUserMedia stream. The preferred path decodes from the
-  same canvas frames via Quagga.decodeSingle (above).
------------------------------------------------------------------- */
-function startBarcodeOnSameCamera(){
-  console.warn('startBarcodeOnSameCamera() available as fallback but not used in simultaneous mode.');
-  // If you want to force Quagga live scanning instead of decodeSingle,
-  // ensure you stop the live camera first (stopLiveScan) and then call this.
-}
+/* expose some helpers to console for debug */
+window._attemptDecodeFromCanvas = attemptDecodeFromCanvas;
+window._ensureDecoderEngine = ensureDecoderEngine;
+window._startLiveScan = startLiveScan;
+window._stopLiveScan = stopLiveScan;
 
-/* ------------------------ Initialization / debug ------------------------ */
-// Optional quick test fetch removed — actual calls happen in captureAndScan
-// Expose functions for debug
-window.startLiveScan = startLiveScan;
-window.stopLiveScan = stopLiveScan;
-window.resetAIScan = resetAIScan;
-window.attemptBarcodeDecodeFromCanvas = attemptBarcodeDecodeFromCanvas;
 </script>
 </body>
 </html>
-
 
 
 
