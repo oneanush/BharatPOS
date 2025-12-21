@@ -22,16 +22,7 @@
 
     /* Billing layout */
     .billing-container { display: flex; gap: 16px; justify-content:center; align-items:flex-start; flex-wrap: wrap; }
-    /* Remove independent scroll from billing container */
-    .billing-container {
-      max-height: none !important;
-      overflow: visible !important;
-    }
-    .cart-section {
-      max-height: none !important;
-      overflow: visible !important;
-    }
-    #stockScrollBox {
+    .billing-container, .cart-section, #stockScrollBox {
       max-height: none !important;
       overflow: visible !important;
     }
@@ -63,7 +54,7 @@
 
     #productList {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Slightly wider for unit text */
       gap: 8px;
       align-items: start;
     }
@@ -83,8 +74,11 @@
       transition: 0.15s;
     }
     .prod-btn:active { transform: scale(0.97); }
-    .prod-name { font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
-    .prod-qty { font-size:11px; color:#333; opacity:0.8; margin-top:4px; }
+    .prod-name { font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-weight: 600; }
+    
+    /* Updated styles for Quantity/Unit display */
+    .prod-unit { font-size: 11px; font-weight: 700; color: #0b5ed7; margin: 2px 0; }
+    .prod-price { font-size:11px; color:#333; opacity:0.8; }
 
     /* Scroll only on stock/product section */
     .stock-scroll {
@@ -95,28 +89,15 @@
       background: #f9f9f9;
     }
 
-    /* Cart section smaller */
+    /* Cart section */
     .cart-section { flex: 0.9; max-width:650px; min-width:320px; }
 
-    /* responsive tweak */
+    /* Responsive */
     @media (max-width:700px){
       #productGridWrap{ width: 96%; }
       .billing-container{  align-items:center; flex-direction:column; }
       .cart-section{ width:96%; max-width: none; }
     }
-
-    /* Category buttons */
-    #categoryFilters button {
-      padding:4px 10px;
-      border-radius:6px;
-      border:none;
-      background:#0077ff;
-      color:#fff;
-      font-weight:600;
-      cursor:pointer;
-      transition: 0.2s;
-    }
-    #categoryFilters button:hover { background:#005fcc; transform: scale(1.05); }
 
     /* Scanner UI */
     #scannerContainer { display:flex; align-items:center; justify-content:center; background:#000; color:#fff; }
@@ -133,8 +114,7 @@
   </nav>
 
   <div class="header">
- <div class="global-header">     <img src="logo.png" class="global-logo"> </div>
-
+    <div class="global-header"> <img src="logo.png" class="global-logo"> </div>
     <div class="brand"> Bharat POS</div>
     <div class="nav">
       <a href="dashboard.html">Dashboard</a>
@@ -142,7 +122,6 @@
     </div>
   </div>
 
-  <!-- Scanner UI -->
   <div id="scannerContainer" style="width:70%; max-width:600px; height:200px; border:1px solid #ccc; margin-bottom:6px;"></div>
   <div style="margin-bottom:6px;">
     <button id="openCamera">Start Scanner</button>
@@ -150,7 +129,6 @@
     <span id="detectedCode" class="small"></span>
   </div>
 
-  <!-- Hidden input (keeps backward compatibility with code that expects a barcodeInput element) -->
   <input id="barcodeInput" class="hidden" autocomplete="off">
 
   <div class="stock-scroll">
@@ -160,23 +138,24 @@
       <div id="productList" role="list"></div>
     </div>
   </div>
+
   <div class="billing-container">
     <div class="cart-section">
       <div class="card">
         <h3>Billing</h3>
         <div class="form-row">
-          <input type="text" id="productSearch" placeholder="Search product...">
+          <input type="text" id="productSearch" placeholder="Search product..." oninput="handleSearch(this.value)">
           <input id="custName" placeholder="Customer name (optional)">
         </div>
-        <div id="searchResults" class="card"></div>
+        <div id="searchResults" class="card" style="display:none;"></div>
       </div>
 
       <div class="card">
         <h3>Cart</h3>
         <div id="cartList"></div>
         <div class="form-row">
-         <input id="discount" type="number" placeholder="Discount INR (optional)" value="" 
-           oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
+          <input id="discount" type="number" placeholder="Discount INR (optional)" value="" 
+            oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
         </div>
         <div class="total" id="grandTotal">Total: ₹0</div>
         <div class="form-row"><button onclick="completeSale()">Checkout & Print</button></div>
@@ -184,14 +163,12 @@
     </div>
   </div>
 
-  <!-- Invoice Modal -->
   <div id="invoiceModal" class="card hidden" style="max-width:700px;margin:20px auto">
     <div id="invoiceContent"></div>
     <div style="text-align:center; margin-top:10px;">
-    <img id="invoiceQR" style="width:120px; display:none;">
-    <p style="font-size:13px;margin:0;">Scan to Pay</p>
-</div>
-
+        <img id="invoiceQR" style="width:120px; display:none;">
+        <p style="font-size:13px;margin:0;">Scan to Pay</p>
+    </div>
     <div style="text-align:right;margin-top:8px">
       <button onclick="window.print()">Print</button>
       <button onclick="closeInvoice()">Close</button>
@@ -201,10 +178,92 @@
   <script src="bharatpos.js"></script>
   <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 
- <!-- (replace the <script> ... scanner script ... </script> block in billing-bharat-pos.html with this updated script) -->
-<!-- Place in billing.html after Quagga import and DOM elements -->
 <script>
+// ==========================================================
+// 1. CUSTOM BILLING GRID LOGIC (To support Product Quantity)
+// ==========================================================
+
+// Function to render categories
+function renderBillCategories() {
+  const products = (typeof getProducts === 'function') ? getProducts() : [];
+  const container = document.getElementById('categoryFilters');
+  if (!container) return;
+
+  const cats = ['All', ...new Set(products.map(p => p.category).filter(Boolean))];
+  
+  container.innerHTML = cats.map(c => 
+    `<button onclick="renderBillGrid('${c}')">${c}</button>`
+  ).join('');
+}
+
+// Function to render the product grid with the new Qty/Unit field
+function renderBillGrid(category = 'All') {
+  const grid = document.getElementById('productList');
+  if (!grid) return;
+  
+  const products = (typeof getProducts === 'function') ? getProducts() : [];
+  grid.innerHTML = ''; // Clear existing
+
+  const filtered = category === 'All' 
+    ? products 
+    : products.filter(p => p.category === category);
+
+  if(filtered.length === 0) {
+    grid.innerHTML = '<div class="small" style="grid-column: 1/-1; text-align:center;">No products found</div>';
+    return;
+  }
+
+  filtered.forEach(p => {
+    // Determine Stock text
+    const stockTxt = p.stock > 0 ? `₹${p.price}` : 'Out';
+    
+    // NEW: Check if product has the new 'quantity' field (Unit size)
+    // If it exists, create HTML for it.
+    const unitHtml = p.quantity ? `<div class="prod-unit">${p.quantity}</div>` : '';
+
+    const btn = document.createElement('div');
+    btn.className = 'prod-btn';
+    btn.title = `Stock: ${p.stock}`;
+    
+    // Use existing addToBill function from bharatpos.js
+    btn.onclick = () => { if(window.addToBill) window.addToBill(p.id); };
+
+    btn.innerHTML = `
+      <div class="prod-name">${p.name}</div>
+      ${unitHtml} <div class="prod-price">${stockTxt}</div>
+    `;
+    grid.appendChild(btn);
+  });
+}
+
+// Search Handler override to ensure grid refreshes correctly
+function handleSearch(query) {
+    const products = getProducts();
+    const grid = document.getElementById('productList');
+    grid.innerHTML = '';
+    
+    const filtered = products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query)));
+    
+    filtered.forEach(p => {
+        let unitHtml = p.quantity ? `<div class="prod-unit">${p.quantity}</div>` : '';
+        const btn = document.createElement('div');
+        btn.className = 'prod-btn';
+        btn.onclick = () => { if(window.addToBill) window.addToBill(p.id); };
+        btn.innerHTML = `<div class="prod-name">${p.name}</div>${unitHtml}<div class="prod-price">₹${p.price}</div>`;
+        grid.appendChild(btn);
+    });
+}
+
+// ==========================================================
+// 2. SCANNER LOGIC (Preserved from user request)
+// ==========================================================
+
 document.addEventListener("DOMContentLoaded", () => {
+  
+  // Initialize Grid with new render logic
+  renderBillCategories();
+  renderBillGrid();
+
   const scannerContainer = document.getElementById("scannerContainer");
   const openBtn = document.getElementById("openCamera");
   const stopBtn = document.getElementById("stopCamera");
@@ -396,7 +455,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   stopBtn.addEventListener('click', stopScanner);
 });
-  const invoiceQR = document.getElementById("invoiceQR");
+
+// QR Logic
+const invoiceQR = document.getElementById("invoiceQR");
 const storedQR = localStorage.getItem("upiQR");
 
 if (storedQR) {
@@ -405,32 +466,10 @@ if (storedQR) {
 } else {
     invoiceQR.style.display = "none";
 }
-
-
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
