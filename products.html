@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
 <head>
@@ -18,16 +17,7 @@
 </nav>
 
 <style>
-.profile-name {
-  font-weight: 700;
-  color: #ffcc00;
-  margin-left: 12px;
-  margin-right: 5px;
-  padding: 6px 10px;
-  border: 1px solid #ffcc00;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.1);
-}
+.profile-name { font-weight:700; color:#ffcc00; margin-left:12px; margin-right:5px; padding:6px 10px; border:1px solid #ffcc00; border-radius:8px; background:rgba(255,255,255,0.1); }
 </style>
 
 <div class="header">
@@ -82,10 +72,7 @@ loadUser();
 
 function renderProducts(){
   const products = getProducts();
-  if(products.length===0) { 
-    document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; 
-    return;
-  }
+  if(products.length===0) { document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; return; }
   let html = '<table><tr><th>Name</th><th>Qty/Unit</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr>';
   products.forEach(p=>{
     html += `<tr>
@@ -152,67 +139,113 @@ async function handleAddProduct(event){
 
 <script>
 /* ------------------------ AI + BARCODE SCANNER ------------------------ */
+// Configure API base to your Cloudflare server (no trailing slash)
+const API_BASE = 'https://passenger-julie-loved-reproduced.trycloudflare.com';
+
+function buildUrl(endpoint) {
+  if (!endpoint) return API_BASE || '';
+  const ep = endpoint.replace(/^\//,'');
+  if (!API_BASE) return '/' + ep;
+  const normalizedBase = API_BASE.replace(/\/+$/,'');
+  if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
+  return normalizedBase + '/' + ep;
+}
+
 let cameraStream = null;
 let scanInterval = null;
 let scanLocked = false;
 let quaggaRunning = false;
+let quaggaDetectedHandler = null;
 
+// Start live camera + periodic AI captures
 async function startLiveScan() {
   if (cameraStream) return;
   const video = document.getElementById("cameraPreview");
   if (!video) return console.error("❌ cameraPreview missing");
   video.style.display = "block";
-  cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
-  video.srcObject = cameraStream;
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    video.srcObject = cameraStream;
+  } catch(err) {
+    console.error("Could not access camera:", err);
+    alert("Could not access camera. Check permissions.");
+    return;
+  }
 
   scanInterval = setInterval(()=>{ if(!scanLocked) captureAndScan(); },3000);
 }
 
 function stopLiveScan() {
-  if(scanInterval) clearInterval(scanInterval);
-  scanInterval = null;
+  if(scanInterval) { clearInterval(scanInterval); scanInterval = null; }
 
-  if(quaggaRunning){
-    Quagga.stop();
+  if(quaggaRunning) {
+    try { Quagga.stop(); } catch(e){ console.warn('Quagga stop error', e); }
     quaggaRunning = false;
+    if (typeof Quagga.offDetected === 'function' && quaggaDetectedHandler) {
+      Quagga.offDetected(quaggaDetectedHandler);
+      quaggaDetectedHandler = null;
+    }
   }
 
   if(cameraStream){
-    cameraStream.getTracks().forEach(t=>t.stop());
+    try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){ console.warn('Error stopping camera tracks', e); }
     cameraStream=null;
   }
 
   const video = document.getElementById("cameraPreview");
-  if(video) video.style.display="none";
+  if(video) { video.style.display="none"; try { video.srcObject = null; } catch(e){} }
+
+  const barcodePreview = document.getElementById('barcodePreview');
+  if(barcodePreview) barcodePreview.innerHTML = '';
 }
 
+// capture current frame and send to AI product-scan endpoint
 async function captureAndScan(){
   const video = document.getElementById("cameraPreview");
   const canvas = document.getElementById("captureCanvas");
   if(!video || !canvas) return console.error("❌ video or canvas missing");
 
   const ctx = canvas.getContext("2d");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  ctx.drawImage(video,0,0);
+  const vw = video.videoWidth || 640;
+  const vh = video.videoHeight || 480;
+  canvas.width = vw;
+  canvas.height = vh;
+  ctx.drawImage(video,0,0,vw,vh);
 
   const base64 = canvas.toDataURL("image/jpeg",0.8).split(",")[1];
   scanLocked=true;
 
   try{
-    const res = await fetch("https://undertake-declaration-log-tennis.trycloudflare.com/ai-product-scan",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({imageBase64:base64})
+    const url = buildUrl('/ai-product-scan');
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ imageBase64: base64 })
     });
+
+    if(!res.ok){
+      const txt = await res.text().catch(()=>null);
+      console.warn('AI product scan server error', res.status, txt);
+      scanLocked = false;
+      return;
+    }
+
     const data = await res.json();
     console.log("🧠 AI scan data:", data);
-    if(data.success && hasLogicalData(data.product)){
+
+    if(data && data.success && hasLogicalData(data.product)){
       fillProductFromAI(data.product);
-      startBarcodeOnSameCamera(); // start barcode scan AFTER AI success
+      stopLiveScan();
+      startBarcodeOnSameCamera();
+    } else {
+      console.log('AI returned no valid product data');
     }
-  }catch(e){ console.error("❌ AI scan error:", e);}
-  scanLocked=false;
+  }catch(e){ 
+    console.error("❌ AI scan error:", e);
+  } finally {
+    scanLocked=false;
+  }
 }
 
 function hasLogicalData(p){ return p && typeof p.name==="string" && p.name.length>2; }
@@ -247,44 +280,49 @@ function resetAIScan(){
 // ------------------------ BARCODE SCAN ------------------------
 function startBarcodeOnSameCamera(){
   if(quaggaRunning) return;
-  const video=document.getElementById("cameraPreview");
+  const previewEl = document.getElementById('barcodePreview');
+  if(!previewEl) return console.error('No barcodePreview element found');
+  previewEl.innerHTML = '';
+
   Quagga.init({
-    inputStream:{name:"Live",type:"LiveStream",target:video,constraints:{facingMode:"environment"}},
-    decoder:{readers:["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]},
-    locate:true
-  },err=>{
-    if(err) return console.error("Quagga init error:",err);
+    inputStream: { name: "Live", type: "LiveStream", target: previewEl, constraints: { facingMode: "environment" } },
+    decoder: { readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"] },
+    locate: true
+  }, function(err) {
+    if (err) { console.error("Quagga init error:", err); return; }
     Quagga.start();
-    quaggaRunning=true;
+    quaggaRunning = true;
+    console.log('Quagga started');
   });
 
-  Quagga.onDetected(data=>{
-    const code=data.codeResult?.code;
+  try {
+    if (typeof Quagga.offDetected === 'function' && quaggaDetectedHandler) {
+      Quagga.offDetected(quaggaDetectedHandler);
+      quaggaDetectedHandler = null;
+    }
+  } catch(e) {}
+
+  quaggaDetectedHandler = function(result) {
+    const code = result && result.codeResult && result.codeResult.code;
     if(!code) return;
-    document.getElementById("productBarcode").value=code;
-    console.log("📦 BARCODE DETECTED:",code);
-    Quagga.stop();
-    quaggaRunning=false;
-  });
+    const barcodeField = document.getElementById("productBarcode");
+    if(barcodeField) barcodeField.value = code;
+    console.log("📦 BARCODE DETECTED:", code);
+    try { Quagga.stop(); } catch(e){ console.warn('Error stopping Quagga', e); }
+    quaggaRunning = false;
+    try { if (typeof Quagga.offDetected === 'function') Quagga.offDetected(quaggaDetectedHandler); } catch(e){}
+    quaggaDetectedHandler = null;
+  };
+
+  if (typeof Quagga.onDetected === 'function') {
+    Quagga.onDetected(quaggaDetectedHandler);
+  } else {
+    console.warn('Quagga.onDetected not available in this build');
+  }
 }
-
-
-fetch("http://localhost:5185/ai-product-scan", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ product: "milk" })
-})
-.then(res => res.json())
-.then(console.log)
-.catch(console.error);
 </script>
 </body>
 </html>
-
-
-
-
-
 
 
 
