@@ -200,7 +200,7 @@ async function captureAndScan(){
   scanLocked=true;
 
   try{
-    const res = await fetch("https://undertake-declaration-log-tennis.trycloudflare.com",{
+    const res = await fetch("https://undertake-declaration-log-tennis.trycloudflare.com/ai-product-scan",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({imageBase64:base64})
@@ -280,6 +280,7 @@ fetch("http://localhost:5185/ai-product-scan", {
 </script>
 </body>
 </html>
+
 
 
 
