@@ -4,40 +4,46 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sales - BharatPOS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="bharatpos.css">
   <script src="bharatpos.js" defer></script>
 </head>
 
 <body>
-  <!-- Top Navigation -->
-  <nav>
-    <a href="products.html">Products</a>
-    <a href="reports.html">Reports</a>
-    <a href="settings.html">Settings</a>
-    <a href="index.html">About</a>
-  </nav>
-
-  <!-- Header -->
-  <div class="header"><div class="global-header">     <img src="logo.png" class="global-logo"> </div>
-
-    <div class="brand">BharatPOS</div>
+  
+  <div class="header">
+    <div class="global-header"><img src="logo.png" class="global-logo"></div>
+    <div class="brand"> BharatPOS</div>
     <div class="nav">
       <a href="dashboard.html">Dashboard</a>
+      <a href="products.html">Products</a>
       <a href="billing.html">Billing</a>
+      <a href="sales.html" class="active">Sales</a>
+      <a href="report.html">Report</a>
+      <a href="settings.html">Settings</a>
+      <a href="index.html">About</a>
     </div>
   </div>
 
-  <!-- Sales Container -->
   <div class="container">
     <div class="card">
-      <h3>Sales History</h3>
-      <div style="display:flex;gap:8px; margin-bottom:10px;">
-        <button onclick="downloadSalesCSV()">Export CSV</button>
-        <button onclick="clearSales()" style="background:#dc3545; color:#fff;">Clear old sales</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Sales History</h3>
+        
+        <div style="display:flex;gap:8px;">
+          <button onclick="downloadSalesCSV()" style="padding:8px 15px; cursor:pointer;">
+            <i class="fa-solid fa-file-csv"></i> Export CSV
+          </button>
+          <button onclick="clearSales()" style="background:#dc3545; color:#fff; padding:8px 15px; border:none; border-radius:4px; cursor:pointer;">
+            <i class="fa-solid fa-trash"></i> Clear Old
+          </button>
+        </div>
       </div>
-      <div class="small" style="margin-bottom:8px;">
-        Sales older than 2 years are automatically removed. Recent sales are protected.
+
+      <div class="small" style="margin-bottom:15px; color:#666; font-style:italic;">
+        <i class="fa-solid fa-circle-info"></i> Sales older than 2 years are automatically removed to save space.
       </div>
+      
       <div id="salesList"></div>
     </div>
   </div>
@@ -65,69 +71,171 @@
 
     // --- Render Sales Table ---
     function renderSales() {
-      const arr = pruneOldSales().slice().reverse(); // prune first
+      const arr = pruneOldSales().slice().reverse(); // Show newest first
       const container = document.getElementById('salesList');
 
       if(arr.length === 0) {
-        container.innerHTML = '<div class="small">No sales yet</div>';
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">No sales records found.</div>';
         return;
       }
 
-      let html = '<table><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Amount</th><th>Action</th></tr>';
+      // Enhanced Table Styling
+      let html = `
+        <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+          <thead>
+            <tr style="background:#f8f9fa; text-align:left; border-bottom:2px solid #ddd;">
+              <th style="padding:10px;">Invoice #</th>
+              <th style="padding:10px;">Date</th>
+              <th style="padding:10px;">Customer</th>
+              <th style="padding:10px;">Amount</th>
+              <th style="padding:10px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>`;
+      
       arr.forEach(s => {
-        html += `<tr>
-          <td>${s.invoiceNo}</td>
-          <td>${new Date(s.date).toLocaleString()}</td>
-          <td>${s.customer}</td>
-          <td>${formatCurrency(s.total)}</td>
-          <td><button onclick='viewSale("${s.invoiceNo}")'>View</button></td>
-        </tr>`;
+        html += `
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:10px; font-weight:bold; color:#007bff;">${s.invoiceNo}</td>
+            <td style="padding:10px;">${new Date(s.date).toLocaleString()}</td>
+            <td style="padding:10px;">${s.customer || 'Walk-in'}</td>
+            <td style="padding:10px; font-weight:bold;">${formatCurrency(s.total)}</td>
+            <td style="padding:10px;">
+              <button onclick='viewSale("${s.invoiceNo}")' style="padding:5px 10px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">
+                <i class="fa-solid fa-eye"></i> View
+              </button>
+            </td>
+          </tr>`;
       });
-      html += '</table>';
+      html += '</tbody></table>';
       container.innerHTML = html;
     }
 
-    // --- View Single Sale Invoice ---
+    // --- UPGRADED VIEW SALE FUNCTION ---
     function viewSale(inv) {
       const sale = getSales().find(s => s.invoiceNo === inv);
       if(!sale) return alert('Invoice not found');
 
-      let html = `<h3>Invoice ${sale.invoiceNo}</h3>
-        <div>${new Date(sale.date).toLocaleString()} | ${sale.customer}</div>
-        <table>
-          <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>`;
-      
-      sale.items.forEach(it => {
-        html += `<tr>
-          <td>${it.name}</td>
-          <td>${it.qty}</td>
-          <td>${formatCurrency(it.price)}</td>
-          <td>${formatCurrency(it.qty * it.price)}</td>
-        </tr>`;
+      // 1. Fetch Shop Details from LocalStorage (from Settings page)
+      const shopName = localStorage.getItem('shopName') || "Bharat POS Store";
+      const shopPhone = localStorage.getItem('shopPhone') || "";
+
+      // 2. Build Item Rows
+      let itemsHtml = '';
+      sale.items.forEach((it, index) => {
+        itemsHtml += `
+          <tr>
+            <td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">${index + 1}</td>
+            <td style="padding:8px; border-bottom:1px solid #eee;">${it.name}</td>
+            <td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">${it.qty}</td>
+            <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${formatCurrency(it.price)}</td>
+            <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${formatCurrency(it.qty * it.price)}</td>
+          </tr>`;
       });
 
-      html += `</table><div class="total">Total: ${formatCurrency(sale.total)}</div>`;
-
-      const win = window.open('', '_blank');
-      win.document.write(`
+      // 3. Construct the Full Professional HTML
+      const invoiceHtml = `
         <html>
-          <head>
-            <title>Invoice ${sale.invoiceNo}</title>
-            <link rel="stylesheet" href="bharatpos.css">
-          </head>
-          <body>${html}</body>
+        <head>
+          <title>Invoice #${sale.invoiceNo}</title>
+          <style>
+            body { font-family: 'Helvetica', sans-serif; padding: 20px; background: #555; }
+            .invoice-box {
+              max-width: 800px;
+              margin: auto;
+              padding: 30px;
+              border: 1px solid #eee;
+              box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+              background: #fff;
+              border-radius: 8px;
+            }
+            .header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+            .shop-details h1 { margin: 0; font-size: 24px; color: #333; }
+            .shop-details p { margin: 5px 0 0; color: #666; }
+            .invoice-details { text-align: right; }
+            .invoice-details h2 { margin: 0; color: #007bff; }
+            .bill-to { margin-bottom: 20px; background: #f9f9f9; padding: 15px; border-radius: 5px; }
+            table { width: 100%; line-height: inherit; text-align: left; border-collapse: collapse; }
+            table th { background: #eee; padding: 10px; font-weight: bold; font-size: 14px; }
+            table td { padding: 10px; font-size: 14px; }
+            .total-section { margin-top: 20px; text-align: right; border-top: 2px solid #333; padding-top: 10px; }
+            .total-label { font-size: 16px; font-weight: bold; margin-right: 20px; }
+            .total-amount { font-size: 22px; font-weight: bold; color: #28a745; }
+            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 20px; }
+            .print-btn {
+              display: block; width: 100%; padding: 15px; background: #007bff; color: white; 
+              text-align: center; text-decoration: none; font-weight: bold; margin-top: 20px; border-radius: 5px;
+            }
+            @media print {
+              body { background: #fff; padding: 0; }
+              .invoice-box { box-shadow: none; border: none; width: 100%; max-width: 100%; }
+              .print-btn { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            
+            <div class="header">
+              <div class="shop-details">
+                <h1>${shopName}</h1>
+                <p>Phone: ${shopPhone}</p>
+              </div>
+              <div class="invoice-details">
+                <h2>INVOICE</h2>
+                <p># ${sale.invoiceNo}</p>
+                <p>Date: ${new Date(sale.date).toLocaleDateString()}</p>
+                <p>Time: ${new Date(sale.date).toLocaleTimeString()}</p>
+              </div>
+            </div>
+
+            <div class="bill-to">
+              <strong>Bill To:</strong>
+              <span style="font-size:1.1em; margin-left:10px;">${sale.customer || 'Valued Customer'}</span>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:50px; text-align:center">#</th>
+                  <th>Item Description</th>
+                  <th style="width:80px; text-align:center">Qty</th>
+                  <th style="width:100px; text-align:right">Price</th>
+                  <th style="width:100px; text-align:right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div class="total-section">
+              <span class="total-label">GRAND TOTAL</span>
+              <span class="total-amount">${formatCurrency(sale.total)}</span>
+            </div>
+
+            <div class="footer">
+              <p>Thank you for your business!</p>
+              <p>Computer generated invoice.</p>
+            </div>
+
+            <a href="#" onclick="window.print()" class="print-btn">Print Invoice / Save as PDF</a>
+          </div>
+        </body>
         </html>
-      `);
+      `;
+
+      // 4. Open Window
+      const win = window.open('', '_blank');
+      win.document.write(invoiceHtml);
       win.document.close();
     }
 
     // --- CSV Download Helper ---
     function downloadCSV(data, filename = 'data.csv') {
       if(!data || data.length === 0) return alert('No data to export');
-
       const headers = Object.keys(data[0]);
       const rows = data.map(row => headers.map(h => `"${row[h]}"`).join(','));
-
       const csvContent = [headers.join(','), ...rows].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -144,7 +252,6 @@
     function downloadSalesCSV() {
       const sales = getSales();
       if(sales.length === 0) return alert('No sales to export');
-
       const rows = [];
       sales.forEach(s => {
         s.items.forEach(it => {
@@ -159,23 +266,19 @@
           });
         });
       });
-
       downloadCSV(rows, 'bharatpos_sales_' + Date.now() + '.csv');
     }
 
     // --- Clear Old Sales Only ---
     function clearSales() {
       if(!confirm('Clear all sales older than 2 years?')) return;
-
       const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
       const now = Date.now();
-
       let sales = getSales();
       sales = sales.filter(s => now - new Date(s.date).getTime() <= TWO_YEARS_MS);
-
       localStorage.setItem('bharatpos_sales', JSON.stringify(sales));
       renderSales();
-      alert('Old sales cleared. Recent sales are protected.');
+      alert('Old sales cleared.');
     }
 
     // --- Initial Render ---
@@ -183,4 +286,3 @@
   </script>
 </body>
 </html>
-
