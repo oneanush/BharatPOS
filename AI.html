@@ -99,7 +99,7 @@
     const promptBox = document.getElementById("aiPrompt");
     data.prompt = promptBox ? promptBox.value.trim() : "";
 
-   fetch("http://127.0.0.1:5185/ai-business-consult", {
+   fetch("https://undertake-declaration-log-tennis.trycloudflare.com/ai-business-consult", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
