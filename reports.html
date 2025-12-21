@@ -293,7 +293,8 @@ function renderReports(){
 
   if(sortedDates.length === 0){
       tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">No sales data found</td></tr>';
-      return;
+      // still send an empty snapshot (optional) — we'll do it below after building snapshot
+      // return;
   }
 
   const historyHtml = sortedDates.map((date, index) => {
@@ -341,6 +342,130 @@ function renderReports(){
 
   tableBody.innerHTML = historyHtml;
   document.getElementById('grandTotal').innerText = `Total Sales: ${formatCurrency(grandTotalRevenue)}`;
+
+  // Build and send reports snapshot to backend (same flow as dashboard)
+  try {
+    const snapshot = getReportsSnapshot();
+    // persist a copy locally like dashboard page does
+    try { localStorage.setItem("bharatpos_reports_snapshot", JSON.stringify(snapshot)); } catch(e) { console.warn('Could not save reports snapshot to localStorage:', e); }
+    sendReportsSnapshotIfChanged(snapshot).catch(err => console.warn('sendReportsSnapshotIfChanged error:', err));
+  } catch (e) {
+    console.warn('Could not build/send reports snapshot:', e);
+  }
+}
+
+/* ------------------------
+   Snapshot & upload code
+   ------------------------ */
+
+const API_BASE = 'http://127.0.0.1:5185'; // same base used by dashboard
+
+function hashStringDjb2(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash & 0xFFFFFFFF;
+  }
+  return (hash >>> 0).toString(16);
+}
+
+function buildUrl(endpoint) {
+  if (!endpoint) return API_BASE || '';
+  const ep = endpoint.replace(/^\//,'');
+  if (!API_BASE) return '/' + ep;
+  const normalizedBase = API_BASE.replace(/\/+$/,'');
+  if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
+  return normalizedBase + '/' + ep;
+}
+
+async function sendReportsSnapshotIfChanged(snapshot) {
+  try {
+    const snapshotJson = JSON.stringify(snapshot);
+    const snapshotHash = hashStringDjb2(snapshotJson);
+    const lastHashKey = 'bharatpos_last_sent_reports_snapshot_hash';
+    const lastHash = localStorage.getItem(lastHashKey);
+    if (lastHash === snapshotHash) {
+      console.log('Reports snapshot unchanged — skipping upload');
+      return;
+    }
+    const payload = { snapshot, user_prompt: "" };
+    const url = buildUrl('/ai-business-consult');
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    let result = null;
+    try { result = await res.json(); } catch(e) { result = { text: await res.text().catch(()=>null) }; }
+    if (res.ok) {
+      console.log('Reports snapshot uploaded to server successfully:', result);
+      try {
+        localStorage.setItem(lastHashKey, snapshotHash);
+        localStorage.setItem('bharatpos_last_sent_reports_snapshot_time', new Date().toISOString());
+      } catch(e) { console.warn('Could not save last-sent reports hash', e); }
+    } else {
+      console.warn('Server returned error while uploading reports snapshot:', res.status, result);
+    }
+  } catch (err) {
+    console.warn('Failed to send reports snapshot to server:', err);
+  }
+}
+
+/* Build snapshot in same "shape" style as dashboard snapshot but focused on date-wise details
+   Snapshot format (example):
+   {
+     generated_at: ISOString,
+     type: "datewise_sales_report",
+     period_start: "YYYY-MM-DD",
+     period_end: "YYYY-MM-DD",
+     grand_total_revenue: number,
+     total_bills: number,
+     total_items: number,
+     dates: [
+       {
+         date: "YYYY-MM-DD",
+         revenue: number,
+         bills: number,
+         items_sold: number,
+         products: [{ name: "...", qty: n }, ...]
+       }, ...
+     ]
+   }
+*/
+function getReportsSnapshot() {
+  const grouped = groupSalesByDate();
+  const dates = Object.keys(grouped).sort();
+  let grand_total_revenue = 0;
+  let total_bills = 0;
+  let total_items = 0;
+  const datesArray = dates.map(d => {
+    const rd = grouped[d];
+    grand_total_revenue += rd.revenue;
+    total_bills += rd.bills;
+    total_items += rd.totalItems;
+    const products = Object.entries(rd.products || {}).map(([name, qty]) => ({ name, qty }));
+    return {
+      date: d,
+      revenue: Number(rd.revenue || 0),
+      bills: Number(rd.bills || 0),
+      items_sold: Number(rd.totalItems || 0),
+      products
+    };
+  });
+
+  const period_start = dates.length ? dates[0] : null;
+  const period_end = dates.length ? dates[dates.length - 1] : null;
+
+  return {
+    generated_at: new Date().toISOString(),
+    type: "datewise_sales_report",
+    period_start,
+    period_end,
+    grand_total_revenue: Number(grand_total_revenue || 0),
+    total_bills: Number(total_bills || 0),
+    total_items: Number(total_items || 0),
+    dates: datesArray
+  };
 }
 
 document.addEventListener('DOMContentLoaded', renderReports);
