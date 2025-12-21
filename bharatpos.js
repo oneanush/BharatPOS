@@ -596,3 +596,59 @@ function attachProductGridHandlers() {
 
 
 
+
+
+
+function applyShopDetails() {
+  const name = localStorage.getItem("shopName");
+  const phone = localStorage.getItem("shopPhone");
+
+  const shopNameEls = document.querySelectorAll(".shop-name");
+  const shopPhoneEls = document.querySelectorAll(".shop-phone");
+
+  shopNameEls.forEach(el => {
+    if (name) el.textContent = name;
+  });
+
+  shopPhoneEls.forEach(el => {
+    if (phone) el.textContent = phone;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", applyShopDetails);
+
+
+
+
+function loadUPIQR() {
+  const qr = localStorage.getItem("upiQR");
+  if (qr) {
+    document.getElementById("upiQRImg").src = qr;
+    document.getElementById("upiSection").style.display = "block";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadUPIQR);
+
+
+
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+}
+
+function applyTheme() {
+  const theme = localStorage.getItem("theme");
+  if (theme === "dark") {
+    document.body.classList.add("dark");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", applyTheme);
+
+
+
+
+
+
