@@ -6,54 +6,17 @@
   <title>AI Business Advice - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
   <style>
-    .ai-container {
-      max-width: 900px;
-      margin: 20px auto;
-      padding: 20px;
-    }
-    .ai-card {
-      background: var(--card-bg, #fff);
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .ai-card h3 {
-      margin-top: 0;
-    }
-    .ai-output {
-      margin-top: 15px;
-      padding: 15px;
-      background: #f5f7fa;
-      border-radius: 6px;
-      min-height: 120px;
-      white-space: pre-line;
-    }
-    .ai-btn {
-      margin-top: 10px;
-      padding: 10px 18px;
-      font-size: 15px;
-      background: #0d6efd;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .ai-btn:hover {
-      background: #0b5ed7;
-    }
-    .ai-prompt {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      margin-top: 10px;
-      resize: vertical;
-    }
+    .ai-container { max-width:900px; margin:20px auto; padding:20px }
+    .ai-card { background:var(--card-bg,#fff); border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1) }
+    .ai-output { margin-top:15px; padding:15px; background:#f5f7fa; border-radius:6px; min-height:120px; white-space:pre-line }
+    .ai-btn { margin-top:10px; padding:10px 18px; font-size:15px; background:#0d6efd; color:#fff; border:none; border-radius:6px; cursor:pointer }
+    .ai-prompt { width:100%; padding:8px; border-radius:6px; margin-top:10px; resize:vertical }
+    .ai-loading { opacity:0.7 }
   </style>
 </head>
 <body>
-
   <div class="header">
-    <div class="global-header"><img src="logo.png" class="global-logo"></div>
+    <div class="global-header"><img src="logo.png" class="global-logo" alt="logo"></div>
     <div class="brand">Bharat POS</div>
     <div class="nav">
       <a href="dashboard.html">Dashboard</a>
@@ -69,62 +32,108 @@
   <div class="ai-container">
     <div class="ai-card">
       <h3>🤖 AI Business Consultation</h3>
-      <p>This AI automatically analyses your sales, products and stock data.
-         You can also type a question below (optional).</p>
+      <p>This AI automatically analyses your sales, products and stock data. You can also type a question below (optional).</p>
 
-      <!-- Optional prompt -->
       <textarea id="aiPrompt" class="ai-prompt" rows="2" placeholder="Ask a question about your shop (optional)"></textarea>
 
-      <button class="ai-btn" onclick="getAIAdvice()">Get AI Advice</button>
+      <button id="aiBtn" class="ai-btn" onclick="getAIAdvice()">Get AI Advice</button>
 
       <div id="aiOutput" class="ai-output">AI advice will appear here...</div>
     </div>
   </div>
+
 <script>
-  function collectPOSData() {
-    return {
-      settings: JSON.parse(localStorage.getItem("settings")) || {},
-      sales: JSON.parse(localStorage.getItem("sales")) || [],
-      products: JSON.parse(localStorage.getItem("products")) || [],
-      bills: JSON.parse(localStorage.getItem("bills")) || 0
-    };
+  // Use your Cloudflare server as API base (no trailing slash)
+  const API_BASE = 'https://passenger-julie-loved-reproduced.trycloudflare.com';
+
+  // Build URL safely (avoids double-path if API_BASE already contains endpoint)
+  function buildUrl(endpoint) {
+    if (!endpoint) return API_BASE || '';
+    const ep = endpoint.replace(/^\//,'');
+    if (!API_BASE) return '/' + ep;
+    const normalizedBase = API_BASE.replace(/\/+$/,'');
+    if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
+    return normalizedBase + '/' + ep;
   }
 
-  function getAIAdvice() {
-    const aiOutput = document.getElementById("aiOutput");
-    aiOutput.innerText = "⏳ Analysing your business data...";
+  function getStoredSnapshot() {
+    try {
+      const snap = localStorage.getItem('bharatpos_ai_snapshot');
+      if (snap) return JSON.parse(snap);
+    } catch(e) { console.warn('Invalid snapshot in storage', e); }
+    try {
+      const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+      const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+      let revenue = 0;
+      const productQty = {};
+      sales.forEach(s=>{
+        revenue += Number(s.total||0);
+        (s.items||[]).forEach(i=>{
+          if (i && i.name) productQty[i.name] = (productQty[i.name]||0) + Number(i.qty||0);
+        });
+      });
+      const totalBills = sales.length;
+      const avgBill = totalBills ? Math.round(revenue/totalBills) : 0;
+      const lowStock = products.filter(p=>Number(p.stock||0) <= 5).map(p=>p.name);
+      const highStock = products.filter(p=>Number(p.stock||0) > 50).map(p=>p.name);
+      return {
+        generated_at: new Date().toISOString(),
+        revenue, total_bills: totalBills, average_bill: avgBill,
+        low_stock: lowStock, high_stock: highStock, products_count: products.length, sales_count: sales.length
+      };
+    } catch(e){
+      return { generated_at: new Date().toISOString() };
+    }
+  }
 
-    const data = collectPOSData();
+  async function getAIAdvice(){
+    const aiOutput = document.getElementById('aiOutput');
+    const aiBtn = document.getElementById('aiBtn');
+    aiOutput.classList.add('ai-loading');
+    aiOutput.innerText = '⏳ Analysing your business data...';
+    aiBtn.disabled = true;
 
-    const promptBox = document.getElementById("aiPrompt");
-    data.prompt = promptBox ? promptBox.value.trim() : "";
+    const promptBox = document.getElementById('aiPrompt');
+    const prompt = promptBox ? promptBox.value.trim() : '';
 
-   fetch("https://undertake-declaration-log-tennis.trycloudflare.com/ai-business-consult", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    sales: 50000,
-    bills: 120,
-    lowStock: ["Rice", "Oil"],
-    highStock: ["Soap"],
-    prompt: "How can I increase profit?"
-  })
-})
-    .then(res => res.json())
-    .then(result => {
-      if (result.success) {
-        aiOutput.innerText = result.advice;
-      } else {
-        aiOutput.innerText = "AI could not generate advice.";
+    const snapshot = getStoredSnapshot();
+    const payload = { snapshot, user_prompt: prompt }; // server expects user_prompt
+
+    const url = buildUrl('/ai-business-consult');
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(()=>null);
+        aiOutput.classList.remove('ai-loading');
+        aiOutput.innerText = `Server error: ${res.status} ${res.statusText}` + (text ? `\n\n${text}` : '');
+        return;
       }
-    })
-    .catch(err => {
-      console.error(err);
-      aiOutput.innerText = "Server connected but AI failed.";
-    });
+
+      const result = await res.json();
+      if (result && result.success && (result.advice || result.reply || result.message)) {
+        aiOutput.classList.remove('ai-loading');
+        aiOutput.innerText = result.advice || result.reply || result.message || 'AI returned no advice.';
+      } else if (result && !result.success && result.message) {
+        aiOutput.classList.remove('ai-loading');
+        aiOutput.innerText = `AI could not generate advice: ${result.message}`;
+      } else {
+        aiOutput.classList.remove('ai-loading');
+        aiOutput.innerText = 'AI returned an unexpected response.';
+        console.warn('Unexpected AI response', result);
+      }
+    } catch(err) {
+      console.error('AI request failed:', err);
+      aiOutput.classList.remove('ai-loading');
+      aiOutput.innerText = 'Failed to connect to AI server. See console for details.';
+    } finally {
+      aiBtn.disabled = false;
+    }
   }
 </script>
-
-  
 </body>
 </html>
