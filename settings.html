@@ -1,99 +1,283 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Settings - Bharat POS</title>
+  
   <link rel="stylesheet" href="bharatpos.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <script src="bharatpos.js" defer></script>
+
+  <style>
+    :root {
+      --primary-color: #007bff;
+      --danger-color: #dc3545;
+      --success-color: #28a745;
+      --bg-light: #f8f9fa;
+      --text-dark: #343a40;
+    }
+
+    /* Keep main layout but enhance internal container */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 20px 0;
+    }
+
+    .settings-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      padding: 20px;
+      border: 1px solid #eee;
+    }
+
+    .settings-card h4 {
+      margin-top: 0;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      color: var(--text-dark);
+      font-size: 1.1rem;
+    }
+
+    /* Styled Form Elements */
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box; /* Fixes padding issues */
+    }
+
+    /* Styled Buttons */
+    .btn-action {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s;
+    }
+    .btn-action:hover { opacity: 0.9; }
+
+    .btn-primary { background: var(--primary-color); color: white; }
+    .btn-danger { background: var(--danger-color); color: white; }
+    .btn-success { background: var(--success-color); color: white; }
+    .btn-outline { background: white; border: 1px solid #ddd; color: #333; }
+
+    /* Custom File Input Styling */
+    .file-upload-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+    .file-upload-wrapper input[type=file] {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* QR Preview Styling */
+    .qr-container {
+      text-align: center;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+      border: 1px dashed #ccc;
+    }
+  </style>
 </head>
 <body>
 
   <div class="header">
-<div class="global-header">     <img src="logo.png" class="global-logo"> </div>
-    <div class="brand">  Bharat POS</div>
+    <div class="global-header"><img src="logo.png" class="global-logo"></div>
+    <div class="brand"> Bharat POS</div>
     <div class="nav">
       <a href="dashboard.html">Dashboard</a>
       <a href="products.html">Products</a>
       <a href="billing.html">Billing</a>
       <a href="sales.html">Sales</a>
       <a href="report.html">Report</a>
-      <a href="settings.html">Settings</a>
-      <a href="index.html">About</a>
+      <a href="settings.html" class="active">Settings</a> <a href="index.html">About</a>
     </div>
   </div>
 
   <div class="container">
-    <div class="card">
-      <h3>Settings</h3>
+    <div class="settings-header" style="margin-top: 20px;">
+      <h3><i class="fa-solid fa-gears"></i> Application Settings</h3>
+    </div>
+
+    <div class="settings-grid">
       
-      <div class="form-row">
-        <button onclick="exportAll()">Export all (JSON)</button>
-      </div>
-
-      <div class="form-row">
-        <input type="file" id="importFile">
-        <button onclick="doImport()">Import file</button>
-      </div>
-
-      <div class="form-row">
-        <button onclick="if(confirm('Clear ALL data?')){ localStorage.clear(); alert('Cleared'); }" style="background:#dc3545">
-          Reset All Data
+      <div class="settings-card">
+        <h4><i class="fa-solid fa-store"></i> Store Details</h4>
+        <div class="form-group">
+          <label>Shop Name</label>
+          <input type="text" id="shopName" class="form-control" placeholder="Enter Shop Name">
+        </div>
+        <div class="form-group">
+          <label>Contact Number</label>
+          <input type="text" id="shopPhone" class="form-control" placeholder="Enter Phone Number">
+        </div>
+        <button onclick="saveShopDetails()" class="btn-action btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> Save Details
         </button>
       </div>
-<label>Upload UPI QR Code:</label>
-<input type="file" id="qrUpload" accept="image/*">
 
-<img id="qrPreview" style="width:120px; margin-top:10px; display:none;">
-
-      <div class="form-row">
-        <button onclick="toggleTheme()">Toggle Theme</button>
+      <div class="settings-card">
+        <h4><i class="fa-solid fa-qrcode"></i> Payment Configuration</h4>
+        <div class="form-group">
+          <label>Upload UPI QR Code</label>
+          <div class="file-upload-wrapper">
+            <button class="btn-action btn-outline">
+              <i class="fa-solid fa-upload"></i> Choose QR Image
+            </button>
+            <input type="file" id="qrUpload" accept="image/*">
+          </div>
+        </div>
+        <div class="qr-container">
+          <p style="font-size:12px; color:#888; margin:0;" id="qrPlaceholder">No QR Uploaded</p>
+          <img id="qrPreview" style="max-width:100%; height:auto; display:none; border-radius:4px;">
+        </div>
       </div>
+
+      <div class="settings-card">
+        <h4><i class="fa-solid fa-database"></i> Data Management</h4>
+        
+        <div class="form-group">
+          <label>Backup Data</label>
+          <button onclick="exportAll()" class="btn-action btn-success">
+            <i class="fa-solid fa-download"></i> Export All (JSON)
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label>Restore Data</label>
+          <div style="display: flex; gap: 5px;">
+            <input type="file" id="importFile" class="form-control" style="padding: 5px;">
+          </div>
+          <button onclick="doImport()" class="btn-action btn-primary" style="margin-top: 10px;">
+            <i class="fa-solid fa-file-import"></i> Import File
+          </button>
+        </div>
+
+        <hr>
+        
+        <div class="form-group">
+          <button onclick="if(confirm('WARNING: This will delete ALL data. Are you sure?')){ localStorage.clear(); alert('All Data Cleared successfully.'); location.reload(); }" class="btn-action btn-danger">
+            <i class="fa-solid fa-trash-can"></i> Reset All Data
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h4><i class="fa-solid fa-paintbrush"></i> Appearance</h4>
+        <p style="font-size: 0.9rem; color: #666;">Switch between light and dark modes.</p>
+        <button onclick="toggleTheme()" class="btn-action btn-outline">
+          <i class="fa-solid fa-moon"></i> Toggle Theme
+        </button>
+      </div>
+
     </div>
   </div>
 
   <script>
+    // --- 1. IMPORT/EXPORT LOGIC (PRESERVED) ---
     function doImport() {
       const f = document.getElementById('importFile').files[0];
-      if (!f) return alert('Choose file');
-      importAllFile(f, function(err, msg) { 
-        if (err) alert('Import error'); 
-        else { alert(msg); location.reload(); } 
-      });
+      if (!f) return alert('Please choose a file first.');
+      
+      // Checking if importAllFile exists (from bharatpos.js)
+      if (typeof importAllFile === "function") {
+        importAllFile(f, function(err, msg) { 
+          if (err) alert('Import error'); 
+          else { alert(msg); location.reload(); } 
+        });
+      } else {
+        alert("Error: importAllFile function missing. Check bharatpos.js");
+      }
     }
 
-const qrUpload = document.getElementById("qrUpload");
-const qrPreview = document.getElementById("qrPreview");
+    // --- 2. QR CODE LOGIC (PRESERVED & ENHANCED PREVIEW) ---
+    const qrUpload = document.getElementById("qrUpload");
+    const qrPreview = document.getElementById("qrPreview");
+    const qrPlaceholder = document.getElementById("qrPlaceholder");
 
-qrUpload.addEventListener("change", function() {
-    const file = this.files[0];
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
+    qrUpload.addEventListener("change", function() {
+      const file = this.files[0];
+      if(file){
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function() {
+          localStorage.setItem("upiQR", reader.result); 
+          updateQRDisplay(reader.result);
+          alert("QR Code Saved Successfully");
+        };
+      }
+    });
 
-    reader.onload = function() {
-        localStorage.setItem("upiQR", reader.result); 
-        qrPreview.src = reader.result;
-        qrPreview.style.display = "block";
-        alert("QR Code Saved Successfully");
+    function updateQRDisplay(src) {
+      if(src) {
+        qrPreview.src = src;
+        qrPreview.style.display = "inline-block";
+        qrPlaceholder.style.display = "none";
+      }
+    }
+
+    // --- 3. SHOP DETAILS LOGIC (NEW FEATURE) ---
+    function saveShopDetails() {
+      const name = document.getElementById('shopName').value;
+      const phone = document.getElementById('shopPhone').value;
+      localStorage.setItem('shopName', name);
+      localStorage.setItem('shopPhone', phone);
+      alert('Shop details saved!');
+    }
+
+    function loadShopDetails() {
+      const name = localStorage.getItem('shopName');
+      const phone = localStorage.getItem('shopPhone');
+      if(name) document.getElementById('shopName').value = name;
+      if(phone) document.getElementById('shopPhone').value = phone;
+    }
+
+    // --- 4. ON LOAD INITIALIZATION ---
+    window.onload = function() {
+      // Load QR
+      const storedQR = localStorage.getItem("upiQR");
+      if (storedQR) {
+        updateQRDisplay(storedQR);
+      }
+      // Load Shop Details
+      loadShopDetails();
     };
-});
-
-// Load saved QR on settings page refresh
-window.onload = function() {
-    const storedQR = localStorage.getItem("upiQR");
-    if (storedQR) {
-        qrPreview.src = storedQR;
-        qrPreview.style.display = "block";
-    }
-};
 
   </script>
 
 </body>
 </html>
-
-
-
-
-
