@@ -1,174 +1,250 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Bharat POS — Dashboard</title>
   <link rel="stylesheet" href="bharatpos.css">
-  <script src="bharatpos.js"></script>
-
-
-
 </head>
-<nav>
 
- <a href="products.html">Products</a>
+<body>
+
+<nav>
+  <a href="products.html">Products</a>
   <a href="reports.html">Reports</a>
   <a href="settings.html">Settings</a>
   <a href="index.html">About</a>
-<div id="profileName" class="profile-name" ></div>
+  <div id="profileName" class="profile-name"></div>
 </nav>
 
-
-
 <style>
-.profile-name {
-  font-weight: 700;
-  color: #ffccrr;
-  margin-left: 12px;
-  margin-right: 5px;
-  padding: 6px 10px;
-  border: 1px solid #ffcc00;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.1);
+.profile-name{
+  font-weight:700;
+  margin-left:12px;
+  padding:6px 10px;
+  border:1px solid #ffcc00;
+  border-radius:8px;
 }
-
-
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.card{padding:16px;border-radius:12px;background:#111;color:#fff}
+.small{font-size:13px;color:#ccc}
+.bad{color:#ff6b6b}
+.good{color:#4cd964}
 </style>
 
+<div class="header">
+  <div class="global-header"><img src="logo.png" class="global-logo"></div>
+  <div class="brand">Bharat POS</div>
+  <div class="nav">
+    <a href="billing.html">Billing</a>
+    <a href="sales.html">Sales</a>
+  </div>
+</div>
 
+<div class="container grid">
 
-<body>
-  <div class="header">
-    <div class="global-header">     <img src="logo.png" class="global-logo"> </div>
-
-    <div class="brand"> Bharat POS</div>
-    <div class="nav">
-      <a href="billing.html">Billing</a>
-      <a href="sales.html">Sales</a>
-     
-    </div>
+  <div class="card">
+    <h3>Revenue</h3>
+    <div id="totalRevenue" style="font-size:22px;font-weight:700">₹0</div>
+    <div class="small" id="avgBill"></div>
   </div>
 
-
-  <div class="container">
-    <div class="card">
-   
-      <h3>Quick Summary</h3>
-      <div id="summary"></div>
-    </div>
-<div> <button class="reset-btn" onclick="resetSales()">Reset</button></div>
-
-    <div class="card">
-      <h3>Low stock items</h3>
-      <div id="lowstock"></div>
-    </div>
+  <div class="card">
+    <h3>Sales</h3>
+    <div id="totalBills" style="font-size:22px;font-weight:700">0 Bills</div>
+    <div class="small" id="salesTrend"></div>
   </div>
 
-  <div class="footer">Built by Utkarsh — BharatPOS</div>
+  <div class="card">
+    <h3>Stock Health</h3>
+    <div id="lowStockCount"></div>
+    <div id="deadStockCount" class="small"></div>
+  </div>
 
-  <script>
-    // render summary
-    function render(){
-      const agg = aggregateSales();
-      document.getElementById('summary').innerHTML = `
-        <div><b>Total Revenue:</b> ${formatCurrency(agg.totalRevenue || 0)}</div>
-        <div><b>Total Sales:</b> ${agg.totalSales}</div>
-        <div><b>Best Seller:</b> ${agg.bestProductName || '—'} (${agg.bestProductQty})</div>
-      `;
-      const low = getProducts().filter(p=>p.stock <= 5);
-      if(low.length===0) document.getElementById('lowstock').innerHTML = '<div class="small">No low stock items</div>';
-      else document.getElementById('lowstock').innerHTML = low.map(p=>`<div class="small">${p.name} — <span class="lowstock">${p.stock}</span></div>`).join('');
-    }
-    render();
-  </script>
+  <div class="card">
+    <h3>Growth Indicator</h3>
+    <div id="growthStatus" style="font-size:20px">—</div>
+    <div class="small" id="growthHint"></div>
+  </div>
+
+</div>
+
+<div class="container">
+  <div class="card">
+    <h3>Low Stock Items</h3>
+    <div id="lowstock"></div>
+  </div>
+
+  <div class="card">
+    <h3>Dead Stock</h3>
+    <div id="deadstock"></div>
+  </div>
+</div>
+
+<div style="margin:20px">
+  <button onclick="resetSales()">Reset Sales</button>
+</div>
+
+<div class="footer">Built by Utkarsh — BharatPOS</div>
 <script>
+// -------------------------
+// Utilities
+// -------------------------
+function formatCurrency(num){
+  return '₹' + Number(num || 0).toLocaleString('en-IN');
+}
+
 function loadUser(){
-  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  if(data.name){
-    document.getElementById('profileName').textContent = "👤 " + data.name;
-  } else {
-    document.getElementById('profileName').textContent = "👤 Guest";
-  }
+  const u = JSON.parse(localStorage.getItem('bharatpos_user')||'{}');
+  document.getElementById('profileName').textContent = u.name ? '👤 '+u.name : '👤 Guest';
 }
-loadUser();
-</script>
-<script>
-function resetSales() {
-  if(confirm("⚠ Are you sure you want to delete all sales records? This action cannot be undone.")){
-    localStorage.setItem('bharatpos_sales', '[]');
-    alert("All sales data has been cleared.");
-    location.reload();
-  }
-}
-</script>
-<script>
-  // -------------------------
-  // Dashboard rendering
-  // -------------------------
-  function renderDashboard() {
-    const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
-    const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
 
-    // --- Quick Summary ---
-    let totalRevenue = 0, totalSales = sales.length;
-    const productSalesCount = {}; // track sold qty per product
-    sales.forEach(sale => {
-      totalRevenue += Number(sale.total || 0);
-      (sale.items || []).forEach(it => {
-        if (!productSalesCount[it.name]) productSalesCount[it.name] = 0;
-        productSalesCount[it.name] += Number(it.qty || 0);
-      });
+// -------------------------
+// AI Snapshot Generator
+// -------------------------
+function getDashboardSnapshot(){
+  const products = JSON.parse(localStorage.getItem('bharatpos_products')||'[]');
+  const sales = JSON.parse(localStorage.getItem('bharatpos_sales')||'[]');
+
+  let revenue = 0;
+  const productQty = {};
+  const productDailySales = {}; // average sales per day
+
+  // Count sold quantities
+  sales.forEach(s=>{
+    revenue += Number(s.total||0);
+    (s.items||[]).forEach(i=>{
+      productQty[i.name] = (productQty[i.name]||0) + Number(i.qty||0);
     });
+  });
 
-    // Best seller
-    let bestProductName = '—', bestProductQty = 0;
-    for (const [name, qty] of Object.entries(productSalesCount)) {
-      if (qty > bestProductQty) { bestProductName = name; bestProductQty = qty; }
-    }
+  const totalBills = sales.length;
+  const avgBill = totalBills ? Math.round(revenue/totalBills) : 0;
 
-    document.getElementById('summary').innerHTML = `
-      <div><b>Total Revenue:</b> ${formatCurrency(totalRevenue)}</div>
-      <div><b>Total Sales:</b> ${totalSales}</div>
-      <div><b>Best Seller:</b> ${bestProductName} (${bestProductQty})</div>
-    `;
+  // Calculate daily sales based on first and last sale date
+  let firstDate = sales.length ? new Date(sales[0].date) : new Date();
+  let lastDate = sales.length ? new Date(sales[sales.length-1].date) : new Date();
+  let days = Math.max(1, Math.ceil((lastDate - firstDate)/(1000*60*60*24)));
 
-    // --- Low Stock Items ---
-    const lowStockItems = products.filter(p => Number(p.stock || 0) <= 5);
-    const lowStockContainer = document.getElementById('lowstock');
-    if (lowStockItems.length === 0) {
-      lowStockContainer.innerHTML = '<div class="small">No low stock items</div>';
-    } else {
-      lowStockContainer.innerHTML = lowStockItems
-        .map(p => `<div class="small">${p.name} — <span class="lowstock">${p.stock}</span></div>`)
-        .join('');
-    }
-  }
+  products.forEach(p=>{
+    const soldQty = productQty[p.name] || 0;
+    productDailySales[p.name] = Math.round(soldQty / days);
+  });
 
-  renderDashboard();
+  const lowStock = products.filter(p=>Number(p.stock||0)<=5);
+  const deadStock = products.filter(p=>!productQty[p.name]);
 
-  // -------------------------
-  // User Profile
-  // -------------------------
-  function loadUser() {
-    const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    document.getElementById('profileName').textContent = data.name ? "👤 " + data.name : "👤 Guest";
-  }
-  loadUser();
-
-  // -------------------------
-  // Reset Sales
-  // -------------------------
-  function resetSales() {
-    if (confirm("⚠ Are you sure you want to delete all sales records? This action cannot be undone.")) {
-      localStorage.setItem('bharatpos_sales', '[]');
-      alert("All sales data has been cleared.");
-      renderDashboard();
+  // best seller
+  let bestProduct = null, bestQty = 0;
+  for(const name in productQty){
+    if(productQty[name] > bestQty){
+      bestProduct = name;
+      bestQty = productQty[name];
     }
   }
+
+  // growth signal
+  let growthSignal = 'stable';
+  if(totalBills === 0) growthSignal = 'no-data';
+  else if(lowStock.length > 10) growthSignal = 'risk';
+
+  return {
+    generated_at: new Date().toISOString(),
+    revenue,
+    total_bills: totalBills,
+    average_bill: avgBill,
+    low_stock_count: lowStock.length,
+    dead_stock_count: deadStock.length,
+    best_product: bestProduct,
+    best_product_qty: bestQty,
+    growth_signal: growthSignal,
+    stock_analysis: products.map(p=>({
+      name: p.name,
+      stock: p.stock,
+      daily_sales: productDailySales[p.name] || 0
+    }))
+  };
+}
+
+
+
+// -------------------------
+// Render Dashboard
+// -------------------------
+function renderDashboard(){
+  const products = JSON.parse(localStorage.getItem('bharatpos_products')||'[]');
+  const sales = JSON.parse(localStorage.getItem('bharatpos_sales')||'[]');
+
+  let revenue=0;
+  const productQty={};
+
+  sales.forEach(s=>{
+    revenue += Number(s.total||0);
+    (s.items||[]).forEach(i=>{
+      productQty[i.name] = (productQty[i.name]||0) + Number(i.qty||0);
+    });
+  });
+
+  const bills = sales.length;
+  const avgBill = bills ? Math.round(revenue/bills) : 0;
+
+  const lowStock = products.filter(p=>Number(p.stock||0)<=5);
+  const deadStock = products.filter(p=>!productQty[p.name]);
+
+  // --- Update dashboard DOM ---
+  document.getElementById('totalRevenue').textContent = formatCurrency(revenue);
+  document.getElementById('avgBill').textContent = 'Avg Bill: '+formatCurrency(avgBill);
+  document.getElementById('totalBills').textContent = bills+' Bills';
+  document.getElementById('salesTrend').textContent = bills>0 ? 'Active sales' : 'No sales yet';
+  document.getElementById('lowStockCount').innerHTML = `Low Stock: <b class="bad">${lowStock.length}</b>`;
+  document.getElementById('deadStockCount').innerHTML = `Dead Stock: <b>${deadStock.length}</b>`;
+
+  const growthStatus = document.getElementById('growthStatus');
+  const growthHint = document.getElementById('growthHint');
+  if(bills===0){
+    growthStatus.textContent='No Data';
+    growthHint.textContent='Start billing to see growth';
+  } else if(lowStock.length>10){
+    growthStatus.textContent='At Risk';
+    growthHint.textContent='Too many low-stock items';
+  } else {
+    growthStatus.textContent='Stable';
+    growthHint.textContent='Operations look normal';
+  }
+
+  document.getElementById('lowstock').innerHTML = lowStock.length ?
+    lowStock.map(p=>`<div class="small">${p.name} — <span class="bad">${p.stock}</span></div>`).join('') :
+    '<div class="small">No low stock</div>';
+
+  document.getElementById('deadstock').innerHTML = deadStock.length ?
+    deadStock.map(p=>`<div class="small">${p.name}</div>`).join('') :
+    '<div class="small">No dead stock</div>';
+
+  // --- Automatically save snapshot to localStorage ---
+  const snapshot = getDashboardSnapshot();
+  localStorage.setItem("bharatpos_ai_snapshot", JSON.stringify(snapshot));
+}
+
+// -------------------------
+// Reset Sales
+// -------------------------
+function resetSales(){
+  if(confirm('⚠ Delete all sales data?')){
+    localStorage.setItem('bharatpos_sales','[]');
+    renderDashboard(); // also regenerates snapshot
+  }
+}
+
+// -------------------------
+// Initialize
+// -------------------------
+loadUser();
+renderDashboard(); // snapshot automatically saved here
 </script>
-
-
 
 </body>
 </html>
+
+
+
 
