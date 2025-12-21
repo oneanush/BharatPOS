@@ -12,12 +12,21 @@
 <nav>
    <a href="sales.html">Sales</a>
    <a href="settings.html">Settings</a>
-    <a href="ai.html">AI</a>
+   <a href="index.html">About</a>
    <div id="profileName" class="profile-name"></div>
 </nav>
 
 <style>
-.profile-name { font-weight:700; color:#ffcc00; margin-left:12px; margin-right:5px; padding:6px 10px; border:1px solid #ffcc00; border-radius:8px; background:rgba(255,255,255,0.1); }
+.profile-name {
+  font-weight: 700;
+  color: #ffcc00;
+  margin-left: 12px;
+  margin-right: 5px;
+  padding: 6px 10px;
+  border: 1px solid #ffcc00;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+}
 </style>
 
 <div class="header">
@@ -72,7 +81,10 @@ loadUser();
 
 function renderProducts(){
   const products = getProducts();
-  if(products.length===0) { document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; return; }
+  if(products.length===0) { 
+    document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; 
+    return;
+  }
   let html = '<table><tr><th>Name</th><th>Qty/Unit</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr>';
   products.forEach(p=>{
     html += `<tr>
@@ -138,10 +150,11 @@ async function handleAddProduct(event){
 </script>
 
 <script>
-/* ------------------------ AI + BARCODE SCANNER ------------------------ */
+/* ------------------------ AI + BARCODE SCANNER (SIMULTANEOUS) ------------------------ */
 // Configure API base to your Cloudflare server (no trailing slash)
 const API_BASE = 'https://passenger-julie-loved-reproduced.trycloudflare.com';
 
+// Build URL helper to avoid doubling endpoints
 function buildUrl(endpoint) {
   if (!endpoint) return API_BASE || '';
   const ep = endpoint.replace(/^\//,'');
@@ -153,9 +166,9 @@ function buildUrl(endpoint) {
 
 let cameraStream = null;
 let scanInterval = null;
-let scanLocked = false;
-let quaggaRunning = false;
-let quaggaDetectedHandler = null;
+let scanLocked = false;            // prevents overlapping AI requests
+let barcodeDecodeInProgress = false; // prevents overlapping barcode decodeSingle calls
+let lastDetectedBarcode = null;   // remember last barcode to avoid repeated fills
 
 // Start live camera + periodic AI captures
 async function startLiveScan() {
@@ -165,7 +178,7 @@ async function startLiveScan() {
   video.style.display = "block";
 
   try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); // single stream
     video.srcObject = cameraStream;
   } catch(err) {
     console.error("Could not access camera:", err);
@@ -173,29 +186,33 @@ async function startLiveScan() {
     return;
   }
 
-  scanInterval = setInterval(()=>{ if(!scanLocked) captureAndScan(); },3000);
+  // periodic capture every 2.5s (adjust as needed)
+  scanInterval = setInterval(()=>{ if(!scanLocked) captureAndScan(); },2500);
 }
 
 function stopLiveScan() {
-  if(scanInterval) { clearInterval(scanInterval); scanInterval = null; }
-
-  if(quaggaRunning) {
-    try { Quagga.stop(); } catch(e){ console.warn('Quagga stop error', e); }
-    quaggaRunning = false;
-    if (typeof Quagga.offDetected === 'function' && quaggaDetectedHandler) {
-      Quagga.offDetected(quaggaDetectedHandler);
-      quaggaDetectedHandler = null;
-    }
+  if(scanInterval) {
+    clearInterval(scanInterval);
+    scanInterval = null;
   }
 
+  // We are not using Quagga.start (live) by default, so just ensure no workers running
+  barcodeDecodeInProgress = false;
+
   if(cameraStream){
-    try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){ console.warn('Error stopping camera tracks', e); }
+    try {
+      cameraStream.getTracks().forEach(t=>t.stop());
+    } catch(e){ console.warn('Error stopping camera tracks', e); }
     cameraStream=null;
   }
 
   const video = document.getElementById("cameraPreview");
-  if(video) { video.style.display="none"; try { video.srcObject = null; } catch(e){} }
+  if(video) {
+    video.style.display="none";
+    try { video.srcObject = null; } catch(e) {}
+  }
 
+  // clear barcode preview area
   const barcodePreview = document.getElementById('barcodePreview');
   if(barcodePreview) barcodePreview.innerHTML = '';
 }
@@ -213,8 +230,14 @@ async function captureAndScan(){
   canvas.height = vh;
   ctx.drawImage(video,0,0,vw,vh);
 
+  // use JPEG for AI (smaller)
   const base64 = canvas.toDataURL("image/jpeg",0.8).split(",")[1];
-  scanLocked=true;
+
+  // Start barcode detection on this same frame (non-blocking)
+  attemptBarcodeDecodeFromCanvas(canvas);
+
+  // Lock AI request so we don't flood
+  scanLocked = true;
 
   try{
     const url = buildUrl('/ai-product-scan');
@@ -227,7 +250,6 @@ async function captureAndScan(){
     if(!res.ok){
       const txt = await res.text().catch(()=>null);
       console.warn('AI product scan server error', res.status, txt);
-      scanLocked = false;
       return;
     }
 
@@ -236,15 +258,77 @@ async function captureAndScan(){
 
     if(data && data.success && hasLogicalData(data.product)){
       fillProductFromAI(data.product);
-      stopLiveScan();
-      startBarcodeOnSameCamera();
+      // Note: we intentionally keep the live camera running so barcode decoding can continue.
+      // If you prefer to stop camera after AI detection, call stopLiveScan() here.
     } else {
+      // no valid product data found — continue scanning
       console.log('AI returned no valid product data');
     }
   }catch(e){ 
     console.error("❌ AI scan error:", e);
   } finally {
     scanLocked=false;
+  }
+}
+
+// Attempt to decode barcode using Quagga.decodeSingle on the canvas image.
+// This avoids opening Quagga LiveStream and uses the same captured frame.
+function attemptBarcodeDecodeFromCanvas(canvas) {
+  if (barcodeDecodeInProgress) return; // avoid overlapping decodes
+  // If the barcode input is already filled with a value we detected earlier, skip decode
+  const currentBarcode = document.getElementById("productBarcode")?.value;
+  if (currentBarcode && currentBarcode === lastDetectedBarcode) return;
+
+  // Convert canvas to dataURL (PNG typically better for Quagga decoding)
+  let dataUrl;
+  try {
+    dataUrl = canvas.toDataURL('image/png');
+  } catch(e) {
+    console.warn('Could not get canvas dataURL for barcode decode', e);
+    return;
+  }
+
+  barcodeDecodeInProgress = true;
+
+  // Quagga.decodeSingle uses the provided src image and runs decoding on it.
+  // Set numOfWorkers: 0 if WebWorker creation causes issues in your environment.
+  try {
+    Quagga.decodeSingle({
+      src: dataUrl,
+      numOfWorkers: 0, // disable workers to avoid cross-origin worker issues, change to >0 if ok
+      locate: true,
+      inputStream: {
+        size: 800 // set resolution to aid detection
+      },
+      decoder: {
+        readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]
+      }
+    }, function(result) {
+      try {
+        if (result && result.codeResult && result.codeResult.code) {
+          const code = result.codeResult.code;
+          console.log('📦 Quagga decodeSingle found barcode:', code);
+          const barcodeField = document.getElementById("productBarcode");
+          if (barcodeField) {
+            barcodeField.value = code;
+            lastDetectedBarcode = code;
+          }
+          // Optionally show the barcodePreview with the detected code
+          const preview = document.getElementById('barcodePreview');
+          if (preview) preview.innerHTML = `<div style="padding:8px;background:#eef;border-radius:6px">Detected barcode: <b>${code}</b></div>`;
+        } else {
+          // no barcode found in this frame
+          //console.log('No barcode in frame');
+        }
+      } catch(e) {
+        console.warn('Error handling Quagga result', e);
+      } finally {
+        barcodeDecodeInProgress = false;
+      }
+    });
+  } catch(e) {
+    console.warn('Quagga.decodeSingle threw error', e);
+    barcodeDecodeInProgress = false;
   }
 }
 
@@ -274,58 +358,33 @@ function resetAIScan(){
   document.getElementById("productPrice").value="";
   document.getElementById("productCategory").value="";
   document.getElementById("productBarcode").value="";
+  lastDetectedBarcode = null;
   startLiveScan();
 }
 
-// ------------------------ BARCODE SCAN ------------------------
+/* ------------------------------------------------------------------
+  NOTE: Old approach (Quagga LiveStream) is retained below as a fallback,
+  but it's NOT used by default in the simultaneous flow because
+  Quagga.start requests camera access again and can conflict with the
+  existing getUserMedia stream. The preferred path decodes from the
+  same canvas frames via Quagga.decodeSingle (above).
+------------------------------------------------------------------ */
 function startBarcodeOnSameCamera(){
-  if(quaggaRunning) return;
-  const previewEl = document.getElementById('barcodePreview');
-  if(!previewEl) return console.error('No barcodePreview element found');
-  previewEl.innerHTML = '';
-
-  Quagga.init({
-    inputStream: { name: "Live", type: "LiveStream", target: previewEl, constraints: { facingMode: "environment" } },
-    decoder: { readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"] },
-    locate: true
-  }, function(err) {
-    if (err) { console.error("Quagga init error:", err); return; }
-    Quagga.start();
-    quaggaRunning = true;
-    console.log('Quagga started');
-  });
-
-  try {
-    if (typeof Quagga.offDetected === 'function' && quaggaDetectedHandler) {
-      Quagga.offDetected(quaggaDetectedHandler);
-      quaggaDetectedHandler = null;
-    }
-  } catch(e) {}
-
-  quaggaDetectedHandler = function(result) {
-    const code = result && result.codeResult && result.codeResult.code;
-    if(!code) return;
-    const barcodeField = document.getElementById("productBarcode");
-    if(barcodeField) barcodeField.value = code;
-    console.log("📦 BARCODE DETECTED:", code);
-    try { Quagga.stop(); } catch(e){ console.warn('Error stopping Quagga', e); }
-    quaggaRunning = false;
-    try { if (typeof Quagga.offDetected === 'function') Quagga.offDetected(quaggaDetectedHandler); } catch(e){}
-    quaggaDetectedHandler = null;
-  };
-
-  if (typeof Quagga.onDetected === 'function') {
-    Quagga.onDetected(quaggaDetectedHandler);
-  } else {
-    console.warn('Quagga.onDetected not available in this build');
-  }
+  console.warn('startBarcodeOnSameCamera() available as fallback but not used in simultaneous mode.');
+  // If you want to force Quagga live scanning instead of decodeSingle,
+  // ensure you stop the live camera first (stopLiveScan) and then call this.
 }
+
+/* ------------------------ Initialization / debug ------------------------ */
+// Optional quick test fetch removed — actual calls happen in captureAndScan
+// Expose functions for debug
+window.startLiveScan = startLiveScan;
+window.stopLiveScan = stopLiveScan;
+window.resetAIScan = resetAIScan;
+window.attemptBarcodeDecodeFromCanvas = attemptBarcodeDecodeFromCanvas;
 </script>
 </body>
 </html>
-
-
-
 
 
 
