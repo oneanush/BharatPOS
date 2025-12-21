@@ -5,10 +5,187 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Reports - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
+  <style>
+    /* --- General Layout & Card --- */
+    body {
+        background-color: #f4f6f9; /* Softer background for the whole page */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* Soft, luxurious shadow */
+        border: none;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f3f5;
+    }
+
+    h3 {
+        margin: 0;
+        font-size: 1.4rem;
+        color: #1a1a1a;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .grand-total {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2e7d32; /* Financial Green */
+        background: #e8f5e9;
+        padding: 8px 16px;
+        border-radius: 30px;
+    }
+
+    /* --- The Table --- */
+    .table-container {
+        border-radius: 8px;
+        overflow: hidden; /* Keeps borders rounded */
+    }
+
+    table.sales-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    /* Header Row */
+    table.sales-table th {
+        background-color: #f8f9fa;
+        color: #8898aa;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        padding: 18px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    /* Data Rows */
+    .sale-row {
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .sale-row td {
+        padding: 18px;
+        color: #525f7f;
+        font-size: 0.95rem;
+    }
+
+    .sale-row:last-child {
+        border-bottom: none;
+    }
+
+    /* Hover Effects */
+    .sale-row:hover {
+        background-color: #f6f9fc;
+        transform: translateY(-2px); /* Slight lift */
+        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        position: relative;
+        z-index: 2;
+    }
+
+    .sale-row td:first-child {
+        font-weight: 600;
+        color: #32325d;
+    }
+
+    /* --- The Expanded Drawer --- */
+    .details-row {
+        display: none;
+        background-color: #f8f9fe;
+        box-shadow: inset 0 6px 10px -8px rgba(0,0,0,0.15); /* Inner shadow for depth */
+    }
+
+    .details-row.active {
+        display: table-row;
+    }
+
+    .details-content {
+        padding: 20px 25px;
+        border-left: 4px solid #5e72e4; /* Accent stripe on the left */
+    }
+
+    .details-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #8898aa;
+        font-weight: 700;
+        margin-bottom: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    /* --- Aesthetic Product Chips --- */
+    .product-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .product-chip {
+        display: flex;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        padding: 8px 14px;
+        border-radius: 50px; /* Fully rounded pill */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        transition: transform 0.2s;
+    }
+    
+    .product-chip:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+
+    .product-chip span {
+        font-weight: 500;
+        color: #32325d;
+        margin-right: 10px;
+    }
+
+    .chip-qty {
+        background: #5e72e4; /* Modern Indigo/Blue */
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        height: 22px;
+        min-width: 22px;
+        padding: 0 6px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Utilities */
+    .text-right { text-align: right !important; }
+    
+    /* Animation for expanding */
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .details-content {
+        animation: slideDown 0.3s ease-out;
+    }
+</style>
+
 </head>
 
 <body>
-  <!-- Navigation -->
   <nav>
     <a href="products.html">Products</a>
     <a href="sales.html">Sales</a>
@@ -16,113 +193,158 @@
     <a href="index.html">Logout</a>
   </nav>
 
-  <!-- Header -->
   <div class="header">
-    <div class="global-header">     <img src="logo.png" class="global-logo"> </div>
-
-    <div class="brand"> Bharat POS</div>
+    <div class="global-header"><img src="logo.png" class="global-logo"></div>
+    <div class="brand">Bharat POS</div>
     <div class="nav">
       <a href="dashboard.html">Dashboard</a>
       <a href="billing.html">Billing</a>
     </div>
   </div>
 
-  <!-- Main container -->
   <div class="container">
-    <div class="card" id="reportCards"></div>
-
     <div class="card">
-      <h3>Top Products</h3>
-      <div id="topProducts"></div>
+      <div class="report-header">
+          <h3>Date-wise Sales Report</h3>
+          <div id="grandTotal" class="grand-total"></div>
+      </div>
+      <p style="font-size:0.8rem; color:#888; margin-top:-10px; margin-bottom:10px;">
+        Tip: Click on any row to see product details.
+      </p>
+      
+      <div class="table-container">
+        <table class="sales-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="text-right">Total Bills</th>
+              <th class="text-right">Items Sold</th>
+              <th class="text-right">Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="salesHistoryBody">
+            </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <div class="footer">Built by Utkarsh — BharatPOS</div>
 
-  <!-- BharatPOS JS -->
   <script src="bharatpos.js"></script>
 
-  <script>
-    // -------------------------
-    // Helper: format currency
-    // -------------------------
-    function formatCurrency(n){ return '₹' + Number(n || 0).toFixed(2); }
+<script>
+function formatCurrency(n){
+  return '₹' + Number(n || 0).toFixed(2);
+}
 
-    // -------------------------
-    // Aggregate sales data
-    // -------------------------
-    function aggregateSales(){
-      const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
-      let totalRevenue = 0, totalSales = sales.length;
-      const productCount = {};
-      let bestProductName = '—', bestProductQty = 0;
+// Group sales strictly by Date
+function groupSalesByDate(){
+  const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+  const grouped = {};
 
-      sales.forEach(sale => {
-        totalRevenue += Number(sale.total || 0);
-        (sale.items || []).forEach(it => {
-          productCount[it.name] = (productCount[it.name] || 0) + Number(it.qty || 0);
-        });
-      });
-
-      for(const [name, qty] of Object.entries(productCount)){
-        if(qty > bestProductQty){
-          bestProductQty = qty;
-          bestProductName = name;
-        }
-      }
-
-      return { totalRevenue, totalSales, bestProductName, bestProductQty };
+  sales.forEach(sale=>{
+    let rawDate = sale.date || 'unknown';
+    const d = rawDate.substring(0, 10); 
+    
+    if(!grouped[d]){
+      grouped[d] = {
+        revenue: 0,
+        bills: 0,
+        totalItems: 0,
+        products: {} // We store product counts here
+      };
     }
 
-    // -------------------------
-    // Render reports
-    // -------------------------
-    function renderReports(){
-      const summary = aggregateSales();
-      document.getElementById('reportCards').innerHTML = `
-        <div><b>Total Revenue:</b> ${formatCurrency(summary.totalRevenue)}</div>
-        <div><b>Total Sales:</b> ${summary.totalSales}</div>
-        <div><b>Best Product:</b> ${summary.bestProductName} (${summary.bestProductQty})</div>
+    grouped[d].revenue += Number(sale.total || 0);
+    grouped[d].bills++;
+
+    // Aggregate Product Quantities
+    (sale.items || []).forEach(it=>{
+      const qty = Number(it.qty || 0);
+      grouped[d].totalItems += qty;
+      
+      // If product exists for this date, add qty, else initialize
+      grouped[d].products[it.name] = (grouped[d].products[it.name] || 0) + qty;
+    });
+  });
+
+  return grouped;
+}
+
+// Function to Toggle the Detail Row
+function toggleDetails(dateId) {
+  const detailRow = document.getElementById('details-' + dateId);
+  if (detailRow.classList.contains('active')) {
+    detailRow.classList.remove('active');
+  } else {
+    // Optional: Close others first? Uncomment line below if you want "accordion" style (only 1 open at a time)
+    // document.querySelectorAll('.details-row').forEach(r => r.classList.remove('active'));
+    detailRow.classList.add('active');
+  }
+}
+
+function renderReports(){
+  const data = groupSalesByDate();
+  const tableBody = document.getElementById('salesHistoryBody');
+  const sortedDates = Object.keys(data).sort().reverse();
+  
+  let grandTotalRevenue = 0;
+
+  if(sortedDates.length === 0){
+      tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">No sales data found</td></tr>';
+      return;
+  }
+
+  const historyHtml = sortedDates.map((date, index) => {
+      const rowData = data[date];
+      grandTotalRevenue += rowData.revenue;
+      
+      // Create a unique ID for the toggle
+      const dateId = date.replace(/-/g, ''); 
+
+      // Create Product Chips HTML
+      const productEntries = Object.entries(rowData.products);
+      let productsHtml = '';
+      
+      if(productEntries.length > 0){
+         productsHtml = productEntries.map(([name, qty]) => `
+            <div class="product-chip">
+              <span>${name}</span>
+              <div class="chip-qty">${qty}</div>
+            </div>
+         `).join('');
+      } else {
+         productsHtml = '<span style="color:#999; font-style:italic;">No items detail available</span>';
+      }
+
+      return `
+        <tr class="sale-row" onclick="toggleDetails('${dateId}')" title="Click to view products">
+          <td>${date}</td>
+          <td class="text-right">${rowData.bills}</td>
+          <td class="text-right">${rowData.totalItems}</td>
+          <td class="text-right" style="color:#28a745;"><b>${formatCurrency(rowData.revenue)}</b></td>
+        </tr>
+
+        <tr id="details-${dateId}" class="details-row">
+          <td colspan="4" style="padding:0;">
+             <div class="details-content">
+                <div style="font-size:0.8rem; color:#777; margin-bottom:8px;">PRODUCTS SOLD:</div>
+                <div class="product-grid">
+                   ${productsHtml}
+                </div>
+             </div>
+          </td>
+        </tr>
       `;
-
-      // Top products list
-      const prodCount = {};
-      JSON.parse(localStorage.getItem('bharatpos_sales') || '[]').forEach(sale=>{
-        (sale.items || []).forEach(it=>{
-          prodCount[it.name] = (prodCount[it.name] || 0) + Number(it.qty || 0);
-        });
-      });
-      const topProductsArr = Object.entries(prodCount).sort((a,b)=>b[1]-a[1]);
-      const topProductsEl = document.getElementById('topProducts');
-     // Enhanced Top Products display
-if(topProductsArr.length === 0){
-  topProductsEl.innerHTML = '<div class="small">No data</div>';
-} else {
-  // Determine max qty for relative width
-  const maxQty = Math.max(...topProductsArr.map(x=>x[1]));
-  topProductsEl.innerHTML = topProductsArr.map(x=>{
-    const name = x[0], qty = x[1];
-    const barWidth = maxQty ? (qty / maxQty * 100) : 0;
-    return `
-      <div class="top-product-card">
-        <div class="top-product-name">${name}</div>
-
-<div class="top-product-bar-wrap">
-       
-          <div class="top-product-bar" style="width:${barWidth}%;"></div>
-        </div>
-        <div class="top-product-qty">-${qty}</div>
-      </div>
-    `;
   }).join('');
+
+  tableBody.innerHTML = historyHtml;
+  document.getElementById('grandTotal').innerText = `Total Sales: ${formatCurrency(grandTotalRevenue)}`;
 }
-}
-    // -------------------------
-    // Run after DOM is ready
-    // -------------------------
-    document.addEventListener('DOMContentLoaded', renderReports);
-  </script>
+
+document.addEventListener('DOMContentLoaded', renderReports);
+</script>
 
 </body>
 </html>
-
