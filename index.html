@@ -15,7 +15,6 @@
             --primary-glow: rgba(255, 215, 0, 0.4);
             --text-white: #ffffff;
             --text-gray: #94a3b8;
-            --glass: rgba(13, 22, 38, 0.7);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -44,7 +43,7 @@
         /* --- NAVIGATION --- */
         nav {
             display: flex;
-            justify-content: flex-start; /* Aligns to left */
+            justify-content: flex-start;
             align-items: center;
             padding: 20px 5%;
             position: absolute;
@@ -56,15 +55,19 @@
         .logo-container {
             display: flex;
             align-items: center;
-            gap: 12px; /* Space between logo and text */
+            gap: 15px;
             cursor: pointer;
         }
 
         .logo-img {
-            height: 45px; /* Perfect size for header */
-            width: auto;
-            /* Adds a subtle gold glow to the png */
-            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.2)); 
+            height: 50px;        /* Fixed Height */
+            width: 50px;         /* Fixed Width to match height */
+            object-fit: cover;   /* Prevents stretching if image is rectangular */
+            border-radius: 50%;  /* MAKES IT CIRCULAR */
+            border: 2px solid rgba(255, 215, 0, 0.2); /* Thin Gold Ring */
+            
+            /* Glow Effect */
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
@@ -77,9 +80,10 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Hover Effect: Logo tilts slightly */
+        /* Hover Effect: Logo spins slightly */
         .logo-container:hover .logo-img {
-            transform: rotate(-10deg) scale(1.1);
+            transform: rotate(360deg);
+            border-color: var(--primary);
         }
 
         /* --- HERO SECTION --- */
@@ -204,7 +208,7 @@
                 padding: 60px 5%;
                 gap: 40px;
             }
-            .hero { padding-top: 120px; /* Space for logo on mobile */ }
+            .hero { padding-top: 120px; }
             h1 { font-size: 40px; }
             .glow-spot { display: none; }
         }
