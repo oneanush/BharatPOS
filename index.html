@@ -108,4 +108,187 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 20px;
-            box-shadow: 0 0 15px rgba(124
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1 {
+            font-size: 56px;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(to bottom right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc {
+            font-size: 18px;
+            color: var(--text-gray);
+            margin-bottom: 30px;
+        }
+
+        .cta-btn {
+            background: var(--primary);
+            color: #000;
+            padding: 16px 36px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px var(--primary-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 35px var(--primary-glow);
+            background: #ffe033;
+        }
+
+        .hero-visual {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        .feature-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.5s ease;
+        }
+
+        .feature-img:hover {
+            transform: scale(1.02);
+        }
+
+        /* --- ZIG ZAG SECTIONS --- */
+        .section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 80px 10%;
+            gap: 60px;
+        }
+
+        .section.reverse {
+            flex-direction: row-reverse;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .section-text { flex: 1; }
+        .section-text h2 { font-size: 36px; margin-bottom: 15px; color: var(--primary); }
+        .section-text p { font-size: 16px; color: var(--text-gray); margin-bottom: 20px; }
+        .section-visual { flex: 1; }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+            color: #555;
+        }
+        footer a { color: var(--primary); text-decoration: none; }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 900px) {
+            .hero, .section, .section.reverse {
+                flex-direction: column;
+                text-align: center;
+                padding: 60px 5%;
+                gap: 40px;
+            }
+            .hero { padding-top: 120px; /* Space for logo on mobile */ }
+            h1 { font-size: 40px; }
+            .glow-spot { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow-spot glow-1"></div>
+    <div class="glow-spot glow-2"></div>
+
+    <nav>
+        <div class="logo-container">
+            <img src="logo.png" alt="BharatPOS Logo" class="logo-img">
+            <span class="logo-text">BharatPOS</span>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-text">
+            <div class="ai-pill">✨ New: AI Consultation Added</div>
+            <h1>India’s Own <br>Retail Intelligence.</h1>
+            <p class="hero-desc">
+                Upgrade your shop with the smartest POS system. 
+                Featuring <strong>AI-Scan</strong> for inventory and automatic business consultation. 
+                Simple, fast, and designed for Bharat.
+            </p>
+            <button class="cta-btn" onclick="gologin()">Get Started ➜</button>
+        </div>
+        
+        <div class="hero-visual">
+            <img src="in.png" alt="BharatPOS Dashboard Intro" class="feature-img">
+        </div>
+    </header>
+
+    <section class="section reverse">
+        <div class="section-text">
+            <h2>Effortless Interface</h2>
+            <p>
+                No complex manuals needed. Our clean, dark-mode friendly interface 
+                ensures you can bill customers in seconds. Designed to reduce eye strain 
+                during long shop hours.
+            </p>
+        </div>
+        <div class="section-visual">
+            <img src="2in.png" alt="Interface" class="feature-img">
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-text">
+            <h2>Smart AI Scan</h2>
+            <p>
+                Point your camera, and let our AI do the rest. Automatically identify products, 
+                update inventory, and generate bills without typing a single word.
+            </p>
+        </div>
+        <div class="section-visual">
+            <img src="3in.png" alt="AI Scan Technology" class="feature-img">
+        </div>
+    </section>
+
+    <section class="section reverse">
+        <div class="section-text">
+            <h2>Business Growth</h2>
+            <p>
+                Track your daily sales, GST reports, and profits. Our new AI Consultation 
+                analyzes your data to suggest how you can grow your margins.
+            </p>
+        </div>
+        <div class="section-visual">
+            <img src="4in.png" alt="Growth Analytics" class="feature-img">
+        </div>
+    </section>
+
+    <footer>
+        <p>📞 9911901910 • <a href="https://oneanush.github.io/BharatPOS/">Visit Website</a></p>
+        <p style="margin-top: 10px; opacity: 0.6;">Designed by UTKARSH SHARMA</p>
+    </footer>
+
+    <script>
+        function gologin() {
+            window.location.href = "login.html";
+        }
+    </script>
+
+</body>
+</html>
