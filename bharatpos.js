@@ -15,7 +15,7 @@
 // Auto switch local vs cloud
 const API_BASE =
   location.hostname === "localhost" || location.hostname === "127.0.0.1"
-    ? "http://127.0.0.1:5185"
+    ? "http://localhost:5185"
     : "https://genre-dressing-cove-dept.trycloudflare.com"; // <-- PUT YOUR CLOUDFLARE URL HERE
 
 // Make globally accessible
@@ -682,6 +682,7 @@ function applyTheme() {
 }
 
 document.addEventListener("DOMContentLoaded", applyTheme);
+
 
 
 
