@@ -8,6 +8,15 @@
 /* -------------------------
    Storage keys & helpers
    ------------------------- */
+const API_BASE =
+  location.hostname === "localhost" || location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:5185"
+    : "https://YOUR-CLOUDFLARE-URL.trycloudflare.com";
+
+window.API_BASE = API_BASE;
+
+
+
 const LS_KEYS = {
   PRODUCTS: 'bharatpos_products',
   SALES: 'bharatpos_sales',
@@ -646,6 +655,7 @@ function applyTheme() {
 }
 
 document.addEventListener("DOMContentLoaded", applyTheme);
+
 
 
 
