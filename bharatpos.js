@@ -16,7 +16,7 @@
 const API_BASE =
   location.hostname === "localhost" || location.hostname === "127.0.0.1"
     ? "http://localhost:5185"
-    : "https://genre-dressing-cove-dept.trycloudflare.com"; // <-- PUT YOUR CLOUDFLARE URL HERE
+    : "https://drink-seed-keys-trademark.trycloudflare.com"; // <-- PUT YOUR CLOUDFLARE URL HERE
 
 // Make globally accessible
 window.API_BASE = API_BASE;
@@ -682,6 +682,7 @@ function applyTheme() {
 }
 
 document.addEventListener("DOMContentLoaded", applyTheme);
+
 
 
 
