@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Bharat POS — Dashboard</title>
   <link rel="stylesheet" href="bharatpos.css">
+  <script src="bharatpos.js"></script>
+
 </head>
 <body>
 <nav>
@@ -78,7 +80,7 @@
 <div class="footer">Built by Utkarsh — BharatPOS</div>
 
 <script>
-                                                                                         const API_BASE = 'https://firms-tommy-claims-discuss.trycloudflare.com';
+                                                                                      
 
   function formatCurrency(num){ return '₹' + Number(num || 0).toLocaleString('en-IN'); }
   function safeParse(json, fallback) { try { return JSON.parse(json); } catch(e) { return fallback; } }
@@ -98,14 +100,7 @@
     return (hash >>> 0).toString(16);
   }
 
-  function buildUrl(endpoint) {
-    if (!endpoint) return API_BASE || '';
-    const ep = endpoint.replace(/^\//,'');
-    if (!API_BASE) return '/' + ep;
-    const normalizedBase = API_BASE.replace(/\/+$/,'');
-    if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
-    return normalizedBase + '/' + ep;
-  }
+  
 
   async function sendSnapshotIfChanged(snapshot) {
     try {
@@ -195,6 +190,7 @@
 </script>
 </body>
 </html>
+
 
 
 
