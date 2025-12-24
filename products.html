@@ -148,14 +148,10 @@ async function handleAddProduct(event){
   }
 }
 </script>
-
 <script>
-/* ------------------------ AI + BARCODE SCANNER (SIMULTANEOUS) ------------------------ */
-// Configure API base to your Cloudflare server (no trailing slash)
+/* ------------------------ AI + BARCODE SCANNER (SIMULTANEOUS & OPTIMIZED) ------------------------ */
+const API_BASE = 'http://localhost:5185';
 
-                                                                                           const API_BASE = 'https://cooking-miniature-means-institutions.trycloudflare.com';
-
-// Build URL helper to avoid doubling endpoints
 function buildUrl(endpoint) {
   if (!endpoint) return API_BASE || '';
   const ep = endpoint.replace(/^\//,'');
@@ -166,44 +162,70 @@ function buildUrl(endpoint) {
 }
 
 let cameraStream = null;
-let scanInterval = null;
-let scanLocked = false;            // prevents overlapping AI requests
-let barcodeDecodeInProgress = false; // prevents overlapping barcode decodeSingle calls
-let lastDetectedBarcode = null;   // remember last barcode to avoid repeated fills
+let aiScanInterval = null;
+let barcodeScanFrameId = null; // For requestAnimationFrame
 
-// Start live camera + periodic AI captures
+let aiScanLocked = false;          
+let barcodeDecodeInProgress = false; 
+let lastDetectedBarcode = null;
+let lastBarcodeTime = 0;
+
+// Dedicated canvas for barcode processing to avoid conflicts with AI canvas
+const barcodeCanvas = document.createElement('canvas'); 
+const barcodeCtx = barcodeCanvas.getContext('2d', { willReadFrequently: true });
+
+// Start live camera + Dual Scanning Loops
 async function startLiveScan() {
   if (cameraStream) return;
   const video = document.getElementById("cameraPreview");
   if (!video) return console.error("❌ cameraPreview missing");
+  
   video.style.display = "block";
 
   try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); // single stream
+    // Requesting HD if possible for better barcode clarity
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { 
+        facingMode: "environment",
+        width: { ideal: 1280 },
+        height: { ideal: 720 } 
+      }
+    }); 
     video.srcObject = cameraStream;
+    
+    // Wait for video to actually play to get dimensions
+    video.onloadedmetadata = () => {
+      video.play();
+      // Start AI Loop (Slow & Heavy)
+      aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 2500);
+      
+      // Start Barcode Loop (Fast & Local)
+      loopBarcodeScanning();
+    };
+
   } catch(err) {
     console.error("Could not access camera:", err);
     alert("Could not access camera. Check permissions.");
-    return;
   }
-
-  // periodic capture every 2.5s (adjust as needed)
-  scanInterval = setInterval(()=>{ if(!scanLocked) captureAndScan(); },2500);
 }
 
 function stopLiveScan() {
-  if(scanInterval) {
-    clearInterval(scanInterval);
-    scanInterval = null;
+  // Stop AI Loop
+  if(aiScanInterval) {
+    clearInterval(aiScanInterval);
+    aiScanInterval = null;
   }
 
-  // We are not using Quagga.start (live) by default, so just ensure no workers running
+  // Stop Barcode Loop
+  if(barcodeScanFrameId) {
+    cancelAnimationFrame(barcodeScanFrameId);
+    barcodeScanFrameId = null;
+  }
+
   barcodeDecodeInProgress = false;
 
   if(cameraStream){
-    try {
-      cameraStream.getTracks().forEach(t=>t.stop());
-    } catch(e){ console.warn('Error stopping camera tracks', e); }
+    try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){}
     cameraStream=null;
   }
 
@@ -213,32 +235,26 @@ function stopLiveScan() {
     try { video.srcObject = null; } catch(e) {}
   }
 
-  // clear barcode preview area
   const barcodePreview = document.getElementById('barcodePreview');
   if(barcodePreview) barcodePreview.innerHTML = '';
 }
 
-// capture current frame and send to AI product-scan endpoint
-async function captureAndScan(){
+// ---------------------- 1. AI SCANNING LOOP (Every 2.5s) ----------------------
+async function captureAndSendToAI(){
   const video = document.getElementById("cameraPreview");
-  const canvas = document.getElementById("captureCanvas");
-  if(!video || !canvas) return console.error("❌ video or canvas missing");
+  const canvas = document.getElementById("captureCanvas"); // Visible/Debug canvas
+  if(!video || !canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const vw = video.videoWidth || 640;
-  const vh = video.videoHeight || 480;
-  canvas.width = vw;
-  canvas.height = vh;
-  ctx.drawImage(video,0,0,vw,vh);
+  // AI needs a decent resolution, but not huge
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // use JPEG for AI (smaller)
-  const base64 = canvas.toDataURL("image/jpeg",0.8).split(",")[1];
+  // use JPEG for AI (smaller payload)
+  const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
 
-  // Start barcode detection on this same frame (non-blocking)
-  attemptBarcodeDecodeFromCanvas(canvas);
-
-  // Lock AI request so we don't flood
-  scanLocked = true;
+  aiScanLocked = true;
 
   try{
     const url = buildUrl('/ai-product-scan');
@@ -248,91 +264,106 @@ async function captureAndScan(){
       body: JSON.stringify({ imageBase64: base64 })
     });
 
-    if(!res.ok){
-      const txt = await res.text().catch(()=>null);
-      console.warn('AI product scan server error', res.status, txt);
-      return;
-    }
+    if(!res.ok) return;
 
     const data = await res.json();
     console.log("🧠 AI scan data:", data);
 
     if(data && data.success && hasLogicalData(data.product)){
       fillProductFromAI(data.product);
-      // Note: we intentionally keep the live camera running so barcode decoding can continue.
-      // If you prefer to stop camera after AI detection, call stopLiveScan() here.
-    } else {
-      // no valid product data found — continue scanning
-      console.log('AI returned no valid product data');
-    }
-  }catch(e){ 
+    } 
+  } catch(e){ 
     console.error("❌ AI scan error:", e);
   } finally {
-    scanLocked=false;
+    aiScanLocked = false;
   }
 }
 
-// Attempt to decode barcode using Quagga.decodeSingle on the canvas image.
-// This avoids opening Quagga LiveStream and uses the same captured frame.
-function attemptBarcodeDecodeFromCanvas(canvas) {
-  if (barcodeDecodeInProgress) return; // avoid overlapping decodes
-  // If the barcode input is already filled with a value we detected earlier, skip decode
-  const currentBarcode = document.getElementById("productBarcode")?.value;
-  if (currentBarcode && currentBarcode === lastDetectedBarcode) return;
+// ---------------------- 2. BARCODE SCANNING LOOP (High Frequency) ----------------------
+function loopBarcodeScanning() {
+  // Keep looping as long as stream is active
+  if (!cameraStream) return;
 
-  // Convert canvas to dataURL (PNG typically better for Quagga decoding)
-  let dataUrl;
-  try {
-    dataUrl = canvas.toDataURL('image/png');
-  } catch(e) {
-    console.warn('Could not get canvas dataURL for barcode decode', e);
-    return;
+  const now = Date.now();
+  // Throttle: Limit barcode attempts to ~5 times per second (every 200ms) to save CPU
+  // You can lower 200 to 100 for faster scanning, or raise to 300 for weaker devices
+  if (now - lastBarcodeTime > 200 && !barcodeDecodeInProgress) {
+    lastBarcodeTime = now;
+    attemptFastBarcodeDecode();
   }
+
+  barcodeScanFrameId = requestAnimationFrame(loopBarcodeScanning);
+}
+
+function attemptFastBarcodeDecode() {
+  const video = document.getElementById("cameraPreview");
+  if (!video || video.videoWidth === 0) return;
+
+  // Check if input is already filled to avoid redundant processing
+  const currentVal = document.getElementById("productBarcode")?.value;
+  if (currentVal && currentVal === lastDetectedBarcode) return;
 
   barcodeDecodeInProgress = true;
 
-  // Quagga.decodeSingle uses the provided src image and runs decoding on it.
-  // Set numOfWorkers: 0 if WebWorker creation causes issues in your environment.
-  try {
-    Quagga.decodeSingle({
-      src: dataUrl,
-      numOfWorkers: 0, // disable workers to avoid cross-origin worker issues, change to >0 if ok
-      locate: true,
-      inputStream: {
-        size: 800 // set resolution to aid detection
-      },
-      decoder: {
-        readers: ["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"]
-      }
-    }, function(result) {
-      try {
-        if (result && result.codeResult && result.codeResult.code) {
-          const code = result.codeResult.code;
-          console.log('📦 Quagga decodeSingle found barcode:', code);
-          const barcodeField = document.getElementById("productBarcode");
-          if (barcodeField) {
-            barcodeField.value = code;
-            lastDetectedBarcode = code;
-          }
-          // Optionally show the barcodePreview with the detected code
-          const preview = document.getElementById('barcodePreview');
-          if (preview) preview.innerHTML = `<div style="padding:8px;background:#eef;border-radius:6px">Detected barcode: <b>${code}</b></div>`;
-        } else {
-          // no barcode found in this frame
-          //console.log('No barcode in frame');
-        }
-      } catch(e) {
-        console.warn('Error handling Quagga result', e);
-      } finally {
-        barcodeDecodeInProgress = false;
-      }
-    });
-  } catch(e) {
-    console.warn('Quagga.decodeSingle threw error', e);
+  // 1. Draw current video frame to our efficient off-screen canvas
+  // We limit width to 800px for Quagga performance (scanning 4k is too slow)
+  const scale = 800 / video.videoWidth; 
+  barcodeCanvas.width = 800;
+  barcodeCanvas.height = video.videoHeight * scale;
+  
+  barcodeCtx.drawImage(video, 0, 0, barcodeCanvas.width, barcodeCanvas.height);
+
+  // 2. Convert to Data URL (PNG is often better for Quagga contrast)
+  const dataUrl = barcodeCanvas.toDataURL("image/png");
+
+  // 3. Run Quagga Decode
+  Quagga.decodeSingle({
+    src: dataUrl,
+    numOfWorkers: 2, // Use 2 workers for "peak" performance (non-blocking)
+    inputStream: {
+      size: 800,
+      singleChannel: false // let Quagga decide greyscale
+    },
+    locate: true, // Important for finding barcode in full image
+    locator: {
+      patchSize: "medium", // 'medium' or 'large' works best for product labels
+      halfSample: true     // CRITICAL: speeds up processing significantly
+    },
+    decoder: {
+      readers: ["ean_reader", "ean_8_reader", "upc_reader", "code_128_reader"]
+    }
+  }, function(result) {
+    // Callback happens when finish
     barcodeDecodeInProgress = false;
-  }
+
+    if (result && result.codeResult && result.codeResult.code) {
+      const code = result.codeResult.code;
+      
+      // Basic validation: EAN/UPC usually numeric and > 5 chars
+      if(code.length > 5) {
+        console.log('📦 FAST SCAN found:', code);
+        
+        const barcodeField = document.getElementById("productBarcode");
+        if (barcodeField) {
+          barcodeField.value = code;
+          lastDetectedBarcode = code;
+          
+          // Audio feedback (optional 'beep')
+          // playBeep(); 
+        }
+
+        const preview = document.getElementById('barcodePreview');
+        if (preview) {
+           preview.innerHTML = `<div style="padding:10px; background:#d4edda; color:#155724; border:1px solid #c3e6cb; border-radius:5px; text-align:center;">
+             <strong>MATCH!</strong> Barcode: ${code} <br> Format: ${result.codeResult.format}
+           </div>`;
+        }
+      }
+    }
+  });
 }
 
+// ---------------------- HELPERS ----------------------
 function hasLogicalData(p){ return p && typeof p.name==="string" && p.name.length>2; }
 
 function fillProductFromAI(product){
@@ -341,18 +372,21 @@ function fillProductFromAI(product){
   const priceEl=document.getElementById("productPrice");
   const catEl=document.getElementById("productCategory");
 
-  if(!nameEl || !priceEl || !catEl) return console.error("❌ missing input fields");
-
-  nameEl.value = product.name || "";
-  if(qtyEl) qtyEl.value = product.quantity || "";
-  priceEl.value = product.price || "";
-  catEl.value = product.category || "";
-
-  console.log("✅ FILLED VALUES:", {name:nameEl.value,quantity:qtyEl?.value,price:priceEl.value,category:catEl.value});
+  if(!nameEl) return;
+  // Only overwrite if empty or user wants strict AI override? 
+  // Currently overwriting for convenience.
+  nameEl.value = product.name || nameEl.value;
+  if(qtyEl) qtyEl.value = product.quantity || qtyEl.value;
+  if(priceEl) priceEl.value = product.price || priceEl.value;
+  if(catEl) catEl.value = product.category || catEl.value;
+  
+  // Highlight that AI updated fields
+  nameEl.style.backgroundColor = "#fff3cd";
+  setTimeout(()=> nameEl.style.backgroundColor = "", 1000);
 }
 
 function resetAIScan(){
-  scanLocked=false;
+  aiScanLocked=false;
   stopLiveScan();
   document.getElementById("productName").value="";
   document.getElementById("productQuantity").value="";
@@ -360,32 +394,19 @@ function resetAIScan(){
   document.getElementById("productCategory").value="";
   document.getElementById("productBarcode").value="";
   lastDetectedBarcode = null;
+  const preview = document.getElementById('barcodePreview');
+  if(preview) preview.innerHTML = '';
   startLiveScan();
 }
 
-/* ------------------------------------------------------------------
-  NOTE: Old approach (Quagga LiveStream) is retained below as a fallback,
-  but it's NOT used by default in the simultaneous flow because
-  Quagga.start requests camera access again and can conflict with the
-  existing getUserMedia stream. The preferred path decodes from the
-  same canvas frames via Quagga.decodeSingle (above).
------------------------------------------------------------------- */
-function startBarcodeOnSameCamera(){
-  console.warn('startBarcodeOnSameCamera() available as fallback but not used in simultaneous mode.');
-  // If you want to force Quagga live scanning instead of decodeSingle,
-  // ensure you stop the live camera first (stopLiveScan) and then call this.
-}
-
-/* ------------------------ Initialization / debug ------------------------ */
-// Optional quick test fetch removed — actual calls happen in captureAndScan
-// Expose functions for debug
+// Expose functions
 window.startLiveScan = startLiveScan;
 window.stopLiveScan = stopLiveScan;
 window.resetAIScan = resetAIScan;
-window.attemptBarcodeDecodeFromCanvas = attemptBarcodeDecodeFromCanvas;
 </script>
 </body>
 </html>
+
 
 
 
