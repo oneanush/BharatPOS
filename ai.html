@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Business Advice - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
-  <script src="bharatpos.js"></script>
-
   <style>
     .ai-container { max-width:900px; margin:20px auto; padding:20px }
     .ai-card { background:var(--card-bg,#fff); border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1) }
@@ -26,7 +23,7 @@
       <a href="products.html">Products</a>
       <a href="billing.html">Billing</a>
       <a href="sales.html">Sales</a>
-      <a href="reports.html">Report</a>
+      <a href="report.html">Report</a>
       <a href="settings.html">Settings</a>
       <a href="ai.html">AI</a>
     </div>
@@ -47,10 +44,17 @@
 
 <script>
   // Use your Cloudflare server as API base (no trailing slash)
-                                                                        
-
+  const API_BASE = 'http://localhost:5185';
 
   // Build URL safely (avoids double-path if API_BASE already contains endpoint)
+  function buildUrl(endpoint) {
+    if (!endpoint) return API_BASE || '';
+    const ep = endpoint.replace(/^\//,'');
+    if (!API_BASE) return '/' + ep;
+    const normalizedBase = API_BASE.replace(/\/+$/,'');
+    if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
+    return normalizedBase + '/' + ep;
+  }
 
   function getStoredSnapshot() {
     try {
