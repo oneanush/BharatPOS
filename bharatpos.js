@@ -12,33 +12,6 @@
 // BharatPOS — Global Backend Config + URL Builder
 // ===================================================
 
-// Auto switch local vs cloud
-const API_BASE =
-  location.hostname === "localhost" || location.hostname === "127.0.0.1"
-    ? "http://localhost:5185"
-    : "https://drink-seed-keys-trademark.trycloudflare.com"; // <-- PUT YOUR CLOUDFLARE URL HERE
-
-// Make globally accessible
-window.API_BASE = API_BASE;
-
-// Central URL builder
-function buildUrl(endpoint) {
-  const API = window.API_BASE || '';
-  if (!endpoint) return API;
-
-  const ep = endpoint.replace(/^\/+/, '');
-  if (!API) return '/' + ep;
-
-  const base = API.replace(/\/+$/, '');
-
-  // Prevent duplicate endpoints
-  if (base.endsWith('/' + ep) || base.endsWith(ep)) return base;
-
-  return base + '/' + ep;
-}
-
-// Expose globally
-window.buildUrl = buildUrl;
 
 
 
@@ -682,6 +655,7 @@ function applyTheme() {
 }
 
 document.addEventListener("DOMContentLoaded", applyTheme);
+
 
 
 
