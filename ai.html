@@ -26,7 +26,7 @@
       <a href="products.html">Products</a>
       <a href="billing.html">Billing</a>
       <a href="sales.html">Sales</a>
-      <a href="report.html">Report</a>
+      <a href="reports.html">Report</a>
       <a href="settings.html">Settings</a>
       <a href="ai.html">AI</a>
     </div>
@@ -51,14 +51,6 @@
 
 
   // Build URL safely (avoids double-path if API_BASE already contains endpoint)
-  function buildUrl(endpoint) {
-    if (!endpoint) return API_BASE || '';
-    const ep = endpoint.replace(/^\//,'');
-    if (!API_BASE) return '/' + ep;
-    const normalizedBase = API_BASE.replace(/\/+$/,'');
-    if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
-    return normalizedBase + '/' + ep;
-  }
 
   function getStoredSnapshot() {
     try {
