@@ -16,18 +16,37 @@
 </nav>
 
 <style>
+/* Base Styles */
 .profile-name{font-weight:700;margin-left:12px;padding:6px 10px;border:1px solid #ffcc00;border-radius:8px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-.card{padding:16px;border-radius:12px;background:#111;color:#fff}
-.small{font-size:13px;color:#ccc}
+.card{padding:16px;border-radius:12px;background:#111;color:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
+.small{font-size:13px;color:#ccc; margin-top: 5px;}
 .bad{color:#ff6b6b}
 .good{color:#4cd964}
+.warn{color:#ffcc00}
 .container{margin:18px}
 .footer{margin:20px;text-align:center;color:#666}
+
+/* Header Styles */
+.header{display:flex;align-items:center;justify-content:space-between;padding:18px;background:#000;color:#fff;border-bottom:1px solid #333}
+.brand{font-size:24px;font-weight:bold;color:#fff}
+.nav a{margin-left:15px;color:#ccc;text-decoration:none;font-size:14px}
+.nav a:hover{color:#fff}
+
+/* Chart Styles (New Feature) */
+.chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 100px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #333; }
+.bar-group { display: flex; flex-direction: column; align-items: center; width: 12%; }
+.bar { width: 100%; background: #333; border-radius: 4px 4px 0 0; transition: height 0.5s ease; position: relative; }
+.bar:hover { background: #4cd964; }
+.bar-label { font-size: 10px; color: #888; margin-top: 4px; }
+.bar-value { font-size: 10px; color: #fff; margin-bottom: 4px; font-weight: bold; }
+
+/* List Styles */
+.list-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222; font-size: 14px; }
+.list-item:last-child { border-bottom: none; }
 </style>
 
 <div class="header">
-  <div class="global-header"><img src="logo.png" class="global-logo" alt="logo"></div>
   <div class="brand">Bharat POS</div>
   <div class="nav">
     <a href="billing.html">Billing</a>
@@ -38,165 +57,235 @@
 
 <div class="container grid">
   <div class="card">
-    <h3>Revenue</h3>
-    <div id="totalRevenue" style="font-size:22px;font-weight:700">₹0</div>
-    <div class="small" id="avgBill"></div>
+    <h3>Revenue (Today)</h3>
+    <div id="todayRevenue" style="font-size:22px;font-weight:700">₹0</div>
+    <div class="small" id="totalRevenueLifetime">Lifetime: ₹0</div>
   </div>
+  
   <div class="card">
-    <h3>Sales</h3>
-    <div id="totalBills" style="font-size:22px;font-weight:700">0 Bills</div>
-    <div class="small" id="salesTrend"></div>
+    <h3>Growth (24h)</h3>
+    <div id="growthStatus" style="font-size:22px;font-weight:700">—</div>
+    <div class="small" id="growthHint">vs Yesterday</div>
   </div>
+
   <div class="card">
     <h3>Stock Health</h3>
     <div id="lowStockCount"></div>
     <div id="deadStockCount" class="small"></div>
   </div>
+  
   <div class="card">
-    <h3>Growth Indicator</h3>
-    <div id="growthStatus" style="font-size:20px">—</div>
-    <div class="small" id="growthHint"></div>
+    <h3>Sales Count</h3>
+    <div id="totalBills" style="font-size:22px;font-weight:700">0 Bills</div>
+    <div class="small" id="avgBill"></div>
   </div>
 </div>
 
 <div class="container">
+    <div class="card">
+        <h3>Weekly Performance (Last 7 Days)</h3>
+        <div id="salesChart" class="chart-container">
+            <div class="small">Loading chart...</div>
+        </div>
+    </div>
+</div>
+
+<div class="container grid">
   <div class="card">
-    <h3>Low Stock Items</h3>
-    <div id="lowstock"></div>
+    <h3>Top Selling Items</h3>
+    <div id="patterns" style="margin-top:10px">Loading...</div>
   </div>
 
   <div class="card">
-    <h3>Dead Stock</h3>
-    <div id="deadstock"></div>
+    <h3>Smart Restock</h3>
+    <div class="small" style="margin-bottom:8px">Items selling fast but low on stock:</div>
+    <div id="smartOrders">All good</div>
+  </div>
+
+  <div class="card">
+    <h3>Low Stock Alert</h3>
+    <div id="lowstock"></div>
   </div>
 </div>
 
-<div style="margin:20px">
-  <button onclick="resetSales()">Reset Sales</button>
+<div style="margin:20px; text-align: center;">
+  <button onclick="resetSales()" style="padding: 10px 20px; cursor: pointer; background: #333; color: white; border: none; border-radius: 5px;">Reset Sales Data</button>
 </div>
 
 <div class="footer">Built by Utkarsh — BharatPOS</div>
 
 <script>
-  const API_BASE = 'http://localhost:5185';
-
+  // UTILITIES
   function formatCurrency(num){ return '₹' + Number(num || 0).toLocaleString('en-IN'); }
   function safeParse(json, fallback) { try { return JSON.parse(json); } catch(e) { return fallback; } }
   function escapeHtml(str){ if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+  // LOAD USER
   function loadUser(){
     const u = safeParse(localStorage.getItem('bharatpos_user')||'{}', {});
     document.getElementById('profileName').textContent = u.name ? '👤 '+u.name : '👤 Guest';
   }
 
-  function hashStringDjb2(str) {
-    let hash = 5381;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) + hash) + str.charCodeAt(i);
-      hash = hash & 0xFFFFFFFF;
-    }
-    return (hash >>> 0).toString(16);
+  // --- CORE ANALYTICS LOGIC (LOCAL) ---
+
+  function getSalesData() {
+    return safeParse(localStorage.getItem('bharatpos_sales')||'[]', []);
   }
 
-  function buildUrl(endpoint) {
-    if (!endpoint) return API_BASE || '';
-    const ep = endpoint.replace(/^\//,'');
-    if (!API_BASE) return '/' + ep;
-    const normalizedBase = API_BASE.replace(/\/+$/,'');
-    if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
-    return normalizedBase + '/' + ep;
+  function getProductData() {
+    return safeParse(localStorage.getItem('bharatpos_products')||'[]', []);
   }
 
-  async function sendSnapshotIfChanged(snapshot) {
-    try {
-      const snapshotJson = JSON.stringify(snapshot);
-      const snapshotHash = hashStringDjb2(snapshotJson);
-      const lastHash = localStorage.getItem('bharatpos_last_sent_snapshot_hash');
-      if (lastHash === snapshotHash) {
-        console.log('Snapshot unchanged — skipping upload');
-        return;
-      }
-      const payload = { snapshot, user_prompt: "" };
-      const url = buildUrl('/ai-business-consult');
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      let result = null;
-      try { result = await res.json(); } catch(e) { result = { text: await res.text().catch(()=>null) }; }
-      if (res.ok) {
-        console.log('Snapshot uploaded to server successfully:', result);
-        try {
-          localStorage.setItem('bharatpos_last_sent_snapshot_hash', snapshotHash);
-          localStorage.setItem('bharatpos_last_sent_snapshot_time', new Date().toISOString());
-        } catch(e) { console.warn('Could not save last-sent hash', e); }
-      } else {
-        console.warn('Server returned error while uploading snapshot:', res.status, result);
-      }
-    } catch (err) { console.warn('Failed to send snapshot to server:', err); }
-  }
-
-  function getDashboardSnapshot(){
-    const products = safeParse(localStorage.getItem('bharatpos_products')||'[]', []);
-    const sales = safeParse(localStorage.getItem('bharatpos_sales')||'[]', []);
-    const sortedSales = sales.slice().sort((a,b)=>{ const da = a && a.date ? new Date(a.date) : new Date(0); const db = b && b.date ? new Date(b.date) : new Date(0); return da - db; });
-    let revenue = 0; const productQty = {}; const productDailySales = {};
-    sortedSales.forEach(s=>{ revenue += Number(s.total || 0); (s.items || []).forEach(i=>{ if (!i || !i.name) return; productQty[i.name] = (productQty[i.name] || 0) + Number(i.qty || 0); }); });
-    const totalBills = sortedSales.length; const averageBill = totalBills ? Math.round(revenue / totalBills) : 0;
-    let firstDate = sortedSales.length ? new Date(sortedSales[0].date) : new Date();
-    let lastDate = sortedSales.length ? new Date(sortedSales[sortedSales.length - 1].date) : new Date();
-    if (isNaN(firstDate.getTime())) firstDate = new Date();
-    if (isNaN(lastDate.getTime())) lastDate = new Date();
-    let daysDiff = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)); if (daysDiff <= 0) daysDiff = 1;
-    products.forEach(p=>{ const soldQty = productQty[p.name] || 0; productDailySales[p.name] = Math.max(0, Math.round(soldQty / daysDiff)); });
-    const lowStockItems = products.filter(p=>Number(p.stock || 0) <= 5);
-    const deadStockItems = products.filter(p=> !productQty[p.name]);
-    let bestProduct = null, bestQty = 0; for(const name in productQty){ if(productQty[name] > bestQty){ bestProduct = name; bestQty = productQty[name]; } }
-    let growthSignal = 'stable'; if (totalBills === 0) growthSignal = 'no-data'; else if (lowStockItems.length > 10) growthSignal = 'risk';
-    const stock_analysis = products.map(p=>({ name: p.name, stock: Number(p.stock || 0), daily_sales: productDailySales[p.name] || 0, expiry: p.expiry || null }));
-    return { generated_at: new Date().toISOString(), revenue, total_bills: totalBills, average_bill: averageBill, low_stock_count: lowStockItems.length, dead_stock_count: deadStockItems.length, best_product: bestProduct, best_product_qty: bestQty, growth_signal: growthSignal, low_stock_items: lowStockItems.map(p => ({ name: p.name, stock: Number(p.stock || 0) })), dead_stock_items: deadStockItems.map(p => ({ name: p.name })), stock_analysis };
+  function getDateString(dateObj) {
+    return dateObj.toISOString().split('T')[0]; // Returns YYYY-MM-DD
   }
 
   function renderDashboard(){
-    const products = safeParse(localStorage.getItem('bharatpos_products')||'[]', []);
-    const sales = safeParse(localStorage.getItem('bharatpos_sales')||'[]', []);
-    let revenue=0; const productQty={};
-    sales.forEach(s=>{ revenue += Number(s.total || 0); (s.items || []).forEach(i=>{ if (!i || !i.name) return; productQty[i.name] = (productQty[i.name] || 0) + Number(i.qty || 0); }); });
-    const bills = sales.length; const avgBill = bills ? Math.round(revenue / bills) : 0;
-    const lowStock = products.filter(p=>Number(p.stock || 0) <= 5);
-    const deadStock = products.filter(p=> !productQty[p.name]);
-    document.getElementById('totalRevenue').textContent = formatCurrency(revenue);
+    const sales = getSalesData();
+    const products = getProductData();
+
+    // 1. Calculate Revenue (Total & Today)
+    let totalRev = 0;
+    let todayRev = 0;
+    const todayStr = getDateString(new Date());
+    const yesterStr = getDateString(new Date(Date.now() - 86400000));
+    let yesterdayRev = 0;
+    const productCounts = {}; // For patterns
+
+    sales.forEach(s => {
+        const amt = Number(s.total || 0);
+        const sDate = s.date ? s.date.substring(0, 10) : '';
+        
+        totalRev += amt;
+        if(sDate === todayStr) todayRev += amt;
+        if(sDate === yesterStr) yesterdayRev += amt;
+
+        // Count products for patterns
+        (s.items || []).forEach(i => {
+            if(i.name) productCounts[i.name] = (productCounts[i.name] || 0) + Number(i.qty || 0);
+        });
+    });
+
+    // Display Revenue
+    document.getElementById('todayRevenue').textContent = formatCurrency(todayRev);
+    document.getElementById('totalRevenueLifetime').textContent = 'Lifetime: ' + formatCurrency(totalRev);
+    
+    // Display Bills
+    const avgBill = sales.length ? Math.round(totalRev / sales.length) : 0;
+    document.getElementById('totalBills').textContent = sales.length;
     document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(avgBill);
-    document.getElementById('totalBills').textContent = bills + ' Bills';
-    document.getElementById('salesTrend').textContent = bills > 0 ? 'Active sales' : 'No sales yet';
-    document.getElementById('lowStockCount').innerHTML = `Low Stock: <b class="bad">${lowStock.length}</b>`;
-    document.getElementById('deadStockCount').innerHTML = `Dead Stock: <b>${deadStock.length}</b>`;
-    const growthStatus = document.getElementById('growthStatus'); const growthHint = document.getElementById('growthHint');
-    if (bills === 0){ growthStatus.textContent = 'No Data'; growthHint.textContent = 'Start billing to see growth'; }
-    else if (lowStock.length > 10){ growthStatus.textContent = 'At Risk'; growthHint.textContent = 'Too many low-stock items'; }
-    else { growthStatus.textContent = 'Stable'; growthHint.textContent = 'Operations look normal'; }
-    document.getElementById('lowstock').innerHTML = lowStock.length ? lowStock.map(p=>`<div class="small">${escapeHtml(p.name)} — <span class="bad">${escapeHtml(String(p.stock))}</span></div>`).join('') : '<div class="small">No low stock</div>';
-    document.getElementById('deadstock').innerHTML = deadStock.length ? deadStock.map(p=>`<div class="small">${escapeHtml(p.name)}</div>`).join('') : '<div class="small">No dead stock</div>';
-    const snapshot = getDashboardSnapshot();
-    try { localStorage.setItem("bharatpos_ai_snapshot", JSON.stringify(snapshot)); } catch(e) { console.warn('Could not save snapshot to localStorage:', e); }
-    sendSnapshotIfChanged(snapshot).catch(err => console.warn('sendSnapshotIfChanged error:', err));
+
+    // 2. Growth Indicator (Real Math)
+    const growthEl = document.getElementById('growthStatus');
+    const growthHint = document.getElementById('growthHint');
+    
+    if (yesterdayRev === 0 && todayRev === 0) {
+        growthEl.textContent = "—";
+        growthHint.textContent = "No recent data";
+    } else if (yesterdayRev === 0 && todayRev > 0) {
+        growthEl.innerHTML = '<span class="good">▲ 100%</span>';
+        growthHint.textContent = "First sales today!";
+    } else {
+        const diff = todayRev - yesterdayRev;
+        const pct = Math.round((diff / yesterdayRev) * 100);
+        if(pct > 0) {
+            growthEl.innerHTML = `<span class="good">▲ ${pct}%</span>`;
+        } else if (pct < 0) {
+            growthEl.innerHTML = `<span class="bad">▼ ${Math.abs(pct)}%</span>`;
+        } else {
+            growthEl.textContent = "0%";
+        }
+    }
+
+    // 3. Stock Logic
+    const lowStock = products.filter(p => Number(p.stock || 0) <= 5);
+    const deadStock = products.filter(p => !productCounts[p.name]); // Items never sold
+
+    document.getElementById('lowStockCount').innerHTML = `Low: <b class="${lowStock.length > 0 ? 'bad' : ''}">${lowStock.length}</b>`;
+    document.getElementById('deadStockCount').innerHTML = `Unsold Items: <b>${deadStock.length}</b>`;
+
+    document.getElementById('lowstock').innerHTML = lowStock.length 
+      ? lowStock.map(p=>`<div class="list-item"><span>${escapeHtml(p.name)}</span><span class="bad">Qty: ${p.stock}</span></div>`).join('') 
+      : '<div class="small">Stocks look good.</div>';
+
+    // 4. Buying Patterns (Top Selling)
+    const sortedProducts = Object.keys(productCounts).map(key => ({name: key, qty: productCounts[key]}));
+    sortedProducts.sort((a,b) => b.qty - a.qty);
+    const top5 = sortedProducts.slice(0, 5);
+    
+    document.getElementById('patterns').innerHTML = top5.length
+        ? top5.map((p, index) => `<div class="list-item"><span>${index+1}. ${escapeHtml(p.name)}</span><span class="good">${p.qty} sold</span></div>`).join('')
+        : '<div class="small">No sales patterns yet.</div>';
+
+    // 5. Smart Restock (High Sales + Low Stock)
+    // Logic: Item is in top 50% of sales BUT stock is < 10
+    const smartRestock = products.filter(p => {
+        const sold = productCounts[p.name] || 0;
+        const stock = Number(p.stock || 0);
+        return stock < 10 && sold > 2; // Thresholds
+    });
+
+    document.getElementById('smartOrders').innerHTML = smartRestock.length
+        ? smartRestock.map(p => `<div class="list-item"><span>${escapeHtml(p.name)}</span><span class="warn">Order Now</span></div>`).join('')
+        : '<div class="small">No urgent restocks needed.</div>';
+
+    // 6. RENDER THE CHART
+    renderChart(sales);
+  }
+
+  function renderChart(sales) {
+    const ctx = document.getElementById('salesChart');
+    const days = 7;
+    const dataPoints = [];
+    const labels = [];
+    
+    // Generate last 7 days buckets
+    for(let i=6; i>=0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dStr = getDateString(d);
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }); // Mon, Tue
+        
+        // Sum sales for this day
+        const dayTotal = sales
+            .filter(s => (s.date || '').startsWith(dStr))
+            .reduce((sum, s) => sum + Number(s.total || 0), 0);
+            
+        dataPoints.push(dayTotal);
+        labels.push(dayName);
+    }
+
+    const maxVal = Math.max(...dataPoints, 1); // Avoid div by zero
+
+    let html = '';
+    dataPoints.forEach((val, index) => {
+        const heightPct = Math.round((val / maxVal) * 80); // Max height 80% of container
+        const barColor = val > 0 ? '#4cd964' : '#333';
+        html += `
+            <div class="bar-group">
+                <div class="bar-value">${val > 0 ? (val/1000).toFixed(1)+'k' : ''}</div>
+                <div class="bar" style="height: ${heightPct}%; background: ${barColor}"></div>
+                <div class="bar-label">${labels[index]}</div>
+            </div>
+        `;
+    });
+    ctx.innerHTML = html;
   }
 
   function resetSales(){
-    if (confirm('⚠ Delete all sales data?')){ try { localStorage.setItem('bharatpos_sales','[]'); } catch(e) { console.warn('Could not reset sales', e); } renderDashboard(); }
+    if (confirm('⚠ Are you sure? This deletes all sales history permanently.')){ 
+        try { localStorage.setItem('bharatpos_sales','[]'); } catch(e) {} 
+        renderDashboard(); 
+    }
   }
 
+  // Init
   loadUser();
   renderDashboard();
-  window.getDashboardSnapshot = getDashboardSnapshot;
-  window.renderDashboard = renderDashboard;
-  window.sendSnapshotIfChanged = sendSnapshotIfChanged;
+
 </script>
 </body>
 </html>
-
-
 
 
 
