@@ -3,353 +3,218 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Bharat POS — Dashboard</title>
+  <title>Billing - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    /* ... (Your existing styles) ... */
+    table { width:100%; border-collapse: collapse; margin: 6px 0; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    .total { margin-top: 6px; font-weight: bold; font-size: 1.1em; color: #0b5ed7; text-align: right; }
+    .card { padding: 12px; margin-bottom: 12px; background: #f7f7f7; border-radius: 6px; position: relative; }
+    .form-row { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
+    .small { font-size: 0.85em; color: #555; }
+    button { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; background: #0b5ed7; color: white; }
+    button:hover { background: #084298; }
+    .btn-danger { background: #dc3545; }
+    .btn-danger:hover { background: #bb2d3b; }
+    .hidden { display:none !important; } /* Force hide */
+    nav a { margin-right: 12px; }
+    .header { display:flex; justify-content: space-between; align-items:center; margin-bottom:12px; }
+    .brand { font-weight:bold; font-size:1.2em; }
+    .nav a { margin-left:8px; }
+
+    .billing-container { display: flex; gap: 16px; justify-content:center; align-items:flex-start; flex-wrap: wrap; }
+    .billing-container, .cart-section, #stockScrollBox { max-height: none !important; overflow: visible !important; }
+
+    #productGridWrap { width: 90%; margin: 6px auto; max-width: 1200px; }
+    #categoryFilters { display:flex; gap:6px; flex-wrap:wrap;margin-bottom:10px; }
+    #categoryFilters button { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; padding: 6px 12px; background-color: #0b5ed7; color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 13px; }
+    #categoryFilters button:hover { background-color: #0740a0; }
+
+    #productList { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; align-items: start; }
+    .prod-btn { aspect-ratio: 1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px; font-size:12px; border-radius:8px; border:1px solid #ccc; background: linear-gradient(180deg,#ffffff,#f0f6ff); cursor:pointer; overflow:hidden; transition: 0.15s; }
+    .prod-btn:active { transform: scale(0.97); }
+    .prod-name { font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-weight: 600; }
+    .prod-unit { font-size: 11px; font-weight: 700; color: #0b5ed7; margin: 2px 0; }
+    .prod-price { font-size:11px; color:#333; opacity:0.8; }
+
+    .stock-scroll { max-height: 50vh; overflow-y: auto; padding: 6px; border-radius: 8px; background: #f9f9f9; }
+    .cart-section { flex: 0.9; max-width:650px; min-width:320px; }
+    
+    .pay-mode-group { display: flex; gap: 15px; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; width: 100%; box-sizing: border-box; }
+    .pay-mode-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 500; font-size: 0.9em; }
+
+    @media (max-width:700px){
+      #productGridWrap{ width: 96%; }
+      .billing-container{  align-items:center; flex-direction:column; }
+      .cart-section{ width:96%; max-width: none; }
+    }
+
+    #scannerContainer { display: block; position: relative; width: 100%; max-width: 500px; height: 250px; background: #000; overflow: hidden; border-radius: 8px; margin: 10px auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+    #scannerContainer video, #scannerContainer canvas { width: 100% !important; height: 100% !important; object-fit: cover; position: absolute; top: 0; left: 0; }
+    #scannerContainer::after { content: ''; position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: rgba(255, 0, 0, 0.7); box-shadow: 0 0 4px red; pointer-events: none; z-index: 10; }
+  </style>
 </head>
+
 <body>
-<nav>
-  <a href="products.html">Products</a>
-  <a href="reports.html">Reports</a>
-  <a href="settings.html">Settings</a>
-  <a href="index.html">About</a>
-  <div id="profileName" class="profile-name"></div>
-</nav>
-
-<style>
-/* Base Styles */
-.profile-name{font-weight:700;margin-left:12px;padding:6px 10px;border:1px solid #ffcc00;border-radius:8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-.card{padding:16px;border-radius:12px;background:#111;color:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
-.small{font-size:13px;color:#ccc; margin-top: 5px;}
-.bad{color:#ff6b6b}
-.good{color:#4cd964}
-.warn{color:#ffcc00}
-.container{margin:18px}
-.footer{margin:20px;text-align:center;color:#666}
-
-/* Header Styles */
-.header{display:flex;align-items:center;justify-content:space-between;padding:18px;background:#000;color:#fff;border-bottom:1px solid #333}
-.brand{font-size:24px;font-weight:bold;color:#fff}
-.nav a{margin-left:15px;color:#ccc;text-decoration:none;font-size:14px}
-.nav a:hover{color:#fff}
-
-/* --- UPDATED CHART STYLES --- */
-.chart-container { 
-    display: flex; 
-    align-items: flex-end; 
-    justify-content: space-between; 
-    height: 160px; /* Taller for better visibility */
-    margin-top: 15px; 
-    padding-top: 20px; 
-    border-bottom: 1px solid #333; /* Baseline axis */
-}
-.bar-group { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: flex-end; 
-    width: 12%; 
-    height: 100%; 
-}
-.bar { 
-    width: 60%; 
-    background: #333; 
-    border-radius: 4px 4px 0 0; 
-    transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
-    position: relative; 
-    min-height: 2px; /* Always show a tiny line for 0 */
-}
-.bar.active {
-    background: linear-gradient(to top, #4cd964, #28a745); /* Gradient Green */
-    box-shadow: 0 0 8px rgba(76, 217, 100, 0.3);
-}
-.bar-label { 
-    font-size: 11px; 
-    color: #888; 
-    margin-top: 8px; 
-}
-.bar-value { 
-    font-size: 11px; 
-    color: #fff; 
-    margin-bottom: 6px; 
-    font-weight: bold; 
-    text-shadow: 0 1px 2px black;
-}
-
-/* List Styles */
-.list-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222; font-size: 14px; align-items: center; }
-.list-item:last-child { border-bottom: none; }
-
-/* Button Style for Order Now */
-.btn-restock {
-    background: #ffcc00;
-    color: #000;
-    padding: 4px 10px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 11px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.btn-restock:hover { background: #e6b800; }
-</style>
-
-<div class="header">
-  <div class="brand">Bharat POS</div>
-  <div class="nav">
-    <a href="billing.html">Billing</a>
+  <nav>
     <a href="sales.html">Sales</a>
-    <a href="ai.html">AI</a>
-  </div>
-</div>
+    <a href="reports.html">Reports</a>
+    <a href="settings.html">Settings</a>
+    <a href="index.html">About</a>
+  </nav>
 
-<div class="container grid">
-  <div class="card">
-    <h3>Revenue (Today)</h3>
-    <div id="todayRevenue" style="font-size:22px;font-weight:700">₹0</div>
-    <div class="small" id="totalRevenueLifetime">Lifetime: ₹0</div>
-  </div>
-   
-  <div class="card">
-    <h3>Growth (24h)</h3>
-    <div id="growthStatus" style="font-size:22px;font-weight:700">—</div>
-    <div class="small" id="growthHint">vs Yesterday</div>
-  </div>
-
-  <div class="card">
-    <h3>Stock Health</h3>
-    <div id="lowStockCount"></div>
-    <div id="deadStockCount" class="small"></div>
-  </div>
-   
-  <div class="card">
-    <h3>Sales Count</h3>
-    <div id="totalBills" style="font-size:22px;font-weight:700">0 Bills</div>
-    <div class="small" id="avgBill"></div>
-  </div>
-</div>
-
-<div class="container">
-    <div class="card">
-        <h3>Weekly Performance (Last 7 Days)</h3>
-        <div id="salesChart" class="chart-container">
-            <div class="small">Loading chart...</div>
-        </div>
+  <div class="header">
+    <div class="global-header"> <img src="logo.png" class="global-logo"> </div>
+    <div class="brand"> Bharat POS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="products.html">Products</a>
     </div>
-</div>
-
-<div class="container grid">
-  <div class="card">
-    <h3>Top Selling Items</h3>
-    <div id="patterns" style="margin-top:10px">Loading...</div>
   </div>
 
-  <div class="card">
-    <h3>Smart Restock</h3>
-    <div class="small" style="margin-bottom:8px">Items selling fast but low on stock:</div>
-    <div id="smartOrders">All good</div>
+  <div id="scannerContainer"></div>
+  <div style="margin-bottom:6px;">
+    <button id="openCamera">Start Scanner</button>
+    <button id="stopCamera" style="display:none; margin-left:6px;" class="btn-danger">Stop Scanner</button>
+    <span id="detectedCode" class="small"></span>
+  </div>
+  <input id="barcodeInput" class="hidden" autocomplete="off">
+
+  <div class="stock-scroll">
+    <div id="productGridWrap">
+      <h3 style="text-align:center;margin:6px 0;">Available Products</h3>
+      <div id="categoryFilters"></div>
+      <div id="productList" role="list"></div>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Low Stock Alert</h3>
-    <div id="lowstock"></div>
+  <div class="billing-container">
+    <div class="cart-section">
+      
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Billing Details</h3>
+            <span id="billDateDisplay" class="small" style="font-weight:bold;"></span>
+        </div>
+        
+        <div class="form-row">
+            <input type="text" id="productSearch" placeholder="Search product..." style="flex:1; padding:8px;" oninput="handleSearch(this.value)">
+        </div>
+
+        <div class="form-row">
+            <input id="custName" placeholder="Customer Name" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            <input type="number" id="custPhone" placeholder="Mobile No. (Required for Udhaar)" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+        </div>
+
+        <div id="searchResults" class="card" style="display:none;"></div>
+      </div>
+
+      <div class="card">
+        <h3>Cart Items</h3>
+        <div id="cartList"></div>
+        
+        <div class="form-row">
+          <input id="discount" type="number" placeholder="Discount ₹" value="" style="padding:6px; width:100px;" 
+            oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
+        </div>
+
+        <hr style="border-top:1px dashed #ccc; margin:10px 0;">
+
+        <div style="margin-bottom: 10px;">
+            <label class="small" style="font-weight:bold;">Payment Mode:</label>
+            <div class="pay-mode-group">
+                <label><input type="radio" name="payMode" value="Cash" checked> 💵 Cash</label>
+                <label><input type="radio" name="payMode" value="UPI"> 📱 UPI</label>
+                <label style="color:#dc3545; font-weight:bold;"><input type="radio" name="payMode" value="Udhaar"> 📒 Udhaar</label>
+            </div>
+        </div>
+
+        <div style="margin: 10px 0; text-align: right;">
+            <button onclick="sendWhatsAppBill()" style="background:#25d366; color:white; font-weight:bold; width:100%;">
+                📱 Send Bill on WhatsApp
+            </button>
+        </div>
+
+        <div class="total" id="grandTotal">Total: ₹0</div>
+        
+        <div class="form-row" style="margin-top:15px; justify-content: space-between;">
+            <button onclick="if(confirm('Clear cart?')) { window.cart=[]; window.renderCart(); }" class="btn-danger">Reset Cart</button>
+            <button onclick="completeSale()" style="font-size:1.1em; padding: 8px 20px;">✅ Checkout & Print</button>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
-<div style="margin:20px; text-align: center;">
-  <button onclick="resetSales()" style="padding: 10px 20px; cursor: pointer; background: #333; color: white; border: none; border-radius: 5px;">Reset Sales Data</button>
-</div>
+  <div id="invoiceModal" class="card hidden" style="position:fixed; top:5%; left:5%; right:5%; z-index:1000; max-width:700px; margin:auto; border:2px solid #333; max-height:90vh; overflow-y:auto; box-shadow:0 0 20px rgba(0,0,0,0.5);">
+    <div id="invoiceContent"></div>
+    <div style="text-align:center; margin-top:10px;">
+      <h2 class="shop-name">Bharat POS</h2>
+      <p class="shop-phone"></p>
+      <div id="upiSection" style="display:none; text-align:center;">
+        <p><strong>Scan to Pay</strong></p>
+        <img id="upiQRImg" style="max-width:180px; border:1px solid #ccc; padding:5px;">
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:8px">
+      <button onclick="window.print()">Print</button>
+      <button onclick="closeInvoice()" class="btn-danger">Close</button>
+    </div>
+  </div>
 
-<div class="footer">Built by Utkarsh — BharatPOS</div>
+  <script src="bharatpos.js"></script>
+  <script src="quagga.js"></script>
 
 <script>
-  // UTILITIES
-  function formatCurrency(num){ return '₹' + Number(num || 0).toLocaleString('en-IN'); }
-  function safeParse(json, fallback) { try { return JSON.parse(json); } catch(e) { return fallback; } }
-  function escapeHtml(str){ if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// --- UI FUNCTIONS ---
+function updateDateTime() { const now = new Date(); document.getElementById('billDateDisplay').innerText = now.toLocaleString('en-IN'); }
+setInterval(updateDateTime, 1000); updateDateTime();
+function renderBillCategories() { const products = (typeof getProducts==='function')?getProducts():[]; const c=document.getElementById('categoryFilters'); if(!c)return; const cats=['All',...new Set(products.map(p=>p.category).filter(Boolean))]; c.innerHTML=cats.map(k=>`<button onclick="renderBillGrid('${k}')">${k}</button>`).join(''); }
+function renderBillGrid(cat='All'){ const g=document.getElementById('productList'); if(!g)return; const ps=(typeof getProducts==='function')?getProducts():[]; g.innerHTML=''; const f=cat==='All'?ps:ps.filter(p=>p.category===cat); if(!f.length){g.innerHTML='<div class="small">No products</div>';return;} f.forEach(p=>{ const s=p.stock>0?`₹${p.price}`:'Out'; const u=p.quantity?`<div class="prod-unit">${p.quantity}</div>`:''; const d=document.createElement('div'); d.className='prod-btn'; d.onclick=()=>{if(window.addToBill)window.addToBill(p.id)}; d.innerHTML=`<div class="prod-name">${p.name}</div>${u}<div class="prod-price">${s}</div>`; g.appendChild(d); }); }
+function handleSearch(q){ const ps=getProducts(); const g=document.getElementById('productList'); g.innerHTML=''; const f=ps.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||(p.barcode&&p.barcode.includes(q))); f.forEach(p=>{ const u=p.quantity?`<div class="prod-unit">${p.quantity}</div>`:''; const d=document.createElement('div'); d.className='prod-btn'; d.onclick=()=>{if(window.addToBill)window.addToBill(p.id)}; d.innerHTML=`<div class="prod-name">${p.name}</div>${u}<div class="prod-price">₹${p.price}</div>`; g.appendChild(d); }); }
+document.addEventListener("DOMContentLoaded", ()=>{ renderBillCategories(); renderBillGrid(); });
 
-  // --- RE-STOCK LINK LOGIC (PRESERVED) ---
-  function getRestockLink(p) {
-      const params = new URLSearchParams();
-      // Basic Info
-      params.set('restock', p.name);
-      if(p.price) params.set('price', p.price);
-      if(p.category) params.set('category', p.category);
-      if(p.tax) params.set('tax', p.tax);
-      
-      // Stock Count (Number)
-      if(p.stock) params.set('stock_val', p.stock);
+// --- FIXED CLOSE FUNCTION ---
+function closeInvoice() {
+    document.getElementById('invoiceModal').classList.add('hidden');
+}
 
-      // Quantity/Unit (1kg, 2pcs)
-      const unitSize = p.quantity || p.unit || p.size || '';
-      if(unitSize) params.set('unit_val', unitSize);
-
-      return `products.html?${params.toString()}`;
-  }
-
-  // LOAD USER
-  function loadUser(){
-    const u = safeParse(localStorage.getItem('bharatpos_user')||'{}', {});
-    document.getElementById('profileName').textContent = u.name ? '👤 '+u.name : '👤 Guest';
-  }
-
-  // --- CORE ANALYTICS LOGIC ---
-
-  function getSalesData() { return safeParse(localStorage.getItem('bharatpos_sales')||'[]', []); }
-  function getProductData() { return safeParse(localStorage.getItem('bharatpos_products')||'[]', []); }
-  function getDateString(dateObj) { return dateObj.toISOString().split('T')[0]; }
-
-  function renderDashboard(){
-    const sales = getSalesData();
-    const products = getProductData();
-
-    // 1. Calculate Revenue (Total & Today)
-    let totalRev = 0;
-    let todayRev = 0;
-    const todayStr = getDateString(new Date());
-    const yesterStr = getDateString(new Date(Date.now() - 86400000));
-    let yesterdayRev = 0;
-    const productCounts = {};
-
-    sales.forEach(s => {
-        const amt = Number(s.total || 0);
-        const sDate = s.date ? s.date.substring(0, 10) : '';
-        totalRev += amt;
-        if(sDate === todayStr) todayRev += amt;
-        if(sDate === yesterStr) yesterdayRev += amt;
-        (s.items || []).forEach(i => {
-            if(i.name) productCounts[i.name] = (productCounts[i.name] || 0) + Number(i.qty || 0);
-        });
-    });
-
-    // Display Revenue
-    document.getElementById('todayRevenue').textContent = formatCurrency(todayRev);
-    document.getElementById('totalRevenueLifetime').textContent = 'Lifetime: ' + formatCurrency(totalRev);
+// --- FIXED WHATSAPP LOGIC (Reads Storage Directly) ---
+function sendWhatsAppBill() {
+    const phone = document.getElementById('custPhone').value; 
+    const custName = document.getElementById('custName').value || "Customer";
     
-    // Display Bills
-    const avgBill = sales.length ? Math.round(totalRev / sales.length) : 0;
-    document.getElementById('totalBills').textContent = sales.length;
-    document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(avgBill);
+    // DIRECT STORAGE READ (Fixes 'Cart Empty' error)
+    let cart = [];
+    try { 
+        const raw = localStorage.getItem('bill_items');
+        if(raw) cart = JSON.parse(raw);
+    } catch(e) {}
 
-    // 2. Growth Indicator
-    const growthEl = document.getElementById('growthStatus');
-    const growthHint = document.getElementById('growthHint');
-    if (yesterdayRev === 0 && todayRev === 0) {
-        growthEl.textContent = "—"; growthHint.textContent = "No recent data";
-    } else if (yesterdayRev === 0 && todayRev > 0) {
-        growthEl.innerHTML = '<span class="good">▲ 100%</span>'; growthHint.textContent = "First sales today!";
-    } else {
-        const diff = todayRev - yesterdayRev;
-        const pct = Math.round((diff / yesterdayRev) * 100);
-        growthEl.innerHTML = pct > 0 ? `<span class="good">▲ ${pct}%</span>` : (pct < 0 ? `<span class="bad">▼ ${Math.abs(pct)}%</span>` : "0%");
+    if (!cart || cart.length === 0) { 
+        // Fallback to window.cart just in case
+        if(window.cart && window.cart.length > 0) cart = window.cart;
+        else { alert("Cart is empty!"); return; }
     }
 
-    // 3. Stock Logic
-    const lowStock = products.filter(p => Number(p.stock || 0) <= 5);
-    const deadStock = products.filter(p => !productCounts[p.name]); 
+    if (!phone || phone.length < 10) { alert("Please enter valid Mobile Number!"); return; }
 
-    document.getElementById('lowStockCount').innerHTML = `Low: <b class="${lowStock.length > 0 ? 'bad' : ''}">${lowStock.length}</b>`;
-    document.getElementById('deadStockCount').innerHTML = `Unsold Items: <b>${deadStock.length}</b>`;
+    const totalTxt = document.getElementById('grandTotal').innerText.replace("Total:", "").trim();
+    const dateTxt = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 
-    document.getElementById('lowstock').innerHTML = lowStock.length 
-      ? lowStock.map(p => `
-          <div class="list-item">
-            <span>${escapeHtml(p.name)} <span class="bad">(Qty: ${p.stock})</span></span>
-            <a href="${getRestockLink(p)}" class="btn-restock">Order</a>
-          </div>`).join('') 
-      : '<div class="small">Stocks look good.</div>';
-
-    // 4. Buying Patterns
-    const sortedProducts = Object.keys(productCounts).map(key => ({name: key, qty: productCounts[key]}));
-    sortedProducts.sort((a,b) => b.qty - a.qty);
-    const top5 = sortedProducts.slice(0, 5);
-    document.getElementById('patterns').innerHTML = top5.length
-        ? top5.map((p, index) => `<div class="list-item"><span>${index+1}. ${escapeHtml(p.name)}</span><span class="good">${p.qty} sold</span></div>`).join('')
-        : '<div class="small">No sales patterns yet.</div>';
-
-    // 5. Smart Restock
-    const smartRestock = products.filter(p => {
-        const sold = productCounts[p.name] || 0;
-        const stock = Number(p.stock || 0);
-        return stock < 10 && sold > 2; 
+    let msg = `🧾 *BHARAT POS INVOICE* %0A📅 ${dateTxt} %0A👤 ${custName} %0A--------------------------------%0A`;
+    cart.forEach((item, index) => {
+        msg += `${index + 1}. ${item.name} x ${item.qty || 1} = ₹${(item.price * (item.qty || 1)).toFixed(2)} %0A`;
     });
+    msg += `--------------------------------%0A💰 *TOTAL: ${totalTxt}* %0A--------------------------------%0A🙏 Thank you!`;
 
-    document.getElementById('smartOrders').innerHTML = smartRestock.length
-        ? smartRestock.map(p => `
-            <div class="list-item">
-                <span>${escapeHtml(p.name)}</span>
-                <a href="${getRestockLink(p)}" class="btn-restock">Order Now</a>
-            </div>`).join('')
-        : '<div class="small">No urgent restocks needed.</div>';
-
-    // 6. RENDER THE CHART (UPDATED)
-    renderChart(sales);
-  }
-
-  // --- UPDATED CHART FUNCTION ---
-  function renderChart(sales) {
-    const ctx = document.getElementById('salesChart');
-    const days = 7;
-    const dataPoints = [];
-    const labels = [];
-    
-    // Generate last 7 days buckets
-    for(let i=6; i>=0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dStr = getDateString(d);
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-        
-        const dayTotal = sales
-            .filter(s => (s.date || '').startsWith(dStr))
-            .reduce((sum, s) => sum + Number(s.total || 0), 0);
-            
-        dataPoints.push(dayTotal);
-        labels.push(dayName);
-    }
-
-    const maxVal = Math.max(...dataPoints, 1); 
-
-    let html = '';
-    dataPoints.forEach((val, index) => {
-        // Calculate height (max 85%)
-        const heightPct = Math.round((val / maxVal) * 85); 
-        
-        // Format label: <1000 = exact, >1000 = 1.2k
-        let displayVal = '';
-        if(val > 0) {
-            displayVal = val >= 1000 
-                ? '₹' + (val/1000).toFixed(1) + 'k' 
-                : '₹' + val;
-        }
-
-        const activeClass = val > 0 ? 'active' : '';
-
-        html += `
-            <div class="bar-group">
-                <div class="bar-value">${displayVal}</div>
-                <div class="bar ${activeClass}" style="height: ${heightPct}%"></div>
-                <div class="bar-label">${labels[index]}</div>
-            </div>
-        `;
-    });
-    ctx.innerHTML = html;
-  }
-
-  function resetSales(){
-    if (confirm('⚠ Are you sure? This deletes all sales history permanently.')){ 
-        try { localStorage.setItem('bharatpos_sales','[]'); } catch(e) {} 
-        renderDashboard(); 
-    }
-  }
-
-  loadUser();
-  renderDashboard();
-
+    window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
+}
 </script>
 </body>
 </html>
-
 
 
 
