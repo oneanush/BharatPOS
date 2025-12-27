@@ -17,7 +17,7 @@
     .offer-badge { background: #ffcc00; color: #000; padding: 8px 20px; border-radius: 30px; font-weight: bold; font-size: 13px; display: inline-block; margin-top: 15px; box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4); animation: pulse 2s infinite; max-width: 90%; }
     @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
 
-    /* --- CHAMPIONS PODIUM --- */
+    /* --- PODIUM --- */
     .podium-container { max-width: 500px; margin: -80px auto 30px; display: flex; justify-content: center; align-items: flex-end; gap: 10px; position: relative; z-index: 10; }
     .podium-card { background: white; border-radius: 12px; padding: 10px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.15); width: 100px; display: flex; flex-direction: column; justify-content: flex-end; position: relative; border: 3px solid transparent; transition: transform 0.3s; }
     .podium-card:hover { transform: translateY(-5px); }
@@ -34,10 +34,23 @@
     .search-btn { background: #1e3a8a; color: white; border: none; padding: 0 25px; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 18px; transition: background 0.2s; }
     .search-btn:hover { background: #172554; }
 
-    /* --- RESULTS --- */
+    /* --- RESULTS & HISTORY BUTTON --- */
     .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+    
+    .history-btn-wrap { text-align: center; margin-bottom: 20px; display: none; /* HIDDEN BY DEFAULT */ }
+    .btn-history {
+        background: linear-gradient(135deg, #4f46e5, #4338ca); color: white;
+        border: none; padding: 12px 25px; border-radius: 30px;
+        font-size: 14px; font-weight: 700; cursor: pointer;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        display: inline-flex; align-items: center; gap: 8px;
+        transition: transform 0.2s;
+    }
+    .btn-history:hover { transform: translateY(-2px); }
+
     .summary-card { background: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; display: none; border-left: 5px solid #3b82f6; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     .total-amt { font-size: 32px; font-weight: 800; color: #dc3545; }
+    
     .bill-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 
     /* TICKER */
@@ -45,17 +58,22 @@
     .ticker { white-space: nowrap; animation: ticker 20s linear infinite; padding-left: 100%; font-size: 13px; }
     @keyframes ticker { 100% { transform: translateX(-100%); } }
 
-    /* MODALS (Receipt & Winner) */
+    /* MODALS */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
     .modal-content { background: white; width: 90%; max-width: 350px; padding: 20px; border-radius: 12px; font-family: monospace; max-height: 80vh; overflow-y: auto; position: relative; }
 
-    /* WINNER SPECIFIC STYLES */
+    /* WINNER MODAL */
     .winner-box { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #fff, #fffbea); border: 4px solid #ffcc00; }
     .big-trophy { font-size: 80px; display: block; margin-bottom: 10px; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .win-title { font-size: 24px; font-weight: 800; color: #d97706; margin: 10px 0; }
     .win-rank { font-size: 18px; color: #333; font-weight: bold; }
     .win-msg { color: #666; margin: 15px 0; }
     @keyframes popIn { from{transform:scale(0);} to{transform:scale(1);} }
+
+    /* HISTORY LIST STYLE */
+    .hist-item { padding: 10px; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; font-size: 12px; }
+    .hist-paid { color: #16a34a; font-weight: bold; }
+    .hist-due { color: #dc2626; font-weight: bold; }
 
   </style>
 </head>
@@ -76,11 +94,19 @@
 </div>
 
 <div class="container">
+    
+    <div id="historyBtnContainer" class="history-btn-wrap">
+        <button class="btn-history" onclick="showHistory()">
+            <span>📜 View All Past Invoices</span>
+        </button>
+    </div>
+
     <div id="summaryCard" class="summary-card">
         <div style="font-size:12px; color:#888;">Pending Dues for <b id="custName">Guest</b></div>
         <div class="total-amt" id="totalAmt">₹0</div>
         <div style="font-size:11px; margin-top:5px; color:#666;">Please visit the shop to pay.</div>
     </div>
+    
     <div id="billList"></div>
 </div>
 
@@ -103,6 +129,17 @@
     </div>
 </div>
 
+<div id="historyModal" class="modal-overlay" onclick="closeModal(event, 'historyModal')">
+    <div class="modal-content" style="max-height: 70vh;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0;">📜 Full History</h3>
+            <button onclick="document.getElementById('historyModal').style.display='none'" style="border:none;background:none;font-size:24px;">&times;</button>
+        </div>
+        <div id="historyListBody" style="font-family:sans-serif;">
+            </div>
+    </div>
+</div>
+
 <div id="winnerModal" class="modal-overlay" onclick="closeModal(event, 'winnerModal')">
     <div class="modal-content winner-box">
         <div class="big-trophy" id="winTrophy">🏆</div>
@@ -120,19 +157,19 @@
 
     // GLOBAL VARS
     let currentBillsList = [];
+    let allUserBills = []; // Store full history
+    let currentUserPhone = "";
 
     document.addEventListener("DOMContentLoaded", () => {
         loadLeaderboard();
         loadDynamicOffer();
     });
 
-    // --- 1. LOAD OFFER ---
     function loadDynamicOffer() {
         const offer = localStorage.getItem('bharatpos_offer_text') || "📢 This Month's Offer: Top 3 get 20% OFF!";
         document.getElementById('offerBadgeText').innerText = offer;
     }
 
-    // --- 2. LEADERBOARD ---
     function loadLeaderboard() {
         const sales = safeParse('bharatpos_sales');
         const custMap = {};
@@ -152,28 +189,46 @@
         podium.innerHTML = displayOrder.map(c => `<div class="podium-card rank-${c.r}"><div class="trophy-icon">${c.i}</div><span class="winner-name">${c.name}</span><span class="winner-amt">${formatMoney(c.total)}</span><span class="winner-label">${c.l}</span></div>`).join('');
     }
 
-    // --- 3. FETCH DUES ---
+    // --- MAIN CHECK ---
     function handleUserCheck() {
         const phone = document.getElementById('userPhone').value.trim();
         if(!phone || phone.length < 10) { alert("Enter valid mobile number"); return; }
         
+        currentUserPhone = phone;
+        
         const ledger = safeParse('bharatpos_ledger');
-        const custRecord = ledger.find(l => l.phone === phone);
-        if(custRecord && custRecord.customer) checkRankAndCelebrate(custRecord.customer);
-        fetchBills(phone);
+        
+        // 1. Check if user exists at all (any bill, paid or unpaid)
+        const userExists = ledger.some(l => l.phone === phone);
+
+        if (userExists) {
+            // SHOW HISTORY BUTTON
+            document.getElementById('historyBtnContainer').style.display = 'block';
+            
+            // Check Rank
+            const custRecord = ledger.find(l => l.phone === phone);
+            if(custRecord && custRecord.customer) checkRankAndCelebrate(custRecord.customer);
+            
+            fetchDues(phone);
+        } else {
+            document.getElementById('historyBtnContainer').style.display = 'none';
+            alert("No records found for this number.");
+            document.getElementById('billList').innerHTML = "";
+            document.getElementById('summaryCard').style.display = 'none';
+        }
     }
 
-    function fetchBills(phone) {
+    function fetchDues(phone) {
         const ledger = safeParse('bharatpos_ledger');
         const myBills = ledger.filter(l => l.phone === phone && !l.isPaid);
-        currentBillsList = myBills; // Store globally
+        currentBillsList = myBills; // Store globally for clicking
 
         const summary = document.getElementById('summaryCard');
         const list = document.getElementById('billList');
 
         if(myBills.length === 0) {
             summary.style.display = 'none';
-            list.innerHTML = `<div style="text-align:center;padding:40px;color:#888;"><h3>🎉 No Dues!</h3><p>You have no pending payments for <b>${phone}</b>.</p></div>`;
+            list.innerHTML = `<div style="text-align:center;padding:40px;color:#888;"><h3>🎉 No Pending Dues!</h3><p>You are all clear.</p></div>`;
             return;
         }
 
@@ -189,7 +244,35 @@
             </div>`).join('');
     }
 
-    // --- 4. MODAL (READ ONLY) ---
+    // --- NEW: SHOW HISTORY FUNCTION ---
+    function showHistory() {
+        const ledger = safeParse('bharatpos_ledger');
+        const allHistory = ledger.filter(l => l.phone === currentUserPhone).sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        const histDiv = document.getElementById('historyListBody');
+        
+        if (allHistory.length === 0) {
+            histDiv.innerHTML = "<p>No history found.</p>";
+        } else {
+            histDiv.innerHTML = allHistory.map(h => {
+                const statusClass = h.isPaid ? 'hist-paid' : 'hist-due';
+                const statusText = h.isPaid ? 'PAID ✅' : 'PENDING ⚠️';
+                return `
+                <div class="hist-item">
+                    <div>
+                        <div style="font-weight:bold;">${new Date(h.date).toLocaleDateString()}</div>
+                        <div style="color:#666;">Inv #${h.id}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:bold;">${formatMoney(h.amount)}</div>
+                        <div class="${statusClass}">${statusText}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        document.getElementById('historyModal').style.display = 'flex';
+    }
+
     function viewBill(index) {
         const bill = currentBillsList[index];
         if(!bill) return;
@@ -211,7 +294,6 @@
         document.getElementById(id).style.display = 'none';
     }
 
-    // --- 5. ANIMATIONS ---
     function checkRankAndCelebrate(custName) {
         const sales = safeParse('bharatpos_sales');
         const custMap = {};
