@@ -33,17 +33,65 @@
 .nav a{margin-left:15px;color:#ccc;text-decoration:none;font-size:14px}
 .nav a:hover{color:#fff}
 
-/* Chart Styles (New Feature) */
-.chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 100px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #333; }
-.bar-group { display: flex; flex-direction: column; align-items: center; width: 12%; }
-.bar { width: 100%; background: #333; border-radius: 4px 4px 0 0; transition: height 0.5s ease; position: relative; }
-.bar:hover { background: #4cd964; }
-.bar-label { font-size: 10px; color: #888; margin-top: 4px; }
-.bar-value { font-size: 10px; color: #fff; margin-bottom: 4px; font-weight: bold; }
+/* --- UPDATED CHART STYLES --- */
+.chart-container { 
+    display: flex; 
+    align-items: flex-end; 
+    justify-content: space-between; 
+    height: 160px; /* Taller for better visibility */
+    margin-top: 15px; 
+    padding-top: 20px; 
+    border-bottom: 1px solid #333; /* Baseline axis */
+}
+.bar-group { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: flex-end; 
+    width: 12%; 
+    height: 100%; 
+}
+.bar { 
+    width: 60%; 
+    background: #333; 
+    border-radius: 4px 4px 0 0; 
+    transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+    position: relative; 
+    min-height: 2px; /* Always show a tiny line for 0 */
+}
+.bar.active {
+    background: linear-gradient(to top, #4cd964, #28a745); /* Gradient Green */
+    box-shadow: 0 0 8px rgba(76, 217, 100, 0.3);
+}
+.bar-label { 
+    font-size: 11px; 
+    color: #888; 
+    margin-top: 8px; 
+}
+.bar-value { 
+    font-size: 11px; 
+    color: #fff; 
+    margin-bottom: 6px; 
+    font-weight: bold; 
+    text-shadow: 0 1px 2px black;
+}
 
 /* List Styles */
-.list-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222; font-size: 14px; }
+.list-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222; font-size: 14px; align-items: center; }
 .list-item:last-child { border-bottom: none; }
+
+/* Button Style for Order Now */
+.btn-restock {
+    background: #ffcc00;
+    color: #000;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.btn-restock:hover { background: #e6b800; }
 </style>
 
 <div class="header">
@@ -61,7 +109,7 @@
     <div id="todayRevenue" style="font-size:22px;font-weight:700">₹0</div>
     <div class="small" id="totalRevenueLifetime">Lifetime: ₹0</div>
   </div>
-  
+   
   <div class="card">
     <h3>Growth (24h)</h3>
     <div id="growthStatus" style="font-size:22px;font-weight:700">—</div>
@@ -73,7 +121,7 @@
     <div id="lowStockCount"></div>
     <div id="deadStockCount" class="small"></div>
   </div>
-  
+   
   <div class="card">
     <h3>Sales Count</h3>
     <div id="totalBills" style="font-size:22px;font-weight:700">0 Bills</div>
@@ -108,6 +156,36 @@
   </div>
 </div>
 
+<a href="customers.html" style="text-decoration:none;">
+  <div class="card" style="border-left: 5px solid #6d28d9; cursor:pointer;">
+    <h3>Bharat CRM</h3>
+    <div style="font-size:18px; margin-top:5px; font-weight:bold;">Loyalty & Users</div>
+    <div class="small">Click to Manage ></div>
+  </div>
+</a>
+
+
+
+
+
+
+
+
+<a href="udhaar.html" style="text-decoration:none;">
+      <div class="card" style="border-left: 5px solid #dc3545; cursor:pointer; transition:transform 0.2s;">
+        <h3>Pending Udhaar</h3>
+        <div id="totalUdhaar" style="font-size:22px;font-weight:700; color:#dc3545;">₹0</div>
+        <div class="small" id="udhaarCount">Click to Manage ></div>
+      </div>
+  </a>
+
+
+
+
+
+
+
+
 <div style="margin:20px; text-align: center;">
   <button onclick="resetSales()" style="padding: 10px 20px; cursor: pointer; background: #333; color: white; border: none; border-radius: 5px;">Reset Sales Data</button>
 </div>
@@ -120,25 +198,36 @@
   function safeParse(json, fallback) { try { return JSON.parse(json); } catch(e) { return fallback; } }
   function escapeHtml(str){ if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+  // --- RE-STOCK LINK LOGIC (PRESERVED) ---
+  function getRestockLink(p) {
+      const params = new URLSearchParams();
+      // Basic Info
+      params.set('restock', p.name);
+      if(p.price) params.set('price', p.price);
+      if(p.category) params.set('category', p.category);
+      if(p.tax) params.set('tax', p.tax);
+      
+      // Stock Count (Number)
+      if(p.stock) params.set('stock_val', p.stock);
+
+      // Quantity/Unit (1kg, 2pcs)
+      const unitSize = p.quantity || p.unit || p.size || '';
+      if(unitSize) params.set('unit_val', unitSize);
+
+      return `products.html?${params.toString()}`;
+  }
+
   // LOAD USER
   function loadUser(){
     const u = safeParse(localStorage.getItem('bharatpos_user')||'{}', {});
     document.getElementById('profileName').textContent = u.name ? '👤 '+u.name : '👤 Guest';
   }
 
-  // --- CORE ANALYTICS LOGIC (LOCAL) ---
+  // --- CORE ANALYTICS LOGIC ---
 
-  function getSalesData() {
-    return safeParse(localStorage.getItem('bharatpos_sales')||'[]', []);
-  }
-
-  function getProductData() {
-    return safeParse(localStorage.getItem('bharatpos_products')||'[]', []);
-  }
-
-  function getDateString(dateObj) {
-    return dateObj.toISOString().split('T')[0]; // Returns YYYY-MM-DD
-  }
+  function getSalesData() { return safeParse(localStorage.getItem('bharatpos_sales')||'[]', []); }
+  function getProductData() { return safeParse(localStorage.getItem('bharatpos_products')||'[]', []); }
+  function getDateString(dateObj) { return dateObj.toISOString().split('T')[0]; }
 
   function renderDashboard(){
     const sales = getSalesData();
@@ -150,17 +239,14 @@
     const todayStr = getDateString(new Date());
     const yesterStr = getDateString(new Date(Date.now() - 86400000));
     let yesterdayRev = 0;
-    const productCounts = {}; // For patterns
+    const productCounts = {};
 
     sales.forEach(s => {
         const amt = Number(s.total || 0);
         const sDate = s.date ? s.date.substring(0, 10) : '';
-        
         totalRev += amt;
         if(sDate === todayStr) todayRev += amt;
         if(sDate === yesterStr) yesterdayRev += amt;
-
-        // Count products for patterns
         (s.items || []).forEach(i => {
             if(i.name) productCounts[i.name] = (productCounts[i.name] || 0) + Number(i.qty || 0);
         });
@@ -175,64 +261,81 @@
     document.getElementById('totalBills').textContent = sales.length;
     document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(avgBill);
 
-    // 2. Growth Indicator (Real Math)
+    // 2. Growth Indicator
     const growthEl = document.getElementById('growthStatus');
     const growthHint = document.getElementById('growthHint');
-    
     if (yesterdayRev === 0 && todayRev === 0) {
-        growthEl.textContent = "—";
-        growthHint.textContent = "No recent data";
+        growthEl.textContent = "—"; growthHint.textContent = "No recent data";
     } else if (yesterdayRev === 0 && todayRev > 0) {
-        growthEl.innerHTML = '<span class="good">▲ 100%</span>';
-        growthHint.textContent = "First sales today!";
+        growthEl.innerHTML = '<span class="good">▲ 100%</span>'; growthHint.textContent = "First sales today!";
     } else {
         const diff = todayRev - yesterdayRev;
         const pct = Math.round((diff / yesterdayRev) * 100);
-        if(pct > 0) {
-            growthEl.innerHTML = `<span class="good">▲ ${pct}%</span>`;
-        } else if (pct < 0) {
-            growthEl.innerHTML = `<span class="bad">▼ ${Math.abs(pct)}%</span>`;
-        } else {
-            growthEl.textContent = "0%";
-        }
+        growthEl.innerHTML = pct > 0 ? `<span class="good">▲ ${pct}%</span>` : (pct < 0 ? `<span class="bad">▼ ${Math.abs(pct)}%</span>` : "0%");
     }
 
     // 3. Stock Logic
     const lowStock = products.filter(p => Number(p.stock || 0) <= 5);
-    const deadStock = products.filter(p => !productCounts[p.name]); // Items never sold
+    const deadStock = products.filter(p => !productCounts[p.name]); 
 
     document.getElementById('lowStockCount').innerHTML = `Low: <b class="${lowStock.length > 0 ? 'bad' : ''}">${lowStock.length}</b>`;
     document.getElementById('deadStockCount').innerHTML = `Unsold Items: <b>${deadStock.length}</b>`;
 
     document.getElementById('lowstock').innerHTML = lowStock.length 
-      ? lowStock.map(p=>`<div class="list-item"><span>${escapeHtml(p.name)}</span><span class="bad">Qty: ${p.stock}</span></div>`).join('') 
+      ? lowStock.map(p => `
+          <div class="list-item">
+            <span>${escapeHtml(p.name)} <span class="bad">(Qty: ${p.stock})</span></span>
+            <a href="${getRestockLink(p)}" class="btn-restock">Order</a>
+          </div>`).join('') 
       : '<div class="small">Stocks look good.</div>';
 
-    // 4. Buying Patterns (Top Selling)
+    // 4. Buying Patterns
     const sortedProducts = Object.keys(productCounts).map(key => ({name: key, qty: productCounts[key]}));
     sortedProducts.sort((a,b) => b.qty - a.qty);
     const top5 = sortedProducts.slice(0, 5);
-    
     document.getElementById('patterns').innerHTML = top5.length
         ? top5.map((p, index) => `<div class="list-item"><span>${index+1}. ${escapeHtml(p.name)}</span><span class="good">${p.qty} sold</span></div>`).join('')
         : '<div class="small">No sales patterns yet.</div>';
 
-    // 5. Smart Restock (High Sales + Low Stock)
-    // Logic: Item is in top 50% of sales BUT stock is < 10
+    // 5. Smart Restock
     const smartRestock = products.filter(p => {
         const sold = productCounts[p.name] || 0;
         const stock = Number(p.stock || 0);
-        return stock < 10 && sold > 2; // Thresholds
+        return stock < 10 && sold > 2; 
     });
 
     document.getElementById('smartOrders').innerHTML = smartRestock.length
-        ? smartRestock.map(p => `<div class="list-item"><span>${escapeHtml(p.name)}</span><span class="warn">Order Now</span></div>`).join('')
+        ? smartRestock.map(p => `
+            <div class="list-item">
+                <span>${escapeHtml(p.name)}</span>
+                <a href="${getRestockLink(p)}" class="btn-restock">Order Now</a>
+            </div>`).join('')
         : '<div class="small">No urgent restocks needed.</div>';
 
-    // 6. RENDER THE CHART
+    // 6. RENDER THE CHART (UPDATED)
     renderChart(sales);
+
+
+
+
+
+// --- UDHAAR LOGIC ---
+    const ledger = safeParse(localStorage.getItem('bharatpos_ledger') || '[]');
+    // Filter only unpaid debts
+    const pendingDebts = ledger.filter(l => !l.isPaid);
+    
+    const totalPending = pendingDebts.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    
+    document.getElementById('totalUdhaar').textContent = formatCurrency(totalPending);
+    document.getElementById('udhaarCount').textContent = `${pendingDebts.length} Customers pending`;
+
+
+
+
+
   }
 
+  // --- UPDATED CHART FUNCTION ---
   function renderChart(sales) {
     const ctx = document.getElementById('salesChart');
     const days = 7;
@@ -244,9 +347,8 @@
         const d = new Date();
         d.setDate(d.getDate() - i);
         const dStr = getDateString(d);
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }); // Mon, Tue
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
         
-        // Sum sales for this day
         const dayTotal = sales
             .filter(s => (s.date || '').startsWith(dStr))
             .reduce((sum, s) => sum + Number(s.total || 0), 0);
@@ -255,16 +357,27 @@
         labels.push(dayName);
     }
 
-    const maxVal = Math.max(...dataPoints, 1); // Avoid div by zero
+    const maxVal = Math.max(...dataPoints, 1); 
 
     let html = '';
     dataPoints.forEach((val, index) => {
-        const heightPct = Math.round((val / maxVal) * 80); // Max height 80% of container
-        const barColor = val > 0 ? '#4cd964' : '#333';
+        // Calculate height (max 85%)
+        const heightPct = Math.round((val / maxVal) * 85); 
+        
+        // Format label: <1000 = exact, >1000 = 1.2k
+        let displayVal = '';
+        if(val > 0) {
+            displayVal = val >= 1000 
+                ? '₹' + (val/1000).toFixed(1) + 'k' 
+                : '₹' + val;
+        }
+
+        const activeClass = val > 0 ? 'active' : '';
+
         html += `
             <div class="bar-group">
-                <div class="bar-value">${val > 0 ? (val/1000).toFixed(1)+'k' : ''}</div>
-                <div class="bar" style="height: ${heightPct}%; background: ${barColor}"></div>
+                <div class="bar-value">${displayVal}</div>
+                <div class="bar ${activeClass}" style="height: ${heightPct}%"></div>
                 <div class="bar-label">${labels[index]}</div>
             </div>
         `;
@@ -279,7 +392,6 @@
     }
   }
 
-  // Init
   loadUser();
   renderDashboard();
 
