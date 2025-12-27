@@ -1,22 +1,16 @@
+
+
+
+
+
 /* ============================================================
-  bharatpos.js — Full script for Bharat POS
-  Updated: prefix search matching and non-intrusive search results
-  plus universal barcode Enter handler (no scanner UI here).
-  Scanner live logic lives in billing-bharat-pos.html.
-  ============================================================ */
+   bharatpos.js — FULL & CORRECTED
+   Fixed: Udhaar Logic, Syntax Errors, and Cart Syncing
+   ============================================================ */
 
 /* -------------------------
    Storage keys & helpers
    ------------------------- */
-// ===================================================
-// BharatPOS — Global Backend Config + URL Builder
-// ===================================================
-
-
-
-
-
-
 const LS_KEYS = {
   PRODUCTS: 'bharatpos_products',
   SALES: 'bharatpos_sales',
@@ -55,6 +49,9 @@ function addProduct() {
   const taxEl = document.getElementById('productTax');
   const catEl = document.getElementById('productCategory');
   const barcodeEl = document.getElementById('productBarcode');
+  
+  // Read the Quantity/Unit field
+  const qtyEl = document.getElementById('productQuantity'); 
 
   if (!nameEl || !priceEl || !stockEl || !catEl) {
     alert('Product form missing fields');
@@ -67,6 +64,7 @@ function addProduct() {
   const taxPercent = parseFloat(taxEl?.value) || 0;
   const category = catEl.value.trim() || 'General';
   const barcode = barcodeEl?.value.trim() || '';
+  const quantity = qtyEl?.value.trim() || ''; 
 
   if (!name || isNaN(price) || isNaN(stock)) {
     alert('Enter valid product info');
@@ -82,6 +80,7 @@ function addProduct() {
     existing.taxPercent = Number(taxPercent);
     existing.category = category || existing.category;
     existing.barcode = barcode || existing.barcode;
+    existing.quantity = quantity || existing.quantity; 
   } else {
     products.push({
       id: uid('p'),
@@ -90,10 +89,10 @@ function addProduct() {
       stock,
       taxPercent,
       category,
-      barcode
+      barcode,
+      quantity 
     });
   }
- 
 
   saveProducts(products);
 
@@ -104,6 +103,7 @@ function addProduct() {
   taxEl.value = '';
   catEl.value = '';
   if (barcodeEl) barcodeEl.value = '';
+  if (qtyEl) qtyEl.value = '';
 
   if (typeof window.renderCategoryFilters === 'function') window.renderCategoryFilters();
   if (typeof window._renderProductGrid === 'function') window._renderProductGrid();
@@ -128,6 +128,7 @@ function filterByCategory(cat){
     const disabled = qty <= 0 ? 'disabled' : '';
     return `<button class="prod-btn" data-id="${p.id}" ${disabled}>
               <div class="prod-name">${escapeHTML(p.name)}</div>
+              <div class="small" style="color:#0b5ed7;font-weight:bold;">${p.quantity || ''}</div>
               <div class="prod-qty">×${qty}</div>
             </button>`;
   }).join('');
@@ -251,8 +252,19 @@ function toggleTheme(){
   if(!window.location.href.includes('billing.html')) return;
 
   let billItems = JSON.parse(localStorage.getItem('bill_items') || '[]');
-  const syncToStorage = () => localStorage.setItem('bill_items', JSON.stringify(billItems));
-  const loadFromStorage = () => { billItems = JSON.parse(localStorage.getItem('bill_items') || '[]'); };
+  
+  // FIX: Sync global variable for WhatsApp Button
+  window.cart = billItems;
+
+  const syncToStorage = () => {
+    localStorage.setItem('bill_items', JSON.stringify(billItems));
+    window.cart = billItems; // Keep global in sync
+  };
+  
+  const loadFromStorage = () => { 
+      billItems = JSON.parse(localStorage.getItem('bill_items') || '[]'); 
+      window.cart = billItems; // Keep global in sync
+  };
 
   // ----------------- Add to bill -----------------
   window.addToBill = function(id){
@@ -273,7 +285,8 @@ function toggleTheme(){
         name: product.name,
         price: Number(product.price||0),
         qty: 1,
-        taxPercent: Number(product.taxPercent||0)
+        taxPercent: Number(product.taxPercent||0),
+        unit: product.quantity || '' 
       });
     }
     syncToStorage();
@@ -303,8 +316,10 @@ function toggleTheme(){
       subtotal += price*qty;
       taxTotal += tax;
 
+      const unitLabel = it.unit ? `<span class="small" style="color:#0b5ed7">${it.unit}</span> ` : '';
+
       html += `<tr>
-        <td>${escapeHTML(it.name)}</td>
+        <td>${escapeHTML(it.name)} <br>${unitLabel}</td>
         <td>${qty}</td>
         <td>₹${price.toFixed(2)}</td>
         <td>₹${tax.toFixed(2)}</td>
@@ -322,17 +337,14 @@ function toggleTheme(){
 
     const discount = Number(document.getElementById('discount')?.value||0);
     const grand = subtotal + taxTotal - discount;
-    document.getElementById('grandTotal').innerText=
-      `Subtotal: ₹${subtotal.toFixed(2)} | Tax: ₹${taxTotal.toFixed(2)} | Discount: ₹${discount.toFixed(2)} → Grand Total: ₹${grand.toFixed(2)}`;
+    document.getElementById('grandTotal').innerText= `Total: ₹${grand.toFixed(2)}`;
 
-    // Attach cart button events
     container.querySelectorAll('.cart-inc').forEach(btn=>{
       btn.onclick = ()=>{
         const i = Number(btn.dataset.index);
         if(!billItems[i]) return;
         billItems[i].qty += 1;
-        syncToStorage();
-        renderCart();
+        syncToStorage(); renderCart();
       };
     });
     container.querySelectorAll('.cart-dec').forEach(btn=>{
@@ -341,8 +353,7 @@ function toggleTheme(){
         if(!billItems[i]) return;
         billItems[i].qty -= 1;
         if(billItems[i].qty <= 0) billItems.splice(i,1);
-        syncToStorage();
-        renderCart();
+        syncToStorage(); renderCart();
       };
     });
     container.querySelectorAll('.cart-remove').forEach(btn=>{
@@ -350,14 +361,13 @@ function toggleTheme(){
         const i = Number(btn.dataset.index);
         if(!billItems[i]) return;
         billItems.splice(i,1);
-        syncToStorage();
-        renderCart();
+        syncToStorage(); renderCart();
       };
     });
   }
   window.renderCart = renderCart;
 
-  // ----------------- Product grid (prefix matching) -----------------
+  // ----------------- Product grid -----------------
   let activeCategory = null;
   let searchQuery = '';
 
@@ -376,13 +386,15 @@ function toggleTheme(){
 
     productList.innerHTML = products.map(p=>{
       const qty = Number(p.stock||0), disabled = qty<=0?'disabled':'';
+      const unitDisplay = p.quantity ? `<div style="font-size:10px;font-weight:bold;color:#0b5ed7">${p.quantity}</div>` : '';
+      
       return `<button class="prod-btn" ${disabled} data-id="${p.id}">
                 <div class="prod-name">${escapeHTML(p.name)}</div>
+                ${unitDisplay}
                 <div class="prod-qty">×${qty}</div>
               </button>`;
     }).join('');
 
-    // Attach click handlers
     productList.querySelectorAll('.prod-btn').forEach(btn=>{
       const pid = btn.dataset.id;
       btn.onclick = ()=>window.addToBill(pid);
@@ -390,30 +402,21 @@ function toggleTheme(){
   }
   window._renderProductGrid = renderProductGrid;
 
-  // ----------------- Category filter -----------------
   window.filterCategory = function(cat){
     activeCategory = cat==='All'?null:cat;
     renderProductGrid();
   };
 
-  // ----------------- Search results (non-intrusive) -----------------
+  // ----------------- Search results -----------------
   function debounce(fn, wait){
-    let t;
-    return function(...args){
-      clearTimeout(t);
-      t = setTimeout(()=>fn.apply(this,args), wait);
-    };
+    let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait); };
   }
 
   function renderSearchResults(query){
     const resultsBox = document.getElementById('searchResults');
     if(!resultsBox) return;
     const q = (query || '').trim().toLowerCase();
-    if(!q){
-      resultsBox.innerHTML = '';
-      resultsBox.style.display = 'none';
-      return;
-    }
+    if(!q){ resultsBox.innerHTML = ''; resultsBox.style.display = 'none'; return; }
 
     const products = getProducts();
     const matches = products.filter(p => {
@@ -431,11 +434,10 @@ function toggleTheme(){
     const html = matches.map(p=>{
       const price = Number(p.price||0);
       const stock = Number(p.stock||0);
-      const tax = Number(p.taxPercent||0);
       return `<div class="search-result">
         <div class="info">
           <div class="title">${escapeHTML(p.name || 'Unnamed')}</div>
-          <div class="meta">Price: ₹${price.toFixed(2)} • Stock: ${stock} • Tax: ${tax}%</div>
+          <div class="meta">Price: ₹${price.toFixed(2)} • Stock: ${stock}</div>
         </div>
         <div>
           <button class="search-add-btn" data-id="${p.id}">Add</button>
@@ -466,11 +468,10 @@ function toggleTheme(){
   if(searchInput){
     searchInput.addEventListener('input', ()=>{
       searchQuery = searchInput.value.trim();
-      renderProductGrid(); // grid uses prefix matching now
+      renderProductGrid(); 
       debouncedRenderSearchResults(searchQuery);
     });
 
-    // Enter: add top prefix-matching product
     searchInput.addEventListener('keydown', (e)=>{
       if (e.key === 'Enter') {
         const q = searchInput.value.trim().toLowerCase();
@@ -496,7 +497,6 @@ function toggleTheme(){
       }
     });
 
-    // click outside closes results
     document.addEventListener('click', (ev) => {
       const resultsBox = document.getElementById('searchResults');
       if (!resultsBox || resultsBox.style.display === 'none') return;
@@ -510,30 +510,94 @@ function toggleTheme(){
     });
   }
 
-  // ----------------- Checkout -----------------
+  /* ==========================================================
+     UPDATED: COMPLETE SALE (Correctly placed logic)
+     ========================================================== */
   window.completeSale = function(){
-    loadFromStorage();
-    if(!billItems.length){ alert('Cart empty'); return; }
+    // 1. Basic Checks
+    let cart = window.cart; 
+    if (!cart || cart.length === 0) {
+        try { cart = JSON.parse(localStorage.getItem('bill_items') || '[]'); } catch(e){}
+    }
+    if (!cart || cart.length === 0) { alert('Cart empty'); return; }
 
-    const customer = document.getElementById('custName')?.value||'Walk-in';
-    const discount = Number(document.getElementById('discount')?.value||0);
-    const sale = checkoutCart(billItems, customer, 'cash', discount);
+    // 2. Get Form Data
+    const customer = document.getElementById('custName')?.value.trim();
+    const phone = document.getElementById('custPhone')?.value.trim();
+    const discount = Number(document.getElementById('discount')?.value || 0);
+    const payModeEl = document.querySelector('input[name="payMode"]:checked');
+    const paymentMode = payModeEl ? payModeEl.value : 'Cash';
 
-    billItems=[]; syncToStorage(); renderCart(); renderProductGrid();
+    // 3. UDHAAR VALIDATION
+    if (paymentMode === 'Udhaar') {
+        if (!customer || customer.length < 3) {
+            alert("⚠️ For Udhaar, Customer Name is mandatory!");
+            document.getElementById('custName').focus(); return;
+        }
+        if (!phone || phone.length < 10) {
+            alert("⚠️ For Udhaar, valid Phone Number is mandatory!");
+            document.getElementById('custPhone').focus(); return;
+        }
+    }
 
+    // 4. PROCESS SALE FIRST (Source of Truth)
+    const sale = checkoutCart(cart, customer || 'Walk-in', paymentMode, discount);
+
+    // 5. SAVE TO LEDGER (Syncing the ID)
+    if (paymentMode === 'Udhaar') {
+        const ledgerEntry = {
+            id: sale.invoiceNo,       
+            date: sale.date,
+            customer: customer,
+            phone: phone,
+            amount: sale.total,
+            items: sale.items, // [FIXED] Saving items list for detailed view 
+            isPaid: false
+        };
+        
+        const ledger = JSON.parse(localStorage.getItem('bharatpos_ledger') || '[]');
+        ledger.push(ledgerEntry);
+        localStorage.setItem('bharatpos_ledger', JSON.stringify(ledger));
+    }
+
+    // 6. Cleanup
+    window.cart = []; 
+    localStorage.setItem('bill_items', '[]'); 
+    if(window.renderCart) window.renderCart(); 
+    if(typeof window.renderProductGrid === 'function') window.renderProductGrid();
+
+    // 7. Show Invoice Modal
     const modal = document.getElementById('invoiceModal');
     const content = document.getElementById('invoiceContent');
-    if(content){
-      content.innerHTML = `<h3>🛰️ Bharat POS</h3>
-      <div><b>Invoice:</b>${sale.invoiceNo}<br><b>Date:</b>${new Date(sale.date).toLocaleString()}<br><b>Customer:</b>${sale.customer}</div>
-      <table style="width:100%;margin-top:8px;border-collapse:collapse">
-        <tr><th>Item</th><th>Qty</th><th>Price</th><th>Tax</th><th>Total</th></tr>
-        ${sale.items.map(it=>`<tr><td>${escapeHTML(it.name)}</td><td>${it.qty}</td><td>₹${it.price.toFixed(2)}</td><td>₹${it.taxAmount.toFixed(2)}</td><td>₹${(it.price*it.qty+it.taxAmount).toFixed(2)}</td></tr>`).join('')}
-      </table>
-      <div style="text-align:right;margin-top:8px"><b>Grand Total: ₹${sale.total.toFixed(2)}</b></div>`;
+    if (content) {
+        const statusBadge = paymentMode === 'Udhaar' 
+            ? `<div style="background:#dc3545; color:#fff; padding:5px; text-align:center; font-weight:bold; margin-bottom:10px;">⚠️ PAYMENT PENDING (UDHAAR)</div>`
+            : '';
+
+        content.innerHTML = `
+            <h3>🛰️ Bharat POS</h3>
+            ${statusBadge}
+            <div><b>Invoice:</b> ${sale.invoiceNo}</div> 
+            <div><b>Date:</b> ${new Date(sale.date).toLocaleString()}</div>
+            <div><b>Customer:</b> ${sale.customer}</div>
+            <table style="width:100%;margin-top:8px;border-collapse:collapse">
+                <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                ${sale.items.map(it => `<tr><td>${escapeHTML(it.name)}</td><td>${it.qty}</td><td>₹${it.price.toFixed(2)}</td><td>₹${(it.price * it.qty).toFixed(2)}</td></tr>`).join('')}
+            </table>
+            <div style="text-align:right;margin-top:8px"><b>Grand Total: ₹${sale.total.toFixed(2)}</b></div>
+        `;
     }
-    if(modal) modal.classList.remove('hidden');
-  };
+    if (modal) modal.classList.remove('hidden');
+
+    // 8. Auto-WhatsApp Logic (NOW INSIDE THE FUNCTION CORRECTLY)
+    if (paymentMode === 'Udhaar' && phone) {
+        if(confirm("Send Udhaar record to customer via WhatsApp?")) {
+            const msg = `Hello ${customer}, you have a pending amount of ₹${sale.total.toFixed(2)} at BharatPOS. Invoice: ${sale.invoiceNo}. Please pay soon.`;
+            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    }
+  }; // <--- Correct closing bracket placement
+
   window.closeInvoice = ()=>document.getElementById('invoiceModal')?.classList.add('hidden');
 
   // ----------------- Init -----------------
@@ -545,8 +609,6 @@ function toggleTheme(){
 
 /* -------------------------
    Universal barcode Enter-key handler
-   - If barcode matches product -> add to bill (if billing page).
-   - If not found -> redirect to products.html with temp_new_barcode filled.
    ------------------------- */
 document.addEventListener('DOMContentLoaded', () => {
   const barcodeInput = document.getElementById('barcodeInput');
@@ -591,9 +653,6 @@ function escapeHTML(str) {
   return div.innerHTML;
 }
 
-/* -------------------------
-   attachProductGridHandlers helper (used by filterByCategory)
-   ------------------------- */
 function attachProductGridHandlers() {
   const productList = document.getElementById('productList');
   if (!productList) return;
@@ -603,11 +662,6 @@ function attachProductGridHandlers() {
   });
 }
 
-
-
-
-
-
 function applyShopDetails() {
   const name = localStorage.getItem("shopName");
   const phone = localStorage.getItem("shopPhone");
@@ -615,49 +669,31 @@ function applyShopDetails() {
   const shopNameEls = document.querySelectorAll(".shop-name");
   const shopPhoneEls = document.querySelectorAll(".shop-phone");
 
-  shopNameEls.forEach(el => {
-    if (name) el.textContent = name;
-  });
-
-  shopPhoneEls.forEach(el => {
-    if (phone) el.textContent = phone;
-  });
+  shopNameEls.forEach(el => { if (name) el.textContent = name; });
+  shopPhoneEls.forEach(el => { if (phone) el.textContent = phone; });
 }
-
 document.addEventListener("DOMContentLoaded", applyShopDetails);
-
-
-
 
 function loadUPIQR() {
   const qr = localStorage.getItem("upiQR");
   if (qr) {
-    document.getElementById("upiQRImg").src = qr;
-    document.getElementById("upiSection").style.display = "block";
+    const el = document.getElementById("upiQRImg");
+    if(el) el.src = qr;
+    const sec = document.getElementById("upiSection");
+    if(sec) sec.style.display = "block";
   }
 }
-
 document.addEventListener("DOMContentLoaded", loadUPIQR);
-
-
-
 
 function toggleTheme() {
   const isDark = document.body.classList.toggle("dark");
   localStorage.setItem("theme", isDark ? "dark" : "light");
 }
-
 function applyTheme() {
   const theme = localStorage.getItem("theme");
-  if (theme === "dark") {
-    document.body.classList.add("dark");
-  }
+  if (theme === "dark") { document.body.classList.add("dark"); }
 }
-
 document.addEventListener("DOMContentLoaded", applyTheme);
-
-
-
 
 
 
