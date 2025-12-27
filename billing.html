@@ -5,15 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Billing - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
     table { width:100%; border-collapse: collapse; margin: 6px 0; }
     th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    .total { margin-top: 6px; font-weight: bold; }
-    .card { padding: 12px; margin-bottom: 12px; background: #f7f7f7; border-radius: 6px; }
-    .form-row { margin-top: 8px; display: flex; gap: 6px; }
+    .total { margin-top: 6px; font-weight: bold; font-size: 1.1em; color: #0b5ed7; text-align: right; }
+    .card { padding: 12px; margin-bottom: 12px; background: #f7f7f7; border-radius: 6px; position: relative; }
+    .form-row { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
     .small { font-size: 0.85em; color: #555; }
-    button { padding: 4px 8px; cursor: pointer; }
+    button { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; background: #0b5ed7; color: white; }
+    button:hover { background: #084298; }
+    .btn-danger { background: #dc3545; }
+    .btn-danger:hover { background: #bb2d3b; }
     .hidden { display:none; }
     nav a { margin-right: 12px; }
     .header { display:flex; justify-content: space-between; align-items:center; margin-bottom:12px; }
@@ -54,7 +58,7 @@
 
     #productList {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Slightly wider for unit text */
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
       gap: 8px;
       align-items: start;
     }
@@ -76,7 +80,6 @@
     .prod-btn:active { transform: scale(0.97); }
     .prod-name { font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-weight: 600; }
     
-    /* Updated styles for Quantity/Unit display */
     .prod-unit { font-size: 11px; font-weight: 700; color: #0b5ed7; margin: 2px 0; }
     .prod-price { font-size:11px; color:#333; opacity:0.8; }
 
@@ -92,6 +95,10 @@
     /* Cart section */
     .cart-section { flex: 0.9; max-width:650px; min-width:320px; }
 
+    /* Payment Mode Radio Style */
+    .pay-mode-group { display: flex; gap: 15px; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; width: 100%; box-sizing: border-box; }
+    .pay-mode-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 500; font-size: 0.9em; }
+
     /* Responsive */
     @media (max-width:700px){
       #productGridWrap{ width: 96%; }
@@ -99,34 +106,40 @@
       .cart-section{ width:96%; max-width: none; }
     }
 
- /* Scanner UI - Fixed Alignment */
+    /* Scanner UI */
     #scannerContainer { 
-      display: block;           /* Changed from flex to block to avoid flex shrinking issues */
-      position: relative;       /* Crucial for the video to fill the box */
+      display: block;           
+      position: relative;       
       width: 100%;
-      max-width: 500px;         /* Keeps it a reasonable size */
-      height: 250px;            /* Fixed height */
+      max-width: 500px;         
+      height: 250px;            
       background: #000; 
       overflow: hidden; 
       border-radius: 8px; 
       margin: 10px auto; 
       box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
     }
-
-    /* Force the video and canvas to stretch fully */
     #scannerContainer video, 
     #scannerContainer canvas {
-      width: 100% !important;   /* !important overrides the library's default width */
+      width: 100% !important;   
       height: 100% !important;
-      object-fit: cover;        /* Zooms the video to fill the box without squishing */
-      position: absolute;       /* Locks it to the top-left of the container */
+      object-fit: cover;        
+      position: absolute;       
       top: 0;
       left: 0;
     }
-
-  
-
-
+    #scannerContainer::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: rgba(255, 0, 0, 0.7);
+      box-shadow: 0 0 4px red;
+      pointer-events: none;
+      z-index: 10;
+    }
   </style>
 </head>
 
@@ -150,7 +163,7 @@
  <div id="scannerContainer" style="width:100%; max-width:500px; height:250px;"></div>
   <div style="margin-bottom:6px;">
     <button id="openCamera">Start Scanner</button>
-    <button id="stopCamera" style="display:none; margin-left:6px;">Stop Scanner</button>
+    <button id="stopCamera" style="display:none; margin-left:6px;" class="btn-danger">Stop Scanner</button>
     <span id="detectedCode" class="small"></span>
   </div>
 
@@ -166,78 +179,124 @@
 
   <div class="billing-container">
     <div class="cart-section">
+      
       <div class="card">
-        <h3>Billing</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Billing Details</h3>
+            <span id="billDateDisplay" class="small" style="font-weight:bold;"></span>
+        </div>
+        
         <div class="form-row">
-          <input type="text" id="productSearch" placeholder="Search product..." oninput="handleSearch(this.value)">
-          <input id="custName" placeholder="Customer name (optional)">
+          <input type="text" id="productSearch" placeholder="Search product..." style="flex:1; padding:8px;" oninput="handleSearch(this.value)">
+          <input id="custName" placeholder="Customer Name" style="flex:1; padding:8px;">
         </div>
         <div id="searchResults" class="card" style="display:none;"></div>
       </div>
 
       <div class="card">
-        <h3>Cart</h3>
+        <h3>Cart Items</h3>
         <div id="cartList"></div>
+        
         <div class="form-row">
-          <input id="discount" type="number" placeholder="Discount INR (optional)" value="" 
+          <input id="discount" type="number" placeholder="Discount ₹" value="" style="padding:6px; width:100px;" 
             oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
         </div>
+
+        <hr style="border-top:1px dashed #ccc; margin:10px 0;">
+
+        <div style="margin-bottom: 10px;">
+            <label class="small" style="font-weight:bold;">Payment Mode:</label>
+            <div class="pay-mode-group">
+                <label><input type="radio" name="payMode" value="Cash" checked> 💵 Cash</label>
+                <label><input type="radio" name="payMode" value="UPI"> 📱 UPI</label>
+            </div>
+        </div>
+
+        <div style="margin: 10px 0; padding: 10px; border: 1px solid #25d366; border-radius: 6px; background: #f0fff4;">
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span style="font-size:1.5em;">📱</span>
+                <input type="number" id="custPhone" placeholder="Mobile (e.g. 98...)" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                <button onclick="sendWhatsAppBill()" style="background:#25d366; color:white; font-weight:bold;">WhatsApp Bill</button>
+            </div>
+        </div>
+
         <div class="total" id="grandTotal">Total: ₹0</div>
-        <div class="form-row"><button onclick="completeSale()">Checkout & Print</button></div>
+        
+        <div class="form-row" style="margin-top:15px; justify-content: space-between;">
+            <button onclick="if(confirm('Clear cart?')) { window.cart=[]; window.renderCart(); }" class="btn-danger">Reset Cart</button>
+            <button onclick="completeSale()" style="font-size:1.1em; padding: 8px 20px;">✅ Checkout & Print</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div id="invoiceModal" class="card hidden" style="max-width:700px;margin:20px auto">
+  <div id="invoiceModal" class="card hidden" style="max-width:700px;margin:20px auto; border:2px solid #333;">
     <div id="invoiceContent"></div>
     <div style="text-align:center; margin-top:10px;">
       <h2 class="shop-name">Bharat POS</h2>
-<p class="shop-phone"></p>
+      <p class="shop-phone"></p>
 
-
-
-<div id="upiSection" style="display:none; text-align:center;">
-  <p>Scan to Pay</p>
-  <img id="upiQRImg" style="max-width:180px;">
-</div>
-
-
+      <div id="upiSection" style="display:none; text-align:center;">
+        <p><strong>Scan to Pay</strong></p>
+        <img id="upiQRImg" style="max-width:180px; border:1px solid #ccc; padding:5px;">
+      </div>
     </div>
     <div style="text-align:right;margin-top:8px">
       <button onclick="window.print()">Print</button>
-      <button onclick="closeInvoice()">Close</button>
+      <button onclick="closeInvoice()" class="btn-danger">Close</button>
+    </div>
+  </div>
+
+  <div id="receipt-capture-area" style="position:fixed; top:-9999px; left:-9999px; width:350px; background:#fff; padding:20px; color:#000; font-family:'Courier New', monospace; border:1px solid #ccc;">
+    <div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;">
+        <h2 style="margin:0; font-size:24px;">BHARAT POS</h2>
+        <div id="rec-date" style="font-size:12px; color:#555;"></div>
+    </div>
+    <div id="rec-items"></div>
+    <div style="border-top:2px dashed #000; margin-top:10px; padding-top:10px; text-align:right;">
+        <h3 style="margin:0;">TOTAL: <span id="rec-total"></span></h3>
+    </div>
+    <div style="text-align:center; margin-top:15px; font-size:12px;">
+        Thank you for shopping!<br>Generated by BharatPOS
     </div>
   </div>
 
   <script src="bharatpos.js"></script>
- 
-<script src="quagga.js"></script>
+  <script src="quagga.js"></script>
 
 <script>
 // ==========================================================
-// 1. CUSTOM BILLING GRID LOGIC (To support Product Quantity)
+// 1. UI UTILITIES
+// ==========================================================
+function updateDateTime() {
+    const now = new Date();
+    document.getElementById('billDateDisplay').innerText = now.toLocaleString('en-IN');
+}
+setInterval(updateDateTime, 1000);
+updateDateTime(); 
+
+// ==========================================================
+// 2. CUSTOM BILLING GRID LOGIC
 // ==========================================================
 
-// Function to render categories
 function renderBillCategories() {
   const products = (typeof getProducts === 'function') ? getProducts() : [];
   const container = document.getElementById('categoryFilters');
   if (!container) return;
 
   const cats = ['All', ...new Set(products.map(p => p.category).filter(Boolean))];
-  
+    
   container.innerHTML = cats.map(c => 
     `<button onclick="renderBillGrid('${c}')">${c}</button>`
   ).join('');
 }
 
-// Function to render the product grid with the new Qty/Unit field
 function renderBillGrid(category = 'All') {
   const grid = document.getElementById('productList');
   if (!grid) return;
-  
+    
   const products = (typeof getProducts === 'function') ? getProducts() : [];
-  grid.innerHTML = ''; // Clear existing
+  grid.innerHTML = ''; 
 
   const filtered = category === 'All' 
     ? products 
@@ -249,18 +308,13 @@ function renderBillGrid(category = 'All') {
   }
 
   filtered.forEach(p => {
-    // Determine Stock text
     const stockTxt = p.stock > 0 ? `₹${p.price}` : 'Out';
-    
-    // NEW: Check if product has the new 'quantity' field (Unit size)
-    // If it exists, create HTML for it.
     const unitHtml = p.quantity ? `<div class="prod-unit">${p.quantity}</div>` : '';
 
     const btn = document.createElement('div');
     btn.className = 'prod-btn';
     btn.title = `Stock: ${p.stock}`;
     
-    // Use existing addToBill function from bharatpos.js
     btn.onclick = () => { if(window.addToBill) window.addToBill(p.id); };
 
     btn.innerHTML = `
@@ -271,7 +325,6 @@ function renderBillGrid(category = 'All') {
   });
 }
 
-// Search Handler override to ensure grid refreshes correctly
 function handleSearch(query) {
     const products = getProducts();
     const grid = document.getElementById('productList');
@@ -290,12 +343,11 @@ function handleSearch(query) {
 }
 
 // ==========================================================
-// 2. SCANNER LOGIC (Preserved from user request)
+// 3. SCANNER LOGIC
 // ==========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  
-  // Initialize Grid with new render logic
+   
   renderBillCategories();
   renderBillGrid();
 
@@ -491,25 +543,77 @@ document.addEventListener("DOMContentLoaded", () => {
   stopBtn.addEventListener('click', stopScanner);
 });
 
-// QR Logic
-const invoiceQR = document.getElementById("invoiceQR");
+// ==========================================================
+// 4. QR LOGIC
+// ==========================================================
+const invoiceQR = document.getElementById("upiQRImg");
 const storedQR = localStorage.getItem("upiQR");
 
-if (storedQR) {
+if (storedQR && invoiceQR) {
     invoiceQR.src = storedQR;
-    invoiceQR.style.display = "block";
-} else {
-    invoiceQR.style.display = "none";
+}
+
+// ==========================================================
+// 5. WHATSAPP BILL LOGIC (IMAGE BASED)
+// ==========================================================
+function sendWhatsAppBill() {
+    // 1. Get Phone & Name
+    const phone = document.getElementById('custPhone').value;
+    const custName = document.getElementById('custName').value || "Valued Customer"; // Default if empty
+
+    if (!phone || phone.length < 10) {
+        alert("Please enter a valid 10-digit mobile number.");
+        return;
+    }
+
+    // 2. Get Cart Data (Handles global or local storage)
+    let cart = window.cart;
+    if (!cart || cart.length === 0) {
+        try { cart = JSON.parse(localStorage.getItem('bill_items') || '[]'); } catch(e){}
+    }
+
+    if (!cart || cart.length === 0) {
+        alert("Cart is empty! Add items first.");
+        return;
+    }
+
+    // 3. Get Total & Date
+    const totalTxt = document.getElementById('grandTotal').innerText.replace("Total:", "").trim();
+    const dateTxt = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+    // 4. Build Professional Invoice Message
+    // %0A = New Line
+    // *Bold Text*
+    
+    let msg = `🧾 *BHARAT POS INVOICE* %0A`;
+    msg += `📅 ${dateTxt} %0A`;
+    msg += `👤 Customer: *${custName}* %0A`;
+    msg += `--------------------------------%0A`;
+    
+    // Add Items
+    cart.forEach((item, index) => {
+        const name = item.name || "Item";
+        const qty = item.qty || 1;
+        const total = (item.price * qty).toFixed(2);
+        
+        // Format: 1. Milk x 2 = ₹50
+        msg += `${index + 1}. ${name} x ${qty} = ₹${total} %0A`;
+    });
+
+    msg += `--------------------------------%0A`;
+    msg += `💰 *TOTAL AMOUNT: ${totalTxt}* %0A`;
+    msg += `--------------------------------%0A`;
+    msg += `🙏 Thank you for shopping with us! %0A`;
+    msg += `Visit us again.`;
+
+    // 5. Open WhatsApp
+    const url = `https://wa.me/91${phone}?text=${msg}`;
+    window.open(url, '_blank');
 }
 </script>
 
 </body>
 </html>
-
-
-
-
-
 
 
 
