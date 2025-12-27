@@ -204,19 +204,24 @@ function sendWhatsAppBill() {
     const totalTxt = document.getElementById('grandTotal').innerText.replace("Total:", "").trim();
     const dateTxt = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 
+    // 1. Build Item List
     let msg = `🧾 *BHARAT POS INVOICE* %0A📅 ${dateTxt} %0A👤 ${custName} %0A--------------------------------%0A`;
-    cart.forEach((item, index) => {
-        msg += `${index + 1}. ${item.name} x ${item.qty || 1} = ₹${(item.price * (item.qty || 1)).toFixed(2)} %0A`;
-    });
-    msg += `--------------------------------%0A💰 *TOTAL: ${totalTxt}* %0A--------------------------------%0A🙏 Thank you!`;
+   
+       
+    // 3. NEW: Add My Khata Link & Description
+    // %0A is a line break. *Text* makes it bold.
+    msg += `📢 *Track Rewards & Ledger:* %0A`;
+    msg += `*Get your invoice and pending dues here:* ⬇️ %0A`;
+    msg += `https://oneanush.github.io/BharatPOS/my_khata.html %0A`;
+    
+    // 4. Footer
+    msg += `--------------------------------%0A🙏 Thank you!`;
 
     window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
 }
 </script>
 </body>
 </html>
-
-
 
 
 
