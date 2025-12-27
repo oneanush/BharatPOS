@@ -212,6 +212,35 @@
             h1 { font-size: 40px; }
             .glow-spot { display: none; }
         }
+
+
+.module-btn {
+            display: inline-block; padding: 12px 25px; border-radius: 30px;
+            font-weight: 700; text-decoration: none; margin-top: 10px;
+            transition: 0.3s; text-transform: uppercase; font-size: 14px;
+        }
+        
+        /* Specific Button Colors */
+        .btn-finance { border: 2px solid var(--accent-blue); color: var(--accent-blue); }
+        .btn-finance:hover { background: var(--accent-blue); color: white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        
+        .btn-crm { border: 2px solid var(--accent-purple); color: var(--accent-purple); }
+        .btn-crm:hover { background: var(--accent-purple); color: white; box-shadow: 0 0 20px rgba(124, 58, 237, 0.4); }
+        
+        .btn-khata { border: 2px solid var(--primary); color: var(--primary); }
+        .btn-khata:hover { background: var(--primary); color: black; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+
+        footer { text-align: center; padding: 40px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 14px; color: #555; }
+        footer a { color: var(--primary); text-decoration: none; }
+
+        @media (max-width: 900px) {
+            .hero, .section, .section.reverse { flex-direction: column; text-align: center; padding: 60px 5%; gap: 40px; }
+            .hero { padding-top: 120px; }
+            h1 { font-size: 40px; }
+            .glow-spot { display: none; }
+        }
+
+
     </style>
 </head>
 <body>
@@ -280,6 +309,41 @@
         </div>
         <div class="section-visual">
             <img src="4in.png" alt="Growth Analytics" class="feature-img">
+        </div>
+    </section>
+ <section class="section">
+        <div class="section-text">
+            <div style="color:#3b82f6; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">FINANCIAL HEADQUARTERS</div>
+            <h2 style="color:white;">My Dukkan</h2>
+            <p>A complete CFO in your pocket. Track your expenses (Rent, Salary, Stock), visualize your spending with Pie Charts, and get AI Forecasts on your business runway.</p>
+            <a href="my_dukkan.html" class="module-btn btn-finance">Launch My Dukkan ↗</a>
+        </div>
+        <div class="section-visual">
+            <img src="https://placehold.co/600x350/1e293b/3b82f6?text=My+Dukkan+Finance+Dashboard" alt="My Dukkan Dashboard" class="feature-img" style="border:2px solid #3b82f6;">
+        </div>
+    </section>
+
+    <section class="section reverse">
+        <div class="section-text">
+            <div style="color:#7c3aed; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">LOYALTY & RETENTION</div>
+            <h2 style="color:white;">Bharat CRM <span style="font-size:16px; opacity:0.6; display:block;">(Customer Relationship Management)</span></h2>
+            <p>Turn one-time buyers into loyal fans. Automatically rank customers on a "Champions Podium", assign Gold/Platinum badges, and use AI to send "Miss You" offers to inactive users.</p>
+            <a href="customers.html" class="module-btn btn-crm">Open CRM System ↗</a>
+        </div>
+        <div class="section-visual">
+             <img src="https://placehold.co/600x350/2e1065/7c3aed?text=Bharat+CRM+Loyalty+System" alt="Bharat CRM" class="feature-img" style="border:2px solid #7c3aed;">
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-text">
+            <div style="color:#FFD700; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">CUSTOMER PORTAL</div>
+            <h2 style="color:white;">My Khata</h2>
+            <p>The transparent way to handle Udhaar. Your customers can check their own dues online, see their rank on the leaderboard, and win rewards for paying on time.</p>
+            <a href="my_khata.html" class="module-btn btn-khata">View Customer Page ↗</a>
+        </div>
+        <div class="section-visual">
+             <img src="https://placehold.co/600x350/3f2c05/FFD700?text=My+Khata+Customer+Rewards" alt="My Khata Page" class="feature-img" style="border:2px solid #FFD700;">
         </div>
     </section>
 
