@@ -404,8 +404,68 @@ window.startLiveScan = startLiveScan;
 window.stopLiveScan = stopLiveScan;
 window.resetAIScan = resetAIScan;
 </script>
+<script>
+  window.addEventListener('DOMContentLoaded', (event) => {
+    // 1. Get parameters from URL
+    const params = new URLSearchParams(window.location.search);
+    
+    if (params.has('restock')) {
+      // Get the distinct values
+      const pName  = params.get('restock');
+      const pPrice = params.get('price');
+      const pCat   = params.get('category');
+      const pTax   = params.get('tax');
+      const pStockCount = params.get('stock_val'); 
+      
+      // FALLBACK CHECK: Check all possible names for the quantity/unit
+      const pUnitSize = params.get('unit_val') || params.get('unit') || params.get('quantity');
+
+      console.log("Auto-filling:", { pName, pStockCount, pUnitSize });
+
+      // 2. HELPER: Find element by ID
+      const findEl = (ids) => {
+        for (let id of ids) {
+          const el = document.getElementById(id);
+          if (el) return el;
+        }
+        return null;
+      };
+
+      // 3. FIND INPUTS (Matched to your specific IDs)
+      const elName  = findEl(['productName', 'name']);
+      const elPrice = findEl(['productPrice', 'price']);
+      const elCat   = findEl(['productCategory', 'category']);
+      const elTax   = findEl(['productTax', 'tax']);
+      const elStock = findEl(['productStock', 'stock']); // Stock Count
+      
+      // QTY/UNIT: Matches your 'productQuantity' ID
+      const elUnit  = findEl(['productQuantity', 'quantity', 'unit', 'size']);
+
+      // 4. FILL VALUES
+      if (elName) elName.value = pName;
+      if (elPrice && pPrice) elPrice.value = pPrice;
+      if (elCat && pCat) elCat.value = pCat;
+      if (elTax && pTax) elTax.value = pTax;
+      
+            
+      // Fill Unit/Quantity (e.g. 1kg)
+      if (elUnit && pUnitSize) elUnit.value = pUnitSize;
+
+      // 5. Highlight
+      [elName, elPrice, elCat, elTax, elStock, elUnit].forEach(el => {
+        if(el) {
+          el.style.backgroundColor = "#fff3cd"; 
+          setTimeout(() => el.style.backgroundColor = "", 2000);
+        }
+      });
+      
+      if(elName) elName.focus();
+    }
+  });
+</script>
 </body>
 </html>
+
 
 
 
