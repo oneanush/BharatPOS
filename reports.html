@@ -1,339 +1,328 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>Reports - Bharat POS</title>
-  <link rel="stylesheet" href="bharatpos.css">
-<script src="bharatpos.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <script src="bharatpos.js"></script>
+
   <style>
-    /* --- General Layout & Card --- */
+    /* --- VARIABLES & RESET --- */
+    :root {
+      --bg-body: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --glass: blur(16px);
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b; /* Gold */
+      --success: #10b981; /* Emerald */
+      --indigo: #6366f1;
+      --chart-bar-bg: rgba(16, 185, 129, 0.15);
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    
     body {
-        background-color: #f4f6f9; /* Softer background for the whole page */
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+      background-attachment: fixed;
     }
 
-    .card {
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* Soft, luxurious shadow */
-        border: none;
-        padding: 25px;
-        margin-bottom: 20px;
+    /* --- NAVIGATION --- */
+    .navbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 24px; background: rgba(15, 23, 42, 0.9); backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
     }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); }
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
+    .nav-links a:hover { color: var(--accent); }
 
+    /* --- CONTAINER --- */
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; padding-bottom: 80px; }
+
+    /* --- KPI CARDS --- */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;
+    }
+    .kpi-card {
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+      position: relative; overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); }
+    
+    .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; display:flex; justify-content:space-between; }
+    .kpi-value { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: #fff; margin-top: 10px; letter-spacing: -1px; }
+    
+    .kpi-icon { font-size: 16px; opacity: 0.7; }
+    .accent-green { color: var(--success); }
+    .accent-blue { color: var(--indigo); }
+    .accent-gold { color: var(--accent); }
+
+    /* --- REPORT TABLE --- */
+    .report-card {
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
     .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #f1f3f5;
+      padding: 20px 25px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255,255,255,0.02);
     }
-
-    h3 {
-        margin: 0;
-        font-size: 1.4rem;
-        color: #1a1a1a;
-        font-weight: 700;
-        letter-spacing: -0.5px;
+    .report-title-group { display: flex; align-items: center; gap: 10px; }
+    .report-title { font-size: 16px; font-weight: 700; color: #fff; }
+    
+    /* SYNC INDICATOR */
+    .sync-status {
+        font-size: 10px; padding: 4px 8px; border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-muted);
+        display: flex; align-items: center; gap: 6px; font-weight: 600; opacity: 0; transition: opacity 0.3s;
     }
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+    .sync-active { opacity: 1; }
+    .sync-active .sync-dot { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulseDot 1s infinite; }
+    
+    @keyframes pulseDot { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-    .grand-total {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #2e7d32; /* Financial Green */
-        background: #e8f5e9;
-        padding: 8px 16px;
-        border-radius: 30px;
+    .download-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted);
+      padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: 0.2s; font-weight: 600;
     }
+    .download-btn:hover { background: #fff; color: #000; }
 
-    /* --- The Table --- */
-    .table-container {
-        border-radius: 8px;
-        overflow: hidden; /* Keeps borders rounded */
+    /* Table Styles */
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 16px 25px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); font-weight: 600; }
+    td { padding: 16px 25px; color: var(--text-main); font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+    
+    .sale-row { cursor: pointer; transition: background 0.15s; position: relative; }
+    .sale-row:hover { background: rgba(255,255,255,0.04); }
+    
+    .trend-bg {
+      position: absolute; right: 0; top: 15%; height: 70%; 
+      background: var(--chart-bar-bg); z-index: 0; pointer-events: none;
+      border-radius: 4px 0 0 4px; transition: width 1s ease-out; width: 0;
     }
+    .money-cell { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--success); position: relative; z-index: 1; }
 
-    table.sales-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-    }
-
-    /* Header Row */
-    table.sales-table th {
-        background-color: #f8f9fa;
-        color: #8898aa;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-        padding: 18px;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    /* Data Rows */
-    .sale-row {
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        border-bottom: 1px solid #f1f1f1;
-    }
-
-    .sale-row td {
-        padding: 18px;
-        color: #525f7f;
-        font-size: 0.95rem;
-    }
-
-    .sale-row:last-child {
-        border-bottom: none;
-    }
-
-    /* Hover Effects */
-    .sale-row:hover {
-        background-color: #f6f9fc;
-        transform: translateY(-2px); /* Slight lift */
-        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-        position: relative;
-        z-index: 2;
-    }
-
-    .sale-row td:first-child {
-        font-weight: 600;
-        color: #32325d;
-    }
-
-    /* --- The Expanded Drawer --- */
-    .details-row {
-        display: none;
-        background-color: #f8f9fe;
-        box-shadow: inset 0 6px 10px -8px rgba(0,0,0,0.15); /* Inner shadow for depth */
-    }
-
-    .details-row.active {
-        display: table-row;
-    }
-
-    .details-content {
-        padding: 20px 25px;
-        border-left: 4px solid #5e72e4; /* Accent stripe on the left */
-    }
-
-    .details-label {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        color: #8898aa;
-        font-weight: 700;
-        margin-bottom: 12px;
-        letter-spacing: 0.5px;
-    }
-
-    /* --- Aesthetic Product Chips --- */
-    .product-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
+    /* Details Drawer */
+    .details-row { display: none; background: rgba(0,0,0,0.2); box-shadow: inset 0 4px 10px rgba(0,0,0,0.1); }
+    .details-row.active { display: table-row; }
+    .details-content { padding: 20px 25px; border-left: 3px solid var(--indigo); animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    
+    .product-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .product-chip {
-        display: flex;
-        align-items: center;
-        background: #ffffff;
-        border: 1px solid #e9ecef;
-        padding: 8px 14px;
-        border-radius: 50px; /* Fully rounded pill */
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        transition: transform 0.2s;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text-main);
     }
-    
-    .product-chip:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-    }
-
-    .product-chip span {
-        font-weight: 500;
-        color: #32325d;
-        margin-right: 10px;
-    }
-
     .chip-qty {
-        background: #5e72e4; /* Modern Indigo/Blue */
-        color: #fff;
-        font-size: 0.75rem;
-        font-weight: 700;
-        height: 22px;
-        min-width: 22px;
-        padding: 0 6px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      background: var(--indigo); color: white; font-size: 11px; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px;
     }
 
-    /* Utilities */
-    .text-right { text-align: right !important; }
-    
-    /* Animation for expanding */
-    @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .details-content {
-        animation: slideDown 0.3s ease-out;
-    }
-</style>
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+      thead { display: none; }
+      .sale-row {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px;
+        background: rgba(255,255,255,0.02); margin-bottom: 2px; border-bottom: 1px solid var(--border);
+      }
+      td { padding: 0; border: none; display: block; }
+      td:nth-child(1) { grid-column: span 2; font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+      td:nth-child(2)::before { content: "Bills: "; color: var(--text-muted); }
+      td:nth-child(3)::before { content: "Items: "; color: var(--text-muted); }
+      td:nth-child(4) { grid-column: span 2; text-align: right; font-size: 20px; margin-top: 10px; }
+      .text-right { text-align: left !important; }
+      td:nth-child(4) { text-align: right !important; }
+    }
+  </style>
 </head>
 
 <body>
-  <nav>
-    <a href="products.html">Products</a>
-    <a href="sales.html">Sales</a>
-    <a href="settings.html">Settings</a>
-    <a href="index.html">Logout</a>
+
+  <nav class="navbar">
+    <div class="brand">
+      <img src="logo.png" class="global-logo">
+      Bharat POS
+    </div>
+    <div class="nav-links">
+      <a href="products.html">Products</a>
+      <a href="sales.html">Sales</a>
+      <a href="settings.html">Settings</a>
+      <a href="index.html" style="color:var(--text-muted)">Logout</a>
+    </div>
   </nav>
 
-  <div class="header">
-    <div class="global-header"><img src="logo.png" class="global-logo"></div>
-    <div class="brand">Bharat POS</div>
-    <div class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="billing.html">Billing</a>
-    </div>
-  </div>
-
   <div class="container">
-    <div class="card">
-      <div class="report-header">
-          <h3>Date-wise Sales Report</h3>
-          <div id="grandTotal" class="grand-total"></div>
+    
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Revenue <span class="kpi-icon accent-green">↗</span></div>
+        <div class="kpi-value" id="kpiRevenue">₹0</div>
+        <div style="position:absolute; bottom:0; left:0; height:3px; width:100%; background: linear-gradient(90deg, var(--success), transparent);"></div>
       </div>
-      <p style="font-size:0.8rem; color:#888; margin-top:-10px; margin-bottom:10px;">
-        Tip: Click on any row to see product details.
-      </p>
-      
-      <div class="table-container">
-        <table class="sales-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th class="text-right">Total Bills</th>
-              <th class="text-right">Items Sold</th>
-              <th class="text-right">Total Revenue</th>
-            </tr>
-          </thead>
-          <tbody id="salesHistoryBody">
-            </tbody>
-        </table>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Bills <span class="kpi-icon accent-blue">#</span></div>
+        <div class="kpi-value" id="kpiBills">0</div>
+        <div style="position:absolute; bottom:0; left:0; height:3px; width:100%; background: linear-gradient(90deg, var(--indigo), transparent);"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Items Sold <span class="kpi-icon accent-gold">📦</span></div>
+        <div class="kpi-value" id="kpiItems">0</div>
+        <div style="position:absolute; bottom:0; left:0; height:3px; width:100%; background: linear-gradient(90deg, var(--accent), transparent);"></div>
       </div>
     </div>
+
+    <div class="report-card">
+      <div class="report-header">
+        <div class="report-title-group">
+            <div class="report-title">📊 Sales History</div>
+            <div id="syncStatus" class="sync-status">
+                <span class="sync-dot"></span> <span id="syncText">Syncing...</span>
+            </div>
+        </div>
+        <button class="download-btn" onclick="window.print()">🖨️ Report</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th class="text-right">Bills</th>
+            <th class="text-right">Items</th>
+            <th class="text-right">Revenue</th>
+          </tr>
+        </thead>
+        <tbody id="salesHistoryBody">
+            </tbody>
+      </table>
+    </div>
   </div>
-
-  <div class="footer">Built by Utkarsh — BharatPOS</div>
-
-  <script src="bharatpos.js"></script>
 
 <script>
-function formatCurrency(n){
-  return '₹' + Number(n || 0).toFixed(2);
+// --- UTILS ---
+function formatCurrency(n){ return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+function animateValue(obj, start, end, duration, isCurrency=false) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const val = Math.floor(progress * (end - start) + start);
+    obj.innerHTML = isCurrency ? formatCurrency(val) : val;
+    if (progress < 1) { window.requestAnimationFrame(step); }
+  };
+  window.requestAnimationFrame(step);
 }
 
-// Group sales strictly by Date
+// --- DATA PROCESSING ---
 function groupSalesByDate(){
   const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
   const grouped = {};
-
   sales.forEach(sale=>{
     let rawDate = sale.date || 'unknown';
     const d = rawDate.substring(0, 10); 
-    
-    if(!grouped[d]){
-      grouped[d] = {
-        revenue: 0,
-        bills: 0,
-        totalItems: 0,
-        products: {} // We store product counts here
-      };
-    }
-
+    if(!grouped[d]) grouped[d] = { revenue: 0, bills: 0, totalItems: 0, products: {} };
     grouped[d].revenue += Number(sale.total || 0);
     grouped[d].bills++;
-
-    // Aggregate Product Quantities
     (sale.items || []).forEach(it=>{
       const qty = Number(it.qty || 0);
       grouped[d].totalItems += qty;
-      
-      // If product exists for this date, add qty, else initialize
       grouped[d].products[it.name] = (grouped[d].products[it.name] || 0) + qty;
     });
   });
-
   return grouped;
 }
 
-// Function to Toggle the Detail Row
 function toggleDetails(dateId) {
   const detailRow = document.getElementById('details-' + dateId);
-  if (detailRow.classList.contains('active')) {
-    detailRow.classList.remove('active');
-  } else {
-    // Optional: Close others first? Uncomment line below if you want "accordion" style (only 1 open at a time)
-    // document.querySelectorAll('.details-row').forEach(r => r.classList.remove('active'));
-    detailRow.classList.add('active');
+  const isHidden = getComputedStyle(detailRow).display === 'none';
+  document.querySelectorAll('.details-row').forEach(row => {
+    row.classList.remove('active');
+    row.style.display = 'none';
+  });
+  if(isHidden) {
+    detailRow.style.display = 'table-row';
+    setTimeout(() => detailRow.classList.add('active'), 10);
   }
 }
 
+// --- MAIN RENDER ---
 function renderReports(){
   const data = groupSalesByDate();
   const tableBody = document.getElementById('salesHistoryBody');
   const sortedDates = Object.keys(data).sort().reverse();
   
-  let grandTotalRevenue = 0;
+  let totalRev = 0, totalBills = 0, totalItems = 0;
+  let maxDailyRev = 0;
+
+  sortedDates.forEach(date => {
+    const d = data[date];
+    totalRev += d.revenue;
+    totalBills += d.bills;
+    totalItems += d.totalItems;
+    if(d.revenue > maxDailyRev) maxDailyRev = d.revenue;
+  });
+
+  animateValue(document.getElementById('kpiRevenue'), 0, totalRev, 1500, true);
+  animateValue(document.getElementById('kpiBills'), 0, totalBills, 1000);
+  animateValue(document.getElementById('kpiItems'), 0, totalItems, 1000);
 
   if(sortedDates.length === 0){
-      tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">No sales data found</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:50px; color:#64748b;">No sales records found.</td></tr>';
       return;
   }
 
   const historyHtml = sortedDates.map((date, index) => {
       const rowData = data[date];
-      grandTotalRevenue += rowData.revenue;
-      
-      // Create a unique ID for the toggle
       const dateId = date.replace(/-/g, ''); 
+      const barWidth = maxDailyRev > 0 ? (rowData.revenue / maxDailyRev) * 100 : 0;
 
-      // Create Product Chips HTML
       const productEntries = Object.entries(rowData.products);
-      let productsHtml = '';
-      
-      if(productEntries.length > 0){
-         productsHtml = productEntries.map(([name, qty]) => `
-            <div class="product-chip">
-              <span>${name}</span>
-              <div class="chip-qty">${qty}</div>
-            </div>
-         `).join('');
-      } else {
-         productsHtml = '<span style="color:#999; font-style:italic;">No items detail available</span>';
-      }
+      let productsHtml = productEntries.length > 0 
+          ? productEntries.map(([name, qty]) => `<div class="product-chip"><span>${name}</span><div class="chip-qty">${qty}</div></div>`).join('') 
+          : '<span style="color:#64748b; font-size:12px;">No item details</span>';
+
+      const dateObj = new Date(date);
+      const today = new Date().toISOString().split('T')[0];
+      const friendlyDate = (date === today) ? "Today" : dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
 
       return `
-        <tr class="sale-row" onclick="toggleDetails('${dateId}')" title="Click to view products">
-          <td>${date}</td>
+        <tr class="sale-row" onclick="toggleDetails('${dateId}')">
+          <td>
+            <div style="font-weight:700; color:#fff; font-size:15px;">${friendlyDate}</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${date}</div>
+          </td>
           <td class="text-right">${rowData.bills}</td>
           <td class="text-right">${rowData.totalItems}</td>
-          <td class="text-right" style="color:#28a745;"><b>${formatCurrency(rowData.revenue)}</b></td>
+          <td class="text-right" style="position:relative;">
+            <div class="trend-bg" style="width:${barWidth * 0.5}px"></div> 
+            <span class="money-cell">${formatCurrency(rowData.revenue)}</span>
+          </td>
         </tr>
-
         <tr id="details-${dateId}" class="details-row">
           <td colspan="4" style="padding:0;">
              <div class="details-content">
-                <div style="font-size:0.8rem; color:#777; margin-bottom:8px;">PRODUCTS SOLD:</div>
-                <div class="product-grid">
-                   ${productsHtml}
-                </div>
+                <div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:12px;">Items Breakdown</div>
+                <div class="product-grid">${productsHtml}</div>
              </div>
           </td>
         </tr>
@@ -341,84 +330,101 @@ function renderReports(){
   }).join('');
 
   tableBody.innerHTML = historyHtml;
-  document.getElementById('grandTotal').innerText = `Total Sales: ${formatCurrency(grandTotalRevenue)}`;
-
-  // After rendering the report, create and send a snapshot for AI (non-blocking)
-  try {
-    const reportsSnapshot = getReportsSnapshot(data, grandTotalRevenue);
-    try { localStorage.setItem('bharatpos_reports_ai_snapshot', JSON.stringify(reportsSnapshot)); } catch(e) { console.warn('Could not save reports snapshot to localStorage:', e); }
-    sendReportsSnapshotIfChanged(reportsSnapshot).catch(err => console.warn('sendReportsSnapshotIfChanged error:', err));
-  } catch (err) {
-    console.warn('Failed to build/send reports snapshot:', err);
-  }
+  
+  // TRIGGER AI SNAPSHOT (FIXED)
+  handleAISnapshot(data, totalRev);
 }
 
-// --- Snapshot & Upload Helpers for Reports Page ---
+// --- FIXED AI BACKEND CONNECTION ---
 function hashStringDjb2(str) {
   let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
-    hash = hash & 0xFFFFFFFF;
-  }
+  for (let i = 0; i < str.length; i++) { hash = ((hash << 5) + hash) + str.charCodeAt(i); hash = hash & 0xFFFFFFFF; }
   return (hash >>> 0).toString(16);
 }
 
+// Helper to show Sync Status UI
+function updateSyncStatus(status) {
+    const el = document.getElementById('syncStatus');
+    const txt = document.getElementById('syncText');
+    if (status === 'syncing') {
+        el.classList.add('sync-active');
+        txt.innerText = "Syncing with AI...";
+    } else if (status === 'success') {
+        el.classList.add('sync-active');
+        document.querySelector('.sync-dot').style.background = '#10b981';
+        txt.innerText = "AI Up to Date";
+        setTimeout(() => el.classList.remove('sync-active'), 3000);
+    } else if (status === 'error') {
+        el.classList.add('sync-active');
+        document.querySelector('.sync-dot').style.background = '#ef4444';
+        txt.innerText = "Sync Failed";
+    }
+}
 
-async function sendReportsSnapshotIfChanged(snapshot) {
+async function handleAISnapshot(data, totalRev) {
   try {
+    const snapshot = getReportsSnapshot(data, totalRev);
+    
+    // Save locally immediately
+    try { localStorage.setItem('bharatpos_reports_ai_snapshot', JSON.stringify(snapshot)); } catch(e){}
+
     const snapshotJson = JSON.stringify(snapshot);
     const snapshotHash = hashStringDjb2(snapshotJson);
     const lastHash = localStorage.getItem('bharatpos_last_sent_reports_snapshot_hash');
-    if (lastHash === snapshotHash) {
-      console.log('Reports snapshot unchanged — skipping upload');
-      return;
-    }
-    const payload = { snapshot, user_prompt: "" };
-    const url = buildUrlForReports('/ai-business-consult');
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    let result = null;
-    try { result = await res.json(); } catch(e) { result = { text: await res.text().catch(()=>null) }; }
-    if (res.ok) {
-      console.log('Reports snapshot uploaded to server successfully:', result);
-      try {
-        localStorage.setItem('bharatpos_last_sent_reports_snapshot_hash', snapshotHash);
-        localStorage.setItem('bharatpos_last_sent_reports_snapshot_time', new Date().toISOString());
-      } catch(e) { console.warn('Could not save last-sent reports hash', e); }
+
+    // Only send if data changed
+    if (lastHash !== snapshotHash) {
+       console.log("🚀 Data changed. Sending snapshot to backend...");
+       updateSyncStatus('syncing');
+
+       // Use buildUrl if available, else relative path
+       const endpoint = '/ai-business-consult';
+       const url = (typeof buildUrl === 'function') ? buildUrl(endpoint) : endpoint;
+
+       const res = await fetch(url, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+               snapshot: snapshot,
+               user_prompt: "System Update: Monthly Sales Data"
+           })
+       });
+
+       if (res.ok) {
+           console.log("✅ AI Snapshot Sent Successfully");
+           localStorage.setItem('bharatpos_last_sent_reports_snapshot_hash', snapshotHash);
+           updateSyncStatus('success');
+       } else {
+           console.warn("⚠️ Backend rejected snapshot", res.status);
+           updateSyncStatus('error');
+       }
     } else {
-      console.warn('Server returned error while uploading reports snapshot:', res.status, result);
+        console.log("ℹ️ Snapshot unchanged. Skipping upload.");
     }
-  } catch (err) { console.warn('Failed to send reports snapshot to server:', err); }
+  } catch(e) { 
+      console.error("❌ Network/Logic Error in Snapshot", e);
+      updateSyncStatus('error');
+  }
 }
 
-// Build the reports snapshot in a structured format (similar to dashboard snapshot)
 function getReportsSnapshot(groupedData, grandTotalRevenue) {
   const dates = Object.keys(groupedData).sort();
   const dateEntries = dates.map(date => {
     const d = groupedData[date];
     const products = Object.entries(d.products || {}).map(([name, qty])=>({ name, qty: Number(qty) }));
-    return {
-      date,
-      revenue: Number(d.revenue || 0),
-      bills: Number(d.bills || 0),
-      total_items: Number(d.totalItems || 0),
-      products
-    };
+    return { date, revenue: Number(d.revenue || 0), bills: Number(d.bills || 0), total_items: Number(d.totalItems || 0), products };
   });
 
   return {
-    type: "datewise_sales_report", // <--- 🟢 THIS IS THE FIX. The server requires this specific tag.
+    type: "datewise_sales_report",
     generated_at: new Date().toISOString(),
     page: 'reports',
-    description: 'Date-wise sales snapshot for AI/analytics',
     grand_total_revenue: Number(grandTotalRevenue || 0),
     dates_count: dateEntries.length,
     dates: dateEntries
   };
 }
+
 document.addEventListener('DOMContentLoaded', renderReports);
 </script>
 
