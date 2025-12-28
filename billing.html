@@ -7,6 +7,7 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="bharatpos.js"></script>
@@ -68,9 +69,9 @@
       overflow: hidden; 
     }
     
-    .search-area { padding: 15px; flex-shrink: 0; }
+    .search-area { padding: 10px 15px; flex-shrink: 0; }
     .search-bar-wrap {
-      background: var(--bg-panel); padding: 8px 12px; border-radius: 12px;
+      background: var(--bg-panel); padding: 6px 12px; border-radius: 12px;
       display: flex; gap: 10px; align-items: center; border: 1px solid var(--border);
     }
     #productSearch {
@@ -88,30 +89,31 @@
     }
     .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-    /* --- PRODUCT GRID (FIXED FOR MOBILE) --- */
+    /* --- PRODUCT GRID (Super Compact) --- */
     .product-scroll-area {
-      flex-grow: 1; overflow-y: auto; padding: 15px;
+      flex-grow: 1; overflow-y: auto; padding: 10px;
       padding-bottom: 100px; /* Space for mobile cart bar */
     }
 
     #productList {
       display: grid; 
-      /* Desktop Default */
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-      gap: 12px;
+      /* EVEN SMALLER GRID: minmax 85px */
+      grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); 
+      gap: 8px;
     }
 
     .prod-card {
-      background: var(--bg-panel); border-radius: 12px; padding: 10px;
+      background: var(--bg-panel); border-radius: 8px; padding: 8px;
       border: 1px solid var(--border); cursor: pointer;
       display: flex; flex-direction: column; justify-content: space-between; 
-      min-height: 110px; position: relative; overflow: hidden;
+      min-height: 85px; position: relative; overflow: hidden;
     }
     .prod-card:active { transform: scale(0.96); border-color: var(--accent); }
     
-    .prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--text-main); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .prod-unit { font-size: 10px; color: var(--text-muted); }
-    .prod-price { font-size: 14px; color: var(--accent); font-weight: 700; margin-top: 4px; }
+    /* Smaller Fonts for Compactness */
+    .prod-name { font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--text-main); margin-bottom: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .prod-unit { font-size: 9px; color: var(--text-muted); }
+    .prod-price { font-size: 12px; color: var(--accent); font-weight: 700; margin-top: 2px; }
     .out-stock { opacity: 0.5; filter: grayscale(1); border: 1px dashed var(--danger); pointer-events: none; }
 
     /* --- RIGHT: CART --- */
@@ -153,38 +155,30 @@
 
     .checkout-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 14px; }
 
-    /* --- MOBILE OPTIMIZATIONS (The Critical Fixes) --- */
+    /* --- MOBILE OPTIMIZATIONS --- */
     @media (max-width: 900px) {
       .app-layout { grid-template-columns: 1fr; display: block; height: calc(100vh - 60px); position: relative; }
       
-      /* 1. Smaller Product Grid */
+      /* Mobile Grid: Even Smaller for Density */
       #productList {
-        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); /* 3 per row on standard phones */
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); 
         gap: 8px;
-        padding-bottom: 80px; /* Crucial: Space for bottom bar */
+        padding-bottom: 80px; 
       }
-      .prod-card { min-height: 90px; padding: 8px; }
-      .prod-name { font-size: 12px; }
-      .prod-price { font-size: 13px; }
 
-      /* 2. Fixed Bottom Cart Bar */
+      /* Bottom Cart Bar */
       .cart-panel {
         position: fixed; bottom: 0; left: 0; width: 100%; 
-        height: 85vh; /* When open, take 85% height */
+        height: 85vh; 
         border-radius: 20px 20px 0 0;
         box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 2000;
-        
-        /* DEFAULT STATE: Hidden except top bar */
         transform: translateY(calc(100% - 70px)); 
       }
       
-      .cart-panel.open {
-        transform: translateY(0); /* Slide Up */
-      }
+      .cart-panel.open { transform: translateY(0); }
 
-      /* The "Handle" / Mini Summary Bar */
       .cart-toggle-bar {
         display: flex; justify-content: space-between; align-items: center;
         padding: 0 20px; height: 70px; cursor: pointer;
@@ -192,17 +186,13 @@
         width: 100%;
       }
       
-      /* Visual Indicators on Bar */
       .mini-cart-info { display: flex; flex-direction: column; }
       .mini-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
       .mini-total { font-size: 18px; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace; }
       .mini-btn { background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
 
-      /* Hide standard header when in mini mode */
       .cart-header { display: none; } 
-      /* Show standard header only when open */
       .cart-panel.open .cart-header { display: flex; }
-      /* Hide Toggle Bar when open */
       .cart-panel.open .cart-toggle-bar { display: none; }
     }
 
@@ -236,8 +226,8 @@
     <div class="search-area">
       <div class="search-bar-wrap">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--accent)"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        <input type="text" id="productSearch" placeholder="Search..." oninput="handleSearch(this.value)" autocomplete="off">
-        <button class="btn-scan" onclick="openScanner()"><i class="fa-solid fa-camera">📷</i></button>
+        <input type="text" id="productSearch" placeholder="Search item..." oninput="handleSearch(this.value)" autocomplete="off">
+        <button class="btn-scan" onclick="openScanner()">📷</button>
         <input id="barcodeInput" style="display:none;"> 
       </div>
     </div>
@@ -276,9 +266,12 @@
     <div class="checkout-area">
       <div class="customer-form">
         <div class="input-row">
-          <input id="custName" class="fancy-input" placeholder="Name">
-          <input type="number" id="custPhone" class="fancy-input" placeholder="Phone">
+          <input id="custName" class="fancy-input" placeholder="Customer Name">
+          <input type="number" id="custPhone" class="fancy-input" placeholder="Mobile No.">
         </div>
+        <button onclick="sendWhatsAppBill()" style="width:100%; background:rgba(37, 211, 102, 0.1); color:#25d366; border:1px solid #25d366; padding:10px; border-radius:8px; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:0.2s;">
+          <i class="fa-brands fa-whatsapp" style="font-size:16px;"></i> Send via WhatsApp
+        </button>
       </div>
 
       <div class="payment-area">
@@ -316,7 +309,7 @@
   <div class="scanner-view" id="scannerContainer">
     <div class="scan-laser"></div>
   </div>
-  <button onclick="closeScanner()" style="margin-top:20px; background:white; border:none; padding:10px 30px; border-radius:30px; font-weight:bold;">Close</button>
+  <button onclick="closeScanner()" style="margin-top:20px; background:white; border:none; padding:10px 30px; border-radius:30px; font-weight:bold; cursor:pointer;">Close</button>
 </div>
 
 <div id="invoiceModal" style="display:none;"><div id="invoiceContent"></div></div>
@@ -432,6 +425,24 @@ function closeScanner() {
     if(btn) btn.click();
 }
 
+// --- WHATSAPP LOGIC RESTORED ---
+function sendWhatsAppBill() {
+    const phone = document.getElementById('custPhone').value; 
+    const custName = document.getElementById('custName').value || "Customer";
+    if (!phone || phone.length < 10) { alert("Please enter valid Mobile No."); return; }
+    const khataLink = "https://oneanush.github.io/BharatPOS/my_khata.html";
+    
+    let total = 0;
+    if(window.cart) window.cart.forEach(i => total += i.price * i.qty);
+    const disc = parseFloat(document.getElementById('discount').value) || 0;
+    const final = Math.max(0, total - disc);
+
+    let msg = `Namaste ${custName}! 🙏%0A%0A`;
+    msg += `Your bill total is *₹${final}*.%0A`;
+    msg += `View details: ${khataLink}`;
+    window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
+}
+
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", ()=>{
     renderBillCategories();
@@ -441,6 +452,4 @@ document.addEventListener("DOMContentLoaded", ()=>{
 </script>
 </body>
 </html>
-
-
 
