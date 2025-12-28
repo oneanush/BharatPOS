@@ -18,7 +18,7 @@
       --bg-card: rgba(30, 41, 59, 0.6);
       --glass: blur(12px);
       --border: rgba(255, 255, 255, 0.1);
-      --accent: #f59e0b;
+      --accent: #f59e0b; /* Bharat POS Gold */
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --success: #10b981;
@@ -192,7 +192,7 @@
         font-size: 11px; color: var(--text-muted);
         display: flex; align-items: center; gap: 8px;
       }
-      /* Inject Category and Unit via CSS content trick is hard, so we assume stock is sufficient context */
+      /* Inject Context via CSS */
       td:nth-child(4)::before { content: "Stock: "; opacity: 0.7; }
       
       /* 4. Delete Button: Bottom Right */
@@ -202,7 +202,7 @@
       }
       .delete-btn { padding: 4px 10px; font-size: 10px; }
 
-      /* Hide less critical info on mobile */
+      /* Hide less critical info on mobile to save space */
       td:nth-child(2), /* Qty */
       td:nth-child(5), /* Tax */
       td:nth-child(6)  /* Category */
@@ -345,15 +345,17 @@ function loadUser(){
 loadUser();
 
 function renderProducts(){
-  const products = getProducts();
-  if(products.length===0) { 
+  const products = getProducts(); // Should be defined in bharatpos.js or handle manually
+  // Fallback if getProducts not found
+  const safeProducts = Array.isArray(products) ? products : JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+
+  if(safeProducts.length===0) { 
     document.getElementById('productsList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 No products found.</div>'; 
     return;
   }
   
-  // HTML Structure compatible with Desktop (Table) and Mobile (CSS Grid Override)
   let html = '<table><thead><tr><th>Name</th><th>Qty</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr></thead><tbody>';
-  products.forEach(p=>{
+  safeProducts.forEach(p=>{
     html += `<tr>
       <td>${p.name}</td>
       <td>${p.quantity || '-'}</td>
@@ -366,6 +368,13 @@ function renderProducts(){
   });
   html += '</tbody></table>';
   document.getElementById('productsList').innerHTML = html;
+}
+
+// Ensure safe lookup
+function getProducts() {
+    try {
+        return JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+    } catch(e) { return []; }
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -382,7 +391,7 @@ function deleteProductConfirm(pid){
   if(!confirm("Are you sure you want to delete this product?")) return;
   let products = getProducts();
   products = products.filter(p => p.id !== pid);
-  saveProducts(products);
+  localStorage.setItem('bharatpos_products', JSON.stringify(products));
   renderProducts();
   showToast("Product deleted successfully!");
 }
@@ -390,13 +399,26 @@ function deleteProductConfirm(pid){
 async function handleAddProduct(event){
   if(event && event.preventDefault) event.preventDefault();
   try {
-    const qtyValue = document.getElementById('productQuantity').value;
-    await addProduct(); 
-    let products = getProducts();
-    if(products.length > 0){
-      let lastProduct = products[products.length - 1];
-      lastProduct.quantity = qtyValue;
-      saveProducts(products);
+    // If addProduct() is in bharatpos.js, call it. Else simulate:
+    if(typeof addProduct === 'function') {
+        await addProduct();
+        // Override Qty input if needed or just re-render
+    } else {
+        // Fallback Logic
+        const name = document.getElementById('productName').value;
+        const price = document.getElementById('productPrice').value;
+        const qty = document.getElementById('productQuantity').value;
+        const stock = document.getElementById('productStock').value;
+        const tax = document.getElementById('productTax').value;
+        const cat = document.getElementById('productCategory').value;
+        const bar = document.getElementById('productBarcode').value;
+        
+        const products = getProducts();
+        products.push({
+            id: Date.now().toString(),
+            name, price, quantity: qty, stock, taxPercent: tax, category: cat, barcode: bar
+        });
+        localStorage.setItem('bharatpos_products', JSON.stringify(products));
     }
     renderProducts();
     document.getElementById('productForm').reset();
@@ -453,7 +475,7 @@ async function captureAndSendToAI(){
   const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
   aiScanLocked = true;
   try{
-    const url = buildUrl('/ai-product-scan');
+    const url = (typeof buildUrl === 'function') ? buildUrl('/ai-product-scan') : '/ai-product-scan';
     const res = await fetch(url, {
       method: "POST", headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ imageBase64: base64 })
@@ -527,31 +549,54 @@ function resetAIScan(){
   startLiveScan();
 }
 
-window.startLiveScan = startLiveScan;
-window.stopLiveScan = stopLiveScan;
-window.resetAIScan = resetAIScan;
-
+// --- ENHANCED RESTOCK LOGIC ---
 window.addEventListener('DOMContentLoaded', (event) => {
   const params = new URLSearchParams(window.location.search);
+  
   if (params.has('restock')) {
-    const elName  = document.getElementById('productName');
+    const pName = params.get('restock');
+    
+    // Find form elements
+    const elName = document.getElementById('productName');
+    const elQty = document.getElementById('productQuantity');
+    const elPrice = document.getElementById('productPrice');
+    const elStock = document.getElementById('productStock');
+    const elTax = document.getElementById('productTax');
+    const elCat = document.getElementById('productCategory');
+    const elBarcode = document.getElementById('productBarcode');
+
     if (elName) {
-        elName.value = params.get('restock');
-        elName.focus();
+        elName.value = pName;
+        
+        // Lookup Existing Data
+        const products = getProducts();
+        const existing = products.find(p => p.name === pName);
+        
+        if (existing) {
+            if(elPrice) elPrice.value = existing.price || '';
+            if(elQty) elQty.value = existing.quantity || '';
+            if(elCat) elCat.value = existing.category || '';
+            if(elTax) elTax.value = existing.taxPercent || '';
+            if(elBarcode) elBarcode.value = existing.barcode || '';
+            
+            // Visual Highlight
+            [elName, elPrice, elStock].forEach(el => {
+                if(el) { el.style.borderColor = "var(--accent)"; setTimeout(()=>el.style.borderColor="", 2000); }
+            });
+            
+            if(elStock) {
+                elStock.focus(); // Focus stock to add more
+                showToast(`Restocking ${pName}`);
+            }
+        } else {
+            elName.focus();
+        }
     }
   }
 });
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
 
 
 
