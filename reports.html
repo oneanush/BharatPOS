@@ -138,21 +138,41 @@
 
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Mobile Responsive */
+    /* Mobile Responsive (Card View) */
     @media (max-width: 768px) {
       .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+      
+      /* Hide Headers */
       thead { display: none; }
+      
+      /* Row becomes Card */
       .sale-row {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px;
-        background: rgba(255,255,255,0.02); margin-bottom: 2px; border-bottom: 1px solid var(--border);
+        display: grid; grid-template-columns: 1fr auto; gap: 8px; 
+        padding: 15px; margin-bottom: 8px; 
+        background: rgba(255,255,255,0.03); 
+        border-radius: 12px; border: 1px solid var(--border);
       }
+      
+      /* Reset Cells */
       td { padding: 0; border: none; display: block; }
-      td:nth-child(1) { grid-column: span 2; font-size: 16px; font-weight: 700; margin-bottom: 5px; }
-      td:nth-child(2)::before { content: "Bills: "; color: var(--text-muted); }
-      td:nth-child(3)::before { content: "Items: "; color: var(--text-muted); }
-      td:nth-child(4) { grid-column: span 2; text-align: right; font-size: 20px; margin-top: 10px; }
-      .text-right { text-align: left !important; }
-      td:nth-child(4) { text-align: right !important; }
+      
+      /* Date (Top Left) */
+      td:nth-child(1) { grid-column: 1; font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+      
+      /* Revenue (Top Right) */
+      td:nth-child(4) { grid-column: 2; text-align: right; font-size: 16px; font-weight: 800; color: var(--success); }
+      
+      /* Bills (Bottom Left) */
+      td:nth-child(2) { grid-column: 1; font-size: 12px; color: var(--text-muted); }
+      td:nth-child(2)::before { content: "Bills: "; }
+      
+      /* Items (Bottom Right) */
+      td:nth-child(3) { grid-column: 2; text-align: right; font-size: 12px; color: var(--text-muted); }
+      td:nth-child(3)::before { content: "Items: "; }
+
+      /* Details Row Fix */
+      .details-row.active { display: block; }
+      .details-content { padding: 15px; }
     }
   </style>
 </head>
@@ -260,7 +280,12 @@ function toggleDetails(dateId) {
     row.style.display = 'none';
   });
   if(isHidden) {
-    detailRow.style.display = 'table-row';
+    // Check if mobile (screen width < 768) use block, else table-row
+    if(window.innerWidth < 768) {
+        detailRow.style.display = 'block';
+    } else {
+        detailRow.style.display = 'table-row';
+    }
     setTimeout(() => detailRow.classList.add('active'), 10);
   }
 }
@@ -364,8 +389,6 @@ function updateSyncStatus(status) {
 async function handleAISnapshot(data, totalRev) {
   try {
     const snapshot = getReportsSnapshot(data, totalRev);
-    
-    // Save locally immediately
     try { localStorage.setItem('bharatpos_reports_ai_snapshot', JSON.stringify(snapshot)); } catch(e){}
 
     const snapshotJson = JSON.stringify(snapshot);
