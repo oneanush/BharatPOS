@@ -1,235 +1,349 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-<script src="bharatpos.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>Bharat POS — Command Center</title>
   
-  <title>Bharat POS — Dashboard</title>
-  <link rel="stylesheet" href="bharatpos.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <script src="bharatpos.js"></script> 
+  
+  <style>
+    /* --- THEME VARIABLES --- */
+    :root {
+      --bg-body: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --glass: blur(12px);
+      --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      padding-bottom: 80px;
+    }
+
+    /* BACKGROUND MESH */
+    body::before {
+      content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.05), transparent 40%);
+      z-index: -1; pointer-events: none;
+    }
+
+    a { text-decoration: none; color: inherit; transition: 0.2s; }
+
+    /* --- NAVIGATION --- */
+    .navbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: #fff; }
+    .global-logo { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
+    .brand span { color: var(--accent); }
+    
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--text-muted); padding: 6px 10px; border-radius: 6px; }
+    .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
+    
+    .profile-pill {
+      font-size: 13px; font-weight: 600; background: rgba(245, 158, 11, 0.15);
+      color: var(--accent); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* --- LAYOUT GRID --- */
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    
+    .welcome-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; animation: fadeUp 0.6s var(--ease); }
+    .welcome-sub { color: var(--text-muted); font-size: 14px; }
+    .welcome-title { font-size: 24px; font-weight: 700; margin: 4px 0 0; }
+
+    /* AI Sync Status Indicator */
+    .ai-sync-pill {
+        font-size: 11px; padding: 6px 12px; border-radius: 20px;
+        background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+        display: flex; align-items: center; gap: 6px; color: var(--text-muted);
+        transition: 0.3s;
+    }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; transition: 0.3s; }
+    .syncing .sync-dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 1s infinite; }
+    .synced .sync-dot { background: var(--success); box-shadow: 0 0 5px var(--success); }
+    .error .sync-dot { background: var(--danger); }
+    
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+    .grid-dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-auto-rows: minmax(160px, auto);
+      gap: 20px;
+    }
+
+    /* Card Styling */
+    .card {
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; position: relative; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: space-between;
+      transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+      animation: fadeUp 0.8s var(--ease) backwards;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.2); }
+    
+    .card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 0 0 10px 0; font-weight: 600; }
+    .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .stat-sub { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+
+    .span-2 { grid-column: span 2; }
+    .span-4 { grid-column: span 4; }
+    
+    @media (max-width: 900px) {
+      .grid-dashboard { grid-template-columns: 1fr 1fr; }
+      .span-2, .span-4 { grid-column: span 2; }
+    }
+    @media (max-width: 600px) {
+      .grid-dashboard { display: flex; flex-direction: column; }
+      .navbar { flex-direction: column; gap: 10px; align-items: flex-start; }
+      .nav-links { width: 100%; overflow-x: auto; }
+    }
+
+    /* --- CHART COMPONENTS (WITH AXIS PLOTTING) --- */
+    .chart-box { 
+        height: 180px; display: flex; align-items: flex-end; justify-content: space-between; 
+        padding-top: 20px; padding-left: 10px; padding-bottom: 5px;
+        /* Axis Lines */
+        border-left: 2px solid rgba(255,255,255,0.1); 
+        border-bottom: 2px solid rgba(255,255,255,0.1);
+        /* Background Grid */
+        background: linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 100% 25%; /* 4 Grid lines */
+    }
+    .bar-group { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 12%; height: 100%; }
+    .bar { width: 40%; background: #334155; border-radius: 4px 4px 0 0; transition: height 1s var(--ease); position: relative; min-height: 4px; }
+    .bar.active { background: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+    .bar-label { font-size: 10px; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
+
+    /* --- LOW STOCK MODIFIED STYLE --- */
+    .stock-alert-item {
+        background: rgba(239, 68, 68, 0.1); /* Red tint background */
+        border-left: 3px solid var(--danger); /* Red accent line */
+        padding: 10px; margin-bottom: 8px; border-radius: 4px;
+        display: flex; justify-content: space-between; align-items: center;
+        transition: transform 0.2s;
+    }
+    .stock-alert-item:hover { transform: translateX(3px); background: rgba(239, 68, 68, 0.15); }
+    .stock-name { font-weight: 600; font-size: 13px; color: #f8fafc; }
+    .stock-qty { color: var(--danger); font-weight: bold; font-size: 12px; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px; }
+
+    .list-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+    .list-row:last-child { border-bottom: none; }
+    
+    .btn-action { background: var(--text-main); color: var(--bg-body); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; }
+    .text-good { color: var(--success); } .text-bad { color: var(--danger); } .text-warn { color: var(--accent); }
+
+    /* CRM CARD SPECIAL */
+    .card-crm { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(99, 102, 241, 0.3); }
+    .card-crm:hover { border-color: #6366f1; }
+
+    /* FOOTER */
+    .footer-zone { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid var(--border); }
+    .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+    .btn-danger:hover { background: var(--danger); color: white; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
 </head>
 <body>
-<nav>
-  <a href="products.html">Products</a>
-  <a href="reports.html">Reports</a>
-  <a href="settings.html">Settings</a>
-  <a href="index.html">About</a>
-  <div id="profileName" class="profile-name"></div>
+
+<nav class="navbar">
+  <div class="brand">
+    <img src="logo.png" class="global-logo" alt="Logo">
+    Bharat<span>POS</span>
+  </div>
+  <div class="nav-links">
+    <a href="#" class="active">Dashboard</a>
+    <a href="billing.html">Billing</a>
+    <a href="products.html">Inventory</a>
+    <a href="sales.html">Sales</a>
+    <a href="reports.html">Reports</a>
+    <a href="ai.html" style="color:var(--accent)">AI Advisor</a>
+  </div>
+  <div id="profileName" class="profile-pill">Guest</div>
 </nav>
 
-<style>
-/* Base Styles */
-.profile-name{font-weight:700;margin-left:12px;padding:6px 10px;border:1px solid #ffcc00;border-radius:8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-.card{padding:16px;border-radius:12px;background:#111;color:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
-.small{font-size:13px;color:#ccc; margin-top: 5px;}
-.bad{color:#ff6b6b}
-.good{color:#4cd964}
-.warn{color:#ffcc00}
-.container{margin:18px}
-.footer{margin:20px;text-align:center;color:#666}
-
-/* Header Styles */
-.header{display:flex;align-items:center;justify-content:space-between;padding:18px;background:#000;color:#fff;border-bottom:1px solid #333}
-.brand{font-size:24px;font-weight:bold;color:#fff}
-.nav a{margin-left:15px;color:#ccc;text-decoration:none;font-size:14px}
-.nav a:hover{color:#fff}
-
-/* --- UPDATED CHART STYLES --- */
-.chart-container { 
-    display: flex; 
-    align-items: flex-end; 
-    justify-content: space-between; 
-    height: 160px; /* Taller for better visibility */
-    margin-top: 15px; 
-    padding-top: 20px; 
-    border-bottom: 1px solid #333; /* Baseline axis */
-}
-.bar-group { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: flex-end; 
-    width: 12%; 
-    height: 100%; 
-}
-.bar { 
-    width: 60%; 
-    background: #333; 
-    border-radius: 4px 4px 0 0; 
-    transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
-    position: relative; 
-    min-height: 2px; /* Always show a tiny line for 0 */
-}
-.bar.active {
-    background: linear-gradient(to top, #4cd964, #28a745); /* Gradient Green */
-    box-shadow: 0 0 8px rgba(76, 217, 100, 0.3);
-}
-.bar-label { 
-    font-size: 11px; 
-    color: #888; 
-    margin-top: 8px; 
-}
-.bar-value { 
-    font-size: 11px; 
-    color: #fff; 
-    margin-bottom: 6px; 
-    font-weight: bold; 
-    text-shadow: 0 1px 2px black;
-}
-
-/* List Styles */
-.list-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222; font-size: 14px; align-items: center; }
-.list-item:last-child { border-bottom: none; }
-
-/* Button Style for Order Now */
-.btn-restock {
-    background: #ffcc00;
-    color: #000;
-    padding: 4px 10px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 11px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.btn-restock:hover { background: #e6b800; }
-</style>
-
-<div class="header">
-  <div class="brand">Bharat POS</div>
-  <div class="nav">
-    <a href="billing.html">Billing</a>
-    <a href="sales.html">Sales</a>
-    <a href="ai.html">AI</a>
-  </div>
-</div>
-
-<div class="container grid">
-  <div class="card">
-    <h3>Revenue (Today)</h3>
-    <div id="todayRevenue" style="font-size:22px;font-weight:700">₹0</div>
-    <div class="small" id="totalRevenueLifetime">Lifetime: ₹0</div>
-  </div>
-   
-  <div class="card">
-    <h3>Growth (24h)</h3>
-    <div id="growthStatus" style="font-size:22px;font-weight:700">—</div>
-    <div class="small" id="growthHint">vs Yesterday</div>
-  </div>
-
-  <div class="card">
-    <h3>Stock Health</h3>
-    <div id="lowStockCount"></div>
-    <div id="deadStockCount" class="small"></div>
-  </div>
-   
-  <div class="card">
-    <h3>Sales Count</h3>
-    <div id="totalBills" style="font-size:22px;font-weight:700">0 Bills</div>
-    <div class="small" id="avgBill"></div>
-  </div>
-</div>
-
 <div class="container">
-    <div class="card">
-        <h3>Weekly Performance (Last 7 Days)</h3>
-        <div id="salesChart" class="chart-container">
-            <div class="small">Loading chart...</div>
-        </div>
+  
+  <div class="welcome-header">
+    <div>
+        <div class="welcome-sub" id="dateDisplay">Loading date...</div>
+        <h1 class="welcome-title" id="greetingDisplay">Welcome back</h1>
     </div>
-</div>
-
-<div class="container grid">
-  <div class="card">
-    <h3>Top Selling Items</h3>
-    <div id="patterns" style="margin-top:10px">Loading...</div>
+    <div id="aiSyncStatus" class="ai-sync-pill">
+        <div class="sync-dot"></div>
+        <span id="aiSyncText">Connecting AI...</span>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Smart Restock</h3>
-    <div class="small" style="margin-bottom:8px">Items selling fast but low on stock:</div>
-    <div id="smartOrders">All good</div>
-  </div>
-
-  <div class="card">
-    <h3>Low Stock Alert</h3>
-    <div id="lowstock"></div>
-  </div>
-</div>
-
-<a href="customers.html" style="text-decoration:none;">
-  <div class="card" style="border-left: 5px solid #6d28d9; cursor:pointer;">
-    <h3>Bharat CRM</h3>
-    <div style="font-size:18px; margin-top:5px; font-weight:bold;">Loyalty & Users</div>
-    <div class="small">Click to Manage ></div>
-  </div>
-</a>
-
-<a href="udhaar.html" style="text-decoration:none;">
-      <div class="card" style="border-left: 5px solid #dc3545; cursor:pointer; transition:transform 0.2s;">
-        <h3>Pending Udhaar</h3>
-        <div id="totalUdhaar" style="font-size:22px;font-weight:700; color:#dc3545;">₹0</div>
-        <div class="small" id="udhaarCount">Click to Manage ></div>
+  <div class="grid-dashboard">
+    
+    <div class="card span-2" style="background: linear-gradient(180deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,1) 100%); border-top: 2px solid var(--success);">
+      <div style="display:flex; justify-content:space-between;">
+        <h3>Today's Revenue</h3>
+        <span style="font-size:12px; background:rgba(16,185,129,0.1); color:var(--success); padding:2px 8px; border-radius:4px;">Live</span>
       </div>
-  </a>
+      <div>
+        <div id="todayRevenue" class="stat-value">₹0</div>
+        <div class="stat-sub">
+          <span id="growthStatus">—</span> 
+          <span id="growthHint" style="opacity:0.6;">vs Yesterday</span>
+        </div>
+      </div>
+    </div>
 
-<div style="margin:20px; text-align: center;">
-  <button onclick="resetSales()" style="padding: 10px 20px; cursor: pointer; background: #333; color: white; border: none; border-radius: 5px;">Reset Sales Data</button>
+    <div class="card">
+      <h3>Sales Volume</h3>
+      <div id="totalBills" class="stat-value">0</div>
+      <div class="stat-sub" id="avgBill">Avg: ₹0</div>
+      <div style="height:4px; width:100%; background:#334155; margin-top:15px; border-radius:2px; overflow:hidden;">
+        <div style="height:100%; width:60%; background:var(--text-main); opacity:0.5;"></div>
+      </div>
+    </div>
+
+    <a href="customers.html" class="card card-crm">
+       <div style="display:flex; justify-content:space-between;">
+         <h3 style="color:#a5b4fc;">CRM</h3>
+         <span style="font-size:16px;">👥</span>
+       </div>
+       <div>
+         <div style="font-size:16px; font-weight:700; color:#fff;">Customer Loyalty</div>
+         <div class="stat-sub">Manage retention & users</div>
+       </div>
+       <div style="margin-top:10px; font-size:11px; color:#a5b4fc;">View Database ➔</div>
+    </a>
+
+    <a href="udhaar.html" class="card" style="border-left: 4px solid var(--danger);">
+      <div style="display:flex; justify-content:space-between;">
+        <h3>Pending Udhaar</h3>
+        <span style="font-size:16px;">➔</span>
+      </div>
+      <div id="totalUdhaar" class="stat-value text-bad">₹0</div>
+      <div class="stat-sub" id="udhaarCount">No pending dues</div>
+    </a>
+
+    <div class="card span-2">
+      <h3>Weekly Performance</h3>
+      <div id="salesChart" class="chart-box"></div>
+    </div>
+
+    <div class="card">
+      <h3>Stock Alerts</h3>
+      <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
+        <div id="lowStockCount" style="font-size:20px; font-weight:700;">Loading...</div>
+      </div>
+      <div id="lowstock" style="margin-top:10px; max-height:60px; overflow-y:auto;"></div>
+    </div>
+
+    <div class="card span-4" style="min-height:auto;">
+      <h3>⚡ Smart Restock Recommendations</h3>
+      <div id="smartOrders" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
+        All stock levels are healthy.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-zone">
+    <button onclick="resetSales()" class="btn-danger">⚠ Reset Sales Database</button>
+    <div style="margin-top:10px; font-size:11px; color:#475569;">
+      BharatPOS System v2.0 • Obsidian UI
+    </div>
+  </div>
+
 </div>
-
-<div class="footer">Built by Utkarsh — BharatPOS</div>
 
 <script>
-  // UTILITIES
-  function formatCurrency(num){ return '₹' + Number(num || 0).toLocaleString('en-IN'); }
-  function safeParse(json, fallback) { try { return JSON.parse(json); } catch(e) { return fallback; } }
-  function escapeHtml(str){ if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-  // --- RE-STOCK LINK LOGIC (PRESERVED) ---
-  function getRestockLink(p) {
-      const params = new URLSearchParams();
-      // Basic Info
-      params.set('restock', p.name);
-      if(p.price) params.set('price', p.price);
-      if(p.category) params.set('category', p.category);
-      if(p.tax) params.set('tax', p.tax);
-      
-      // Stock Count (Number)
-      if(p.stock) params.set('stock_val', p.stock);
-
-      // Quantity/Unit (1kg, 2pcs)
-      const unitSize = p.quantity || p.unit || p.size || '';
-      if(unitSize) params.set('unit_val', unitSize);
-
-      return `products.html?${params.toString()}`;
+  // --- 1. UTILS & HELPERS ---
+  
+  function formatCurrency(n){ 
+    return '₹' + Number(n || 0).toLocaleString('en-IN'); 
+  }
+  
+  function escapeHtml(str){ 
+    if(!str) return ''; 
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;'); 
   }
 
-  // LOAD USER
+  // Robust Data Fetcher
+  function safeParse(key) {
+    try {
+      const data = localStorage.getItem(key);
+      if (!data || data === "undefined" || data === "null") return [];
+      return JSON.parse(data);
+    } catch (e) {
+      console.error(`Error parsing ${key}:`, e);
+      return [];
+    }
+  }
+
+  // Endpoint Builder (Fallback if bharatpos.js missing)
+  function getApiUrl(endpoint) {
+    if (typeof buildUrl === 'function') return buildUrl(endpoint);
+    return endpoint; 
+  }
+
+  // --- 2. ANIMATION ---
+  function animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      if(obj) obj.innerHTML = formatCurrency(Math.floor(progress * (end - start) + start));
+      if (progress < 1) { window.requestAnimationFrame(step); }
+    };
+    window.requestAnimationFrame(step);
+  }
+
+  function setGreeting() {
+    const d = new Date();
+    document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const hour = d.getHours();
+    const txt = hour < 12 ? "Good Morning" : (hour < 18 ? "Good Afternoon" : "Good Evening");
+    document.getElementById('greetingDisplay').textContent = txt + ", Boss";
+  }
+
+  // --- 3. MAIN DASHBOARD LOGIC ---
   function loadUser(){
-    const u = safeParse(localStorage.getItem('bharatpos_user')||'{}', {});
-    document.getElementById('profileName').textContent = u.name ? '👤 '+u.name : '👤 Guest';
+    try {
+      const u = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+      const el = document.getElementById('profileName');
+      if(el) el.textContent = u.name ? u.name : 'User';
+    } catch(e) { console.log("User load error", e); }
   }
-
-  // --- CORE ANALYTICS LOGIC ---
-
-  function getSalesData() { return safeParse(localStorage.getItem('bharatpos_sales')||'[]', []); }
-  function getProductData() { return safeParse(localStorage.getItem('bharatpos_products')||'[]', []); }
-  function getDateString(dateObj) { return dateObj.toISOString().split('T')[0]; }
 
   function renderDashboard(){
-    const sales = getSalesData();
-    const products = getProductData();
-
-    // 1. Calculate Revenue (Total & Today)
-    let totalRev = 0;
-    let todayRev = 0;
-    const todayStr = getDateString(new Date());
-    const yesterStr = getDateString(new Date(Date.now() - 86400000));
-    let yesterdayRev = 0;
+    console.log("🔄 Rendering Dashboard...");
+    const sales = safeParse('bharatpos_sales');
+    const products = safeParse('bharatpos_products');
+    
+    // Metrics
+    let totalRev = 0, todayRev = 0, yesterdayRev = 0;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yesterStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     const productCounts = {};
 
     sales.forEach(s => {
@@ -243,162 +357,183 @@
         });
     });
 
-    // Display Revenue
-    document.getElementById('todayRevenue').textContent = formatCurrency(todayRev);
-    document.getElementById('totalRevenueLifetime').textContent = 'Lifetime: ' + formatCurrency(totalRev);
+    // UI Updates
+    animateValue(document.getElementById('todayRevenue'), 0, todayRev, 1000);
     
-    // Display Bills
-    const avgBill = sales.length ? Math.round(totalRev / sales.length) : 0;
-    document.getElementById('totalBills').textContent = sales.length;
-    document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(avgBill);
-
-    // 2. Growth Indicator
+    const billsEl = document.getElementById('totalBills');
+    if(billsEl) billsEl.textContent = sales.length;
+    
+    const avgEl = document.getElementById('avgBill');
+    if(avgEl) avgEl.textContent = 'Avg: ' + formatCurrency(sales.length ? Math.round(totalRev/sales.length) : 0);
+    
+    // Growth Indicator
     const growthEl = document.getElementById('growthStatus');
-    const growthHint = document.getElementById('growthHint');
-    if (yesterdayRev === 0 && todayRev === 0) {
-        growthEl.textContent = "—"; growthHint.textContent = "No recent data";
-    } else if (yesterdayRev === 0 && todayRev > 0) {
-        growthEl.innerHTML = '<span class="good">▲ 100%</span>'; growthHint.textContent = "First sales today!";
-    } else {
-        const diff = todayRev - yesterdayRev;
-        const pct = Math.round((diff / yesterdayRev) * 100);
-        growthEl.innerHTML = pct > 0 ? `<span class="good">▲ ${pct}%</span>` : (pct < 0 ? `<span class="bad">▼ ${Math.abs(pct)}%</span>` : "0%");
+    if (growthEl) {
+        if (yesterdayRev === 0 && todayRev > 0) growthEl.innerHTML = '<span class="text-good">▲ 100%</span>';
+        else {
+            const diff = todayRev - yesterdayRev;
+            const pct = yesterdayRev ? Math.round((diff / yesterdayRev) * 100) : 0;
+            growthEl.innerHTML = pct >= 0 ? `<span class="text-good">▲ ${pct}%</span>` : `<span class="text-bad">▼ ${Math.abs(pct)}%</span>`;
+        }
     }
 
-    // 3. Stock Logic
+    // Stock Logic
     const lowStock = products.filter(p => Number(p.stock || 0) <= 5);
-    const deadStock = products.filter(p => !productCounts[p.name]); 
+    const lowStockEl = document.getElementById('lowStockCount');
+    if(lowStockEl) lowStockEl.innerHTML = `<span class="${lowStock.length > 0 ? 'text-warn' : ''}">${lowStock.length} Low Items</span>`;
+    
+    const lowListEl = document.getElementById('lowstock');
+    if(lowListEl) {
+        // MODIFIED: Use stock-alert-item class for red alert look
+        lowListEl.innerHTML = lowStock.length > 0 
+            ? lowStock.map(p => `
+                <div class="stock-alert-item">
+                    <span class="stock-name">${escapeHtml(p.name)}</span> 
+                    <span class="stock-qty">${p.stock} Left</span>
+                </div>`).join('')
+            : '<span style="color:var(--text-muted); font-size:12px;">Inventory looks good.</span>';
+    }
 
-    document.getElementById('lowStockCount').innerHTML = `Low: <b class="${lowStock.length > 0 ? 'bad' : ''}">${lowStock.length}</b>`;
-    document.getElementById('deadStockCount').innerHTML = `Unsold Items: <b>${deadStock.length}</b>`;
+    // Smart Restock Logic
+    const smartOrdersEl = document.getElementById('smartOrders');
+    if(smartOrdersEl) {
+        const smartRestock = products.filter(p => {
+            const sold = productCounts[p.name] || 0;
+            return Number(p.stock || 0) < 10 && sold > 2; 
+        });
+        
+        smartOrdersEl.innerHTML = smartRestock.length > 0
+            ? smartRestock.map(p => `
+                <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                    <div style="font-weight:600; font-size:13px; margin-bottom:5px;">${escapeHtml(p.name)}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:11px; color:var(--text-muted)">Stock: ${p.stock}</span>
+                        <a href="products.html?restock=${encodeURIComponent(p.name)}" class="btn-action">Restock</a>
+                    </div>
+                </div>`).join('')
+            : '<div style="color:var(--text-muted); padding:10px;">All high-velocity items are well stocked.</div>';
+    }
 
-    document.getElementById('lowstock').innerHTML = lowStock.length 
-      ? lowStock.map(p => `
-          <div class="list-item">
-            <span>${escapeHtml(p.name)} <span class="bad">(Qty: ${p.stock})</span></span>
-            <a href="${getRestockLink(p)}" class="btn-restock">Order</a>
-          </div>`).join('') 
-      : '<div class="small">Stocks look good.</div>';
-
-    // 4. Buying Patterns
-    const sortedProducts = Object.keys(productCounts).map(key => ({name: key, qty: productCounts[key]}));
-    sortedProducts.sort((a,b) => b.qty - a.qty);
-    const top5 = sortedProducts.slice(0, 5);
-    document.getElementById('patterns').innerHTML = top5.length
-        ? top5.map((p, index) => `<div class="list-item"><span>${index+1}. ${escapeHtml(p.name)}</span><span class="good">${p.qty} sold</span></div>`).join('')
-        : '<div class="small">No sales patterns yet.</div>';
-
-    // 5. Smart Restock
-    const smartRestock = products.filter(p => {
-        const sold = productCounts[p.name] || 0;
-        const stock = Number(p.stock || 0);
-        return stock < 10 && sold > 2; 
-    });
-
-    document.getElementById('smartOrders').innerHTML = smartRestock.length
-        ? smartRestock.map(p => `
-            <div class="list-item">
-                <span>${escapeHtml(p.name)}</span>
-                <a href="${getRestockLink(p)}" class="btn-restock">Order Now</a>
-            </div>`).join('')
-        : '<div class="small">No urgent restocks needed.</div>';
-
-    // 6. RENDER THE CHART (UPDATED)
+    // Chart Render
     renderChart(sales);
 
-    // --- UDHAAR LOGIC ---
-    const ledger = safeParse(localStorage.getItem('bharatpos_ledger') || '[]');
-    // Filter only unpaid debts
-    const pendingDebts = ledger.filter(l => !l.isPaid);
-    
-    const totalPending = pendingDebts.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    
-    document.getElementById('totalUdhaar').textContent = formatCurrency(totalPending);
-    document.getElementById('udhaarCount').textContent = `${pendingDebts.length} Customers pending`;
+    // Udhaar Render
+    const ledger = safeParse('bharatpos_ledger');
+    const pending = ledger.filter(l => !l.isPaid);
+    const totalPending = pending.reduce((s, i) => s + Number(i.amount || 0), 0);
+    const udhaarEl = document.getElementById('totalUdhaar');
+    if(udhaarEl) udhaarEl.textContent = formatCurrency(totalPending);
+    const uCount = document.getElementById('udhaarCount');
+    if(uCount) uCount.textContent = pending.length ? `${pending.length} pending` : 'All clear';
+
+    // TRIGGER SNAPSHOT
+    sendDashboardSnapshot({ 
+        totalRev, 
+        todayRev, 
+        salesCount: sales.length, 
+        lowStock, 
+        productCounts 
+    });
   }
 
-  // --- UPDATED CHART FUNCTION ---
   function renderChart(sales) {
     const ctx = document.getElementById('salesChart');
-    const days = 7;
-    const dataPoints = [];
-    const labels = [];
+    if(!ctx) return;
+    let html = '';
+    const today = new Date();
     
-    // Generate last 7 days buckets
+    // Find max value for scaling
+    let maxVal = 0;
+    const daysData = [];
     for(let i=6; i>=0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dStr = getDateString(d);
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-        
-        const dayTotal = sales
-            .filter(s => (s.date || '').startsWith(dStr))
-            .reduce((sum, s) => sum + Number(s.total || 0), 0);
-            
-        dataPoints.push(dayTotal);
-        labels.push(dayName);
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        const dStr = d.toISOString().split('T')[0];
+        const dayTotal = sales.filter(s => (s.date||'').startsWith(dStr)).reduce((sum,s)=>sum+Number(s.total||0),0);
+        if(dayTotal > maxVal) maxVal = dayTotal;
+        daysData.push({ date: d, val: dayTotal });
     }
 
-    const maxVal = Math.max(...dataPoints, 1); 
-
-    let html = '';
-    dataPoints.forEach((val, index) => {
-        // Calculate height (max 85%)
-        const heightPct = Math.round((val / maxVal) * 85); 
-        
-        // Format label: <1000 = exact, >1000 = 1.2k
-        let displayVal = '';
-        if(val > 0) {
-            displayVal = val >= 1000 
-                ? '₹' + (val/1000).toFixed(1) + 'k' 
-                : '₹' + val;
-        }
-
-        const activeClass = val > 0 ? 'active' : '';
-
-        html += `
-            <div class="bar-group">
-                <div class="bar-value">${displayVal}</div>
-                <div class="bar ${activeClass}" style="height: ${heightPct}%"></div>
-                <div class="bar-label">${labels[index]}</div>
-            </div>
-        `;
+    daysData.forEach(item => {
+        // Auto-scale height
+        const h = maxVal > 0 ? (item.val / maxVal * 100) : 5; 
+        const dateStr = item.date.toLocaleDateString('en-US',{weekday:'short'});
+        html += `<div class="bar-group"><div class="bar ${item.val>0?'active':''}" style="height:${h}%"></div><div class="bar-label">${dateStr}</div></div>`;
     });
     ctx.innerHTML = html;
   }
 
   function resetSales(){
-    if (confirm('⚠ Are you sure? This deletes all sales history permanently.')){ 
+    if (confirm('⚠ DANGER: Are you sure? This deletes ALL sales history permanently.')){ 
         try { localStorage.setItem('bharatpos_sales','[]'); } catch(e) {} 
         renderDashboard(); 
     }
   }
 
-  // --- FIX: Force Data Refresh on Visibility Change ---
-  // This ensures that if you add a sale in another tab/window and come back here,
-  // the data updates instantly without hitting refresh.
-  
-  // 1. Initial Load
-  loadUser();
-  renderDashboard();
+  // --- 4. AI SYNC LOGIC ---
+  async function sendDashboardSnapshot(metrics) {
+      const statusEl = document.getElementById('aiSyncStatus');
+      const textEl = document.getElementById('aiSyncText');
+      
+      const snapshot = {
+          type: 'dashboard_sync',
+          generated_at: new Date().toISOString(),
+          revenue_total: metrics.totalRev,
+          revenue_today: metrics.todayRev,
+          sales_count: metrics.salesCount,
+          low_stock_count: metrics.lowStock.length,
+          low_stock_items: metrics.lowStock.slice(0, 10).map(p => p.name), 
+          top_selling: Object.entries(metrics.productCounts)
+                             .sort((a,b)=>b[1]-a[1])
+                             .slice(0,5)
+                             .map(x=> ({name: x[0], qty: x[1]}))
+      };
 
-  // 2. Listen for tab switch (visibility change)
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-        renderDashboard(); // Re-fetch data from LocalStorage
-    }
+      console.log("📤 Preparing AI Snapshot:", snapshot);
+      
+      if(statusEl) statusEl.className = 'ai-sync-pill syncing';
+      if(textEl) textEl.innerText = "Syncing AI...";
+      
+      try {
+          const url = getApiUrl('/ai-business-consult');
+          
+          const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  snapshot: snapshot, 
+                  user_prompt: "Background Sync" 
+              })
+          });
+          
+          if(res.ok) {
+             console.log("✅ AI Snapshot Sent!");
+             if(statusEl) statusEl.className = 'ai-sync-pill synced';
+             if(textEl) textEl.innerText = "AI Active";
+          } else {
+             throw new Error(`Server Error: ${res.status}`);
+          }
+      } catch(e) {
+          console.warn("❌ AI Sync Fail:", e);
+          if(statusEl) statusEl.className = 'ai-sync-pill error';
+          if(textEl) textEl.innerText = "AI Offline";
+      }
+  }
+
+  // --- 5. EXECUTION START ---
+  document.addEventListener("DOMContentLoaded", () => {
+      setGreeting();
+      loadUser();
+      setTimeout(renderDashboard, 100);
   });
 
-  // 3. Listen for page show (fixes back button caching issues)
-  window.addEventListener("pageshow", (event) => {
-    if (event.persisted) {
-        renderDashboard();
-    }
+  document.addEventListener("visibilitychange", () => { 
+      if (!document.hidden) renderDashboard(); 
   });
 
 </script>
 </body>
 </html>
+
 
 
 
