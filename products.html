@@ -6,7 +6,7 @@
   <title>Products - Bharat POS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
   <script src="quagga.js"></script>
   <script src="bharatpos.js" defer></script>
@@ -18,7 +18,7 @@
       --bg-card: rgba(30, 41, 59, 0.6);
       --glass: blur(12px);
       --border: rgba(255, 255, 255, 0.1);
-      --accent: #f59e0b; /* Bharat POS Gold */
+      --accent: #f59e0b;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --success: #10b981;
@@ -99,14 +99,12 @@
     .btn-reset { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); }
     .btn-scan:active { transform: scale(0.96); }
 
-    /* HUD Video Container */
     .camera-wrapper {
       position: relative; border-radius: 12px; overflow: hidden;
-      background: #000; display: none; /* Hidden by default */
+      background: #000; display: none; 
       box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); border: 1px solid var(--accent);
     }
     #cameraPreview { width: 100%; height: 300px; object-fit: cover; display: block; }
-    
     .scan-line {
       position: absolute; top: 0; left: 0; width: 100%; height: 2px;
       background: var(--success); box-shadow: 0 0 10px var(--success);
@@ -114,9 +112,8 @@
     }
     @keyframes scanMove { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 
-    /* --- FORM STYLES --- */
+    /* --- FORM --- */
     .form-row { margin-bottom: 16px; position: relative; }
-    
     input {
       width: 100%; padding: 14px 12px; background: var(--input-bg);
       border: 1px solid var(--border); border-radius: 8px;
@@ -142,7 +139,7 @@
       cursor: pointer; font-size: 15px; margin-top: 10px;
     }
 
-    /* --- PRODUCT LIST (Responsive Table Fix) --- */
+    /* --- INVENTORY LIST (TABLE) --- */
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; color: var(--text-muted); font-size: 12px; padding: 10px; border-bottom: 1px solid var(--border); }
     td { padding: 12px 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -153,71 +150,63 @@
     }
     .delete-btn:hover { background: var(--danger); color: white; }
 
-    /* MOBILE CARD VIEW FIX */
+    /* --- MOBILE LIST FIX (COMPACT CARD) --- */
     @media (max-width: 600px) {
-      /* Hide Header */
-      thead { display: none; }
+      .card { padding: 15px; } /* Less padding on container */
       
-      /* Row becomes a Card */
-      tr { 
-        display: grid; 
-        grid-template-columns: 1fr auto; /* Name area | Price & Action */
-        grid-template-rows: auto auto auto;
-        gap: 5px;
-        background: rgba(255,255,255,0.03); 
-        margin-bottom: 10px; 
-        padding: 15px; 
-        border-radius: 12px; 
-        border: 1px solid var(--border); 
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; } /* Hide headers */
+      
+      /* Card Container */
+      tr {
+        display: grid;
+        grid-template-columns: 1fr auto; /* Name area | Action area */
+        gap: 4px;
+        background: rgba(255,255,255,0.03);
+        margin-bottom: 8px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        align-items: center;
       }
 
       /* Reset Cells */
-      td { border: none; padding: 0; display: block; }
+      td { padding: 0; border: none; }
 
-      /* Specific Cell Positioning */
-      /* Name: Full Width, Top */
-      td:nth-child(1) { 
-        grid-column: 1 / -1; 
-        font-weight: 700; font-size: 16px; color: #fff; margin-bottom: 5px; 
+      /* 1. Name: Top Left, Bold */
+      td:nth-child(1) {
+        grid-column: 1; grid-row: 1;
+        font-weight: 600; font-size: 14px; color: #fff;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
+
+      /* 2. Price: Top Right, Gold */
+      td:nth-child(3) {
+        grid-column: 2; grid-row: 1;
+        text-align: right; font-weight: 700; color: var(--accent); font-size: 14px;
+      }
+
+      /* 3. Info Row: Bottom Left (Stock + Category) */
+      td:nth-child(4) {
+        grid-column: 1; grid-row: 2;
+        font-size: 11px; color: var(--text-muted);
+        display: flex; align-items: center; gap: 8px;
+      }
+      /* Inject Category and Unit via CSS content trick is hard, so we assume stock is sufficient context */
+      td:nth-child(4)::before { content: "Stock: "; opacity: 0.7; }
       
-      /* Qty/Unit: Small Text under Name */
-      td:nth-child(2) { 
-        grid-column: 1; grid-row: 2; 
-        font-size: 12px; color: var(--text-muted); 
+      /* 4. Delete Button: Bottom Right */
+      td:nth-child(7) {
+        grid-column: 2; grid-row: 2;
+        text-align: right;
       }
-      td:nth-child(2)::before { content: "Qty: "; }
+      .delete-btn { padding: 4px 10px; font-size: 10px; }
 
-      /* Category: Small Text under Qty */
-      td:nth-child(6) { 
-        grid-column: 1; grid-row: 3; 
-        font-size: 11px; color: var(--text-muted); 
-        text-transform: uppercase; letter-spacing: 0.5px;
-        margin-top: 4px;
-      }
-
-      /* Price: Top Right, Big Gold */
-      td:nth-child(3) { 
-        grid-column: 2; grid-row: 1; 
-        text-align: right; 
-        color: var(--accent) !important; font-weight: 700; font-size: 16px;
-      }
-
-      /* Stock: Below Price */
-      td:nth-child(4) { 
-        grid-column: 2; grid-row: 2; 
-        text-align: right; font-size: 12px; color: var(--text-muted);
-      }
-      td:nth-child(4)::before { content: "Stock: "; }
-
-      /* Action: Bottom Right */
-      td:nth-child(7) { 
-        grid-column: 2; grid-row: 3; 
-        text-align: right; margin-top: 5px;
-      }
-
-      /* Hide Tax on Mobile to save space */
-      td:nth-child(5) { display: none; }
+      /* Hide less critical info on mobile */
+      td:nth-child(2), /* Qty */
+      td:nth-child(5), /* Tax */
+      td:nth-child(6)  /* Category */
+      { display: none; }
     }
 
     /* --- TOAST --- */
@@ -329,9 +318,7 @@
 <div id="toast">Message Here</div>
 
 <script>
-/* ------------------------ UI ENHANCEMENTS ------------------------ */
-
-// Custom Toast Function
+// --- UI ENHANCEMENTS ---
 function showToast(msg, isError = false) {
   const x = document.getElementById("toast");
   x.innerText = msg;
@@ -340,21 +327,17 @@ function showToast(msg, isError = false) {
   setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
 }
 
-// Wrapper for Camera UI toggling
 function uiStartScan() {
-  const cont = document.getElementById('cameraContainer');
-  cont.style.display = 'block'; // Show HUD
-  startLiveScan(); // Call original logic
+  document.getElementById('cameraContainer').style.display = 'block';
+  startLiveScan(); 
 }
 
 function uiStopScan() {
-  const cont = document.getElementById('cameraContainer');
-  cont.style.display = 'none'; // Hide HUD
-  stopLiveScan(); // Call original logic
+  document.getElementById('cameraContainer').style.display = 'none';
+  stopLiveScan(); 
 }
 
-/* ------------------------ ORIGINAL LOGIC PRESERVED ------------------------ */
-
+// --- CORE LOGIC ---
 function loadUser(){
   const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
   document.getElementById('profileName').textContent = data.name ? "👤 " + data.name : "👤 Guest";
@@ -364,21 +347,21 @@ loadUser();
 function renderProducts(){
   const products = getProducts();
   if(products.length===0) { 
-    document.getElementById('productsList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 No products found.<br>Add one using the form.</div>'; 
+    document.getElementById('productsList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 No products found.</div>'; 
     return;
   }
   
-  // Responsive Table HTML
-  let html = '<table><thead><tr><th>Name</th><th>Qty/Unit</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr></thead><tbody>';
+  // HTML Structure compatible with Desktop (Table) and Mobile (CSS Grid Override)
+  let html = '<table><thead><tr><th>Name</th><th>Qty</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr></thead><tbody>';
   products.forEach(p=>{
     html += `<tr>
-      <td data-label="Name" style="font-weight:600; color:#fff;">${p.name}</td>
-      <td data-label="Qty">${p.quantity || '-'}</td>
-      <td data-label="Price" style="color:var(--accent);">₹${p.price}</td>
-      <td data-label="Stock">${p.stock}</td>
-      <td data-label="Tax">${p.taxPercent}%</td>
-      <td data-label="Category">${p.category}</td>
-      <td data-label="Action"><button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button></td>
+      <td>${p.name}</td>
+      <td>${p.quantity || '-'}</td>
+      <td style="color:var(--accent);">₹${p.price}</td>
+      <td>${p.stock}</td>
+      <td>${p.taxPercent}%</td>
+      <td>${p.category}</td>
+      <td><button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button></td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -408,7 +391,7 @@ async function handleAddProduct(event){
   if(event && event.preventDefault) event.preventDefault();
   try {
     const qtyValue = document.getElementById('productQuantity').value;
-    await addProduct(); // from bharatpos.js
+    await addProduct(); 
     let products = getProducts();
     if(products.length > 0){
       let lastProduct = products[products.length - 1];
@@ -416,121 +399,72 @@ async function handleAddProduct(event){
       saveProducts(products);
     }
     renderProducts();
-    
-    // Reset form
     document.getElementById('productForm').reset();
     showToast("Product Added Successfully!");
-
   } catch(err){
-    console.error('Error adding product:', err);
+    console.error(err);
     showToast('Failed to add product', true);
   }
 }
 
-/* ------------------------ AI + BARCODE SCANNER LOGIC (UNTOUCHED) ------------------------ */
-
+// --- SCANNER LOGIC ---
 let cameraStream = null;
 let aiScanInterval = null;
 let barcodeScanFrameId = null; 
-
 let aiScanLocked = false;          
 let barcodeDecodeInProgress = false; 
 let lastDetectedBarcode = null;
 let lastBarcodeTime = 0;
-
 const barcodeCanvas = document.createElement('canvas'); 
 const barcodeCtx = barcodeCanvas.getContext('2d', { willReadFrequently: true });
 
 async function startLiveScan() {
   if (cameraStream) return;
   const video = document.getElementById("cameraPreview");
-  if (!video) return console.error("❌ cameraPreview missing");
-  
   try {
     cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { 
-        facingMode: "environment",
-        width: { ideal: 1280 },
-        height: { ideal: 720 } 
-      }
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
     }); 
     video.srcObject = cameraStream;
-    
     video.onloadedmetadata = () => {
       video.play();
       aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 2500);
       loopBarcodeScanning();
     };
-
-  } catch(err) {
-    console.error("Could not access camera:", err);
-    alert("Could not access camera. Check permissions.");
-  }
+  } catch(err) { alert("Camera access denied."); }
 }
 
 function stopLiveScan() {
-  if(aiScanInterval) {
-    clearInterval(aiScanInterval);
-    aiScanInterval = null;
-  }
-
-  if(barcodeScanFrameId) {
-    cancelAnimationFrame(barcodeScanFrameId);
-    barcodeScanFrameId = null;
-  }
-
-  barcodeDecodeInProgress = false;
-
-  if(cameraStream){
-    try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){}
-    cameraStream=null;
-  }
-
+  if(aiScanInterval) { clearInterval(aiScanInterval); aiScanInterval = null; }
+  if(barcodeScanFrameId) { cancelAnimationFrame(barcodeScanFrameId); barcodeScanFrameId = null; }
+  if(cameraStream){ try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){} cameraStream=null; }
   const video = document.getElementById("cameraPreview");
-  if(video) {
-    try { video.srcObject = null; } catch(e) {}
-  }
-
-  const barcodePreview = document.getElementById('barcodePreview');
-  if(barcodePreview) barcodePreview.innerHTML = '';
+  if(video) try { video.srcObject = null; } catch(e) {}
 }
 
 async function captureAndSendToAI(){
   const video = document.getElementById("cameraPreview");
   const canvas = document.getElementById("captureCanvas"); 
   if(!video || !canvas) return;
-
   const ctx = canvas.getContext("2d");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
   const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
-
   aiScanLocked = true;
-
   try{
     const url = buildUrl('/ai-product-scan');
     const res = await fetch(url, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
+      method: "POST", headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ imageBase64: base64 })
     });
-
     if(!res.ok) return;
-
     const data = await res.json();
-    console.log("🧠 AI scan data:", data);
-
     if(data && data.success && hasLogicalData(data.product)){
       fillProductFromAI(data.product);
       showToast("AI Detected Product!", false);
     } 
-  } catch(e){ 
-    console.error("❌ AI scan error:", e);
-  } finally {
-    aiScanLocked = false;
-  }
+  } catch(e){} finally { aiScanLocked = false; }
 }
 
 function loopBarcodeScanning() {
@@ -546,48 +480,25 @@ function loopBarcodeScanning() {
 function attemptFastBarcodeDecode() {
   const video = document.getElementById("cameraPreview");
   if (!video || video.videoWidth === 0) return;
-
   const currentVal = document.getElementById("productBarcode")?.value;
   if (currentVal && currentVal === lastDetectedBarcode) return;
-
   barcodeDecodeInProgress = true;
-
   const scale = 800 / video.videoWidth; 
   barcodeCanvas.width = 800;
   barcodeCanvas.height = video.videoHeight * scale;
-  
   barcodeCtx.drawImage(video, 0, 0, barcodeCanvas.width, barcodeCanvas.height);
   const dataUrl = barcodeCanvas.toDataURL("image/png");
-
   Quagga.decodeSingle({
-    src: dataUrl,
-    numOfWorkers: 2, 
-    inputStream: { size: 800, singleChannel: false },
-    locate: true, 
-    locator: { patchSize: "medium", halfSample: true },
+    src: dataUrl, numOfWorkers: 2, inputStream: { size: 800, singleChannel: false },
+    locate: true, locator: { patchSize: "medium", halfSample: true },
     decoder: { readers: ["ean_reader", "ean_8_reader", "upc_reader", "code_128_reader"] }
   }, function(result) {
     barcodeDecodeInProgress = false;
-
     if (result && result.codeResult && result.codeResult.code) {
       const code = result.codeResult.code;
-      
       if(code.length > 5) {
-        console.log('📦 FAST SCAN found:', code);
-        
         const barcodeField = document.getElementById("productBarcode");
-        if (barcodeField) {
-          barcodeField.value = code;
-          lastDetectedBarcode = code;
-          showToast("Barcode Scanned: " + code);
-        }
-
-        const preview = document.getElementById('barcodePreview');
-        if (preview) {
-           preview.innerHTML = `<div style="padding:10px; background:rgba(16,185,129,0.2); color:#10b981; border:1px solid #10b981; border-radius:5px; text-align:center;">
-             <strong>MATCH!</strong> Barcode: ${code} <br> Format: ${result.codeResult.format}
-           </div>`;
-        }
+        if (barcodeField) { barcodeField.value = code; lastDetectedBarcode = code; showToast("Barcode Scanned!"); }
       }
     }
   });
@@ -600,14 +511,11 @@ function fillProductFromAI(product){
   const qtyEl=document.getElementById("productQuantity");
   const priceEl=document.getElementById("productPrice");
   const catEl=document.getElementById("productCategory");
-
   if(!nameEl) return;
-  
   nameEl.value = product.name || nameEl.value;
   if(qtyEl) qtyEl.value = product.quantity || qtyEl.value;
   if(priceEl) priceEl.value = product.price || priceEl.value;
   if(catEl) catEl.value = product.category || catEl.value;
-  
   nameEl.focus();
 }
 
@@ -616,8 +524,6 @@ function resetAIScan(){
   stopLiveScan();
   document.getElementById("productForm").reset();
   lastDetectedBarcode = null;
-  const preview = document.getElementById('barcodePreview');
-  if(preview) preview.innerHTML = '';
   startLiveScan();
 }
 
@@ -625,56 +531,19 @@ window.startLiveScan = startLiveScan;
 window.stopLiveScan = stopLiveScan;
 window.resetAIScan = resetAIScan;
 
-/* URL PARAMS LOGIC */
 window.addEventListener('DOMContentLoaded', (event) => {
   const params = new URLSearchParams(window.location.search);
-  
   if (params.has('restock')) {
-    const pName  = params.get('restock');
-    const pPrice = params.get('price');
-    const pCat   = params.get('category');
-    const pTax   = params.get('tax');
-    const pStockCount = params.get('stock_val'); 
-    
-    const pUnitSize = params.get('unit_val') || params.get('unit') || params.get('quantity');
-
-    const findEl = (ids) => {
-      for (let id of ids) {
-        const el = document.getElementById(id);
-        if (el) return el;
-      }
-      return null;
-    };
-
-    const elName  = findEl(['productName', 'name']);
-    const elPrice = findEl(['productPrice', 'price']);
-    const elCat   = findEl(['productCategory', 'category']);
-    const elTax   = findEl(['productTax', 'tax']);
-    const elStock = findEl(['productStock', 'stock']); 
-    const elUnit  = findEl(['productQuantity', 'quantity', 'unit', 'size']);
-
-    if (elName) elName.value = pName;
-    if (elPrice && pPrice) elPrice.value = pPrice;
-    if (elCat && pCat) elCat.value = pCat;
-    if (elTax && pTax) elTax.value = pTax;
-    
-    if (elUnit && pUnitSize) elUnit.value = pUnitSize;
-
-    [elName, elPrice, elCat, elTax, elStock, elUnit].forEach(el => {
-      if(el) {
-        el.style.borderColor = "var(--accent)"; 
-        setTimeout(() => el.style.borderColor = "", 2000);
-      }
-    });
-    
-    if(elName) elName.focus();
+    const elName  = document.getElementById('productName');
+    if (elName) {
+        elName.value = params.get('restock');
+        elName.focus();
+    }
   }
 });
 </script>
 </body>
 </html>
-
-
 
 
 
