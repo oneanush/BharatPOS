@@ -1,213 +1,575 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>Billing - Bharat POS</title>
-  <link rel="stylesheet" href="bharatpos.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <style>
-    /* ... (Your existing styles) ... */
-    table { width:100%; border-collapse: collapse; margin: 6px 0; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    .total { margin-top: 6px; font-weight: bold; font-size: 1.1em; color: #0b5ed7; text-align: right; }
-    .card { padding: 12px; margin-bottom: 12px; background: #f7f7f7; border-radius: 6px; position: relative; }
-    .form-row { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
-    .small { font-size: 0.85em; color: #555; }
-    button { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; background: #0b5ed7; color: white; }
-    button:hover { background: #084298; }
-    .btn-danger { background: #dc3545; }
-    .btn-danger:hover { background: #bb2d3b; }
-    .hidden { display:none !important; } /* Force hide */
-    nav a { margin-right: 12px; }
-    .header { display:flex; justify-content: space-between; align-items:center; margin-bottom:12px; }
-    .brand { font-weight:bold; font-size:1.2em; }
-    .nav a { margin-left:8px; }
-
-    .billing-container { display: flex; gap: 16px; justify-content:center; align-items:flex-start; flex-wrap: wrap; }
-    .billing-container, .cart-section, #stockScrollBox { max-height: none !important; overflow: visible !important; }
-
-    #productGridWrap { width: 90%; margin: 6px auto; max-width: 1200px; }
-    #categoryFilters { display:flex; gap:6px; flex-wrap:wrap;margin-bottom:10px; }
-    #categoryFilters button { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; padding: 6px 12px; background-color: #0b5ed7; color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 13px; }
-    #categoryFilters button:hover { background-color: #0740a0; }
-
-    #productList { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; align-items: start; }
-    .prod-btn { aspect-ratio: 1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px; font-size:12px; border-radius:8px; border:1px solid #ccc; background: linear-gradient(180deg,#ffffff,#f0f6ff); cursor:pointer; overflow:hidden; transition: 0.15s; }
-    .prod-btn:active { transform: scale(0.97); }
-    .prod-name { font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-weight: 600; }
-    .prod-unit { font-size: 11px; font-weight: 700; color: #0b5ed7; margin: 2px 0; }
-    .prod-price { font-size:11px; color:#333; opacity:0.8; }
-
-    .stock-scroll { max-height: 50vh; overflow-y: auto; padding: 6px; border-radius: 8px; background: #f9f9f9; }
-    .cart-section { flex: 0.9; max-width:650px; min-width:320px; }
-    
-    .pay-mode-group { display: flex; gap: 15px; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; width: 100%; box-sizing: border-box; }
-    .pay-mode-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 500; font-size: 0.9em; }
-
-    @media (max-width:700px){
-      #productGridWrap{ width: 96%; }
-      .billing-container{  align-items:center; flex-direction:column; }
-      .cart-section{ width:96%; max-width: none; }
-    }
-
-    #scannerContainer { display: block; position: relative; width: 100%; max-width: 500px; height: 250px; background: #000; overflow: hidden; border-radius: 8px; margin: 10px auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
-    #scannerContainer video, #scannerContainer canvas { width: 100% !important; height: 100% !important; object-fit: cover; position: absolute; top: 0; left: 0; }
-    #scannerContainer::after { content: ''; position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: rgba(255, 0, 0, 0.7); box-shadow: 0 0 4px red; pointer-events: none; z-index: 10; }
-  </style>
-</head>
-
-<body>
-  <nav>
-    <a href="sales.html">Sales</a>
-    <a href="reports.html">Reports</a>
-    <a href="settings.html">Settings</a>
-    <a href="index.html">About</a>
-  </nav>
-
-  <div class="header">
-    <div class="global-header"> <img src="logo.png" class="global-logo"> </div>
-    <div class="brand"> Bharat POS</div>
-    <div class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="products.html">Products</a>
-    </div>
-  </div>
-
-  <div id="scannerContainer"></div>
-  <div style="margin-bottom:6px;">
-    <button id="openCamera">Start Scanner</button>
-    <button id="stopCamera" style="display:none; margin-left:6px;" class="btn-danger">Stop Scanner</button>
-    <span id="detectedCode" class="small"></span>
-  </div>
-  <input id="barcodeInput" class="hidden" autocomplete="off">
-
-  <div class="stock-scroll">
-    <div id="productGridWrap">
-      <h3 style="text-align:center;margin:6px 0;">Available Products</h3>
-      <div id="categoryFilters"></div>
-      <div id="productList" role="list"></div>
-    </div>
-  </div>
-
-  <div class="billing-container">
-    <div class="cart-section">
-      
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>Billing Details</h3>
-            <span id="billDateDisplay" class="small" style="font-weight:bold;"></span>
-        </div>
-        
-        <div class="form-row">
-            <input type="text" id="productSearch" placeholder="Search product..." style="flex:1; padding:8px;" oninput="handleSearch(this.value)">
-        </div>
-
-        <div class="form-row">
-            <input id="custName" placeholder="Customer Name" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
-            <input type="number" id="custPhone" placeholder="Mobile No. (Required for Udhaar)" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
-        </div>
-
-        <div id="searchResults" class="card" style="display:none;"></div>
-      </div>
-
-      <div class="card">
-        <h3>Cart Items</h3>
-        <div id="cartList"></div>
-        
-        <div class="form-row">
-          <input id="discount" type="number" placeholder="Discount ₹" value="" style="padding:6px; width:100px;" 
-            oninput="if(window.renderCart) renderCart(); if(window.renderBillItems) renderBillItems();">
-        </div>
-
-        <hr style="border-top:1px dashed #ccc; margin:10px 0;">
-
-        <div style="margin-bottom: 10px;">
-            <label class="small" style="font-weight:bold;">Payment Mode:</label>
-            <div class="pay-mode-group">
-                <label><input type="radio" name="payMode" value="Cash" checked> 💵 Cash</label>
-                <label><input type="radio" name="payMode" value="UPI"> 📱 UPI</label>
-                <label style="color:#dc3545; font-weight:bold;"><input type="radio" name="payMode" value="Udhaar"> 📒 Udhaar</label>
-            </div>
-        </div>
-
-        <div style="margin: 10px 0; text-align: right;">
-            <button onclick="sendWhatsAppBill()" style="background:#25d366; color:white; font-weight:bold; width:100%;">
-                📱 Send Bill on WhatsApp
-            </button>
-        </div>
-
-        <div class="total" id="grandTotal">Total: ₹0</div>
-        
-        <div class="form-row" style="margin-top:15px; justify-content: space-between;">
-            <button onclick="if(confirm('Clear cart?')) { window.cart=[]; window.renderCart(); }" class="btn-danger">Reset Cart</button>
-            <button onclick="completeSale()" style="font-size:1.1em; padding: 8px 20px;">✅ Checkout & Print</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="invoiceModal" class="card hidden" style="position:fixed; top:5%; left:5%; right:5%; z-index:1000; max-width:700px; margin:auto; border:2px solid #333; max-height:90vh; overflow-y:auto; box-shadow:0 0 20px rgba(0,0,0,0.5);">
-    <div id="invoiceContent"></div>
-    <div style="text-align:center; margin-top:10px;">
-      <h2 class="shop-name">Bharat POS</h2>
-      <p class="shop-phone"></p>
-      <div id="upiSection" style="display:none; text-align:center;">
-        <p><strong>Scan to Pay</strong></p>
-        <img id="upiQRImg" style="max-width:180px; border:1px solid #ccc; padding:5px;">
-      </div>
-    </div>
-    <div style="text-align:right;margin-top:8px">
-      <button onclick="window.print()">Print</button>
-      <button onclick="closeInvoice()" class="btn-danger">Close</button>
-    </div>
-  </div>
-
   <script src="bharatpos.js"></script>
   <script src="quagga.js"></script>
 
-<script>
-// --- UI FUNCTIONS ---
-function updateDateTime() { const now = new Date(); document.getElementById('billDateDisplay').innerText = now.toLocaleString('en-IN'); }
-setInterval(updateDateTime, 1000); updateDateTime();
-function renderBillCategories() { const products = (typeof getProducts==='function')?getProducts():[]; const c=document.getElementById('categoryFilters'); if(!c)return; const cats=['All',...new Set(products.map(p=>p.category).filter(Boolean))]; c.innerHTML=cats.map(k=>`<button onclick="renderBillGrid('${k}')">${k}</button>`).join(''); }
-function renderBillGrid(cat='All'){ const g=document.getElementById('productList'); if(!g)return; const ps=(typeof getProducts==='function')?getProducts():[]; g.innerHTML=''; const f=cat==='All'?ps:ps.filter(p=>p.category===cat); if(!f.length){g.innerHTML='<div class="small">No products</div>';return;} f.forEach(p=>{ const s=p.stock>0?`₹${p.price}`:'Out'; const u=p.quantity?`<div class="prod-unit">${p.quantity}</div>`:''; const d=document.createElement('div'); d.className='prod-btn'; d.onclick=()=>{if(window.addToBill)window.addToBill(p.id)}; d.innerHTML=`<div class="prod-name">${p.name}</div>${u}<div class="prod-price">${s}</div>`; g.appendChild(d); }); }
-function handleSearch(q){ const ps=getProducts(); const g=document.getElementById('productList'); g.innerHTML=''; const f=ps.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||(p.barcode&&p.barcode.includes(q))); f.forEach(p=>{ const u=p.quantity?`<div class="prod-unit">${p.quantity}</div>`:''; const d=document.createElement('div'); d.className='prod-btn'; d.onclick=()=>{if(window.addToBill)window.addToBill(p.id)}; d.innerHTML=`<div class="prod-name">${p.name}</div>${u}<div class="prod-price">₹${p.price}</div>`; g.appendChild(d); }); }
-document.addEventListener("DOMContentLoaded", ()=>{ renderBillCategories(); renderBillGrid(); });
+  <style>
+    /* --- VARIABLES & RESET --- */
+    :root {
+      --bg-body: #0f172a;
+      --bg-panel: #1e293b;
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b;
+      --primary: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --glass: blur(12px);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    }
+    
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      height: 100vh; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
 
-// --- FIXED CLOSE FUNCTION ---
-function closeInvoice() {
-    document.getElementById('invoiceModal').classList.add('hidden');
+    /* --- LAYOUT GRID --- */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px; 
+      height: calc(100vh - 65px); 
+      overflow: hidden;
+    }
+
+    /* --- HEADER --- */
+    .header {
+      height: 65px; background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; z-index: 100; backdrop-filter: var(--glass);
+      flex-shrink: 0;
+    }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .global-logo { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); }
+    .nav { display: flex; gap: 20px; }
+    .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
+    .nav a:hover, .nav a.active { color: var(--accent); }
+
+    /* --- LEFT PANEL: CATALOG (FIXED LAYOUT) --- */
+    .catalog-panel {
+      display: flex; flex-direction: column; 
+      height: 100%; 
+      background: radial-gradient(circle at 0% 0%, rgba(59,130,246,0.05), transparent 50%);
+      overflow: hidden; /* STOP THE PARENT SCROLLING */
+    }
+    
+    /* Search Bar Area */
+    .search-area {
+      padding: 20px 20px 10px 20px;
+      flex-shrink: 0; /* Never shrink */
+    }
+
+    .search-bar-wrap {
+      background: var(--bg-panel); padding: 8px 12px; border-radius: 12px;
+      box-shadow: var(--shadow-lg); display: flex; gap: 10px; align-items: center;
+      border: 1px solid var(--border);
+    }
+    #productSearch {
+      border: none; flex: 1; font-size: 15px; padding: 8px;
+      font-family: 'Inter', sans-serif; background: transparent; color: white;
+    }
+    .btn-scan { background: none; border: none; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+    
+    /* Categories Area */
+    .category-area {
+      padding: 0 20px 15px 20px;
+      flex-shrink: 0; /* Never shrink */
+      border-bottom: 1px solid var(--border);
+    }
+
+    #categoryFilters {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px;
+      scrollbar-width: none;
+    }
+    #categoryFilters::-webkit-scrollbar { display: none; }
+    
+    .cat-btn {
+      white-space: nowrap; padding: 8px 16px; border-radius: 20px;
+      font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); color: var(--text-muted); transition: 0.2s;
+    }
+    .cat-btn:hover, .cat-btn.active {
+      background: var(--primary); color: white; border-color: var(--primary); 
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Product Grid (THE ONLY SCROLLABLE PART) */
+    .product-scroll-area {
+      flex-grow: 1; /* Take all remaining height */
+      overflow-y: auto; /* Scroll inside here */
+      padding: 20px;
+    }
+
+    #productList {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px;
+      padding-bottom: 80px; /* Space for mobile bottom sheet */
+    }
+
+    /* Product Cards */
+    .prod-card {
+      background: var(--bg-panel); border-radius: 16px; padding: 15px;
+      border: 1px solid var(--border); cursor: pointer;
+      display: flex; flex-direction: column; justify-content: space-between; height: 130px;
+      transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative; overflow: hidden;
+    }
+    .prod-card:active { transform: scale(0.95); }
+    
+    .prod-name { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--text-main); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .prod-meta { margin-top: auto; }
+    .prod-unit { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+    .prod-price { font-size: 16px; color: var(--accent); font-weight: 700; margin-top: 4px; }
+    .out-stock { opacity: 0.5; pointer-events: none; filter: grayscale(1); border: 1px dashed var(--danger); }
+    
+    /* --- RIGHT PANEL: CART --- */
+    .cart-panel {
+      background: #111827; border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; height: 100%;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.3); z-index: 20;
+    }
+    
+    .cart-header {
+      padding: 20px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2);
+      display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+    .cart-title { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .date-badge { background: rgba(255,255,255,0.1); font-size: 11px; padding: 4px 8px; border-radius: 4px; color: var(--text-muted); }
+
+    .cart-body { flex: 1; overflow-y: auto; padding: 0; }
+    .cart-items-list table { width: 100%; border-collapse: collapse; }
+    .cart-items-list th { text-align: left; font-size: 11px; color: var(--text-muted); padding: 10px 15px; border-bottom: 1px solid var(--border); background: #1f2937; position: sticky; top: 0; text-transform: uppercase; letter-spacing: 1px; }
+    .cart-items-list td { padding: 12px 15px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; color: #e2e8f0; }
+    
+    .qty-ctrl { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; padding: 2px; width: fit-content; }
+    .qty-btn { width: 24px; height: 24px; border-radius: 4px; border: none; background: transparent; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .qty-btn:hover { background: rgba(255,255,255,0.1); }
+    .qty-val { font-weight: 600; width: 20px; text-align: center; font-size: 13px; }
+
+    /* Payment Area (Fixed at bottom) */
+    .checkout-area {
+        flex-shrink: 0;
+        display: flex; flex-direction: column;
+    }
+    .customer-form { padding: 15px 20px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); }
+    .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .fancy-input {
+      width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; background: rgba(255,255,255,0.05); color: #fff; transition: 0.2s;
+    }
+    .fancy-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
+
+    .payment-area { padding: 20px; background: #111827; border-top: 1px solid var(--border); }
+    
+    .pay-mode-chips { display: flex; gap: 8px; margin-bottom: 15px; }
+    .chip-radio { display: none; }
+    .chip-label {
+      flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+      text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s;
+      background: rgba(255,255,255,0.03); color: var(--text-muted);
+    }
+    .chip-radio:checked + .chip-label { background: var(--text-main); color: #000; border-color: var(--text-main); }
+    .chip-radio[value="Udhaar"]:checked + .chip-label { background: var(--danger); color: white; border-color: var(--danger); }
+    .chip-radio[value="UPI"]:checked + .chip-label { background: var(--success); color: white; border-color: var(--success); }
+
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; color: var(--text-muted); }
+    .grand-total { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 20px; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+    
+    .checkout-btn {
+      width: 100%; background: var(--primary); color: white; border: none;
+      padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700;
+      margin-top: 15px; cursor: pointer; transition: transform 0.1s;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    .checkout-btn:active { transform: scale(0.98); }
+
+    /* --- RESPONSIVE MOBILE --- */
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      
+      .cart-panel {
+        position: fixed; bottom: 0; left: 0; width: 100%; height: auto;
+        border-top: 1px solid var(--border); border-radius: 20px 20px 0 0;
+        box-shadow: 0 -5px 30px rgba(0,0,0,0.5);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000; max-height: 85vh; background: #1e293b;
+      }
+      .cart-panel.collapsed { transform: translateY(calc(100% - 75px)); }
+      
+      .cart-toggle-bar {
+        display: flex; justify-content: center; padding: 10px; cursor: pointer;
+        border-bottom: 1px solid var(--border);
+      }
+      .cart-handle { width: 50px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; }
+      
+      .cart-body { max-height: 40vh; }
+    }
+    @media (min-width: 901px) {
+      .cart-toggle-bar { display: none; }
+    }
+
+    /* --- SCANNER MODAL --- */
+    .scanner-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95); z-index: 2000;
+      display: none; align-items: center; justify-content: center; flex-direction: column;
+    }
+    .scanner-view { width: 90%; max-width: 500px; height: 300px; background: black; position: relative; border-radius: 12px; overflow: hidden; border: 2px solid var(--accent); }
+    #scannerContainer video { width: 100%; height: 100%; object-fit: cover; }
+    .scan-laser { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--danger); box-shadow: 0 0 15px red; animation: scan 2s infinite; }
+    @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+
+    .shake { animation: shake 0.3s; }
+    @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(5px); } 50% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <img src="logo.png" class="global-logo">
+    Bharat POS
+  </div>
+  <div class="nav">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html" class="active">Sales</a>
+  </div>
+</div>
+
+<div class="app-layout">
+
+  <div class="catalog-panel">
+    
+    <div class="search-area">
+      <div class="search-bar-wrap">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--accent)"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <input type="text" id="productSearch" placeholder="Search item or scan..." oninput="handleSearch(this.value)" autocomplete="off">
+        <button class="btn-scan" onclick="openScanner()" title="Start Camera">
+          <i class="fa-solid fa-camera"></i>
+        </button>
+        <input id="barcodeInput" style="display:none;"> 
+      </div>
+    </div>
+
+    <div class="category-area">
+      <div id="categoryFilters">
+        </div>
+    </div>
+
+    <div class="product-scroll-area">
+      <div id="productList">
+        </div>
+    </div>
+  </div>
+
+  <div class="cart-panel" id="cartPanel">
+    
+    <div class="cart-toggle-bar" onclick="toggleCart()">
+      <div class="cart-handle"></div>
+    </div>
+
+    <div class="cart-header">
+      <div class="cart-title">
+        <span>🛒 Order Details</span>
+        <span class="date-badge" id="billDateDisplay"></span>
+      </div>
+      <button onclick="clearCartConfirm()" style="color:var(--danger); background:none; border:none; font-size:12px; font-weight:600; cursor:pointer;">
+        <i class="fa-solid fa-trash"></i> Reset
+      </button>
+    </div>
+
+    <div class="cart-body">
+      <div id="cartList" class="cart-items-list"></div>
+    </div>
+
+    <div class="checkout-area">
+      <div class="customer-form">
+        <div class="input-row">
+          <input id="custName" class="fancy-input" placeholder="Customer Name">
+          <input type="number" id="custPhone" class="fancy-input" placeholder="Mobile No.">
+        </div>
+        <button onclick="sendWhatsAppBill()" style="width:100%; background:rgba(37, 211, 102, 0.1); color:#25d366; border:1px solid #25d366; padding:10px; border-radius:8px; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:0.2s;">
+          <i class="fa-brands fa-whatsapp" style="font-size:16px;"></i> Send via WhatsApp
+        </button>
+      </div>
+
+      <div class="payment-area">
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span id="subTotalVal">₹0</span>
+        </div>
+        <div class="summary-row" style="align-items:center;">
+          <span>Discount (₹)</span>
+          <input id="discount" type="number" placeholder="0" style="width:70px; padding:6px; border:1px solid var(--border); border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; text-align:right;" oninput="renderCart()">
+        </div>
+        
+        <div class="grand-total" id="totalDisplayBox">
+          <span>TOTAL TO PAY</span>
+          <span id="grandTotal">₹0</span>
+        </div>
+
+        <div style="margin:15px 0;">
+          <div class="pay-mode-chips">
+            <input type="radio" name="payMode" value="Cash" id="pmCash" class="chip-radio" checked>
+            <label for="pmCash" class="chip-label">💵 Cash</label>
+            
+            <input type="radio" name="payMode" value="UPI" id="pmUPI" class="chip-radio">
+            <label for="pmUPI" class="chip-label">📱 UPI</label>
+            
+            <input type="radio" name="payMode" value="Udhaar" id="pmUdhaar" class="chip-radio">
+            <label for="pmUdhaar" class="chip-label">📒 Udhaar</label>
+          </div>
+        </div>
+
+        <button class="checkout-btn" onclick="completeSale()">
+          ✅ Checkout & Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="scannerModal" class="scanner-modal">
+  <div class="scanner-view" id="scannerContainer">
+    <div class="scan-laser"></div>
+  </div>
+  <button onclick="closeScanner()" style="margin-top:25px; background:white; border:none; padding:12px 30px; border-radius:30px; font-weight:bold; cursor:pointer;">Close Camera</button>
+</div>
+
+<div id="invoiceModal" style="display:none;">
+    <div id="invoiceContent"></div>
+</div>
+
+<script>
+/* --- SOUND EFFECTS (Simple Beep) --- */
+const beepCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep() {
+    if (beepCtx.state === 'suspended') beepCtx.resume();
+    const osc = beepCtx.createOscillator();
+    const gain = beepCtx.createGain();
+    osc.connect(gain);
+    gain.connect(beepCtx.destination);
+    osc.frequency.value = 800;
+    gain.gain.value = 0.1;
+    osc.start();
+    setTimeout(() => osc.stop(), 100);
 }
 
-// --- FIXED WHATSAPP LOGIC (Reads Storage Directly) ---
+// Time Updater
+setInterval(() => {
+    document.getElementById('billDateDisplay').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}, 1000);
+
+// --- 1. RENDER CATALOG ---
+function renderBillCategories() {
+    const products = (typeof getProducts==='function')?getProducts():[];
+    const cats = ['All', ...new Set(products.map(p=>p.category).filter(Boolean))];
+    const c = document.getElementById('categoryFilters');
+    c.innerHTML = cats.map((k, i) => 
+        `<button class="cat-btn ${i===0?'active':''}" onclick="filterCat(this, '${k}')">${k}</button>`
+    ).join('');
+}
+
+function filterCat(btn, cat) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderBillGrid(cat);
+}
+
+function renderBillGrid(cat='All'){
+    const g = document.getElementById('productList');
+    const ps = (typeof getProducts==='function')?getProducts():[];
+    g.innerHTML = '';
+    
+    const f = cat==='All' ? ps : ps.filter(p => p.category === cat);
+    
+    if(!f.length){ g.innerHTML='<div style="grid-column:1/-1; text-align:center; padding:40px; color:#64748b;">No items found</div>'; return; }
+    
+    f.forEach(p => {
+        const isOut = p.stock <= 0;
+        const div = document.createElement('div');
+        div.className = `prod-card ${isOut ? 'out-stock' : ''}`;
+        div.onclick = () => { if(!isOut && window.addToBill) { window.addToBill(p.id); playBeep(); } };
+        
+        div.innerHTML = `
+            <div class="prod-name">${p.name}</div>
+            <div class="prod-meta">
+                <div class="prod-unit">${p.quantity || 'Unit'}</div>
+                <div class="prod-price">₹${p.price}</div>
+            </div>
+            ${isOut ? '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-10deg); color:#ef4444; font-weight:900; border:2px solid #ef4444; padding:4px 8px; border-radius:4px; font-size:12px;">OUT OF STOCK</div>' : ''}
+        `;
+        g.appendChild(div);
+    });
+}
+
+function handleSearch(q){
+    const ps = getProducts();
+    const g = document.getElementById('productList');
+    g.innerHTML = '';
+    const f = ps.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || (p.barcode && p.barcode.includes(q)));
+    
+    f.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'prod-card';
+        div.onclick = () => { if(window.addToBill) { window.addToBill(p.id); playBeep(); } };
+        div.innerHTML = `
+            <div class="prod-name">${p.name}</div>
+            <div class="prod-meta">
+                <div class="prod-unit">${p.quantity||''}</div>
+                <div class="prod-price">₹${p.price}</div>
+            </div>
+        `;
+        g.appendChild(div);
+    });
+}
+
+// --- 2. CART RENDER (Enhanced) ---
+window.renderCart = function() {
+    const list = document.getElementById('cartList');
+    const totalEl = document.getElementById('grandTotal');
+    const subTotalEl = document.getElementById('subTotalVal');
+    const discInput = document.getElementById('discount');
+    const totalBox = document.getElementById('totalDisplayBox');
+    
+    // Shake Animation on Update
+    if(totalBox) {
+        totalBox.classList.remove('shake');
+        void totalBox.offsetWidth; // trigger reflow
+        totalBox.classList.add('shake');
+    }
+
+    if(!window.cart || window.cart.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#475569;"><div style="font-size:40px; margin-bottom:15px; opacity:0.5;">🛒</div><div>Your cart is empty</div><div style="font-size:12px; margin-top:5px;">Scan or click items to add</div></div>';
+        totalEl.innerText = "₹0";
+        if(subTotalEl) subTotalEl.innerText = "₹0";
+        return;
+    }
+
+    let subTotal = 0;
+    let html = '<table><thead><tr><th>Item</th><th style="width:90px; text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="width:30px;"></th></tr></thead><tbody>';
+    
+    window.cart.forEach((item, index) => {
+        const itemTotal = item.price * item.qty;
+        subTotal += itemTotal;
+        html += `
+        <tr>
+            <td>
+                <div style="font-weight:600; color:#fff;">${item.name}</div>
+                <div style="font-size:11px; color:#94a3b8;">₹${item.price} / unit</div>
+            </td>
+            <td>
+                <div class="qty-ctrl">
+                    <button class="qty-btn" onclick="updateQty(${index}, -1)">-</button>
+                    <span class="qty-val">${item.qty}</span>
+                    <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
+                </div>
+            </td>
+            <td style="text-align:right; font-weight:600; color:#fff;">₹${itemTotal}</td>
+            <td style="text-align:right;">
+                <button onclick="removeFromCart(${index})" style="color:#ef4444; background:none; border:none; cursor:pointer; font-size:16px;">&times;</button>
+            </td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    list.innerHTML = html;
+
+    if(subTotalEl) subTotalEl.innerText = "₹" + subTotal;
+    
+    const disc = parseFloat(discInput.value) || 0;
+    const final = Math.max(0, subTotal - disc);
+    totalEl.innerText = "₹" + final;
+}
+
+// --- 3. UI HELPERS ---
+function toggleCart() {
+    const panel = document.getElementById('cartPanel');
+    panel.classList.toggle('collapsed');
+}
+
+function clearCartConfirm() {
+    if(confirm('Empty the cart?')) {
+        window.cart = [];
+        renderCart();
+    }
+}
+
+// --- KEYBOARD SHORTCUTS ---
+document.addEventListener('keydown', (e) => {
+    if (e.key === '/') {
+        e.preventDefault();
+        document.getElementById('productSearch').focus();
+    }
+    if (e.key === 'Escape') {
+        document.getElementById('productSearch').value = '';
+        document.getElementById('productSearch').blur();
+        renderBillGrid();
+    }
+});
+
+// --- INIT ---
+document.addEventListener("DOMContentLoaded", ()=>{
+    renderBillCategories();
+    renderBillGrid();
+    renderCart();
+    
+    // Auto collapse cart on mobile initially
+    if(window.innerWidth < 900) {
+        document.getElementById('cartPanel').classList.add('collapsed');
+    }
+});
+
+// --- SCANNER UI ---
+function openScanner() {
+    document.getElementById('scannerModal').style.display = 'flex';
+    const btn = document.getElementById('openCamera'); 
+    if(btn) btn.click();
+}
+
+function closeScanner() {
+    document.getElementById('scannerModal').style.display = 'none';
+    const btn = document.getElementById('stopCamera');
+    if(btn) btn.click();
+}
+
+// --- WHATSAPP ---
 function sendWhatsAppBill() {
     const phone = document.getElementById('custPhone').value; 
     const custName = document.getElementById('custName').value || "Customer";
-    
-    // 1. Validation
-    if (!phone || phone.length < 10) { 
-        alert("Please enter a valid Mobile Number!"); 
-        return; 
-    }
-
-    // 2. The Link to your Khata Page
+    if (!phone || phone.length < 10) { alert("Please enter valid Mobile No."); return; }
     const khataLink = "https://oneanush.github.io/BharatPOS/my_khata.html";
+    
+    let total = 0;
+    if(window.cart) window.cart.forEach(i => total += i.price * i.qty);
+    const disc = parseFloat(document.getElementById('discount').value) || 0;
+    const final = Math.max(0, total - disc);
 
-    // 3. Construct the Message (Using %0A for new lines)
     let msg = `Namaste ${custName}! 🙏%0A%0A`;
-    msg += `Thank you for visiting our shop!%0A`;
-    msg += `You can view your invoice history and pending dues here:%0A`;
-    msg += `${khataLink}`;
-
-    // 4. Open WhatsApp
+    msg += `Your bill total is *₹${final}*.%0A`;
+    msg += `View details: ${khataLink}`;
     window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
 }
 </script>
 </body>
 </html>
-
 
 
 
