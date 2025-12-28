@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Reports - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
+<script src="bharatpos.js"></script>
   <style>
     /* --- General Layout & Card --- */
     body {
@@ -353,8 +354,6 @@ function renderReports(){
 }
 
 // --- Snapshot & Upload Helpers for Reports Page ---
-const REPORTS_API_BASE = 'http://localhost:5185';
-
 function hashStringDjb2(str) {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
@@ -364,14 +363,6 @@ function hashStringDjb2(str) {
   return (hash >>> 0).toString(16);
 }
 
-function buildUrlForReports(endpoint) {
-  if (!endpoint) return REPORTS_API_BASE || '';
-  const ep = endpoint.replace(/^\//,'');
-  if (!REPORTS_API_BASE) return '/' + ep;
-  const normalizedBase = REPORTS_API_BASE.replace(/\/+$/,'');
-  if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
-  return normalizedBase + '/' + ep;
-}
 
 async function sendReportsSnapshotIfChanged(snapshot) {
   try {
@@ -433,7 +424,6 @@ document.addEventListener('DOMContentLoaded', renderReports);
 
 </body>
 </html>
-
 
 
 
