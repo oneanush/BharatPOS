@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Business Advice - Bharat POS</title>
   <link rel="stylesheet" href="bharatpos.css">
+<script src="bharatpos.js"></script>
   <style>
     .ai-container { max-width:900px; margin:20px auto; padding:20px }
     .ai-card { background:var(--card-bg,#fff); border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1) }
@@ -12,6 +13,68 @@
     .ai-btn { margin-top:10px; padding:10px 18px; font-size:15px; background:#0d6efd; color:#fff; border:none; border-radius:6px; cursor:pointer }
     .ai-prompt { width:100%; padding:8px; border-radius:6px; margin-top:10px; resize:vertical }
     .ai-loading { opacity:0.7 }
+
+
+
+
+/* AI Container Styles */
+.ai-suggestion-card {
+    background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+    border: 1px solid #333;
+    border-left: 5px solid #00d2ff; /* Cyber Blue Accent */
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+    box-shadow: 0 10px 30px rgba(0, 210, 255, 0.1);
+    font-family: 'Segoe UI', sans-serif;
+    color: #e0e0e0;
+    line-height: 1.6;
+    position: relative;
+    overflow: hidden;
+}
+
+/* The Glowing "AI" Badge */
+.ai-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #00d2ff;
+    color: #000;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-bottom-left-radius: 12px;
+}
+
+/* Formatting for the text returned by AI */
+.ai-text h3, .ai-text strong {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1em;
+}
+
+.ai-text ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.ai-text li {
+    margin-bottom: 8px;
+    list-style-type: none;
+    position: relative;
+}
+
+.ai-text li::before {
+    content: "⚡";
+    position: absolute;
+    left: -25px;
+    color: #ffd700;
+}
+
+
+
+
+
   </style>
 </head>
 <body>
@@ -44,18 +107,7 @@
 
 <script>
   // Use your Cloudflare server as API base (no trailing slash)
-  const API_BASE = 'http://localhost:5185';
-
-  // Build URL safely (avoids double-path if API_BASE already contains endpoint)
-  function buildUrl(endpoint) {
-    if (!endpoint) return API_BASE || '';
-    const ep = endpoint.replace(/^\//,'');
-    if (!API_BASE) return '/' + ep;
-    const normalizedBase = API_BASE.replace(/\/+$/,'');
-    if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
-    return normalizedBase + '/' + ep;
-  }
-
+ 
   function getStoredSnapshot() {
     try {
       const snap = localStorage.getItem('bharatpos_ai_snapshot');
@@ -85,55 +137,77 @@
       return { generated_at: new Date().toISOString() };
     }
   }
-
-  async function getAIAdvice(){
+async function getAIAdvice() {
     const aiOutput = document.getElementById('aiOutput');
     const aiBtn = document.getElementById('aiBtn');
+    
+    // 1. Better Loading State
     aiOutput.classList.add('ai-loading');
-    aiOutput.innerText = '⏳ Analysing your business data...';
+    aiOutput.innerHTML = `
+        <div style="text-align:center; padding:20px; color:#888;">
+            <div style="font-size:24px; margin-bottom:10px; animation: pulse 1.5s infinite;">🧠</div>
+            <div>Analyzing Sales Patterns & Thinking...</div>
+        </div>`;
     aiBtn.disabled = true;
 
+    // 2. Prepare Data (Keep your existing logic)
     const promptBox = document.getElementById('aiPrompt');
     const prompt = promptBox ? promptBox.value.trim() : '';
-
-    const snapshot = getStoredSnapshot();
-    const payload = { snapshot, user_prompt: prompt }; // server expects user_prompt
+    
+    // Ensure getStoredSnapshot exists, otherwise send empty object
+    const snapshot = (typeof getStoredSnapshot === 'function') ? getStoredSnapshot() : {};
+    const payload = { snapshot, user_prompt: prompt };
 
     const url = buildUrl('/ai-business-consult');
+
     try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-      if (!res.ok) {
-        const text = await res.text().catch(()=>null);
-        aiOutput.classList.remove('ai-loading');
-        aiOutput.innerText = `Server error: ${res.status} ${res.statusText}` + (text ? `\n\n${text}` : '');
-        return;
-      }
+        if (!res.ok) {
+            const text = await res.text().catch(() => null);
+            throw new Error(`Server error: ${res.status} ${text || ''}`);
+        }
 
-      const result = await res.json();
-      if (result && result.success && (result.advice || result.reply || result.message)) {
+        const result = await res.json();
+        const rawAdvice = result.advice || result.reply || result.message;
+
+        if (result.success && rawAdvice) {
+            // 3. THE UPGRADE: Format the text to look professional
+            // Converts **bold** to <strong> and new lines to <br>
+            let formattedText = rawAdvice
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#fff;">$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            // 4. Inject the Fancy Card HTML
+            aiOutput.innerHTML = `
+                <div class="ai-suggestion-card">
+                    <div class="ai-badge">BHARAT AI STRATEGIST</div>
+                    <div class="ai-text">
+                        ${formattedText}
+                    </div>
+                </div>`;
+            aiOutput.classList.remove('ai-loading');
+
+        } else {
+            throw new Error(result.message || 'AI returned no advice.');
+        }
+
+    } catch (err) {
+        console.error('AI request failed:', err);
         aiOutput.classList.remove('ai-loading');
-        aiOutput.innerText = result.advice || result.reply || result.message || 'AI returned no advice.';
-      } else if (result && !result.success && result.message) {
-        aiOutput.classList.remove('ai-loading');
-        aiOutput.innerText = `AI could not generate advice: ${result.message}`;
-      } else {
-        aiOutput.classList.remove('ai-loading');
-        aiOutput.innerText = 'AI returned an unexpected response.';
-        console.warn('Unexpected AI response', result);
-      }
-    } catch(err) {
-      console.error('AI request failed:', err);
-      aiOutput.classList.remove('ai-loading');
-      aiOutput.innerText = 'Failed to connect to AI server. See console for details.';
+        // Show error in a red box
+        aiOutput.innerHTML = `
+            <div style="border:1px solid #ff4444; background:#330000; color:#ffcccc; padding:15px; border-radius:8px;">
+                <strong>Connection Failed:</strong> <br> ${err.message}
+            </div>`;
     } finally {
-      aiBtn.disabled = false;
+        aiBtn.disabled = false;
     }
-  }
+}
 </script>
 </body>
 </html>
