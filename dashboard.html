@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+<script src="bharatpos.js"></script>
+  
   <title>Bharat POS — Dashboard</title>
   <link rel="stylesheet" href="bharatpos.css">
 </head>
@@ -164,13 +169,6 @@
   </div>
 </a>
 
-
-
-
-
-
-
-
 <a href="udhaar.html" style="text-decoration:none;">
       <div class="card" style="border-left: 5px solid #dc3545; cursor:pointer; transition:transform 0.2s;">
         <h3>Pending Udhaar</h3>
@@ -178,13 +176,6 @@
         <div class="small" id="udhaarCount">Click to Manage ></div>
       </div>
   </a>
-
-
-
-
-
-
-
 
 <div style="margin:20px; text-align: center;">
   <button onclick="resetSales()" style="padding: 10px 20px; cursor: pointer; background: #333; color: white; border: none; border-radius: 5px;">Reset Sales Data</button>
@@ -315,11 +306,7 @@
     // 6. RENDER THE CHART (UPDATED)
     renderChart(sales);
 
-
-
-
-
-// --- UDHAAR LOGIC ---
+    // --- UDHAAR LOGIC ---
     const ledger = safeParse(localStorage.getItem('bharatpos_ledger') || '[]');
     // Filter only unpaid debts
     const pendingDebts = ledger.filter(l => !l.isPaid);
@@ -328,11 +315,6 @@
     
     document.getElementById('totalUdhaar').textContent = formatCurrency(totalPending);
     document.getElementById('udhaarCount').textContent = `${pendingDebts.length} Customers pending`;
-
-
-
-
-
   }
 
   // --- UPDATED CHART FUNCTION ---
@@ -392,13 +374,31 @@
     }
   }
 
+  // --- FIX: Force Data Refresh on Visibility Change ---
+  // This ensures that if you add a sale in another tab/window and come back here,
+  // the data updates instantly without hitting refresh.
+  
+  // 1. Initial Load
   loadUser();
   renderDashboard();
+
+  // 2. Listen for tab switch (visibility change)
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        renderDashboard(); // Re-fetch data from LocalStorage
+    }
+  });
+
+  // 3. Listen for page show (fixes back button caching issues)
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+        renderDashboard();
+    }
+  });
 
 </script>
 </body>
 </html>
-
 
 
 
