@@ -44,7 +44,7 @@
       z-index: -1; pointer-events: none;
     }
 
-    /* --- NAVIGATION (Preserved Links) --- */
+    /* --- NAVIGATION --- */
     nav {
       display: flex; align-items: center; justify-content: flex-end;
       padding: 15px 20px; gap: 15px;
@@ -107,7 +107,6 @@
     }
     #cameraPreview { width: 100%; height: 300px; object-fit: cover; display: block; }
     
-    /* Scanning Animation Line */
     .scan-line {
       position: absolute; top: 0; left: 0; width: 100%; height: 2px;
       background: var(--success); box-shadow: 0 0 10px var(--success);
@@ -125,9 +124,8 @@
       font-family: 'Inter', sans-serif;
     }
     input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
-    input::placeholder { color: transparent; } /* Hide default placeholder for floating label effect */
+    input::placeholder { color: transparent; } 
 
-    /* Floating Label Magic */
     .floating-label {
       position: absolute; left: 12px; top: 14px; color: var(--text-muted);
       font-size: 14px; pointer-events: none; transition: 0.2s;
@@ -144,7 +142,7 @@
       cursor: pointer; font-size: 15px; margin-top: 10px;
     }
 
-    /* --- PRODUCT LIST (Responsive Table) --- */
+    /* --- PRODUCT LIST (Responsive Table Fix) --- */
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; color: var(--text-muted); font-size: 12px; padding: 10px; border-bottom: 1px solid var(--border); }
     td { padding: 12px 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -155,13 +153,71 @@
     }
     .delete-btn:hover { background: var(--danger); color: white; }
 
-    /* Mobile Table Transformation */
+    /* MOBILE CARD VIEW FIX */
     @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr { display: block; }
-      thead tr { position: absolute; top: -9999px; left: -9999px; }
-      tr { margin-bottom: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; border: 1px solid var(--border); }
-      td { border: none; padding: 6px 0; position: relative; padding-left: 40%; display: flex; align-items: center; }
-      td:before { position: absolute; left: 0; width: 35%; white-space: nowrap; content: attr(data-label); color: var(--text-muted); font-size: 12px; font-weight: 600; }
+      /* Hide Header */
+      thead { display: none; }
+      
+      /* Row becomes a Card */
+      tr { 
+        display: grid; 
+        grid-template-columns: 1fr auto; /* Name area | Price & Action */
+        grid-template-rows: auto auto auto;
+        gap: 5px;
+        background: rgba(255,255,255,0.03); 
+        margin-bottom: 10px; 
+        padding: 15px; 
+        border-radius: 12px; 
+        border: 1px solid var(--border); 
+      }
+
+      /* Reset Cells */
+      td { border: none; padding: 0; display: block; }
+
+      /* Specific Cell Positioning */
+      /* Name: Full Width, Top */
+      td:nth-child(1) { 
+        grid-column: 1 / -1; 
+        font-weight: 700; font-size: 16px; color: #fff; margin-bottom: 5px; 
+      }
+      
+      /* Qty/Unit: Small Text under Name */
+      td:nth-child(2) { 
+        grid-column: 1; grid-row: 2; 
+        font-size: 12px; color: var(--text-muted); 
+      }
+      td:nth-child(2)::before { content: "Qty: "; }
+
+      /* Category: Small Text under Qty */
+      td:nth-child(6) { 
+        grid-column: 1; grid-row: 3; 
+        font-size: 11px; color: var(--text-muted); 
+        text-transform: uppercase; letter-spacing: 0.5px;
+        margin-top: 4px;
+      }
+
+      /* Price: Top Right, Big Gold */
+      td:nth-child(3) { 
+        grid-column: 2; grid-row: 1; 
+        text-align: right; 
+        color: var(--accent) !important; font-weight: 700; font-size: 16px;
+      }
+
+      /* Stock: Below Price */
+      td:nth-child(4) { 
+        grid-column: 2; grid-row: 2; 
+        text-align: right; font-size: 12px; color: var(--text-muted);
+      }
+      td:nth-child(4)::before { content: "Stock: "; }
+
+      /* Action: Bottom Right */
+      td:nth-child(7) { 
+        grid-column: 2; grid-row: 3; 
+        text-align: right; margin-top: 5px;
+      }
+
+      /* Hide Tax on Mobile to save space */
+      td:nth-child(5) { display: none; }
     }
 
     /* --- TOAST --- */
@@ -390,8 +446,6 @@ async function startLiveScan() {
   const video = document.getElementById("cameraPreview");
   if (!video) return console.error("❌ cameraPreview missing");
   
-  // video.style.display = "block"; // Handled by UI wrapper now
-
   try {
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: { 
@@ -434,7 +488,6 @@ function stopLiveScan() {
 
   const video = document.getElementById("cameraPreview");
   if(video) {
-    // video.style.display="none"; // Handled by UI wrapper
     try { video.srcObject = null; } catch(e) {}
   }
 
@@ -555,7 +608,6 @@ function fillProductFromAI(product){
   if(priceEl) priceEl.value = product.price || priceEl.value;
   if(catEl) catEl.value = product.category || catEl.value;
   
-  // Highlighting logic handled by CSS transition
   nameEl.focus();
 }
 
@@ -621,7 +673,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
 </script>
 </body>
 </html>
-
 
 
 
