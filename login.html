@@ -1,150 +1,258 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Login • BharatPOS</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Login • BharatPOS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<style>
-/* ----------------- Body ----------------- */
-body {
-  margin: 0;
-  font-family: Inter, Arial, sans-serif;
-  background: linear-gradient(135deg,#004d99,#0b5ed7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  color: white;
-}
+  <style>
+    /* --- VARIABLES & RESET --- */
+    :root {
+      --bg-body: #0f172a;
+      --glass: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #f59e0b; /* Gold */
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --primary-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
 
-/* ----------------- Form Box ----------------- */
-.form-box {
-  background: rgba(255,255,255,0.15);
-  padding: 32px 28px;
-  border-radius: 18px;
-  width: 90%;
-  max-width: 420px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
-}
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
 
-/* ----------------- Heading ----------------- */
-h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: 700;
-  color: #ffeb99;
-}
+    body {
+      margin: 0; font-family: 'Inter', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; overflow: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.1), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.1), transparent 40%);
+    }
 
-/* ----------------- Inputs & Selects ----------------- */
-input, select {
-  width: 100%;
-  padding: 12px 10px;
-  margin-top: 12px;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-  font-size: 16px;
-}
+    /* --- ANIMATIONS --- */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ----------------- Button ----------------- */
-button {
-  width: 100%;
-  margin-top: 18px;
-  padding: 14px;
-  background: #ffcc00;
-  color: black;
-  font-size: 18px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-weight: 700;
-  transition: 0.3s;
-}
-button:hover {
-  background: #ffdd44;
-}
+    /* --- FORM CONTAINER --- */
+    .login-container {
+      width: 100%; max-width: 400px; padding: 20px;
+      display: flex; flex-direction: column; align-items: center;
+      animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
 
-/* ----------------- Mobile tweak ----------------- */
-@media (max-width: 480px){
-  .form-box { padding: 24px 20px; }
-  h2 { font-size: 22px; }
-  input, select { font-size: 14px; padding: 10px; }
-  button { font-size: 16px; padding: 12px; }
-}
-</style>
+    /* LOGO AREA */
+    .logo-box {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--bg-body); border: 2px solid var(--accent);
+      padding: 5px; margin-bottom: 20px;
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+      display: flex; justify-content: center; align-items: center;
+    }
+    .logo-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+    .form-box {
+      background: var(--glass); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); border-radius: 24px;
+      padding: 40px 30px; width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    h2 { text-align: center; margin: 0 0 8px 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+    .subtitle { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 30px; }
+
+    /* --- FLOATING LABEL INPUTS --- */
+    .input-group { position: relative; margin-bottom: 20px; }
+    
+    input, select {
+      width: 100%; padding: 14px 15px; background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border); border-radius: 12px;
+      color: #fff; font-size: 15px; transition: 0.3s;
+      appearance: none; font-family: 'Inter', sans-serif;
+    }
+    
+    /* Input Focus Effects */
+    input:focus, select:focus {
+      border-color: var(--accent); background: rgba(0,0,0,0.5);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+    }
+
+    /* Floating Label Logic */
+    .floating-label {
+      position: absolute; left: 15px; top: 14px;
+      color: var(--text-muted); font-size: 15px; pointer-events: none;
+      transition: 0.2s ease all;
+    }
+    
+    input:focus ~ .floating-label,
+    input:not(:placeholder-shown) ~ .floating-label,
+    select:focus ~ .floating-label,
+    select:valid ~ .floating-label {
+      top: -10px; left: 10px; font-size: 11px;
+      color: var(--accent); background: var(--bg-body);
+      padding: 0 6px; border-radius: 4px;
+    }
+
+    /* --- BUTTON --- */
+    button {
+      width: 100%; padding: 16px; margin-top: 10px;
+      background: var(--primary-gradient); color: #000;
+      font-size: 16px; font-weight: 700; border-radius: 12px;
+      border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      display: flex; justify-content: center; align-items: center; gap: 10px;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
+    button:active { transform: scale(0.98); }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.3);
+      border-top-color: #000; border-radius: 50%;
+      animation: spin 0.8s linear infinite; display: none;
+    }
+    .btn-text { transition: 0.2s; }
+
+    /* State Loading */
+    .loading .spinner { display: block; }
+    .loading .btn-text { display: none; }
+
+    /* --- TOAST NOTIFICATION --- */
+    #toast {
+      visibility: hidden; min-width: 250px; background-color: var(--success, #10b981);
+      color: #fff; text-align: center; border-radius: 8px; padding: 14px;
+      position: fixed; z-index: 1; left: 50%; bottom: 30px; transform: translateX(-50%);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+      font-weight: 600; font-size: 14px;
+    }
+    #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+    #toast.error { background-color: #ef4444; }
+
+  </style>
 </head>
 
 <body>
-<div class="form-box">
-  <h2>Retailer Login / Register</h2>
 
-  <form id="loginForm">
-    <input type="text" id="retailerName" placeholder="Retailer Name" required>
+  <div class="login-container">
+    
+    <div class="logo-box">
+      <img src="logo.png" alt="BharatPOS" class="logo-img">
+    </div>
 
-    <input type="tel" id="mobile" placeholder="Mobile Number (10 digits)" maxlength="10" pattern="[0-9]{10}" required>
+    <div class="form-box">
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Access your Retail Intelligence System</p>
 
-    <select id="country">
-      <option>India</option>
-      <option>America</option>
-      <option>Other</option>
-      <option>Russia</option>
-    </select>
+      <form id="loginForm">
+        
+        <div class="input-group">
+          <input type="text" id="retailerName" placeholder=" " required autocomplete="off">
+          <label class="floating-label">Retailer Name</label>
+        </div>
 
-    <select id="state" required>
-      <option value="">Select State</option>
-      <option>Uttar Pradesh</option>
-      <option>Delhi</option>
-      <option>Maharashtra</option>
-      <option>Rajasthan</option>
-      <option>Haryana</option>
-    </select>
+        <div class="input-group">
+          <input type="tel" id="mobile" placeholder=" " maxlength="10" pattern="[0-9]{10}" required autocomplete="off">
+          <label class="floating-label">Mobile Number</label>
+        </div>
 
-    <select id="type">
-      <option>Retailer</option>
-      <option>Wholesaler</option>
-    </select>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+          <div class="input-group">
+            <select id="country" required>
+              <option value="India" selected>India</option>
+              <option value="USA">USA</option>
+              <option value="Other">Other</option>
+            </select>
+            <label class="floating-label">Country</label>
+          </div>
 
-    <button type="submit">Continue</button>
-  </form>
-</div>
+          <div class="input-group">
+            <select id="state" required>
+              <option value="" disabled selected></option>
+              <option>Uttar Pradesh</option>
+              <option>Delhi</option>
+              <option>Maharashtra</option>
+              <option>Rajasthan</option>
+              <option>Haryana</option>
+              <option>Other</option>
+            </select>
+            <label class="floating-label">State</label>
+          </div>
+        </div>
 
+        <div class="input-group">
+          <select id="type" required>
+            <option value="Retailer" selected>Retailer</option>
+            <option value="Wholesaler">Wholesaler</option>
+          </select>
+          <label class="floating-label">Business Type</label>
+        </div>
+
+        <button type="submit" id="submitBtn">
+          <span class="btn-text">Secure Login</span>
+          <div class="spinner"></div>
+        </button>
+
+      </form>
+    </div>
+  </div>
+
+  <div id="toast">Signed in successfully!</div>
 
 <script>
-// ----------------- Form Submission -----------------
-document.getElementById('loginForm').addEventListener('submit', function(e){
-  e.preventDefault(); // prevent default form submission
-// Validate mobile number
+// --- UI UTILS ---
+function showToast(msg, isError = false) {
+  const x = document.getElementById("toast");
+  x.innerText = msg;
+  x.className = isError ? "show error" : "show";
+  setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+}
 
+// --- FORM LOGIC ---
+document.getElementById('loginForm').addEventListener('submit', function(e){
+  e.preventDefault(); 
+  
+  const btn = document.getElementById('submitBtn');
   const name = document.getElementById('retailerName').value.trim();
   const mobile = document.getElementById('mobile').value.trim();
   const country = document.getElementById('country').value;
   const state = document.getElementById('state').value;
   const type = document.getElementById('type').value;
 
-  // Validation
+  // 1. Validation
   if(!name || !mobile || !state){
-    alert("Please fill all required fields correctly!");
+    showToast("Please fill all required fields.", true);
     return;
   }
 
+  if(!/^[0-9]{10}$/.test(mobile)){
+    showToast("Invalid Mobile Number (10 digits required)", true);
+    return;
+  }
 
-// Validate mobile number
-if(!/^[0-9]{10}$/.test(mobile)){
-  alert("Enter a valid 10-digit mobile number!");
-  return;
-}
+  // 2. Loading State (UX Delight)
+  btn.classList.add('loading');
+  
+  // 3. Process (Simulate API delay)
+  setTimeout(() => {
+    
+    // Save to localStorage
+    const data = { name, mobile, country, state, type };
+    localStorage.setItem('bharatpos_user', JSON.stringify(data));
 
-  // Save to localStorage
-  const data = { name, mobile, country, state, type };
-  localStorage.setItem('bharatpos_user', JSON.stringify(data));
+    // Success Feedback
+    showToast("Access Granted. Redirecting...");
+    
+    // Redirect
+    setTimeout(() => {
+        window.location.href = "products.html"; 
+    }, 1000);
 
-  alert("Registration Successful!");
-  window.location.href = "products.html"; // redirect
+  }, 1200); // 1.2s delay for "security" feel
 });
 </script>
 
 </body>
 </html>
+
