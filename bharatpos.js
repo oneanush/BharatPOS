@@ -1,4 +1,21 @@
 
+// --- CONFIGURATION START ---
+// Change this single line whenever your Cloudflare URL changes
+const API_BASE = 'http://localhost:5185'; 
+// ---------------------------
+
+// This function is now available globally
+function buildUrl(endpoint) {
+  if (!endpoint) return API_BASE || '';
+  const ep = endpoint.replace(/^\//,'');
+  if (!API_BASE) return '/' + ep;
+  const normalizedBase = API_BASE.replace(/\/+$/,'');
+  if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
+  return normalizedBase + '/' + ep;
+}
+
+
+
 
 
 
@@ -694,6 +711,7 @@ function applyTheme() {
   if (theme === "dark") { document.body.classList.add("dark"); }
 }
 document.addEventListener("DOMContentLoaded", applyTheme);
+
 
 
 
