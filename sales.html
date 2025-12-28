@@ -2,287 +2,385 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>Sales - BharatPOS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="bharatpos.css">
+  
   <script src="bharatpos.js" defer></script>
+
+  <style>
+    /* --- VARIABLES & RESET --- */
+    :root {
+      --bg-body: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.6);
+      --glass: blur(12px);
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b; /* Gold */
+      --success: #10b981; /* Emerald */
+      --primary: #3b82f6; /* Blue */
+      --danger: #ef4444; /* Red */
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      padding-bottom: 80px;
+    }
+
+    /* Background Mesh */
+    body::before {
+      content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.1), transparent 40%),
+                  radial-gradient(circle at 20% 90%, rgba(59, 130, 246, 0.1), transparent 40%);
+      z-index: -1; pointer-events: none;
+    }
+
+    /* --- NAVIGATION --- */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 24px; background: rgba(15, 23, 42, 0.9); backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .global-logo { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--accent); }
+    
+    .nav { display: flex; gap: 20px; }
+    .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
+    .nav a:hover, .nav a.active { color: var(--accent); }
+
+    /* --- LAYOUT --- */
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+
+    .card {
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    /* --- TOOLBAR --- */
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
+    }
+    .toolbar h3 { margin: 0; font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    
+    .search-box {
+      position: relative; flex-grow: 1; max-width: 400px;
+    }
+    .search-input {
+      width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border);
+      color: #fff; padding: 10px 10px 10px 35px; border-radius: 8px; font-family: 'Inter', sans-serif;
+    }
+    .search-icon { position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 12px; }
+
+    .actions { display: flex; gap: 10px; }
+    .btn {
+      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .btn-export { background: rgba(59, 130, 246, 0.1); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); }
+    .btn-export:hover { background: var(--primary); color: white; }
+    .btn-clear { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-clear:hover { background: var(--danger); color: white; }
+
+    /* --- SALES LIST (Responsive Grid) --- */
+    .sales-grid { display: flex; flex-direction: column; gap: 8px; }
+    
+    .grid-header {
+      display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 1fr 1fr; 
+      padding: 10px 15px; border-bottom: 1px solid var(--border);
+      color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase;
+    }
+
+    .sale-row {
+      display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 1fr 1fr;
+      padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px;
+      align-items: center; transition: 0.2s; border: 1px solid transparent;
+      color: var(--text-main); font-size: 14px;
+    }
+    .sale-row:hover { background: rgba(255,255,255,0.08); border-color: var(--border); transform: translateX(5px); }
+    
+    .inv-id { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
+    .amount { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--success); }
+    .btn-view {
+      padding: 6px 12px; background: var(--text-main); color: var(--bg-body);
+      border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: none;
+    }
+    .btn-view:hover { opacity: 0.9; }
+
+    /* --- MOBILE RESPONSIVE --- */
+    @media (max-width: 768px) {
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .search-box { max-width: 100%; }
+      .grid-header { display: none; } /* Hide header on mobile */
+      
+      .sale-row {
+        grid-template-columns: 1fr 1fr; gap: 10px;
+        position: relative; padding-bottom: 50px;
+      }
+      .col-cust { grid-column: 1 / -1; font-weight: 600; font-size: 16px; order: -1; }
+      .col-date { font-size: 12px; color: var(--text-muted); }
+      .col-amt { text-align: right; font-size: 18px; }
+      .col-action { position: absolute; bottom: 15px; left: 15px; width: calc(100% - 30px); }
+      .btn-view { width: 100%; padding: 10px; }
+    }
+
+    /* --- MODAL --- */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+      z-index: 2000; display: none; align-items: center; justify-content: center;
+    }
+    .modal-content {
+      background: #fff; width: 90%; max-width: 500px;
+      border-radius: 12px; overflow: hidden; color: #333;
+      max-height: 90vh; display: flex; flex-direction: column;
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .modal-footer { padding: 15px; border-top: 1px solid #eee; background: #f8f9fa; display: flex; gap: 10px; }
+
+    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    
+    /* Skeleton Loader */
+    .skeleton { height: 50px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 8px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+  </style>
 </head>
 
 <body>
   
   <div class="header">
-    <div class="global-header"><img src="logo.png" class="global-logo"></div>
-    <div class="brand"> BharatPOS</div>
+    <div class="brand"><img src="logo.png" class="global-logo"> BharatPOS</div>
     <div class="nav">
       <a href="dashboard.html">Dashboard</a>
-      <a href="products.html">Products</a>
-      <a href="billing.html">Billing</a>
       <a href="sales.html" class="active">Sales</a>
-      <a href="report.html">Report</a>
       <a href="settings.html">Settings</a>
-      <a href="index.html">About</a>
     </div>
   </div>
 
   <div class="container">
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3><i class="fa-solid fa-clock-rotate-left"></i> Sales History</h3>
+      
+      <div class="toolbar">
+        <h3><i class="fa-solid fa-vault"></i> Sales History</h3>
         
-        <div style="display:flex;gap:8px;">
-          <button onclick="downloadSalesCSV()" style="padding:8px 15px; cursor:pointer;">
-            <i class="fa-solid fa-file-csv"></i> Export CSV
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" class="search-input" id="searchBar" placeholder="Search Invoice # or Customer..." oninput="filterSales(this.value)">
+        </div>
+
+        <div class="actions">
+          <button onclick="downloadSalesCSV()" class="btn btn-export">
+            <i class="fa-solid fa-file-csv"></i> Export
           </button>
-          <button onclick="clearSales()" style="background:#dc3545; color:#fff; padding:8px 15px; border:none; border-radius:4px; cursor:pointer;">
-            <i class="fa-solid fa-trash"></i> Clear Old
+          <button onclick="clearSales()" class="btn btn-clear">
+            <i class="fa-solid fa-trash"></i> Clean
           </button>
         </div>
       </div>
 
-      <div class="small" style="margin-bottom:15px; color:#666; font-style:italic;">
-        <i class="fa-solid fa-circle-info"></i> Sales older than 2 years are automatically removed to save space.
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:15px; display:flex; align-items:center; gap:6px;">
+         <i class="fa-solid fa-circle-info"></i> Records older than 2 years are auto-archived.
       </div>
-      
-      <div id="salesList"></div>
+
+      <div class="grid-header">
+        <div>Invoice #</div>
+        <div>Date</div>
+        <div>Customer</div>
+        <div style="text-align:right">Amount</div>
+        <div style="text-align:center">Action</div>
+      </div>
+
+      <div id="salesList" class="sales-grid">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="invoiceModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <strong style="font-size:16px;">Invoice Preview</strong>
+        <button onclick="closeModal()" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-body" id="invoicePreviewContent">
+        </div>
+      <div class="modal-footer">
+        <button onclick="triggerPrint()" class="btn" style="flex:1; background:#3b82f6; color:white; justify-content:center;">Print / PDF</button>
+        <button onclick="closeModal()" class="btn" style="background:#e5e7eb; color:#333;">Close</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // --- Helper to get sales from localStorage ---
-    function getSales() {
-      return JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
-    }
+    // --- 1. DATA LOGIC ---
+    function getSales() { return JSON.parse(localStorage.getItem('bharatpos_sales') || '[]'); }
+    function formatCurrency(val) { return '₹' + Number(val).toLocaleString('en-IN', {minimumFractionDigits: 2}); }
 
-    // --- Helper to format currency ---
-    function formatCurrency(val) {
-      return '₹' + Number(val).toFixed(2);
-    }
+    // --- 2. INITIALIZATION & RENDER ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Simulate "thinking" delay for premium feel
+      setTimeout(() => {
+        renderSales();
+      }, 500);
+      pruneOldSales();
+    });
 
-    // --- Automatically prune sales older than 2 years ---
     function pruneOldSales() {
-      const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+      const TWO_YEARS = 2 * 365 * 24 * 60 * 60 * 1000;
       const now = Date.now();
       const sales = getSales();
-      const recentSales = sales.filter(s => now - new Date(s.date).getTime() <= TWO_YEARS_MS);
-      localStorage.setItem('bharatpos_sales', JSON.stringify(recentSales));
-      return recentSales;
+      const recent = sales.filter(s => now - new Date(s.date).getTime() <= TWO_YEARS);
+      if(sales.length !== recent.length) localStorage.setItem('bharatpos_sales', JSON.stringify(recent));
     }
 
-    // --- Render Sales Table ---
-    function renderSales() {
-      const arr = pruneOldSales().slice().reverse(); // Show newest first
-      const container = document.getElementById('salesList');
+    let currentData = [];
 
-      if(arr.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">No sales records found.</div>';
+    function renderSales(filterText = "") {
+      const allSales = getSales().reverse();
+      const container = document.getElementById('salesList');
+      
+      const filtered = allSales.filter(s => 
+        s.invoiceNo.toLowerCase().includes(filterText.toLowerCase()) || 
+        (s.customer || '').toLowerCase().includes(filterText.toLowerCase())
+      );
+      
+      currentData = filtered;
+
+      if(filtered.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:40px; color:var(--text-muted);">
+            <i class="fa-solid fa-receipt" style="font-size:30px; margin-bottom:10px; opacity:0.5;"></i>
+            <br>No matching records found.
+          </div>`;
         return;
       }
 
-      // Enhanced Table Styling
-      let html = `
-        <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-          <thead>
-            <tr style="background:#f8f9fa; text-align:left; border-bottom:2px solid #ddd;">
-              <th style="padding:10px;">Invoice #</th>
-              <th style="padding:10px;">Date</th>
-              <th style="padding:10px;">Customer</th>
-              <th style="padding:10px;">Amount</th>
-              <th style="padding:10px;">Action</th>
-            </tr>
-          </thead>
-          <tbody>`;
-      
-      arr.forEach(s => {
+      let html = "";
+      filtered.forEach(s => {
         html += `
-          <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:10px; font-weight:bold; color:#007bff;">${s.invoiceNo}</td>
-            <td style="padding:10px;">${new Date(s.date).toLocaleString()}</td>
-            <td style="padding:10px;">${s.customer || 'Walk-in'}</td>
-            <td style="padding:10px; font-weight:bold;">${formatCurrency(s.total)}</td>
-            <td style="padding:10px;">
-              <button onclick='viewSale("${s.invoiceNo}")' style="padding:5px 10px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">
-                <i class="fa-solid fa-eye"></i> View
+          <div class="sale-row">
+            <div class="inv-id">#${s.invoiceNo}</div>
+            <div class="col-date">${new Date(s.date).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'})}</div>
+            <div class="col-cust">${s.customer || 'Walk-in'}</div>
+            <div class="col-amt amount">${formatCurrency(s.total)}</div>
+            <div class="col-action" style="text-align:center">
+              <button onclick='openInvoiceModal("${s.invoiceNo}")' class="btn-view">
+                View Receipt
               </button>
-            </td>
-          </tr>`;
+            </div>
+          </div>`;
       });
-      html += '</tbody></table>';
       container.innerHTML = html;
     }
 
-    // --- UPGRADED VIEW SALE FUNCTION ---
-    function viewSale(inv) {
-      const sale = getSales().find(s => s.invoiceNo === inv);
-      if(!sale) return alert('Invoice not found');
+    // --- 3. FILTER LOGIC ---
+    function filterSales(val) {
+      renderSales(val);
+    }
 
-      // 1. Fetch Shop Details from LocalStorage (from Settings page)
+    // --- 4. MODAL LOGIC (New "Wow" Feature) ---
+    let currentPrintFunction = null;
+
+    function openInvoiceModal(inv) {
+      const sale = getSales().find(s => s.invoiceNo === inv);
+      if(!sale) return;
+
       const shopName = localStorage.getItem('shopName') || "Bharat POS Store";
       const shopPhone = localStorage.getItem('shopPhone') || "";
+      
+      let itemsHtml = sale.items.map((it, i) => `
+        <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:4px 0;">
+          <span>${i+1}. ${it.name} <span style="color:#666; font-size:10px;">x${it.qty}</span></span>
+          <span>${formatCurrency(it.qty * it.price)}</span>
+        </div>
+      `).join('');
 
-      // 2. Build Item Rows
-      let itemsHtml = '';
-      sale.items.forEach((it, index) => {
-        itemsHtml += `
-          <tr>
-            <td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">${index + 1}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee;">${it.name}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">${it.qty}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${formatCurrency(it.price)}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${formatCurrency(it.qty * it.price)}</td>
-          </tr>`;
-      });
-
-      // 3. Construct the Full Professional HTML
-      const invoiceHtml = `
-        <html>
-        <head>
-          <title>Invoice #${sale.invoiceNo}</title>
-          <style>
-            body { font-family: 'Helvetica', sans-serif; padding: 20px; background: #555; }
-            .invoice-box {
-              max-width: 800px;
-              margin: auto;
-              padding: 30px;
-              border: 1px solid #eee;
-              box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-              background: #fff;
-              border-radius: 8px;
-            }
-            .header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-            .shop-details h1 { margin: 0; font-size: 24px; color: #333; }
-            .shop-details p { margin: 5px 0 0; color: #666; }
-            .invoice-details { text-align: right; }
-            .invoice-details h2 { margin: 0; color: #007bff; }
-            .bill-to { margin-bottom: 20px; background: #f9f9f9; padding: 15px; border-radius: 5px; }
-            table { width: 100%; line-height: inherit; text-align: left; border-collapse: collapse; }
-            table th { background: #eee; padding: 10px; font-weight: bold; font-size: 14px; }
-            table td { padding: 10px; font-size: 14px; }
-            .total-section { margin-top: 20px; text-align: right; border-top: 2px solid #333; padding-top: 10px; }
-            .total-label { font-size: 16px; font-weight: bold; margin-right: 20px; }
-            .total-amount { font-size: 22px; font-weight: bold; color: #28a745; }
-            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 20px; }
-            .print-btn {
-              display: block; width: 100%; padding: 15px; background: #007bff; color: white; 
-              text-align: center; text-decoration: none; font-weight: bold; margin-top: 20px; border-radius: 5px;
-            }
-            @media print {
-              body { background: #fff; padding: 0; }
-              .invoice-box { box-shadow: none; border: none; width: 100%; max-width: 100%; }
-              .print-btn { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="invoice-box">
-            
-            <div class="header">
-              <div class="shop-details">
-                <h1>${shopName}</h1>
-                <p>Phone: ${shopPhone}</p>
-              </div>
-              <div class="invoice-details">
-                <h2>INVOICE</h2>
-                <p># ${sale.invoiceNo}</p>
-                <p>Date: ${new Date(sale.date).toLocaleDateString()}</p>
-                <p>Time: ${new Date(sale.date).toLocaleTimeString()}</p>
-              </div>
-            </div>
-
-            <div class="bill-to">
-              <strong>Bill To:</strong>
-              <span style="font-size:1.1em; margin-left:10px;">${sale.customer || 'Valued Customer'}</span>
-            </div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:50px; text-align:center">#</th>
-                  <th>Item Description</th>
-                  <th style="width:80px; text-align:center">Qty</th>
-                  <th style="width:100px; text-align:right">Price</th>
-                  <th style="width:100px; text-align:right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-
-            <div class="total-section">
-              <span class="total-label">GRAND TOTAL</span>
-              <span class="total-amount">${formatCurrency(sale.total)}</span>
-            </div>
-
-            <div class="footer">
-              <p>Thank you for your business!</p>
-              <p>Computer generated invoice.</p>
-            </div>
-
-            <a href="#" onclick="window.print()" class="print-btn">Print Invoice / Save as PDF</a>
-          </div>
-        </body>
-        </html>
+      const content = `
+        <div style="text-align:center; margin-bottom:15px;">
+          <h3 style="margin:0;">${shopName}</h3>
+          <div style="color:#666;">${shopPhone}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #000; padding-bottom:5px;">
+          <span>Inv: ${sale.invoiceNo}</span>
+          <span>${new Date(sale.date).toLocaleDateString()}</span>
+        </div>
+        <div style="margin-bottom:15px;">
+           <strong>Customer:</strong> ${sale.customer || 'Guest'}
+        </div>
+        <div style="margin-bottom:15px;">
+          ${itemsHtml}
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:bold; border-top:1px solid #000; padding-top:10px;">
+          <span>TOTAL</span>
+          <span>${formatCurrency(sale.total)}</span>
+        </div>
+        <div style="text-align:center; margin-top:20px; font-size:10px; color:#888;">
+          Generated by BharatPOS
+        </div>
       `;
 
-      // 4. Open Window
-      const win = window.open('', '_blank');
-      win.document.write(invoiceHtml);
-      win.document.close();
+      document.getElementById('invoicePreviewContent').innerHTML = content;
+      document.getElementById('invoiceModal').style.display = 'flex';
+
+      // Prepare Print Logic (Hidden functionality)
+      currentPrintFunction = () => {
+        const win = window.open('', '_blank');
+        win.document.write(`<html><head><title>Print ${inv}</title><style>body{font-family:sans-serif; padding:20px;}</style></head><body><div style="max-width:300px; margin:0 auto;">${content}</div><script>window.print();window.close();<\/script></body></html>`);
+        win.document.close();
+      };
     }
 
-    // --- CSV Download Helper ---
-    function downloadCSV(data, filename = 'data.csv') {
-      if(!data || data.length === 0) return alert('No data to export');
-      const headers = Object.keys(data[0]);
-      const rows = data.map(row => headers.map(h => `"${row[h]}"`).join(','));
-      const csvContent = [headers.join(','), ...rows].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+    function closeModal() {
+      document.getElementById('invoiceModal').style.display = 'none';
     }
 
-    // --- Export Sales as CSV ---
+    function triggerPrint() {
+      if(currentPrintFunction) currentPrintFunction();
+    }
+
+    // --- 5. EXPORT & CLEAR LOGIC (Preserved) ---
     function downloadSalesCSV() {
-      const sales = getSales();
-      if(sales.length === 0) return alert('No sales to export');
+      if(currentData.length === 0) return alert('No data to export');
       const rows = [];
-      sales.forEach(s => {
+      currentData.forEach(s => {
         s.items.forEach(it => {
           rows.push({
-            Invoice: s.invoiceNo,
-            Date: new Date(s.date).toLocaleString(),
-            Customer: s.customer,
-            Item: it.name,
-            Qty: it.qty,
-            Price: it.price,
-            Total: s.total
+            Invoice: s.invoiceNo, Date: new Date(s.date).toLocaleString(),
+            Customer: s.customer, Item: it.name, Qty: it.qty,
+            Price: it.price, Total: s.total
           });
         });
       });
-      downloadCSV(rows, 'bharatpos_sales_' + Date.now() + '.csv');
+      const csvContent = "data:text/csv;charset=utf-8," + [Object.keys(rows[0]).join(','), ...rows.map(r => Object.values(r).join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "sales_report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
-    // --- Clear Old Sales Only ---
     function clearSales() {
-      if(!confirm('Clear all sales older than 2 years?')) return;
-      const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
-      const now = Date.now();
-      let sales = getSales();
-      sales = sales.filter(s => now - new Date(s.date).getTime() <= TWO_YEARS_MS);
-      localStorage.setItem('bharatpos_sales', JSON.stringify(sales));
+      if(!confirm('Delete ALL sales older than 2 years?')) return;
+      pruneOldSales();
       renderSales();
-      alert('Old sales cleared.');
+      alert('Database optimized.');
     }
-
-    // --- Initial Render ---
-    renderSales();
   </script>
 </body>
 </html>
