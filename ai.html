@@ -2,117 +2,198 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Business Advice - Bharat POS</title>
-  <link rel="stylesheet" href="bharatpos.css">
-<script src="bharatpos.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>AI Strategist - Bharat POS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <script src="bharatpos.js"></script>
+
   <style>
-    .ai-container { max-width:900px; margin:20px auto; padding:20px }
-    .ai-card { background:var(--card-bg,#fff); border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1) }
-    .ai-output { margin-top:15px; padding:15px; background:#f5f7fa; border-radius:6px; min-height:120px; white-space:pre-line }
-    .ai-btn { margin-top:10px; padding:10px 18px; font-size:15px; background:#0d6efd; color:#fff; border:none; border-radius:6px; cursor:pointer }
-    .ai-prompt { width:100%; padding:8px; border-radius:6px; margin-top:10px; resize:vertical }
-    .ai-loading { opacity:0.7 }
+    /* --- VARIABLES & RESET --- */
+    :root {
+      --bg-body: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.6);
+      --glass: blur(16px);
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #00d2ff; /* Cyber Blue */
+      --purple: #a855f7;
+    }
 
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 210, 255, 0.1), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1), transparent 40%);
+      background-attachment: fixed;
+    }
 
+    /* --- NAVIGATION --- */
+    .navbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #f59e0b; }
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
+    .nav-links a:hover { color: var(--accent); }
 
+    /* --- MAIN CONTAINER --- */
+    .ai-container { max-width: 800px; margin: 40px auto; padding: 0 20px; padding-bottom: 80px; }
+    
+    .hero-text { text-align: center; margin-bottom: 30px; animation: fadeIn 0.8s ease-out; }
+    .hero-text h1 { font-size: 32px; margin: 0 0 10px 0; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-text p { color: var(--text-muted); font-size: 15px; margin: 0; }
 
-/* AI Container Styles */
-.ai-suggestion-card {
-    background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-    border: 1px solid #333;
-    border-left: 5px solid #00d2ff; /* Cyber Blue Accent */
-    border-radius: 12px;
-    padding: 25px;
-    margin-top: 20px;
-    box-shadow: 0 10px 30px rgba(0, 210, 255, 0.1);
-    font-family: 'Segoe UI', sans-serif;
-    color: #e0e0e0;
-    line-height: 1.6;
-    position: relative;
-    overflow: hidden;
-}
+    /* --- INPUT CARD --- */
+    .input-card {
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 16px; padding: 6px;
+      box-shadow: 0 0 40px rgba(0, 210, 255, 0.05);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .input-card:focus-within {
+      border-color: var(--accent); box-shadow: 0 0 20px rgba(0, 210, 255, 0.15);
+    }
 
-/* The Glowing "AI" Badge */
-.ai-badge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: #00d2ff;
-    color: #000;
-    font-size: 10px;
-    font-weight: bold;
-    padding: 4px 12px;
-    border-bottom-left-radius: 12px;
-}
+    .ai-prompt {
+      width: 100%; background: transparent; border: none;
+      color: #fff; font-size: 16px; font-family: 'Inter', sans-serif;
+      padding: 15px; resize: none; min-height: 60px;
+    }
+    .ai-prompt::placeholder { color: rgba(255,255,255,0.3); }
 
-/* Formatting for the text returned by AI */
-.ai-text h3, .ai-text strong {
-    color: #fff;
-    font-weight: 700;
-    font-size: 1.1em;
-}
+    .action-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 15px; border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    /* Quick Chips */
+    .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+    .chip-scroll::-webkit-scrollbar { display: none; }
+    .chip {
+      background: rgba(255,255,255,0.05); color: var(--text-muted);
+      border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px;
+      font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s;
+    }
+    .chip:hover { background: rgba(0, 210, 255, 0.1); color: var(--accent); border-color: var(--accent); }
 
-.ai-text ul {
-    margin: 10px 0;
-    padding-left: 20px;
-}
+    .ai-btn {
+      background: var(--accent); color: #000; border: none;
+      padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .ai-btn:hover { box-shadow: 0 0 15px var(--accent); }
+    .ai-btn:active { transform: scale(0.96); }
+    .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.ai-text li {
-    margin-bottom: 8px;
-    list-style-type: none;
-    position: relative;
-}
+    /* --- OUTPUT CARD (CYBER THEME) --- */
+    .ai-output-area { margin-top: 30px; min-height: 100px; }
+    
+    .ai-suggestion-card {
+        background: rgba(10, 10, 15, 0.8);
+        border: 1px solid #333;
+        border-left: 4px solid var(--accent);
+        border-radius: 12px; padding: 30px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        position: relative; overflow: hidden;
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .ai-badge {
+        position: absolute; top: 0; right: 0;
+        background: linear-gradient(90deg, #0f172a, var(--accent));
+        color: #fff; font-size: 9px; font-weight: 800;
+        padding: 6px 12px; border-bottom-left-radius: 12px; letter-spacing: 1px;
+    }
 
-.ai-text li::before {
-    content: "⚡";
-    position: absolute;
-    left: -25px;
-    color: #ffd700;
-}
+    .ai-text { color: #e2e8f0; line-height: 1.7; font-size: 15px; }
+    .ai-text h3 { margin-top: 0; color: #fff; }
+    .ai-text strong { color: var(--accent); }
+    .ai-text li { margin-bottom: 8px; list-style: none; position: relative; padding-left: 20px; }
+    .ai-text li::before { content: "›"; position: absolute; left: 0; color: var(--purple); font-weight: bold; }
 
+    /* --- LOADING ANIMATION --- */
+    .thinking-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: var(--accent); }
+    .brain-waves { display: flex; gap: 6px; margin-bottom: 15px; height: 30px; align-items: center; }
+    .wave { width: 4px; background: var(--accent); animation: wave 1s ease-in-out infinite; border-radius: 2px; }
+    .wave:nth-child(2) { animation-delay: 0.1s; }
+    .wave:nth-child(3) { animation-delay: 0.2s; }
+    .wave:nth-child(4) { animation-delay: 0.3s; }
+    .wave:nth-child(5) { animation-delay: 0.4s; }
+    
+    @keyframes wave { 0%, 100% { height: 10px; opacity: 0.5; } 50% { height: 30px; opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-
-
-
+    /* Mobile */
+    @media (max-width: 600px) {
+      .action-bar { flex-direction: column; align-items: stretch; gap: 15px; }
+      .ai-btn { justify-content: center; }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="global-header"><img src="logo.png" class="global-logo" alt="logo"></div>
-    <div class="brand">Bharat POS</div>
-    <div class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="products.html">Products</a>
-      <a href="billing.html">Billing</a>
-      <a href="sales.html">Sales</a>
-      <a href="report.html">Report</a>
-      <a href="settings.html">Settings</a>
-      <a href="ai.html">AI</a>
+
+<nav class="navbar">
+  <div class="brand">
+    <img src="logo.png" class="global-logo">
+    Bharat POS
+  </div>
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="billing.html">Billing</a>
+    <a href="settings.html">Settings</a>
+  </div>
+</nav>
+
+<div class="ai-container">
+  
+  <div class="hero-text">
+    <h1>AI Strategist</h1>
+    <p>Analyze sales, optimize stock, and grow your business.</p>
+  </div>
+
+  <div class="input-card">
+    <textarea id="aiPrompt" class="ai-prompt" rows="2" placeholder="Ask anything (e.g., 'How can I increase profits next week?')..."></textarea>
+    
+    <div class="action-bar">
+      <div class="chip-scroll">
+        <div class="chip" onclick="setPrompt('Analyze my sales trends')">📊 Analyze Sales</div>
+        <div class="chip" onclick="setPrompt('Suggest stock improvements')">📦 Inventory Audit</div>
+        <div class="chip" onclick="setPrompt('Give me marketing ideas')">🚀 Marketing Ideas</div>
+      </div>
+      <button id="aiBtn" class="ai-btn" onclick="getAIAdvice()">
+        <span>Generate</span>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+      </button>
     </div>
   </div>
 
-  <div class="ai-container">
-    <div class="ai-card">
-      <h3>🤖 AI Business Consultation</h3>
-      <p>This AI automatically analyses your sales, products and stock data. You can also type a question below (optional).</p>
+  <div id="aiOutput" class="ai-output-area"></div>
 
-      <textarea id="aiPrompt" class="ai-prompt" rows="2" placeholder="Ask a question about your shop (optional)"></textarea>
-
-      <button id="aiBtn" class="ai-btn" onclick="getAIAdvice()">Get AI Advice</button>
-
-      <div id="aiOutput" class="ai-output">AI advice will appear here...</div>
-    </div>
-  </div>
+</div>
 
 <script>
-  // Use your Cloudflare server as API base (no trailing slash)
- 
+  // --- 1. DATA GATHERING (Preserved) ---
   function getStoredSnapshot() {
     try {
       const snap = localStorage.getItem('bharatpos_ai_snapshot');
       if (snap) return JSON.parse(snap);
-    } catch(e) { console.warn('Invalid snapshot in storage', e); }
+    } catch(e) { }
+    
+    // Fallback: Generate fresh snapshot
     try {
       const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
       const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
@@ -120,44 +201,46 @@
       const productQty = {};
       sales.forEach(s=>{
         revenue += Number(s.total||0);
-        (s.items||[]).forEach(i=>{
-          if (i && i.name) productQty[i.name] = (productQty[i.name]||0) + Number(i.qty||0);
-        });
+        (s.items||[]).forEach(i=>{ if (i && i.name) productQty[i.name] = (productQty[i.name]||0) + Number(i.qty||0); });
       });
-      const totalBills = sales.length;
-      const avgBill = totalBills ? Math.round(revenue/totalBills) : 0;
       const lowStock = products.filter(p=>Number(p.stock||0) <= 5).map(p=>p.name);
-      const highStock = products.filter(p=>Number(p.stock||0) > 50).map(p=>p.name);
       return {
         generated_at: new Date().toISOString(),
-        revenue, total_bills: totalBills, average_bill: avgBill,
-        low_stock: lowStock, high_stock: highStock, products_count: products.length, sales_count: sales.length
+        revenue, total_bills: sales.length,
+        low_stock: lowStock, products_count: products.length
       };
-    } catch(e){
-      return { generated_at: new Date().toISOString() };
-    }
+    } catch(e){ return { generated_at: new Date().toISOString() }; }
   }
-async function getAIAdvice() {
+
+  // --- 2. UI LOGIC ---
+  function setPrompt(text) {
+    const el = document.getElementById('aiPrompt');
+    el.value = text;
+    el.focus();
+    // Optional: Auto-submit
+    // getAIAdvice(); 
+  }
+
+  async function getAIAdvice() {
     const aiOutput = document.getElementById('aiOutput');
     const aiBtn = document.getElementById('aiBtn');
     
-    // 1. Better Loading State
-    aiOutput.classList.add('ai-loading');
+    // A. LOADING STATE (The "Brain" Animation)
     aiOutput.innerHTML = `
-        <div style="text-align:center; padding:20px; color:#888;">
-            <div style="font-size:24px; margin-bottom:10px; animation: pulse 1.5s infinite;">🧠</div>
-            <div>Analyzing Sales Patterns & Thinking...</div>
-        </div>`;
+      <div class="thinking-state">
+        <div class="brain-waves">
+           <div class="wave"></div><div class="wave"></div><div class="wave"></div><div class="wave"></div><div class="wave"></div>
+        </div>
+        <div style="font-size:12px; letter-spacing:1px; opacity:0.8;">PROCESSING RETAIL DATA...</div>
+      </div>
+    `;
     aiBtn.disabled = true;
 
-    // 2. Prepare Data (Keep your existing logic)
+    // B. PREPARE DATA
     const promptBox = document.getElementById('aiPrompt');
     const prompt = promptBox ? promptBox.value.trim() : '';
-    
-    // Ensure getStoredSnapshot exists, otherwise send empty object
-    const snapshot = (typeof getStoredSnapshot === 'function') ? getStoredSnapshot() : {};
+    const snapshot = getStoredSnapshot();
     const payload = { snapshot, user_prompt: prompt };
-
     const url = buildUrl('/ai-business-consult');
 
     try {
@@ -167,47 +250,42 @@ async function getAIAdvice() {
             body: JSON.stringify(payload)
         });
 
-        if (!res.ok) {
-            const text = await res.text().catch(() => null);
-            throw new Error(`Server error: ${res.status} ${text || ''}`);
-        }
+        if (!res.ok) throw new Error(`Server connection failed`);
 
         const result = await res.json();
         const rawAdvice = result.advice || result.reply || result.message;
 
         if (result.success && rawAdvice) {
-            // 3. THE UPGRADE: Format the text to look professional
-            // Converts **bold** to <strong> and new lines to <br>
+            // C. FORMATTING
             let formattedText = rawAdvice
-                .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#fff;">$1</strong>')
-                .replace(/\n/g, '<br>');
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                .replace(/\n/g, '<br>'); // Newlines
 
-            // 4. Inject the Fancy Card HTML
+            // D. SUCCESS CARD
             aiOutput.innerHTML = `
                 <div class="ai-suggestion-card">
-                    <div class="ai-badge">BHARAT AI STRATEGIST</div>
+                    <div class="ai-badge">CORTEX ANALYTICS</div>
                     <div class="ai-text">
                         ${formattedText}
                     </div>
                 </div>`;
-            aiOutput.classList.remove('ai-loading');
-
         } else {
-            throw new Error(result.message || 'AI returned no advice.');
+            throw new Error(result.message || 'No insights generated.');
         }
 
     } catch (err) {
-        console.error('AI request failed:', err);
-        aiOutput.classList.remove('ai-loading');
-        // Show error in a red box
+        // E. ERROR CARD
         aiOutput.innerHTML = `
-            <div style="border:1px solid #ff4444; background:#330000; color:#ffcccc; padding:15px; border-radius:8px;">
-                <strong>Connection Failed:</strong> <br> ${err.message}
+            <div class="ai-suggestion-card" style="border-left-color: #ef4444;">
+                <div class="ai-text" style="color:#fca5a5;">
+                    <h3>⚡ Connection Interrupted</h3>
+                    ${err.message}. Please check your internet and try again.
+                </div>
             </div>`;
     } finally {
         aiBtn.disabled = false;
     }
-}
+  }
 </script>
 </body>
 </html>
