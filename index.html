@@ -3,21 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BharatPOS • AI Retail Revolution</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>BharatPOS • The Retail OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Deep Space Theme */
+            /* Deep Space Theme v2 */
             --bg-dark: #02060c; 
-            --bg-panel: #0d1626;
             --primary: #FFD700; /* Gold */
-            --primary-glow: rgba(255, 215, 0, 0.4);
-            --text-white: #ffffff;
+            --primary-glow: rgba(255, 215, 0, 0.3);
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --text-white: #f8fafc;
             --text-gray: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
 
         body {
             background-color: var(--bg-dark);
@@ -25,222 +30,172 @@
             font-family: 'Outfit', sans-serif;
             overflow-x: hidden;
             line-height: 1.6;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px; /* Tech Grid */
         }
 
-        /* --- BACKGROUND GLOWS --- */
+        /* --- AMBIENT GLOWS --- */
         .glow-spot {
-            position: fixed;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(11,94,215,0.15) 0%, rgba(0,0,0,0) 70%);
-            border-radius: 50%;
-            z-index: -1;
-            pointer-events: none;
+            position: fixed; width: 600px; height: 600px; border-radius: 50%;
+            filter: blur(100px); z-index: -1; pointer-events: none; opacity: 0.6;
+            animation: pulseGlow 10s infinite alternate;
         }
-        .glow-1 { top: -100px; left: -100px; }
-        .glow-2 { bottom: 0; right: -100px; background: radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, rgba(0,0,0,0) 70%); }
+        .glow-1 { top: -200px; left: -200px; background: rgba(59, 130, 246, 0.2); }
+        .glow-2 { bottom: -200px; right: -200px; background: rgba(255, 215, 0, 0.15); animation-delay: 2s; }
+        
+        @keyframes pulseGlow { 0% { opacity: 0.4; transform: scale(1); } 100% { opacity: 0.7; transform: scale(1.2); } }
 
-        /* --- NAVIGATION --- */
+        /* --- STICKY NAV --- */
         nav {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            padding: 20px 5%;
-            position: absolute;
-            width: 100%;
-            top: 0;
-            z-index: 10;
+            display: flex; justify-content: flex-start; align-items: center;
+            padding: 15px 5%; position: fixed; width: 100%; top: 0; z-index: 1000;
+            background: rgba(2, 6, 12, 0.8); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
         }
 
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-        }
-
+        .logo-container { display: flex; align-items: center; gap: 15px; cursor: pointer; text-decoration: none; }
         .logo-img {
-            height: 50px;        /* Fixed Height */
-            width: 50px;         /* Fixed Width to match height */
-            object-fit: cover;   /* Prevents stretching if image is rectangular */
-            border-radius: 50%;  /* MAKES IT CIRCULAR */
-            border: 2px solid rgba(255, 215, 0, 0.2); /* Thin Gold Ring */
-            
-            /* Glow Effect */
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            height: 45px; width: 45px; object-fit: cover; border-radius: 50%;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-
         .logo-text {
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            background: linear-gradient(to right, #ffffff, #cbd5e1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
-
-        /* Hover Effect: Logo spins slightly */
-        .logo-container:hover .logo-img {
-            transform: rotate(360deg);
-            border-color: var(--primary);
-        }
+        .logo-container:hover .logo-img { transform: rotate(180deg) scale(1.1); }
 
         /* --- HERO SECTION --- */
         .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 100px 5% 50px 5%;
-            gap: 40px;
+            min-height: 100vh; display: flex; align-items: center; justify-content: space-between;
+            padding: 120px 5% 100px 5%; gap: 50px; position: relative;
         }
 
-        .hero-text {
-            flex: 1;
-            max-width: 600px;
-            z-index: 2;
-        }
+        .hero-text { flex: 1; max-width: 650px; z-index: 2; opacity: 0; animation: fadeUp 1s forwards 0.2s; }
 
         .ai-pill {
-            display: inline-block;
-            background: linear-gradient(90deg, #2563eb, #7c3aed);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
-            border: 1px solid rgba(255,255,255,0.2);
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600;
+            margin-bottom: 25px; color: #a5b4fc; backdrop-filter: blur(5px);
         }
+        .ai-pill::before { content:""; width:8px; height:8px; background:#a5b4fc; border-radius:50%; box-shadow:0 0 10px #a5b4fc; }
 
         h1 {
-            font-size: 56px;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            background: linear-gradient(to bottom right, #ffffff, #a5b4fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 72px; line-height: 1.05; margin-bottom: 25px; font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
+        .highlight-gold { color: var(--primary); -webkit-text-fill-color: var(--primary); }
 
-        .hero-desc {
-            font-size: 18px;
-            color: var(--text-gray);
-            margin-bottom: 30px;
-        }
+        .hero-desc { font-size: 20px; color: var(--text-gray); margin-bottom: 40px; font-weight: 400; max-width: 90%; line-height: 1.6; }
 
         .cta-btn {
-            background: var(--primary);
-            color: #000;
-            padding: 16px 36px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px var(--primary-glow);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            background: var(--primary); color: #000; padding: 18px 40px;
+            border-radius: 50px; font-size: 18px; font-weight: 800; border: none;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 0 30px var(--primary-glow);
+            position: relative; overflow: hidden;
         }
-
-        .cta-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 35px var(--primary-glow);
-            background: #ffe033;
-        }
+        .cta-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 0 50px var(--primary-glow); background: #fff; }
 
         .hero-visual {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            position: relative;
+            flex: 1; display: flex; justify-content: center; position: relative;
+            animation: float 6s ease-in-out infinite; opacity: 0; animation: fadeUp 1s forwards 0.5s, float 6s ease-in-out infinite 1s;
         }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
         .feature-img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.5s ease;
+            width: 100%; max-width: 600px; height: auto; border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
         }
 
-        .feature-img:hover {
-            transform: scale(1.02);
+        /* --- SCROLL INDICATOR --- */
+        .scroll-wrapper {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            opacity: 0; animation: fadeIn 1s forwards 1.5s; cursor: pointer;
         }
+        .scroll-text { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-gray); font-weight: 600; }
+        .mouse {
+            width: 26px; height: 42px; border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 20px; position: relative;
+        }
+        .wheel {
+            width: 4px; height: 8px; background: #fff; border-radius: 2px;
+            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+            animation: scrollWheel 2s infinite;
+        }
+        .arrows { display: flex; flex-direction: column; align-items: center; margin-top: 5px; gap: 3px; }
+        .arrow { width: 8px; height: 8px; border-right: 2px solid rgba(255,255,255,0.4); border-bottom: 2px solid rgba(255,255,255,0.4); transform: rotate(45deg); animation: arrowFade 2s infinite; }
+        .arrow:nth-child(2) { animation-delay: 0.2s; }
+        
+        @keyframes scrollWheel { 0% { top: 8px; opacity: 1; } 100% { top: 20px; opacity: 0; } }
+        @keyframes arrowFade { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes fadeIn { to { opacity: 1; } }
 
-        /* --- ZIG ZAG SECTIONS --- */
+        /* --- FEATURE SECTIONS --- */
         .section {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 80px 10%;
-            gap: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 100px 8%; gap: 80px; opacity: 0; transform: translateY(50px);
+            transition: all 0.8s ease-out;
         }
+        .section.visible { opacity: 1; transform: translateY(0); }
 
-        .section.reverse {
-            flex-direction: row-reverse;
-            background: rgba(255,255,255,0.02);
-        }
+        .section.reverse { flex-direction: row-reverse; }
 
         .section-text { flex: 1; }
-        .section-text h2 { font-size: 36px; margin-bottom: 15px; color: var(--primary); }
-        .section-text p { font-size: 16px; color: var(--text-gray); margin-bottom: 20px; }
-        .section-visual { flex: 1; }
+        .section-text h2 { font-size: 48px; margin-bottom: 20px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; }
+        .section-text p { font-size: 18px; color: var(--text-gray); margin-bottom: 30px; font-weight: 300; }
 
+        .section-visual { flex: 1; position: relative; }
+        
+        /* Module Buttons */
+        .module-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 14px 30px; border-radius: 12px; font-weight: 700; text-decoration: none;
+            transition: 0.3s; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+        }
+        
+        .btn-finance { color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .btn-finance:hover { background: var(--accent-blue); color: white; box-shadow: 0 0 30px rgba(59, 130, 246, 0.3); }
+        
+        .btn-crm { color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+        .btn-crm:hover { background: var(--accent-purple); color: white; box-shadow: 0 0 30px rgba(124, 58, 237, 0.3); }
+        
+        .btn-khata { color: var(--primary); border: 1px solid var(--primary); }
+        .btn-khata:hover { background: var(--primary); color: black; box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); }
+
+        .img-card {
+            border-radius: 24px; overflow: hidden; border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4); transition: transform 0.3s;
+        }
+        .img-card:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.2); }
+
+        /* --- FOOTER --- */
         footer {
-            text-align: center;
-            padding: 40px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            font-size: 14px;
-            color: #555;
+            text-align: center; padding: 80px 20px; border-top: 1px solid var(--glass-border);
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); margin-top: 50px;
         }
-        footer a { color: var(--primary); text-decoration: none; }
+        footer p { color: var(--text-gray); font-size: 16px; margin-bottom: 10px; }
+        footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
 
-        /* Mobile Responsiveness */
+        /* --- MOBILE --- */
         @media (max-width: 900px) {
-            .hero, .section, .section.reverse {
-                flex-direction: column;
-                text-align: center;
-                padding: 60px 5%;
-                gap: 40px;
-            }
-            .hero { padding-top: 120px; }
-            h1 { font-size: 40px; }
-            .glow-spot { display: none; }
+            h1 { font-size: 48px; }
+            .hero { flex-direction: column; padding-top: 140px; text-align: center; gap: 40px; }
+            .hero-text { margin: 0 auto; }
+            .section { flex-direction: column !important; padding: 60px 5%; text-align: center; gap: 40px; }
+            .glow-spot { opacity: 0.3; }
+            .scroll-wrapper { display: none; }
         }
-
-
-.module-btn {
-            display: inline-block; padding: 12px 25px; border-radius: 30px;
-            font-weight: 700; text-decoration: none; margin-top: 10px;
-            transition: 0.3s; text-transform: uppercase; font-size: 14px;
-        }
-        
-        /* Specific Button Colors */
-        .btn-finance { border: 2px solid var(--accent-blue); color: var(--accent-blue); }
-        .btn-finance:hover { background: var(--accent-blue); color: white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
-        
-        .btn-crm { border: 2px solid var(--accent-purple); color: var(--accent-purple); }
-        .btn-crm:hover { background: var(--accent-purple); color: white; box-shadow: 0 0 20px rgba(124, 58, 237, 0.4); }
-        
-        .btn-khata { border: 2px solid var(--primary); color: var(--primary); }
-        .btn-khata:hover { background: var(--primary); color: black; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
-
-        footer { text-align: center; padding: 40px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 14px; color: #555; }
-        footer a { color: var(--primary); text-decoration: none; }
-
-        @media (max-width: 900px) {
-            .hero, .section, .section.reverse { flex-direction: column; text-align: center; padding: 60px 5%; gap: 40px; }
-            .hero { padding-top: 120px; }
-            h1 { font-size: 40px; }
-            .glow-spot { display: none; }
-        }
-
-
     </style>
 </head>
 <body>
@@ -249,113 +204,139 @@
     <div class="glow-spot glow-2"></div>
 
     <nav>
-        <div class="logo-container">
+        <a href="index.html" class="logo-container">
             <img src="logo.png" alt="BharatPOS Logo" class="logo-img">
             <span class="logo-text">BharatPOS</span>
-        </div>
+        </a>
     </nav>
 
     <header class="hero">
         <div class="hero-text">
-            <div class="ai-pill">✨ New: AI Consultation Added</div>
-            <h1>India’s Own <br>Retail Intelligence.</h1>
+            <div class="ai-pill">✨ New: AI Brain V2.0 Active</div>
+            <h1>India’s Retail <br><span class="highlight-gold">Superpower.</span></h1>
             <p class="hero-desc">
-                Upgrade your shop with the smartest POS system. 
-                Featuring <strong>AI-Scan</strong> for inventory and automatic business consultation. 
-                Simple, fast, and designed for Bharat.
+                Run your entire shop on Autopilot. The only system that tracks stock, bills customers instantly, and grows your profits automatically.
             </p>
-            <button class="cta-btn" onclick="gologin()">Get Started ➜</button>
+            <button class="cta-btn" onclick="gologin()">Start Now ➜</button>
         </div>
         
         <div class="hero-visual">
-            <img src="in.png" alt="BharatPOS Dashboard Intro" class="feature-img">
+            <img src="in.png" alt="BharatPOS Dashboard" class="feature-img">
+        </div>
+
+        <div class="scroll-wrapper" onclick="document.getElementById('feature-1').scrollIntoView()">
+            <div class="mouse"><div class="wheel"></div></div>
+            <div class="arrows"><div class="arrow"></div><div class="arrow"></div></div>
+            <span class="scroll-text">Scroll to Explore</span>
         </div>
     </header>
 
-    <section class="section reverse">
+    <section class="section reverse" id="feature-1">
         <div class="section-text">
-            <h2>Effortless Interface</h2>
+            <h2>Zero Lag.<br>Zero Confusion.</h2>
             <p>
-                No complex manuals needed. Our clean, dark-mode friendly interface 
-                ensures you can bill customers in seconds. Designed to reduce eye strain 
-                during long shop hours.
+                Forget bulky manuals. Our "Obsidian" dark interface is designed for speed. Eye-friendly for long shifts and fast enough to clear queues in seconds.
             </p>
         </div>
         <div class="section-visual">
-            <img src="2in.png" alt="Interface" class="feature-img">
+            <div class="img-card">
+                <img src="2in.png" alt="Billing Interface" style="width:100%; display:block;">
+            </div>
         </div>
     </section>
 
     <section class="section">
         <div class="section-text">
-            <h2>Smart AI Scan</h2>
+            <h2 style="color:#60a5fa;">The Camera is <br>Your Scanner.</h2>
             <p>
-                Point your camera, and let our AI do the rest. Automatically identify products, 
-                update inventory, and generate bills without typing a single word.
+                No expensive hardware needed. Just point your device, and our AI vision recognizes products, reads barcodes, and updates inventory instantly.
             </p>
         </div>
         <div class="section-visual">
-            <img src="3in.png" alt="AI Scan Technology" class="feature-img">
+            <div class="img-card">
+                <img src="3in.png" alt="AI Scan" style="width:100%; display:block;">
+            </div>
         </div>
     </section>
 
     <section class="section reverse">
         <div class="section-text">
-            <h2>Business Growth</h2>
+            <h2 style="color:#34d399;">Know What Sells.<br>Before You Buy.</h2>
             <p>
-                Track your daily sales, GST reports, and profits. Our new AI Consultation 
-                analyzes your data to suggest how you can grow your margins.
+                Stop guessing. Our AI Consultant analyzes your sales trends to tell you exactly what to restock, what to cut, and how to maximize your margin.
             </p>
         </div>
         <div class="section-visual">
-            <img src="4in.png" alt="Growth Analytics" class="feature-img">
-        </div>
-    </section>
- <section class="section">
-        <div class="section-text">
-            <div style="color:#3b82f6; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">FINANCIAL HEADQUARTERS</div>
-            <h2 style="color:white;">My Dukkan</h2>
-            <p>A complete CFO in your pocket. Track your expenses (Rent, Salary, Stock), visualize your spending with Pie Charts, and get AI Forecasts on your business runway.</p>
-            <a href="my_dukkan.html" class="module-btn btn-finance">Launch My Dukkan ↗</a>
-        </div>
-        <div class="section-visual">
-            <img src="https://placehold.co/600x350/1e293b/3b82f6?text=My+Dukkan+Finance+Dashboard" alt="My Dukkan Dashboard" class="feature-img" style="border:2px solid #3b82f6;">
-        </div>
-    </section>
-
-    <section class="section reverse">
-        <div class="section-text">
-            <div style="color:#7c3aed; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">LOYALTY & RETENTION</div>
-            <h2 style="color:white;">Bharat CRM <span style="font-size:16px; opacity:0.6; display:block;">(Customer Relationship Management)</span></h2>
-            <p>Turn one-time buyers into loyal fans. Automatically rank customers on a "Champions Podium", assign Gold/Platinum badges, and use AI to send "Miss You" offers to inactive users.</p>
-            <a href="customers.html" class="module-btn btn-crm">Open CRM System ↗</a>
-        </div>
-        <div class="section-visual">
-             <img src="https://placehold.co/600x350/2e1065/7c3aed?text=Bharat+CRM+Loyalty+System" alt="Bharat CRM" class="feature-img" style="border:2px solid #7c3aed;">
+            <div class="img-card">
+                <img src="4in.png" alt="Analytics" style="width:100%; display:block;">
+            </div>
         </div>
     </section>
 
     <section class="section">
         <div class="section-text">
-            <div style="color:#FFD700; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">CUSTOMER PORTAL</div>
-            <h2 style="color:white;">My Khata</h2>
-            <p>The transparent way to handle Udhaar. Your customers can check their own dues online, see their rank on the leaderboard, and win rewards for paying on time.</p>
-            <a href="my_khata.html" class="module-btn btn-khata">View Customer Page ↗</a>
+            <div style="color:#3b82f6; font-weight:800; letter-spacing:1px; margin-bottom:10px; font-size:12px;">FINANCIAL HEADQUARTERS</div>
+            <h2>Your Digital CFO.</h2>
+            <p>Track every rupee. Manage rent, salaries, and stock costs in one place. Get AI forecasts on your business runway and visual spending breakdowns.</p>
+            <a href="my_dukkan.html" class="module-btn btn-finance">Open Finance HQ ↗</a>
         </div>
         <div class="section-visual">
-             <img src="https://placehold.co/600x350/3f2c05/FFD700?text=My+Khata+Customer+Rewards" alt="My Khata Page" class="feature-img" style="border:2px solid #FFD700;">
+            <div class="img-card" style="border-color:#3b82f6;">
+                <img src="https://placehold.co/600x350/1e293b/3b82f6?text=My+Dukkan+Finance+Dashboard" alt="My Dukkan" style="width:100%; display:block;">
+            </div>
+        </div>
+    </section>
+
+    <section class="section reverse">
+        <div class="section-text">
+            <div style="color:#a855f7; font-weight:800; letter-spacing:1px; margin-bottom:10px; font-size:12px;">LOYALTY ENGINE</div>
+            <h2>Turn Visitors <br>Into Fans.</h2>
+            <p>Automatic customer ranking. Identify your VIPs, assign Gold/Platinum badges, and send personalized "Miss You" offers to bring them back.</p>
+            <a href="customers.html" class="module-btn btn-crm">Access CRM ↗</a>
+        </div>
+        <div class="section-visual">
+            <div class="img-card" style="border-color:#a855f7;">
+                <img src="https://placehold.co/600x350/2e1065/a855f7?text=Bharat+CRM+Loyalty+System" alt="Bharat CRM" style="width:100%; display:block;">
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-text">
+            <div style="color:#FFD700; font-weight:800; letter-spacing:1px; margin-bottom:10px; font-size:12px;">CUSTOMER PORTAL</div>
+            <h2>Transparent Udhaar.</h2>
+            <p>Build trust with a digital ledger. Customers can check their own dues online, view their credit score, and win rewards for timely payments.</p>
+            <a href="my_khata.html" class="module-btn btn-khata">View Portal ↗</a>
+        </div>
+        <div class="section-visual">
+            <div class="img-card" style="border-color:#FFD700;">
+                <img src="https://placehold.co/600x350/3f2c05/FFD700?text=My+Khata+Customer+Rewards" alt="My Khata" style="width:100%; display:block;">
+            </div>
         </div>
     </section>
 
     <footer>
-        <p>📞 9911901910 • <a href="https://oneanush.github.io/BharatPOS/">Visit Website</a></p>
-        <p style="margin-top: 10px; opacity: 0.6;">Designed by UTKARSH SHARMA</p>
+        <p>📞 9911901910 • <a href="https://oneanush.github.io/BharatPOS/">BharatPOS Official</a></p>
+        <p style="margin-top: 15px; opacity: 0.5; font-size:12px;">ENGINEERED BY UTKARSH SHARMA</p>
     </footer>
 
     <script>
         function gologin() {
             window.location.href = "login.html";
         }
+
+        // Scroll Animation Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.15 });
+
+        document.querySelectorAll('.section').forEach(section => {
+            observer.observe(section);
+        });
     </script>
 
 </body>
