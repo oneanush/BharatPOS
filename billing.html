@@ -186,43 +186,27 @@ function sendWhatsAppBill() {
     const phone = document.getElementById('custPhone').value; 
     const custName = document.getElementById('custName').value || "Customer";
     
-    // DIRECT STORAGE READ (Fixes 'Cart Empty' error)
-    let cart = [];
-    try { 
-        const raw = localStorage.getItem('bill_items');
-        if(raw) cart = JSON.parse(raw);
-    } catch(e) {}
-
-    if (!cart || cart.length === 0) { 
-        // Fallback to window.cart just in case
-        if(window.cart && window.cart.length > 0) cart = window.cart;
-        else { alert("Cart is empty!"); return; }
+    // 1. Validation
+    if (!phone || phone.length < 10) { 
+        alert("Please enter a valid Mobile Number!"); 
+        return; 
     }
 
-    if (!phone || phone.length < 10) { alert("Please enter valid Mobile Number!"); return; }
+    // 2. The Link to your Khata Page
+    const khataLink = "https://oneanush.github.io/BharatPOS/my_khata.html";
 
-    const totalTxt = document.getElementById('grandTotal').innerText.replace("Total:", "").trim();
-    const dateTxt = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    // 3. Construct the Message (Using %0A for new lines)
+    let msg = `Namaste ${custName}! 🙏%0A%0A`;
+    msg += `Thank you for visiting our shop!%0A`;
+    msg += `You can view your invoice history and pending dues here:%0A`;
+    msg += `${khataLink}`;
 
-    // 1. Build Item List
-    let msg = `🧾 *BHARAT POS INVOICE* %0A📅 ${dateTxt} %0A👤 ${custName} %0A--------------------------------%0A`;
-   
-       
-    // 3. NEW: Add My Khata Link & Description
-    // %0A is a line break. *Text* makes it bold.
-    msg += `📢 *Track Rewards & Ledger:* %0A`;
-    msg += `*Get your invoice and pending dues here:* ⬇️ %0A`;
-    msg += `https://oneanush.github.io/BharatPOS/my_khata.html %0A`;
-    
-    // 4. Footer
-    msg += `--------------------------------%0A🙏 Thank you!`;
-
+    // 4. Open WhatsApp
     window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
 }
 </script>
 </body>
 </html>
-
 
 
 
