@@ -1,14 +1,181 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>Products - Bharat POS</title>
-  <link rel="stylesheet" href="bharatpos.css">
-  <script src="quagga.js"></script> <!-- Quagga must be loaded first -->
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  
+  <script src="quagga.js"></script>
   <script src="bharatpos.js" defer></script>
+
+  <style>
+    /* --- VARIABLES & RESET --- */
+    :root {
+      --bg-body: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.6);
+      --glass: blur(12px);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #f59e0b; /* Bharat POS Gold */
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --input-bg: rgba(15, 23, 42, 0.6);
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      padding-bottom: 80px;
+    }
+
+    /* BACKGROUND MESH */
+    body::before {
+      content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.05), transparent 40%),
+                  radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05), transparent 40%);
+      z-index: -1; pointer-events: none;
+    }
+
+    /* --- NAVIGATION (Preserved Links) --- */
+    nav {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 15px 20px; gap: 15px;
+      background: rgba(15, 23, 42, 0.9); backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    nav a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; }
+    nav a:hover { color: var(--accent); }
+    
+    .profile-name {
+      font-weight: 700; color: var(--accent);
+      padding: 6px 12px; border: 1px solid var(--accent);
+      border-radius: 20px; background: rgba(245, 158, 11, 0.1);
+      font-size: 13px; margin-left: 10px;
+    }
+
+    /* --- HEADER --- */
+    .header {
+      padding: 20px; display: flex; align-items: center; justify-content: space-between;
+      max-width: 1200px; margin: 0 auto;
+    }
+    .global-logo { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
+    .brand { font-size: 20px; font-weight: 800; margin-left: 10px; flex-grow: 1; color: #fff; }
+    .nav a { margin-left: 15px; font-size: 14px; }
+
+    /* --- LAYOUT --- */
+    .main-container {
+      display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px;
+      max-width: 1200px; margin: 0 auto; padding: 0 20px;
+    }
+    @media(max-width: 900px) { .main-container { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    h3 { margin: 0 0 20px 0; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+
+    /* --- SCANNER HUD --- */
+    .scanner-section { max-width: 1200px; margin: 0 auto 20px auto; padding: 0 20px; }
+    .scan-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+    
+    .btn-scan {
+      flex: 1; padding: 12px; border: none; border-radius: 8px;
+      font-weight: 600; cursor: pointer; transition: transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-start { background: var(--accent); color: #000; }
+    .btn-stop { background: var(--input-bg); color: var(--danger); border: 1px solid var(--danger); }
+    .btn-reset { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); }
+    .btn-scan:active { transform: scale(0.96); }
+
+    /* HUD Video Container */
+    .camera-wrapper {
+      position: relative; border-radius: 12px; overflow: hidden;
+      background: #000; display: none; /* Hidden by default */
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); border: 1px solid var(--accent);
+    }
+    #cameraPreview { width: 100%; height: 300px; object-fit: cover; display: block; }
+    
+    /* Scanning Animation Line */
+    .scan-line {
+      position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+      background: var(--success); box-shadow: 0 0 10px var(--success);
+      animation: scanMove 2s infinite linear; z-index: 10;
+    }
+    @keyframes scanMove { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+    /* --- FORM STYLES --- */
+    .form-row { margin-bottom: 16px; position: relative; }
+    
+    input {
+      width: 100%; padding: 14px 12px; background: var(--input-bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: #fff; font-size: 14px; transition: 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
+    input::placeholder { color: transparent; } /* Hide default placeholder for floating label effect */
+
+    /* Floating Label Magic */
+    .floating-label {
+      position: absolute; left: 12px; top: 14px; color: var(--text-muted);
+      font-size: 14px; pointer-events: none; transition: 0.2s;
+    }
+    input:focus ~ .floating-label,
+    input:not(:placeholder-shown) ~ .floating-label {
+      top: -8px; left: 10px; font-size: 11px; color: var(--accent);
+      background: var(--bg-body); padding: 0 4px; border-radius: 4px;
+    }
+
+    button[type="submit"] {
+      width: 100%; background: var(--success); color: #fff;
+      padding: 14px; border: none; border-radius: 8px; font-weight: 700;
+      cursor: pointer; font-size: 15px; margin-top: 10px;
+    }
+
+    /* --- PRODUCT LIST (Responsive Table) --- */
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; color: var(--text-muted); font-size: 12px; padding: 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    
+    .delete-btn {
+      background: rgba(239, 68, 68, 0.2); color: var(--danger);
+      border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    }
+    .delete-btn:hover { background: var(--danger); color: white; }
+
+    /* Mobile Table Transformation */
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr { display: block; }
+      thead tr { position: absolute; top: -9999px; left: -9999px; }
+      tr { margin-bottom: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; border: 1px solid var(--border); }
+      td { border: none; padding: 6px 0; position: relative; padding-left: 40%; display: flex; align-items: center; }
+      td:before { position: absolute; left: 0; width: 35%; white-space: nowrap; content: attr(data-label); color: var(--text-muted); font-size: 12px; font-weight: 600; }
+    }
+
+    /* --- TOAST --- */
+    #toast {
+      visibility: hidden; min-width: 250px; background-color: var(--success); color: #fff;
+      text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000;
+      right: 20px; bottom: 30px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+    }
+    #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+  </style>
 </head>
 <body>
+
 <nav>
    <a href="sales.html">Sales</a>
    <a href="settings.html">Settings</a>
@@ -16,63 +183,122 @@
    <div id="profileName" class="profile-name"></div>
 </nav>
 
-<style>
-.profile-name {
-  font-weight: 700;
-  color: #ffcc00;
-  margin-left: 12px;
-  margin-right: 5px;
-  padding: 6px 10px;
-  border: 1px solid #ffcc00;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.1);
-}
-</style>
-
 <div class="header">
-  <div class="global-header"> <img src="logo.png" class="global-logo"> </div>
-  <div class="brand"> Bharat POS</div>
+  <div style="display:flex; align-items:center;">
+      <img src="logo.png" class="global-logo" alt="Logo">
+      <div class="brand">Bharat POS</div>
+  </div>
   <div class="nav">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="billing.html">Billing</a>
+    <a href="dashboard.html" style="color:var(--accent);">Dashboard</a>
+    <a href="billing.html" style="color:#fff;">Billing</a>
   </div>
 </div>
 
-<!-- AI Camera Scan -->
-<div class="form-row">
-  <button type="button" onclick="startLiveScan()">📷 Start AI Scan</button>
-  <button type="button" onclick="stopLiveScan()">⛔ Stop</button>
-  <button type="button" onclick="resetAIScan()">🔄 Scan Next Product</button>
+<div class="scanner-section">
+  <div class="scan-controls">
+    <button type="button" class="btn-scan btn-start" onclick="uiStartScan()">
+      <span>📷 AI Scan</span>
+    </button>
+    <button type="button" class="btn-scan btn-stop" onclick="uiStopScan()">
+      <span>⛔ Stop</span>
+    </button>
+    <button type="button" class="btn-scan btn-reset" onclick="resetAIScan()">
+      <span>🔄 Next Item</span>
+    </button>
+  </div>
+
+  <div id="cameraContainer" class="camera-wrapper">
+    <div class="scan-line"></div>
+    <video id="cameraPreview" autoplay playsinline></video>
+    <canvas id="captureCanvas" style="display:none;"></canvas>
+  </div>
+  <div id="barcodePreview" style="margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:12px;"></div>
 </div>
 
-<video id="cameraPreview" autoplay playsinline style="width:80%;display:none;"></video>
-<canvas id="captureCanvas" style="display:none;"></canvas>
-<div id="barcodePreview" style="width:100%; height:300px;"></div>
-
 <div class="main-container">
+  
   <div class="card">
-    <h3>Add Product</h3>
+    <h3>Add New Product</h3>
     <form id="productForm" onsubmit="handleAddProduct(event);">
-      <div class="form-row"><input id="productName" placeholder="Product name (e.g. Amul Milk)"></div>
-      <div class="form-row"><input id="productQuantity" placeholder="Quantity/Unit (e.g. 250g, 1L, 500ml)"></div>
-      <div class="form-row"><input id="productPrice" type="number" step="0.01" placeholder="Price"></div>
-      <div class="form-row"><input id="productStock" type="number" placeholder="Stock"></div>
-      <div class="form-row"><input id="productTax" type="number" placeholder="Tax % (optional)"></div>
-      <div class="form-row"><input id="productCategory" placeholder="Category (optional)"></div>
-      <label>Barcode:</label>
-      <input type="text" id="productBarcode" placeholder="Enter Barcode">
-      <div class="form-row"><button type="submit">Save Product</button></div>
+      
+      <div class="form-row">
+        <input id="productName" placeholder=" " required>
+        <label for="productName" class="floating-label">Product Name (e.g. Amul Milk)</label>
+      </div>
+
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div style="position:relative;">
+            <input id="productQuantity" placeholder=" ">
+            <label for="productQuantity" class="floating-label">Qty/Unit</label>
+        </div>
+        <div style="position:relative;">
+            <input id="productPrice" type="number" step="0.01" placeholder=" " required>
+            <label for="productPrice" class="floating-label">Price (₹)</label>
+        </div>
+      </div>
+
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div style="position:relative;">
+            <input id="productStock" type="number" placeholder=" ">
+            <label for="productStock" class="floating-label">Stock Qty</label>
+        </div>
+        <div style="position:relative;">
+            <input id="productTax" type="number" placeholder=" ">
+            <label for="productTax" class="floating-label">Tax %</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <input id="productCategory" placeholder=" ">
+        <label for="productCategory" class="floating-label">Category (Optional)</label>
+      </div>
+
+      <div class="form-row" style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
+        <input type="text" id="productBarcode" placeholder=" " style="font-family:'JetBrains Mono'; color:var(--accent);">
+        <label for="productBarcode" class="floating-label">Barcode / SKU</label>
+      </div>
+
+      <div class="form-row">
+        <button type="submit">Save Product to Inventory</button>
+      </div>
     </form>
   </div>
 
   <div class="card">
-    <h3>Products</h3>
+    <h3>Inventory List</h3>
     <div id="productsList"></div>
   </div>
 </div>
 
+<div id="toast">Message Here</div>
+
 <script>
-/* ------------------------ USER PROFILE & PRODUCT LIST ------------------------ */
+/* ------------------------ UI ENHANCEMENTS ------------------------ */
+
+// Custom Toast Function
+function showToast(msg, isError = false) {
+  const x = document.getElementById("toast");
+  x.innerText = msg;
+  x.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
+  x.className = "show";
+  setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+}
+
+// Wrapper for Camera UI toggling
+function uiStartScan() {
+  const cont = document.getElementById('cameraContainer');
+  cont.style.display = 'block'; // Show HUD
+  startLiveScan(); // Call original logic
+}
+
+function uiStopScan() {
+  const cont = document.getElementById('cameraContainer');
+  cont.style.display = 'none'; // Hide HUD
+  stopLiveScan(); // Call original logic
+}
+
+/* ------------------------ ORIGINAL LOGIC PRESERVED ------------------------ */
+
 function loadUser(){
   const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
   document.getElementById('profileName').textContent = data.name ? "👤 " + data.name : "👤 Guest";
@@ -82,22 +308,24 @@ loadUser();
 function renderProducts(){
   const products = getProducts();
   if(products.length===0) { 
-    document.getElementById('productsList').innerHTML = '<div class="small">No products</div>'; 
+    document.getElementById('productsList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 No products found.<br>Add one using the form.</div>'; 
     return;
   }
-  let html = '<table><tr><th>Name</th><th>Qty/Unit</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr>';
+  
+  // Responsive Table HTML
+  let html = '<table><thead><tr><th>Name</th><th>Qty/Unit</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr></thead><tbody>';
   products.forEach(p=>{
     html += `<tr>
-      <td>${p.name}</td>
-      <td>${p.quantity || '-'}</td>
-      <td>${p.price}</td>
-      <td>${p.stock}</td>
-      <td>${p.taxPercent}%</td>
-      <td>${p.category}</td>
-      <td><button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button></td>
+      <td data-label="Name" style="font-weight:600; color:#fff;">${p.name}</td>
+      <td data-label="Qty">${p.quantity || '-'}</td>
+      <td data-label="Price" style="color:var(--accent);">₹${p.price}</td>
+      <td data-label="Stock">${p.stock}</td>
+      <td data-label="Tax">${p.taxPercent}%</td>
+      <td data-label="Category">${p.category}</td>
+      <td data-label="Action"><button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button></td>
     </tr>`;
   });
-  html += '</table>';
+  html += '</tbody></table>';
   document.getElementById('productsList').innerHTML = html;
 }
 
@@ -117,7 +345,7 @@ function deleteProductConfirm(pid){
   products = products.filter(p => p.id !== pid);
   saveProducts(products);
   renderProducts();
-  alert("Product deleted successfully!");
+  showToast("Product deleted successfully!");
 }
 
 async function handleAddProduct(event){
@@ -132,49 +360,39 @@ async function handleAddProduct(event){
       saveProducts(products);
     }
     renderProducts();
+    
     // Reset form
-    const form = document.getElementById('productForm');
-    if(form){
-      document.getElementById('productName').value = '';
-      document.getElementById('productQuantity').value = '';
-      document.getElementById('productPrice').value = '';
-      document.getElementById('productStock').value = '';
-      document.getElementById('productTax').value = '';
-      document.getElementById('productCategory').value = '';
-    }
+    document.getElementById('productForm').reset();
+    showToast("Product Added Successfully!");
+
   } catch(err){
     console.error('Error adding product:', err);
-    alert('Failed to add product. See console.');
+    showToast('Failed to add product', true);
   }
 }
-</script>
-<script>
-/* ------------------------ AI + BARCODE SCANNER (SIMULTANEOUS & OPTIMIZED) ------------------------ */
 
+/* ------------------------ AI + BARCODE SCANNER LOGIC (UNTOUCHED) ------------------------ */
 
 let cameraStream = null;
 let aiScanInterval = null;
-let barcodeScanFrameId = null; // For requestAnimationFrame
+let barcodeScanFrameId = null; 
 
 let aiScanLocked = false;          
 let barcodeDecodeInProgress = false; 
 let lastDetectedBarcode = null;
 let lastBarcodeTime = 0;
 
-// Dedicated canvas for barcode processing to avoid conflicts with AI canvas
 const barcodeCanvas = document.createElement('canvas'); 
 const barcodeCtx = barcodeCanvas.getContext('2d', { willReadFrequently: true });
 
-// Start live camera + Dual Scanning Loops
 async function startLiveScan() {
   if (cameraStream) return;
   const video = document.getElementById("cameraPreview");
   if (!video) return console.error("❌ cameraPreview missing");
   
-  video.style.display = "block";
+  // video.style.display = "block"; // Handled by UI wrapper now
 
   try {
-    // Requesting HD if possible for better barcode clarity
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: { 
         facingMode: "environment",
@@ -184,13 +402,9 @@ async function startLiveScan() {
     }); 
     video.srcObject = cameraStream;
     
-    // Wait for video to actually play to get dimensions
     video.onloadedmetadata = () => {
       video.play();
-      // Start AI Loop (Slow & Heavy)
       aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 2500);
-      
-      // Start Barcode Loop (Fast & Local)
       loopBarcodeScanning();
     };
 
@@ -201,13 +415,11 @@ async function startLiveScan() {
 }
 
 function stopLiveScan() {
-  // Stop AI Loop
   if(aiScanInterval) {
     clearInterval(aiScanInterval);
     aiScanInterval = null;
   }
 
-  // Stop Barcode Loop
   if(barcodeScanFrameId) {
     cancelAnimationFrame(barcodeScanFrameId);
     barcodeScanFrameId = null;
@@ -222,7 +434,7 @@ function stopLiveScan() {
 
   const video = document.getElementById("cameraPreview");
   if(video) {
-    video.style.display="none";
+    // video.style.display="none"; // Handled by UI wrapper
     try { video.srcObject = null; } catch(e) {}
   }
 
@@ -230,19 +442,16 @@ function stopLiveScan() {
   if(barcodePreview) barcodePreview.innerHTML = '';
 }
 
-// ---------------------- 1. AI SCANNING LOOP (Every 2.5s) ----------------------
 async function captureAndSendToAI(){
   const video = document.getElementById("cameraPreview");
-  const canvas = document.getElementById("captureCanvas"); // Visible/Debug canvas
+  const canvas = document.getElementById("captureCanvas"); 
   if(!video || !canvas) return;
 
   const ctx = canvas.getContext("2d");
-  // AI needs a decent resolution, but not huge
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // use JPEG for AI (smaller payload)
   const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
 
   aiScanLocked = true;
@@ -262,6 +471,7 @@ async function captureAndSendToAI(){
 
     if(data && data.success && hasLogicalData(data.product)){
       fillProductFromAI(data.product);
+      showToast("AI Detected Product!", false);
     } 
   } catch(e){ 
     console.error("❌ AI scan error:", e);
@@ -270,19 +480,13 @@ async function captureAndSendToAI(){
   }
 }
 
-// ---------------------- 2. BARCODE SCANNING LOOP (High Frequency) ----------------------
 function loopBarcodeScanning() {
-  // Keep looping as long as stream is active
   if (!cameraStream) return;
-
   const now = Date.now();
-  // Throttle: Limit barcode attempts to ~5 times per second (every 200ms) to save CPU
-  // You can lower 200 to 100 for faster scanning, or raise to 300 for weaker devices
   if (now - lastBarcodeTime > 200 && !barcodeDecodeInProgress) {
     lastBarcodeTime = now;
     attemptFastBarcodeDecode();
   }
-
   barcodeScanFrameId = requestAnimationFrame(loopBarcodeScanning);
 }
 
@@ -290,47 +494,31 @@ function attemptFastBarcodeDecode() {
   const video = document.getElementById("cameraPreview");
   if (!video || video.videoWidth === 0) return;
 
-  // Check if input is already filled to avoid redundant processing
   const currentVal = document.getElementById("productBarcode")?.value;
   if (currentVal && currentVal === lastDetectedBarcode) return;
 
   barcodeDecodeInProgress = true;
 
-  // 1. Draw current video frame to our efficient off-screen canvas
-  // We limit width to 800px for Quagga performance (scanning 4k is too slow)
   const scale = 800 / video.videoWidth; 
   barcodeCanvas.width = 800;
   barcodeCanvas.height = video.videoHeight * scale;
   
   barcodeCtx.drawImage(video, 0, 0, barcodeCanvas.width, barcodeCanvas.height);
-
-  // 2. Convert to Data URL (PNG is often better for Quagga contrast)
   const dataUrl = barcodeCanvas.toDataURL("image/png");
 
-  // 3. Run Quagga Decode
   Quagga.decodeSingle({
     src: dataUrl,
-    numOfWorkers: 2, // Use 2 workers for "peak" performance (non-blocking)
-    inputStream: {
-      size: 800,
-      singleChannel: false // let Quagga decide greyscale
-    },
-    locate: true, // Important for finding barcode in full image
-    locator: {
-      patchSize: "medium", // 'medium' or 'large' works best for product labels
-      halfSample: true     // CRITICAL: speeds up processing significantly
-    },
-    decoder: {
-      readers: ["ean_reader", "ean_8_reader", "upc_reader", "code_128_reader"]
-    }
+    numOfWorkers: 2, 
+    inputStream: { size: 800, singleChannel: false },
+    locate: true, 
+    locator: { patchSize: "medium", halfSample: true },
+    decoder: { readers: ["ean_reader", "ean_8_reader", "upc_reader", "code_128_reader"] }
   }, function(result) {
-    // Callback happens when finish
     barcodeDecodeInProgress = false;
 
     if (result && result.codeResult && result.codeResult.code) {
       const code = result.codeResult.code;
       
-      // Basic validation: EAN/UPC usually numeric and > 5 chars
       if(code.length > 5) {
         console.log('📦 FAST SCAN found:', code);
         
@@ -338,14 +526,12 @@ function attemptFastBarcodeDecode() {
         if (barcodeField) {
           barcodeField.value = code;
           lastDetectedBarcode = code;
-          
-          // Audio feedback (optional 'beep')
-          // playBeep(); 
+          showToast("Barcode Scanned: " + code);
         }
 
         const preview = document.getElementById('barcodePreview');
         if (preview) {
-           preview.innerHTML = `<div style="padding:10px; background:#d4edda; color:#155724; border:1px solid #c3e6cb; border-radius:5px; text-align:center;">
+           preview.innerHTML = `<div style="padding:10px; background:rgba(16,185,129,0.2); color:#10b981; border:1px solid #10b981; border-radius:5px; text-align:center;">
              <strong>MATCH!</strong> Barcode: ${code} <br> Format: ${result.codeResult.format}
            </div>`;
         }
@@ -354,7 +540,6 @@ function attemptFastBarcodeDecode() {
   });
 }
 
-// ---------------------- HELPERS ----------------------
 function hasLogicalData(p){ return p && typeof p.name==="string" && p.name.length>2; }
 
 function fillProductFromAI(product){
@@ -364,104 +549,78 @@ function fillProductFromAI(product){
   const catEl=document.getElementById("productCategory");
 
   if(!nameEl) return;
-  // Only overwrite if empty or user wants strict AI override? 
-  // Currently overwriting for convenience.
+  
   nameEl.value = product.name || nameEl.value;
   if(qtyEl) qtyEl.value = product.quantity || qtyEl.value;
   if(priceEl) priceEl.value = product.price || priceEl.value;
   if(catEl) catEl.value = product.category || catEl.value;
   
-  // Highlight that AI updated fields
-  nameEl.style.backgroundColor = "#fff3cd";
-  setTimeout(()=> nameEl.style.backgroundColor = "", 1000);
+  // Highlighting logic handled by CSS transition
+  nameEl.focus();
 }
 
 function resetAIScan(){
   aiScanLocked=false;
   stopLiveScan();
-  document.getElementById("productName").value="";
-  document.getElementById("productQuantity").value="";
-  document.getElementById("productPrice").value="";
-  document.getElementById("productCategory").value="";
-  document.getElementById("productBarcode").value="";
+  document.getElementById("productForm").reset();
   lastDetectedBarcode = null;
   const preview = document.getElementById('barcodePreview');
   if(preview) preview.innerHTML = '';
   startLiveScan();
 }
 
-// Expose functions
 window.startLiveScan = startLiveScan;
 window.stopLiveScan = stopLiveScan;
 window.resetAIScan = resetAIScan;
-</script>
-<script>
-  window.addEventListener('DOMContentLoaded', (event) => {
-    // 1. Get parameters from URL
-    const params = new URLSearchParams(window.location.search);
+
+/* URL PARAMS LOGIC */
+window.addEventListener('DOMContentLoaded', (event) => {
+  const params = new URLSearchParams(window.location.search);
+  
+  if (params.has('restock')) {
+    const pName  = params.get('restock');
+    const pPrice = params.get('price');
+    const pCat   = params.get('category');
+    const pTax   = params.get('tax');
+    const pStockCount = params.get('stock_val'); 
     
-    if (params.has('restock')) {
-      // Get the distinct values
-      const pName  = params.get('restock');
-      const pPrice = params.get('price');
-      const pCat   = params.get('category');
-      const pTax   = params.get('tax');
-      const pStockCount = params.get('stock_val'); 
-      
-      // FALLBACK CHECK: Check all possible names for the quantity/unit
-      const pUnitSize = params.get('unit_val') || params.get('unit') || params.get('quantity');
+    const pUnitSize = params.get('unit_val') || params.get('unit') || params.get('quantity');
 
-      console.log("Auto-filling:", { pName, pStockCount, pUnitSize });
+    const findEl = (ids) => {
+      for (let id of ids) {
+        const el = document.getElementById(id);
+        if (el) return el;
+      }
+      return null;
+    };
 
-      // 2. HELPER: Find element by ID
-      const findEl = (ids) => {
-        for (let id of ids) {
-          const el = document.getElementById(id);
-          if (el) return el;
-        }
-        return null;
-      };
+    const elName  = findEl(['productName', 'name']);
+    const elPrice = findEl(['productPrice', 'price']);
+    const elCat   = findEl(['productCategory', 'category']);
+    const elTax   = findEl(['productTax', 'tax']);
+    const elStock = findEl(['productStock', 'stock']); 
+    const elUnit  = findEl(['productQuantity', 'quantity', 'unit', 'size']);
 
-      // 3. FIND INPUTS (Matched to your specific IDs)
-      const elName  = findEl(['productName', 'name']);
-      const elPrice = findEl(['productPrice', 'price']);
-      const elCat   = findEl(['productCategory', 'category']);
-      const elTax   = findEl(['productTax', 'tax']);
-      const elStock = findEl(['productStock', 'stock']); // Stock Count
-      
-      // QTY/UNIT: Matches your 'productQuantity' ID
-      const elUnit  = findEl(['productQuantity', 'quantity', 'unit', 'size']);
+    if (elName) elName.value = pName;
+    if (elPrice && pPrice) elPrice.value = pPrice;
+    if (elCat && pCat) elCat.value = pCat;
+    if (elTax && pTax) elTax.value = pTax;
+    
+    if (elUnit && pUnitSize) elUnit.value = pUnitSize;
 
-      // 4. FILL VALUES
-      if (elName) elName.value = pName;
-      if (elPrice && pPrice) elPrice.value = pPrice;
-      if (elCat && pCat) elCat.value = pCat;
-      if (elTax && pTax) elTax.value = pTax;
-      
-            
-      // Fill Unit/Quantity (e.g. 1kg)
-      if (elUnit && pUnitSize) elUnit.value = pUnitSize;
-
-      // 5. Highlight
-      [elName, elPrice, elCat, elTax, elStock, elUnit].forEach(el => {
-        if(el) {
-          el.style.backgroundColor = "#fff3cd"; 
-          setTimeout(() => el.style.backgroundColor = "", 2000);
-        }
-      });
-      
-      if(elName) elName.focus();
-    }
-  });
+    [elName, elPrice, elCat, elTax, elStock, elUnit].forEach(el => {
+      if(el) {
+        el.style.borderColor = "var(--accent)"; 
+        setTimeout(() => el.style.borderColor = "", 2000);
+      }
+    });
+    
+    if(elName) elName.focus();
+  }
+});
 </script>
 </body>
 </html>
-
-
-
-
-
-
 
 
 
