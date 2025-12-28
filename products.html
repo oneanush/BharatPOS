@@ -150,15 +150,6 @@ async function handleAddProduct(event){
 </script>
 <script>
 /* ------------------------ AI + BARCODE SCANNER (SIMULTANEOUS & OPTIMIZED) ------------------------ */
-const API_BASE = 'http://localhost:5185';
-function buildUrl(endpoint) {
-  if (!endpoint) return API_BASE || '';
-  const ep = endpoint.replace(/^\//,'');
-  if (!API_BASE) return '/' + ep;
-  const normalizedBase = API_BASE.replace(/\/+$/,'');
-  if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
-  return normalizedBase + '/' + ep;
-}
 
 
 let cameraStream = null;
@@ -465,6 +456,18 @@ window.resetAIScan = resetAIScan;
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
