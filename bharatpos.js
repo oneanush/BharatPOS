@@ -1,7 +1,7 @@
 
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
-const API_BASE = 'https://assess-furniture-violations-similar.trycloudflare.com'; 
+const API_BASE = 'https://troubleshooting-rack-scale-graphical.trycloudflare.com'; 
 // ---------------------------
 
 // This function is now available globally
@@ -711,6 +711,7 @@ function applyTheme() {
   if (theme === "dark") { document.body.classList.add("dark"); }
 }
 document.addEventListener("DOMContentLoaded", applyTheme);
+
 
 
 
