@@ -7,13 +7,14 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="bharatpos.js"></script>
   <script src="quagga.js"></script>
 
   <style>
-    /* --- VARIABLES & RESET --- */
+    /* --- VARIABLES --- */
     :root {
       --bg-body: #0f172a;
       --bg-panel: #1e293b;
@@ -25,7 +26,6 @@
       --success: #10b981;
       --danger: #ef4444;
       --glass: blur(12px);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     }
     
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -35,33 +35,33 @@
       background-color: var(--bg-body);
       color: var(--text-main);
       font-family: 'Inter', sans-serif;
-      height: 100vh; overflow: hidden; /* App-like feel */
+      height: 100vh; overflow: hidden;
       display: flex; flex-direction: column;
     }
 
-    /* --- LAYOUT GRID --- */
+    /* --- LAYOUT --- */
     .app-layout {
       display: grid;
-      grid-template-columns: 1fr 400px; /* Product Area | Cart Area */
-      height: calc(100vh - 65px); /* Subtract header */
+      grid-template-columns: 1fr 400px; 
+      height: calc(100vh - 60px); 
       overflow: hidden;
     }
 
     /* --- HEADER --- */
     .header {
-      height: 65px; background: rgba(15, 23, 42, 0.95);
+      height: 60px; background: rgba(15, 23, 42, 0.95);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 20px; z-index: 100; backdrop-filter: var(--glass);
+      padding: 0 15px; z-index: 100; backdrop-filter: var(--glass);
       flex-shrink: 0;
     }
-    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
-    .global-logo { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); }
-    .nav { display: flex; gap: 20px; }
-    .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
-    .nav a:hover, .nav a.active { color: var(--accent); }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #fff; }
+    .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); }
+    .nav { display: flex; gap: 15px; }
+    .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; }
+    .nav a.active { color: var(--accent); }
 
-    /* --- LEFT PANEL: CATALOG --- */
+    /* --- LEFT: CATALOG --- */
     .catalog-panel {
       display: flex; flex-direction: column; 
       height: 100%; 
@@ -69,103 +69,125 @@
       overflow: hidden; 
     }
     
-    .search-area { padding: 20px 20px 10px 20px; flex-shrink: 0; }
+    .search-area { padding: 10px 15px; flex-shrink: 0; }
     .search-bar-wrap {
-      background: var(--bg-panel); padding: 8px 12px; border-radius: 12px;
-      box-shadow: var(--shadow-lg); display: flex; gap: 10px; align-items: center; border: 1px solid var(--border);
+      background: var(--bg-panel); padding: 6px 12px; border-radius: 12px;
+      display: flex; gap: 10px; align-items: center; border: 1px solid var(--border);
     }
     #productSearch {
-      border: none; flex: 1; font-size: 15px; padding: 8px;
+      border: none; flex: 1; font-size: 14px; padding: 5px;
       font-family: 'Inter', sans-serif; background: transparent; color: white;
     }
-    .btn-scan { background: none; border: none; cursor: pointer; color: var(--text-muted); transition: 0.2s; font-size: 18px; }
+    .btn-scan { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 18px; }
     
-    .category-area { padding: 0 20px 15px 20px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .category-area { padding: 0 15px 10px 15px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
     #categoryFilters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
     .cat-btn {
-      white-space: nowrap; padding: 8px 16px; border-radius: 20px;
-      font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+      white-space: nowrap; padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border);
       background: rgba(255,255,255,0.05); color: var(--text-muted);
     }
     .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-    .product-scroll-area { flex-grow: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
-    #productList { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-    
-    .prod-card {
-      background: var(--bg-panel); border-radius: 16px; padding: 15px;
-      border: 1px solid var(--border); cursor: pointer;
-      display: flex; flex-direction: column; justify-content: space-between; height: 130px;
-      position: relative; overflow: hidden;
+    /* --- PRODUCT GRID (Compact) --- */
+    .product-scroll-area {
+      flex-grow: 1; overflow-y: auto; padding: 10px;
+      padding-bottom: 100px; /* Space for mobile cart bar */
     }
-    .prod-card:active { transform: scale(0.95); }
-    .prod-name { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--text-main); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .prod-unit { font-size: 11px; color: var(--text-muted); }
-    .prod-price { font-size: 16px; color: var(--accent); font-weight: 700; margin-top: 4px; }
-    .out-stock { opacity: 0.5; pointer-events: none; filter: grayscale(1); border: 1px dashed var(--danger); }
+
+    #productList {
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); 
+      gap: 8px;
+    }
+
+    .prod-card {
+      background: var(--bg-panel); border-radius: 8px; padding: 8px;
+      border: 1px solid var(--border); cursor: pointer;
+      display: flex; flex-direction: column; justify-content: space-between; 
+      min-height: 85px; position: relative; overflow: hidden;
+      transition: border-color 0.1s;
+    }
+    .prod-card:active { transform: scale(0.96); border-color: var(--accent); }
     
-    /* --- RIGHT PANEL: CART --- */
+    .prod-name { font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--text-main); margin-bottom: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .prod-unit { font-size: 9px; color: var(--text-muted); }
+    .prod-price { font-size: 12px; color: var(--accent); font-weight: 700; margin-top: 2px; }
+    .out-stock { opacity: 0.5; filter: grayscale(1); border: 1px dashed var(--danger); pointer-events: none; }
+
+    /* --- RIGHT: CART --- */
     .cart-panel {
       background: #111827; border-left: 1px solid var(--border);
-      display: flex; flex-direction: column; height: 100%;
-      box-shadow: -10px 0 30px rgba(0,0,0,0.3); z-index: 20;
+      display: flex; flex-direction: column; height: 100%; z-index: 500;
     }
     
+    /* Toggle Handle (Visible only on Mobile) */
+    .cart-toggle-bar { display: none; }
+
     .cart-header {
-      padding: 20px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2);
+      padding: 15px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2);
       display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
     }
-    .cart-title { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .cart-title { font-weight: 700; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 8px; }
     
     .cart-body { flex: 1; overflow-y: auto; padding: 0; }
     .cart-items-list table { width: 100%; border-collapse: collapse; }
-    .cart-items-list th { text-align: left; font-size: 11px; color: var(--text-muted); padding: 10px 15px; border-bottom: 1px solid var(--border); background: #1f2937; position: sticky; top: 0; text-transform: uppercase; letter-spacing: 1px; }
-    .cart-items-list td { padding: 12px 15px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; }
+    .cart-items-list td { padding: 10px 15px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; }
     
-    .qty-ctrl { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; padding: 2px; width: fit-content; }
-    .qty-btn { width: 24px; height: 24px; border: none; background: transparent; color: #fff; cursor: pointer; font-weight: bold; }
+    .qty-ctrl { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; padding: 2px; }
+    .qty-btn { width: 22px; height: 22px; border: none; background: transparent; color: #fff; font-weight: bold; cursor: pointer; }
 
-    /* Payment Area */
-    .checkout-area { flex-shrink: 0; display: flex; flex-direction: column; background: #111827; }
-    .customer-form { padding: 15px 20px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); }
-    .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
-    .fancy-input {
-      width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
-      font-size: 13px; background: rgba(255,255,255,0.05); color: #fff;
-    }
-
-    .payment-area { padding: 20px; border-top: 1px solid var(--border); }
-    .pay-mode-chips { display: flex; gap: 8px; margin-bottom: 15px; }
+    .checkout-area { flex-shrink: 0; background: #0f172a; border-top: 1px solid var(--border); }
+    .customer-form { padding: 10px 15px; border-bottom: 1px solid var(--border); }
+    .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .fancy-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.05); color: #fff; }
+    
+    .payment-area { padding: 15px; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; color: var(--text-muted); }
+    .grand-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: var(--accent); margin: 10px 0; border-top: 1px dashed var(--border); padding-top: 10px; }
+    
+    .pay-mode-chips { display: flex; gap: 8px; margin-bottom: 10px; }
     .chip-radio { display: none; }
-    .chip-label { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; text-align: center; font-size: 13px; background: rgba(255,255,255,0.03); color: var(--text-muted); }
+    .chip-label { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 12px; background: rgba(255,255,255,0.03); color: var(--text-muted); }
     .chip-radio:checked + .chip-label { background: var(--text-main); color: #000; border-color: var(--text-main); }
     .chip-radio[value="Udhaar"]:checked + .chip-label { background: var(--danger); color: white; border-color: var(--danger); }
 
-    .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; color: var(--text-muted); }
-    .grand-total { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 20px; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-    
-    .checkout-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700; margin-top: 15px; }
+    .checkout-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 14px; }
 
-    /* --- MOBILE --- */
+    /* --- MOBILE OPTIMIZATIONS --- */
     @media (max-width: 900px) {
-      .app-layout { grid-template-columns: 1fr; display: block; height: calc(100vh - 65px); position: relative; }
+      .app-layout { grid-template-columns: 1fr; display: block; height: calc(100vh - 60px); position: relative; }
       
-      #productList { grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 8px; padding-bottom: 80px; }
-      .prod-card { min-height: 90px; padding: 8px; }
-      .prod-name { font-size: 12px; }
-      
+      /* Mobile Grid */
+      #productList {
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); 
+        gap: 8px;
+        padding-bottom: 80px; 
+      }
+
+      /* Bottom Cart Bar */
       .cart-panel {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 85vh;
-        border-radius: 20px 20px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2000;
+        position: fixed; bottom: 0; left: 0; width: 100%; 
+        height: 85vh; 
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 2000;
         transform: translateY(calc(100% - 70px)); 
       }
+      
       .cart-panel.open { transform: translateY(0); }
 
       .cart-toggle-bar {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 0 20px; height: 70px; cursor: pointer; background: #1e293b; border-bottom: 1px solid var(--border); width: 100%;
+        padding: 0 20px; height: 70px; cursor: pointer;
+        background: #1e293b; border-bottom: 1px solid var(--border);
+        width: 100%;
+        transition: background 0.3s;
       }
+      .cart-toggle-bar.updated { background: #064e3b; }
+
+      .mini-cart-info { display: flex; flex-direction: column; }
       .mini-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
       .mini-total { font-size: 18px; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace; }
       .mini-btn { background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
@@ -174,14 +196,14 @@
       .cart-panel.open .cart-header { display: flex; }
       .cart-panel.open .cart-toggle-bar { display: none; }
     }
-    @media (min-width: 901px) { .cart-toggle-bar { display: none; } }
 
     /* --- SCANNER --- */
-    .scanner-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+    .scanner-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: none; align-items: center; justify-content: center; flex-direction: column; }
     .scanner-view { width: 90%; max-width: 500px; height: 300px; background: black; border-radius: 12px; overflow: hidden; border: 2px solid var(--accent); position: relative; }
-    #scannerContainer video { width: 100%; height: 100%; object-fit: cover; }
-    .scan-laser { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--danger); box-shadow: 0 0 15px red; animation: scan 2s infinite; }
+    #cameraPreview { width: 100%; height: 100%; object-fit: cover; } 
+    .scan-laser { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--danger); box-shadow: 0 0 15px red; animation: scan 2s infinite; z-index: 10; }
     @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+
   </style>
 </head>
 <body>
@@ -192,21 +214,20 @@
     Bharat POS
   </div>
   <div class="nav">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="products.html">Products</a>
-    <a href="sales.html" class="active">Sales</a>
+    <a href="dashboard.html">Dash</a>
+    <a href="products.html">Items</a>
+    <a href="sales.html">History</a>
   </div>
 </div>
 
 <div class="app-layout">
 
   <div class="catalog-panel">
-    
     <div class="search-area">
       <div class="search-bar-wrap">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--accent)"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        <input type="text" id="productSearch" placeholder="Search..." oninput="handleSearch(this.value)" autocomplete="off">
-        <button class="btn-scan" onclick="openScanner()">📷</button>
+        <input type="text" id="productSearch" placeholder="Search item..." oninput="handleSearch(this.value)" autocomplete="off">
+        <button class="btn-scan" onclick="openScanner()"><i class="fa-solid fa-camera"></i></button>
         <input id="barcodeInput" style="display:none;"> 
       </div>
     </div>
@@ -222,7 +243,7 @@
 
   <div class="cart-panel" id="cartPanel">
     
-    <div class="cart-toggle-bar" onclick="toggleCart()">
+    <div class="cart-toggle-bar" id="cartToggleBar" onclick="toggleCart()">
         <div class="mini-cart-info">
             <span class="mini-label">Total to Pay</span>
             <span class="mini-total" id="miniTotal">₹0</span>
@@ -249,7 +270,7 @@
           <input type="number" id="custPhone" class="fancy-input" placeholder="Mobile No.">
         </div>
         <button onclick="sendWhatsAppBill()" style="width:100%; background:rgba(37, 211, 102, 0.1); color:#25d366; border:1px solid #25d366; padding:10px; border-radius:8px; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:0.2s;">
-          <span style="font-size:16px;">📱</span> Send via WhatsApp
+          <i class="fa-brands fa-whatsapp" style="font-size:16px;"></i> Send via WhatsApp
         </button>
       </div>
 
@@ -269,11 +290,11 @@
         <div style="margin:10px 0;">
           <div class="pay-mode-chips">
             <input type="radio" name="payMode" value="Cash" id="pmCash" class="chip-radio" checked>
-            <label for="pmCash" class="chip-label">💵 Cash</label>
+            <label for="pmCash" class="chip-label">Cash</label>
             <input type="radio" name="payMode" value="UPI" id="pmUPI" class="chip-radio">
-            <label for="pmUPI" class="chip-label">📱 UPI</label>
+            <label for="pmUPI" class="chip-label">UPI</label>
             <input type="radio" name="payMode" value="Udhaar" id="pmUdhaar" class="chip-radio">
-            <label for="pmUdhaar" class="chip-label">📒 Udhaar</label>
+            <label for="pmUdhaar" class="chip-label">Udhaar</label>
           </div>
         </div>
 
@@ -285,18 +306,80 @@
 </div>
 
 <div id="scannerModal" class="scanner-modal">
-  <div class="scanner-view" id="scannerContainer">
+  <div class="scanner-view">
+    <div id="cameraPreview"></div> 
     <div class="scan-laser"></div>
   </div>
-  <button onclick="closeScanner()" style="margin-top:20px; background:white; border:none; padding:10px 30px; border-radius:30px; font-weight:bold;">Close</button>
+  <button onclick="closeScanner()" style="margin-top:20px; background:white; border:none; padding:10px 30px; border-radius:30px; font-weight:bold; cursor:pointer;">Close</button>
 </div>
 
 <div id="invoiceModal" style="display:none;"><div id="invoiceContent"></div></div>
 
 <script>
+// Global State
+window.cart = [];
+
+// --- SOUND EFFECTS ---
+const beepCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep() {
+    if (beepCtx.state === 'suspended') beepCtx.resume();
+    const osc = beepCtx.createOscillator();
+    const gain = beepCtx.createGain();
+    osc.connect(gain);
+    gain.connect(beepCtx.destination);
+    osc.frequency.value = 800;
+    gain.gain.value = 0.1;
+    osc.start();
+    setTimeout(() => osc.stop(), 100);
+}
+
+// --- ADD TO BILL LOGIC (Fixes Ghost Items) ---
+window.addToBill = function(productId) {
+    const products = getProducts();
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+
+    // Check if item already exists in local cart
+    const existing = window.cart.find(i => i.id == productId);
+    if (existing) {
+        existing.qty++;
+    } else {
+        window.cart.push({
+            id: product.id,
+            name: product.name,
+            price: parseFloat(product.price),
+            qty: 1
+        });
+    }
+    
+    // Play Sound & Render
+    playBeep();
+    renderCart();
+    visualFeedback();
+}
+
+function updateQty(index, change) {
+    if (window.cart[index]) {
+        window.cart[index].qty += change;
+        if (window.cart[index].qty <= 0) window.cart.splice(index, 1);
+        renderCart();
+    }
+}
+
+function removeFromCart(index) {
+    window.cart.splice(index, 1);
+    renderCart();
+}
+
+function getProducts() {
+    try {
+        return JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+    } catch(e) { return []; }
+}
+
 // --- CORE RENDER LOGIC ---
 function renderBillCategories() {
-    const products = (typeof getProducts==='function')?getProducts():[];
+    const products = getProducts();
     const cats = ['All', ...new Set(products.map(p=>p.category).filter(Boolean))];
     const c = document.getElementById('categoryFilters');
     c.innerHTML = cats.map((k, i) => `<button class="cat-btn ${i===0?'active':''}" onclick="filterCat(this, '${k}')">${k}</button>`).join('');
@@ -310,7 +393,7 @@ function filterCat(btn, cat) {
 
 function renderBillGrid(cat='All'){
     const g = document.getElementById('productList');
-    const ps = (typeof getProducts==='function')?getProducts():[];
+    const ps = getProducts();
     g.innerHTML = '';
     const f = cat==='All' ? ps : ps.filter(p => p.category === cat);
     
@@ -320,7 +403,7 @@ function renderBillGrid(cat='All'){
         const isOut = p.stock <= 0;
         const div = document.createElement('div');
         div.className = `prod-card ${isOut ? 'out-stock' : ''}`;
-        div.onclick = () => { if(!isOut && window.addToBill) window.addToBill(p.id); };
+        div.onclick = () => { if(!isOut) window.addToBill(p.id); };
         div.innerHTML = `
             <div class="prod-name">${p.name}</div>
             <div class="prod-meta"><div class="prod-unit">${p.quantity || ''}</div><div class="prod-price">₹${p.price}</div></div>
@@ -338,32 +421,40 @@ function handleSearch(q){
     f.forEach(p => {
         const div = document.createElement('div');
         div.className = 'prod-card';
-        div.onclick = () => { if(window.addToBill) window.addToBill(p.id); };
+        div.onclick = () => { window.addToBill(p.id); };
         div.innerHTML = `<div class="prod-name">${p.name}</div><div class="prod-price">₹${p.price}</div>`;
         g.appendChild(div);
     });
 }
 
-// --- CART RENDER ---
+// --- CART RENDER (Enhanced for Mobile Total) ---
 window.renderCart = function() {
     const list = document.getElementById('cartList');
     const totalEl = document.getElementById('grandTotal');
     const subTotalEl = document.getElementById('subTotalVal');
-    const miniTotal = document.getElementById('miniTotal');
+    const miniTotal = document.getElementById('miniTotal'); // Mobile Bar
     const discInput = document.getElementById('discount');
     
+    // Calculate Totals FIRST
+    let subTotal = 0;
+    window.cart.forEach((item) => { subTotal += item.price * item.qty; });
+    const disc = parseFloat(discInput.value) || 0;
+    const final = Math.max(0, subTotal - disc);
+    const finalStr = "₹" + final;
+
+    // Update Totals DOM (Always, even if empty)
+    totalEl.innerText = finalStr;
+    if(subTotalEl) subTotalEl.innerText = "₹" + subTotal;
+    if(miniTotal) miniTotal.innerText = finalStr;
+
+    // Render List
     if(!window.cart || window.cart.length === 0) {
         list.innerHTML = '<div style="text-align:center; padding:40px; color:#475569;">Cart Empty</div>';
-        totalEl.innerText = "₹0";
-        if(miniTotal) miniTotal.innerText = "₹0";
         return;
     }
 
-    let subTotal = 0;
     let html = '<table><thead><tr><th>Item</th><th style="width:70px;">Qty</th><th style="text-align:right;">Price</th><th style="width:20px;"></th></tr></thead><tbody>';
-    
     window.cart.forEach((item, index) => {
-        subTotal += item.price * item.qty;
         html += `<tr>
             <td>${item.name}</td>
             <td><div class="qty-ctrl"><button class="qty-btn" onclick="updateQty(${index}, -1)">-</button>${item.qty}<button class="qty-btn" onclick="updateQty(${index}, 1)">+</button></div></td>
@@ -373,14 +464,6 @@ window.renderCart = function() {
     });
     html += '</tbody></table>';
     list.innerHTML = html;
-
-    if(subTotalEl) subTotalEl.innerText = "₹" + subTotal;
-    const disc = parseFloat(discInput.value) || 0;
-    const final = Math.max(0, subTotal - disc);
-    
-    const finalStr = "₹" + final;
-    totalEl.innerText = finalStr;
-    if(miniTotal) miniTotal.innerText = finalStr; // Update Mobile Bar
 }
 
 // --- MOBILE UI ---
@@ -388,23 +471,48 @@ function toggleCart() {
     document.getElementById('cartPanel').classList.toggle('open');
 }
 
+function visualFeedback() {
+    const bar = document.getElementById('cartToggleBar');
+    if(window.getComputedStyle(bar).display !== 'none') {
+        bar.classList.add('updated');
+        setTimeout(() => bar.classList.remove('updated'), 200);
+    }
+}
+
 function clearCartConfirm() {
-    if(confirm('Clear Cart?')) { window.cart = []; renderCart(); }
+    if(confirm('Clear Cart?')) { 
+        window.cart = []; // Full Wipe
+        document.getElementById('discount').value = '';
+        renderCart(); 
+    }
 }
 
 // --- SCANNER ---
 function openScanner() {
     document.getElementById('scannerModal').style.display = 'flex';
-    const btn = document.getElementById('openCamera'); 
-    if(btn) btn.click();
+    Quagga.init({
+        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#cameraPreview'), constraints: { width: 640, height: 480, facingMode: "environment" } },
+        decoder: { readers: ["ean_reader", "ean_8_reader", "code_128_reader"] }
+    }, function(err) {
+        if (err) { console.log(err); return; }
+        Quagga.start();
+    });
+    Quagga.onDetected(function(result) {
+        var code = result.codeResult.code;
+        if(document.getElementById('productSearch').value !== code) {
+            document.getElementById('productSearch').value = code;
+            handleSearch(code);
+            const match = getProducts().find(p => p.barcode === code);
+            if(match) { window.addToBill(match.id); }
+        }
+    });
 }
 function closeScanner() {
     document.getElementById('scannerModal').style.display = 'none';
-    const btn = document.getElementById('stopCamera'); 
-    if(btn) btn.click();
+    Quagga.stop();
 }
 
-// --- WHATSAPP LOGIC (RESTORED) ---
+// --- WHATSAPP ---
 function sendWhatsAppBill() {
     const phone = document.getElementById('custPhone').value; 
     const custName = document.getElementById('custName').value || "Customer";
@@ -426,9 +534,9 @@ function sendWhatsAppBill() {
 document.addEventListener("DOMContentLoaded", ()=>{
     renderBillCategories();
     renderBillGrid();
+    window.cart = []; // Reset cart on load
     renderCart();
 });
 </script>
 </body>
 </html>
-
