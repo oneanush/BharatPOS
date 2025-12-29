@@ -2,283 +2,339 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>Settings - Bharat POS</title>
   
-  <link rel="stylesheet" href="bharatpos.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <script src="bharatpos.js" defer></script>
+  <script src="bharatpos.js"></script>
 
   <style>
+    /* --- VARIABLES & RESET --- */
     :root {
-      --primary-color: #007bff;
-      --danger-color: #dc3545;
-      --success-color: #28a745;
-      --bg-light: #f8f9fa;
-      --text-dark: #343a40;
+      --bg-body: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --glass: blur(16px);
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b; /* Gold */
+      --success: #10b981; /* Emerald */
+      --danger: #ef4444; /* Red */
+      --primary: #3b82f6; /* Blue */
     }
 
-    /* Keep main layout but enhance internal container */
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      padding-bottom: 80px;
+    }
+
+    /* --- NAVIGATION --- */
+    .navbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 24px; background: rgba(15, 23, 42, 0.9); backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); }
+    
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* --- LAYOUT --- */
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+    
+    .page-title {
+        font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 20px; 
+        display: flex; align-items: center; gap: 10px;
+    }
+
     .settings-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 20px;
-      padding: 20px 0;
     }
 
-    .settings-card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      padding: 20px;
-      border: 1px solid #eee;
+    /* --- CARDS --- */
+    .card {
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+      display: flex; flex-direction: column; gap: 20px;
+      transition: transform 0.2s;
     }
+    .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
 
-    .settings-card h4 {
-      margin-top: 0;
-      border-bottom: 2px solid #f0f0f0;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
-      color: var(--text-dark);
-      font-size: 1.1rem;
+    .card-header {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 16px; font-weight: 600; color: #fff; border-bottom: 1px solid var(--border);
+        padding-bottom: 15px; margin-bottom: 5px;
     }
+    .card-icon { color: var(--accent); font-size: 18px; }
 
-    /* Styled Form Elements */
-    .form-group {
-      margin-bottom: 15px;
-    }
-    
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 500;
-      font-size: 0.9rem;
-      color: #666;
-    }
-
+    /* --- FORM ELEMENTS --- */
+    .input-group { position: relative; }
     .form-control {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      box-sizing: border-box; /* Fixes padding issues */
+      width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+      color: #fff; padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif;
+      transition: 0.2s; font-size: 14px;
+    }
+    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
+    
+    .form-label {
+        font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 500;
     }
 
-    /* Styled Buttons */
-    .btn-action {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: opacity 0.2s;
+    /* --- BUTTONS --- */
+    .btn {
+      width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+      font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: 0.2s;
     }
-    .btn-action:hover { opacity: 0.9; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #2563eb; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
+    
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #059669; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+    
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: white; }
 
-    .btn-primary { background: var(--primary-color); color: white; }
-    .btn-danger { background: var(--danger-color); color: white; }
-    .btn-success { background: var(--success-color); color: white; }
-    .btn-outline { background: white; border: 1px solid #ddd; color: #333; }
-
-    /* Custom File Input Styling */
-    .file-upload-wrapper {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-      width: 100%;
+    /* --- FILE UPLOAD ZONE --- */
+    .upload-zone {
+        border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
+        text-align: center; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.02);
     }
-    .file-upload-wrapper input[type=file] {
-      font-size: 100px;
-      position: absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      cursor: pointer;
+    .upload-zone:hover { border-color: var(--accent); background: rgba(245, 158, 11, 0.05); }
+    .upload-input { display: none; }
+    
+    /* QR PREVIEW */
+    .qr-preview-box {
+        margin-top: 15px; text-align: center; min-height: 100px;
+        display: flex; align-items: center; justify-content: center;
+        background: #fff; border-radius: 8px; padding: 10px;
     }
+    .qr-img { max-width: 100%; max-height: 150px; }
 
-    /* QR Preview Styling */
-    .qr-container {
-      text-align: center;
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 10px;
-      border: 1px dashed #ccc;
+    /* --- STORAGE METER --- */
+    .storage-bar-bg { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+    .storage-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 1s; }
+    .storage-text { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: 5px; }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .settings-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <div class="global-header"><img src="logo.png" class="global-logo"></div>
-    <div class="brand"> Bharat POS</div>
-    <div class="nav">
+  <nav class="navbar">
+    <div class="brand">
+      <img src="logo.png" class="global-logo">
+      Bharat POS
+    </div>
+    <div class="nav-links">
       <a href="dashboard.html">Dashboard</a>
       <a href="products.html">Products</a>
-      <a href="billing.html">Billing</a>
       <a href="sales.html">Sales</a>
-      <a href="reports.html">Report</a>
-      <a href="settings.html" class="active">Settings</a> <a href="index.html">About</a>
+      <a href="settings.html" class="active" style="color:var(--accent)">Settings</a>
     </div>
-  </div>
+  </nav>
 
   <div class="container">
-    <div class="settings-header" style="margin-top: 20px;">
-      <h3><i class="fa-solid fa-gears"></i> Application Settings</h3>
-    </div>
+    <div class="page-title"><i class="fa-solid fa-sliders"></i> System Control</div>
 
     <div class="settings-grid">
       
-      <div class="settings-card">
-        <h4><i class="fa-solid fa-store"></i> Store Details</h4>
-        <div class="form-group">
-          <label>Shop Name</label>
-          <input type="text" id="shopName" class="form-control" placeholder="Enter Shop Name">
+      <div class="card">
+        <div class="card-header"><i class="fa-solid fa-store card-icon"></i> Store Identity</div>
+        
+        <div class="input-group">
+            <label class="form-label">Shop Name (Printed on Bills)</label>
+            <input type="text" id="shopName" class="form-control" placeholder="e.g. My Super Store">
         </div>
-        <div class="form-group">
-          <label>Contact Number</label>
-          <input type="text" id="shopPhone" class="form-control" placeholder="Enter Phone Number">
+        
+        <div class="input-group">
+            <label class="form-label">Contact Number</label>
+            <input type="text" id="shopPhone" class="form-control" placeholder="e.g. +91 98765 43210">
         </div>
-        <button onclick="saveShopDetails()" class="btn-action btn-primary">
-          <i class="fa-solid fa-floppy-disk"></i> Save Details
+
+        <button onclick="saveShopDetails()" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i> Save Details
         </button>
       </div>
 
-      <div class="settings-card">
-        <h4><i class="fa-solid fa-qrcode"></i> Payment Configuration</h4>
-        <div class="form-group">
-          <label>Upload UPI QR Code</label>
-          <div class="file-upload-wrapper">
-            <button class="btn-action btn-outline">
-              <i class="fa-solid fa-upload"></i> Choose QR Image
-            </button>
-            <input type="file" id="qrUpload" accept="image/*">
-          </div>
-        </div>
-        <div class="qr-container">
-          <p style="font-size:12px; color:#888; margin:0;" id="qrPlaceholder">No QR Uploaded</p>
-          <img id="qrPreview" style="max-width:100%; height:auto; display:none; border-radius:4px;">
+      <div class="card">
+        <div class="card-header"><i class="fa-solid fa-qrcode card-icon"></i> UPI Configuration</div>
+        
+        <label class="upload-zone">
+            <input type="file" id="qrUpload" accept="image/*" class="upload-input">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size:24px; color:var(--text-muted); margin-bottom:8px;"></i>
+            <div style="font-size:13px; color:var(--text-main);">Click to Upload QR Code</div>
+            <div style="font-size:11px; color:var(--text-muted);">Supports JPG, PNG</div>
+        </label>
+
+        <div class="qr-preview-box" id="qrContainer">
+            <span style="color:#333; font-size:12px;">No QR Code Set</span>
         </div>
       </div>
 
-      <div class="settings-card">
-        <h4><i class="fa-solid fa-database"></i> Data Management</h4>
+      <div class="card">
+        <div class="card-header"><i class="fa-solid fa-database card-icon"></i> Data Vault</div>
         
-        <div class="form-group">
-          <label>Backup Data</label>
-          <button onclick="exportAll()" class="btn-action btn-success">
-            <i class="fa-solid fa-download"></i> Export All (JSON)
-          </button>
+        <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-main); font-weight:600;">
+                <span>Local Storage Usage</span>
+                <span id="storagePercent">0%</span>
+            </div>
+            <div class="storage-bar-bg">
+                <div class="storage-bar-fill" id="storageFill"></div>
+            </div>
+            <div class="storage-text">
+                <span id="storageBytes">0 KB used</span>
+                <span>5 MB Limit</span>
+            </div>
         </div>
 
-        <div class="form-group">
-          <label>Restore Data</label>
-          <div style="display: flex; gap: 5px;">
-            <input type="file" id="importFile" class="form-control" style="padding: 5px;">
-          </div>
-          <button onclick="doImport()" class="btn-action btn-primary" style="margin-top: 10px;">
-            <i class="fa-solid fa-file-import"></i> Import File
-          </button>
-        </div>
+        <button onclick="exportAll()" class="btn btn-success" style="margin-top:10px;">
+            <i class="fa-solid fa-download"></i> Backup Data (JSON)
+        </button>
 
-        <hr>
-        
-        <div class="form-group">
-          <button onclick="if(confirm('WARNING: This will delete ALL data. Are you sure?')){ localStorage.clear(); alert('All Data Cleared successfully.'); location.reload(); }" class="btn-action btn-danger">
-            <i class="fa-solid fa-trash-can"></i> Reset All Data
-          </button>
+        <div style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
+            <label class="form-label">Restore Backup</label>
+            <div style="display:flex; gap:10px;">
+                <label class="btn" style="background:rgba(255,255,255,0.1); color:white; flex:1;">
+                    <input type="file" id="importFile" class="upload-input" onchange="document.getElementById('fileName').innerText = this.files[0].name">
+                    Choose File
+                </label>
+                <button onclick="doImport()" class="btn btn-primary" style="width:auto;">Restore</button>
+            </div>
+            <div id="fileName" style="font-size:11px; color:var(--accent); margin-top:5px; text-align:center;"></div>
         </div>
       </div>
 
-      <div class="settings-card">
-        <h4><i class="fa-solid fa-paintbrush"></i> Appearance</h4>
-        <p style="font-size: 0.9rem; color: #666;">Switch between light and dark modes.</p>
-        <button onclick="toggleTheme()" class="btn-action btn-outline">
-          <i class="fa-solid fa-moon"></i> Toggle Theme
+      <div class="card" style="border-color: rgba(239,68,68,0.3);">
+        <div class="card-header" style="color:var(--danger); border-color: rgba(239,68,68,0.3);"><i class="fa-solid fa-triangle-exclamation card-icon" style="color:var(--danger)"></i> Danger Zone</div>
+        
+        <p style="font-size:13px; color:var(--text-muted); line-height:1.5;">
+            Resetting the system will permanently delete all sales, products, and customer data. This action cannot be undone.
+        </p>
+
+        <button onclick="hardReset()" class="btn btn-danger">
+            <i class="fa-solid fa-trash-can"></i> Factory Reset System
         </button>
       </div>
 
     </div>
   </div>
 
-  <script>
-    // --- 1. IMPORT/EXPORT LOGIC (PRESERVED) ---
-    function doImport() {
-      const f = document.getElementById('importFile').files[0];
-      if (!f) return alert('Please choose a file first.');
-      
-      // Checking if importAllFile exists (from bharatpos.js)
-      if (typeof importAllFile === "function") {
-        importAllFile(f, function(err, msg) { 
-          if (err) alert('Import error'); 
-          else { alert(msg); location.reload(); } 
-        });
-      } else {
-        alert("Error: importAllFile function missing. Check bharatpos.js");
-      }
-    }
+<script>
+// --- 1. CORE LOGIC ---
 
-    // --- 2. QR CODE LOGIC (PRESERVED & ENHANCED PREVIEW) ---
-    const qrUpload = document.getElementById("qrUpload");
-    const qrPreview = document.getElementById("qrPreview");
-    const qrPlaceholder = document.getElementById("qrPlaceholder");
+// Save Shop Details
+function saveShopDetails() {
+    const name = document.getElementById('shopName').value;
+    const phone = document.getElementById('shopPhone').value;
+    localStorage.setItem('shopName', name);
+    localStorage.setItem('shopPhone', phone);
+    alert('✅ Store details updated successfully!');
+}
 
-    qrUpload.addEventListener("change", function() {
-      const file = this.files[0];
-      if(file){
+function loadShopDetails() {
+    document.getElementById('shopName').value = localStorage.getItem('shopName') || '';
+    document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || '';
+}
+
+// QR Code Logic
+const qrUpload = document.getElementById("qrUpload");
+const qrContainer = document.getElementById("qrContainer");
+
+qrUpload.addEventListener("change", function() {
+    const file = this.files[0];
+    if(file){
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function() {
-          localStorage.setItem("upiQR", reader.result); 
-          updateQRDisplay(reader.result);
-          alert("QR Code Saved Successfully");
+            localStorage.setItem("upiQR", reader.result); 
+            renderQR(reader.result);
+            alert("✅ QR Code Saved");
         };
-      }
-    });
-
-    function updateQRDisplay(src) {
-      if(src) {
-        qrPreview.src = src;
-        qrPreview.style.display = "inline-block";
-        qrPlaceholder.style.display = "none";
-      }
     }
+});
 
-    // --- 3. SHOP DETAILS LOGIC (NEW FEATURE) ---
-    function saveShopDetails() {
-      const name = document.getElementById('shopName').value;
-      const phone = document.getElementById('shopPhone').value;
-      localStorage.setItem('shopName', name);
-      localStorage.setItem('shopPhone', phone);
-      alert('Shop details saved!');
+function renderQR(src) {
+    if(src) {
+        qrContainer.innerHTML = `<img src="${src}" class="qr-img">`;
     }
+}
 
-    function loadShopDetails() {
-      const name = localStorage.getItem('shopName');
-      const phone = localStorage.getItem('shopPhone');
-      if(name) document.getElementById('shopName').value = name;
-      if(phone) document.getElementById('shopPhone').value = phone;
+// Import Logic
+function doImport() {
+    const f = document.getElementById('importFile').files[0];
+    if (!f) return alert('Please choose a backup file first.');
+    
+    if (typeof importAllFile === "function") {
+        importAllFile(f, function(err, msg) { 
+            if (err) alert('❌ Import Failed: ' + err); 
+            else { alert('✅ ' + msg); location.reload(); } 
+        });
+    } else {
+        alert("System Error: Import function missing in bharatpos.js");
     }
+}
 
-    // --- 4. ON LOAD INITIALIZATION ---
-    window.onload = function() {
-      // Load QR
-      const storedQR = localStorage.getItem("upiQR");
-      if (storedQR) {
-        updateQRDisplay(storedQR);
-      }
-      // Load Shop Details
-      loadShopDetails();
-    };
+// Storage Calculator (Performance Engineering)
+function updateStorageMeter() {
+    let total = 0;
+    for(let x in localStorage) {
+        if(localStorage.hasOwnProperty(x)) total += ((localStorage[x].length + x.length) * 2);
+    }
+    const kb = (total / 1024).toFixed(2);
+    const limit = 5120; // Approx 5MB limit for LocalStorage
+    const pct = Math.min((total / 1024 / limit) * 100, 100).toFixed(1);
+    
+    document.getElementById('storageBytes').innerText = `${kb} KB used`;
+    document.getElementById('storagePercent').innerText = `${pct}%`;
+    document.getElementById('storageFill').style.width = `${pct}%`;
+    
+    // Warning Color
+    if(pct > 80) document.getElementById('storageFill').style.background = 'var(--danger)';
+}
 
-  </script>
+// Hard Reset
+function hardReset() {
+    if(confirm('⚠️ CRITICAL WARNING ⚠️\n\nThis will DELETE ALL DATA.\nAre you absolutely sure?')) {
+        localStorage.clear();
+        alert('System Reset Complete. Reloading...');
+        location.reload();
+    }
+}
+
+// --- INIT ---
+window.onload = function() {
+    loadShopDetails();
+    
+    const storedQR = localStorage.getItem("upiQR");
+    if (storedQR) renderQR(storedQR);
+    
+    updateStorageMeter();
+};
+</script>
 
 </body>
 </html>
+
 
