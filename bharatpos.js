@@ -1,7 +1,7 @@
 
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
-const API_BASE = 'http://localhost:5185'; 
+const API_BASE = 'https://advisors-portsmouth-nested-commercial.trycloudflare.com'; 
 // ---------------------------
 
 // This function is now available globally
@@ -779,6 +779,7 @@ window.completeSale = function() {
         }
     }
 };
+
 
 
 
