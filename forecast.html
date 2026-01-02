@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DemandMitra AI • BharatPOS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+ <script src="chart.js"></script>
+<script src="bharatpos.js"></script>
+  <style>
+    /* --- THEME --- */
+    :root { --primary: #4f46e5; --bg: #f3f4f6; --success: #10b981; --danger: #ef4444; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; padding-bottom: 60px; }
+
+    .header {
+      background: linear-gradient(135deg, #1e1b4b, #312e81); color: white;
+      padding: 20px; border-radius: 0 0 24px 24px; margin-bottom: 20px;
+    }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 0 15px; }
+
+    /* CONTROLS (Horizontal Scroll) */
+    .controls { 
+      display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; 
+      padding-bottom: 10px; scrollbar-width: none; 
+    }
+    .chip {
+      background: white; border: 1px solid #e5e7eb; padding: 10px 20px;
+      border-radius: 30px; font-size: 13px; font-weight: 600; cursor: pointer; 
+      white-space: nowrap; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* CARDS */
+    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    
+    /* LOADING OVERLAY */
+    #loadingOverlay {
+      display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.8); align-items: center; justify-content: center;
+      border-radius: 16px; font-weight: 600; color: var(--primary); z-index: 10;
+    }
+
+    /* INSIGHT BOXES */
+    .insight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+    .stat-box { background: #f8fafc; padding: 15px; border-radius: 10px; border-left: 4px solid #ccc; }
+    
+    .btn-restock {
+      width: 100%; padding: 12px; background: var(--primary); color: white;
+      border: none; border-radius: 10px; font-weight: 600; margin-top: 10px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1 style="margin:0; font-size:22px;">DemandMitra AI</h1>
+    <p style="margin:5px 0 0; opacity:0.8; font-size:13px;">Real-Time Inventory Forecasting</p>
+  </div>
+
+  <div class="container">
+
+<div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
+  <button onclick="generateBulkForecasts()" style="
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white; border: none; padding: 10px 20px;
+    border-radius: 30px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+    display: flex; align-items: center; gap: 8px;">
+    ⚡ Analyze All Products (1 Click)
+  </button>
+</div>
+
+<div class="controls" id="productChips">
+  </div>
+
+
+    
+    <div class="controls" id="productChips">
+      <div style="padding:10px; color:#666;">Loading Products...</div>
+    </div>
+
+    <div class="card" style="position:relative; min-height: 300px;">
+      <div id="loadingOverlay">✨ AI is Analyzing Sales Patterns...</div>
+      
+      <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+        <b id="chartTitle">Select a Product</b>
+        <span id="trendBadge" style="font-size:12px; padding:4px 8px; border-radius:12px; background:#eee;">--</span>
+      </div>
+      
+      <canvas id="demandChart" height="220"></canvas>
+
+      <div class="insight-row">
+        <div class="stat-box" id="boxStock">
+          <div style="font-size:11px; color:#64748b;">CURRENT STOCK</div>
+          <div style="font-size:20px; font-weight:800;" id="valStock">--</div>
+        </div>
+        <div class="stat-box" id="boxPred">
+          <div style="font-size:11px; color:#64748b;">PREDICTED (7 DAYS)</div>
+          <div style="font-size:20px; font-weight:800;" id="valPred">--</div>
+        </div>
+      </div>
+
+      <div style="margin-top:15px; padding:15px; background:#fffbeb; border-radius:10px; border:1px solid #fcd34d; display:none;" id="aiMsgBox">
+        <b>💡 AI Recommendation:</b> <span id="aiReason">--</span>
+      </div>
+
+      <button id="restockBtn" class="btn-restock" style="display:none;" onclick="alert('Added to Purchase Order!')">
+        GENERATE PURCHASE ORDER
+      </button>
+
+    </div>
+
+  </div>
+
+<script>
+  const safeGet = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
+
+  let myChart = null;
+  let currentProduct = null;
+  
+  // 1. CACHE: Stores the AI results so we don't ask again
+  let forecastCache = {}; 
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadProducts();
+  });
+
+function loadProducts() {
+  const stockData = safeGet('bharatpos_products'); 
+  
+  if(stockData.length === 0) {
+    document.getElementById('productChips').innerHTML = `<div style="padding:10px;">No products found. Add items in Products Page first.</div>`;
+    return;
+  }
+
+  const container = document.getElementById('productChips');
+  container.innerHTML = stockData.map(p => 
+    `<div class="chip" onclick="analyzeProduct('${p.name}', ${p.stock || 0})">${p.name}</div>`
+  ).join('');
+
+  // --- CHANGE IS HERE ---
+  // We REMOVED the line that said: analyzeProduct(stockData[0].name ...)
+  // Instead, we just show a "Ready" message
+  document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+
+  // --- BULK ACTION: The "Single Request" Logic ---
+  async function generateBulkForecasts() {
+    const allProducts = safeGet('bharatpos_products');
+    if(allProducts.length === 0) return alert("No products to analyze!");
+
+    // UI: Show loading state
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('loadingOverlay').innerText = `⚡ AI is processing ${allProducts.length} products in one go...`;
+
+    // 1. PREPARE BIG PAYLOAD
+    const bulkPayload = allProducts.map(p => {
+      return {
+        productName: p.name,
+        currentStock: p.stock || 0,
+        history: calculateSalesHistory(p.name)
+      };
+    });
+
+    try {
+      // 2. SEND SINGLE REQUEST TO BACKEND
+      // Note: You must ensure your backend has this '/api/predict-demand-bulk' endpoint
+      const res = await fetch(buildUrl('/api/predict-demand-bulk'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ products: bulkPayload })
+      });
+
+      const data = await res.json();
+
+      if(data.success && data.predictions) {
+        // 3. SAVE ALL RESULTS TO CACHE
+        data.predictions.forEach(prediction => {
+            // Map result by product name for easy lookup
+            forecastCache[prediction.productName] = prediction;
+        });
+
+        alert("✅ Analysis Complete! Click any product to see its forecast instantly.");
+        
+        // Refresh the currently selected product view immediately
+        if(currentProduct) {
+             const currentP = allProducts.find(p => p.name === currentProduct);
+             analyzeProduct(currentProduct, currentP ? currentP.stock : 0);
+        }
+
+      } else {
+        alert("Server Error: " + (data.message || "Unknown error"));
+      }
+
+    } catch (e) {
+      console.error(e);
+      alert("Error connecting to AI Server for Bulk Analysis.");
+    } finally {
+      document.getElementById('loadingOverlay').style.display = 'none';
+      document.getElementById('loadingOverlay').innerText = "✨ AI is Analyzing Sales Patterns..."; // Reset text
+    }
+  }
+
+  // --- INDIVIDUAL VIEW (Modified to use Cache) ---
+  async function analyzeProduct(name, currentStock) {
+    currentProduct = name;
+    
+    // UI Updates
+    document.querySelectorAll('.chip').forEach(c => {
+      c.classList.toggle('active', c.innerText === name);
+    });
+    document.getElementById('chartTitle').innerText = name;
+    document.getElementById('valStock').innerText = currentStock;
+    document.getElementById('aiMsgBox').style.display = 'none';
+    document.getElementById('restockBtn').style.display = 'none';
+
+    // Get History for Graph
+    const history = calculateSalesHistory(name);
+
+    // CHECK CACHE FIRST (Instant Load)
+    if (forecastCache[name]) {
+        console.log("Reading from Cache for:", name);
+        const cachedPred = forecastCache[name];
+        renderChart(history, cachedPred.predicted_sales);
+        updateInsights(cachedPred, currentStock);
+        return; // STOP HERE, DO NOT CALL SERVER
+    }
+
+    // IF NOT IN CACHE, CALL SERVER (Fallback for single clicks)
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    
+    try {
+      const res = await fetch(buildUrl('/api/predict-demand-bulk'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName: name, history, currentStock })
+      });
+
+      const data = await res.json();
+      
+      if(data.success && data.prediction) {
+        // Save to cache too, just in case
+        forecastCache[name] = data.prediction;
+        
+        renderChart(history, data.prediction.predicted_sales);
+        updateInsights(data.prediction, currentStock);
+      }
+
+    } catch (e) {
+      console.error(e);
+    } finally {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+  }
+
+  // --- SALES HISTORY CALCULATION (Unchanged) ---
+  function calculateSalesHistory(productName) {
+    const sales = safeGet('bharatpos_sales');
+    const dailyCounts = Array(14).fill(0); 
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    sales.forEach(bill => {
+      const billDate = new Date(bill.date);
+      billDate.setHours(0,0,0,0);
+      const diffTime = Math.abs(today - billDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+      if(diffDays < 14) {
+        const item = bill.items.find(i => i.name === productName);
+        if(item) {
+          const index = 13 - diffDays; 
+          if(index >= 0) dailyCounts[index] += (Number(item.qty) || 1);
+        }
+      }
+    });
+    return dailyCounts;
+  }
+
+  // --- RENDER FUNCTIONS (Unchanged) ---
+  function renderChart(pastData, futureData) {
+    const ctx = document.getElementById('demandChart').getContext('2d');
+    if(myChart) myChart.destroy();
+
+    const labels = [];
+    for(let i=13; i>=0; i--) labels.push(`Day -${i}`);
+    for(let i=1; i<=7; i++) labels.push(`Day +${i}`);
+
+    const pastDataset = [...pastData, ...Array(7).fill(null)];
+    const futureDataset = [...Array(14).fill(null), ...futureData];
+    futureDataset[13] = pastData[13];
+
+    myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Actual Sales',
+            data: pastDataset,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            fill: true, tension: 0.3
+          },
+          {
+            label: 'AI Forecast',
+            data: futureDataset,
+            borderColor: '#10b981',
+            borderDash: [5, 5],
+            pointBackgroundColor: '#10b981',
+            tension: 0.3
+          }
+        ]
+      },
+      options: { responsive: true }
+    });
+  }
+
+  function updateInsights(pred, stock) {
+    const totalPredicted = pred.predicted_sales.reduce((a,b)=>a+b, 0);
+    document.getElementById('valPred').innerText = Math.round(totalPredicted);
+    document.getElementById('trendBadge').innerText = pred.trend_analysis;
+    document.getElementById('aiReason').innerText = pred.reason;
+    document.getElementById('aiMsgBox').style.display = 'block';
+
+    if(pred.restock_recommendation === "Yes") {
+      const btn = document.getElementById('restockBtn');
+      btn.style.display = 'block';
+      const needed = Math.max(0, Math.round(totalPredicted - stock));
+      btn.innerText = `GENERATE ORDER (+${needed} units)`;
+      
+      // Link to Products page with Restock param
+      btn.onclick = () => window.location.href = `products.html?restock=${encodeURIComponent(currentProduct)}`;
+      
+      document.getElementById('aiMsgBox').style.backgroundColor = "#fee2e2";
+      document.getElementById('aiMsgBox').style.borderColor = "#ef4444";
+    } else {
+      document.getElementById('restockBtn').style.display = 'none';
+      document.getElementById('aiMsgBox').style.backgroundColor = "#dcfce7";
+      document.getElementById('aiMsgBox').style.borderColor = "#10b981";
+    }
+  }
+</script>
+</body>
+</html>
