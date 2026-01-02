@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Economic Heat Map • BharatPOS Admin</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="bharatpos.js"></script> 
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #10b981; --gold: #f59e0b; --indigo: #6366f1; }
+    body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+    /* SIDEBAR */
+    .sidebar { width: 340px; background: var(--card); padding: 20px; display: flex; flex-direction: column; border-right: 1px solid #334155; z-index: 1000; box-shadow: 5px 0 15px rgba(0,0,0,0.3); overflow-y: auto; }
+    .title { font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+    .subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+    .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
+    .stat-val { font-size: 24px; font-weight: 700; color: #fff; }
+    .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* TREND LIST */
+    .trend-list { margin-top: 10px; }
+    .trend-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #64748b; }
+    .trend-rank { font-size: 10px; font-weight: 800; color: #64748b; width: 15px; }
+    .trend-info { flex: 1; }
+    .trend-cat { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; }
+    .trend-prod { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .trend-count { font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
+
+    /* MAP & TOOLTIP */
+    #map { flex-grow: 1; height: 100%; background: #0f172a; }
+    .custom-tooltip { background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); padding: 0; }
+    .leaflet-tooltip-top:before { border-top-color: #334155; }
+    .tooltip-header { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tooltip-body { padding: 8px 10px; }
+
+    /* --- REPORT MODAL (Exact UI Replication) --- */
+    .modal-overlay { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 9999;
+        display: none; justify-content: center; align-items: center;
+    }
+    .modal-content {
+        width: 90%; max-width: 900px; height: 85vh; background: #0f172a;
+        border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+        display: flex; flex-direction: column; overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+        padding: 20px 25px; background: rgba(30, 41, 59, 0.8); border-bottom: 1px solid rgba(255,255,255,0.1);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-title { font-size: 18px; font-weight: 800; color: #fff; }
+    .modal-close { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }
+    .modal-close:hover { color: #fff; }
+
+    .modal-body { padding: 25px; overflow-y: auto; }
+
+    /* REPORTS UI STYLES (Copied & Scoped) */
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+    .kpi-box { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+    .kpi-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 700; }
+    .kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: #fff; margin-top: 10px; }
+    
+    .report-table-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; overflow: hidden; }
+    .report-table { width: 100%; border-collapse: collapse; }
+    .report-table th { text-align: left; padding: 15px 20px; color: #94a3b8; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .report-table td { padding: 15px 20px; color: #f8fafc; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .trend-bg { position: absolute; right: 0; top: 15%; height: 70%; background: rgba(16, 185, 129, 0.15); z-index: 0; border-radius: 4px 0 0 4px; pointer-events: none; }
+    
+    .product-chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; margin: 2px; }
+    .chip-qty { background: #6366f1; color: white; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+
+    /* Details Drawer */
+    .details-row { display: none; background: rgba(0,0,0,0.2); }
+    .details-row.active { display: table-row; }
+    .details-content { padding: 15px 20px; border-left: 3px solid #6366f1; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="title">
+        <span>🌍 Economic Map</span>
+    </div>
+    <div class="subtitle">Live AI Analytics • Sub-Region Insights</div>
+
+    <div class="stat-card">
+        <div class="stat-label">Total Network Revenue</div>
+        <div class="stat-val" style="color:#10b981;" id="totalRevenue">₹0</div>
+    </div>
+
+    <div style="margin-top:10px;">
+        <div class="stat-label" style="margin-bottom:10px;">🔥 Top 7 Booming Categories</div>
+        <div id="trendList" class="trend-list">
+            <div style="text-align:center; color:#64748b; font-size:12px; padding:20px;">Loading AI Analysis...</div>
+        </div>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<div id="reportModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div>
+                <div class="modal-title" id="modalShopTitle">Shop Name</div>
+                <div style="font-size:12px; color:#94a3b8;" id="modalShopId">ID: --</div>
+            </div>
+            <button class="modal-close" onclick="closeReportModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="reportModalBody">
+            <div style="text-align:center; padding:50px;">Loading Details...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. INITIALIZE MAP
+    const map = L.map('map', { zoomControl: false }).setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO', maxZoom: 19
+    }).addTo(map);
+
+    // 2. LOAD DATA
+    async function loadHeatmap() {
+        try {
+            const res = await fetch(buildUrl('/api/heatmap-data'));
+            const response = await res.json();
+            if(response.success) {
+                const data = response.data || [];
+                // Update Sidebar
+                const revEl = document.getElementById('totalRevenue');
+                if(revEl) revEl.innerText = "₹" + Number(response.globalTotal || 0).toLocaleString('en-IN');
+                renderSidebarTrends(data);
+                // Render Dots
+                renderMicroDots(data);
+            }
+        } catch(e) { console.error("Map Load Error", e); }
+    }
+
+    // 3. SIDEBAR TRENDS
+    function renderSidebarTrends(data) {
+        const trendList = document.getElementById('trendList');
+        if(!trendList) return;
+        const categoryGroups = {};
+        data.forEach(point => {
+            const cat = (point.category || "General").trim();
+            if(!categoryGroups[cat]) categoryGroups[cat] = { count: 0, products: [], color: point.markerColor };
+            categoryGroups[cat].count++;
+            if(point.topProduct) categoryGroups[cat].products.push(point.topProduct);
+        });
+        const sortedCats = Object.entries(categoryGroups).sort((a, b) => b[1].count - a[1].count).slice(0, 7);
+        trendList.innerHTML = sortedCats.map(([catName, details], index) => {
+            const modeMap = {};
+            let maxEl = details.products[0], maxCount = 1;
+            for(let i = 0; i < details.products.length; i++) {
+                let el = details.products[i];
+                if(modeMap[el] == null) modeMap[el] = 1; else modeMap[el]++;  
+                if(modeMap[el] > maxCount) { maxEl = el; maxCount = modeMap[el]; }
+            }
+            return `
+            <div class="trend-item" style="border-left-color:${details.color || '#64748b'}">
+                <div class="trend-rank">#${index+1}</div>
+                <div class="trend-info">
+                    <div class="trend-cat">${catName}</div>
+                    <div class="trend-prod">Best Seller: <span style="color:#fff">${maxEl || "Assorted"}</span></div>
+                </div>
+                <div class="trend-count">${details.count} 📍</div>
+            </div>`;
+        }).join('');
+    }
+
+    // 4. RENDER MICRO-DOTS (With Click Event)
+    function renderMicroDots(data) {
+        data.forEach(point => {
+            const color = point.markerColor || '#10b981';
+            
+            const circle = L.circleMarker([point.lat, point.lng], {
+                radius: 3, fillColor: color, color: "transparent", fillOpacity: 0.9, className: 'clickable-dot'
+            }).addTo(map);
+
+            // HOVER TOOLTIP
+            const tooltipContent = `
+                <div class="tooltip-header" style="background:${color}; color:${color==='#fbbf24'?'#000':'#fff'}">
+                    ${point.regionName || point.merchantId}
+                </div>
+                <div class="tooltip-body">
+                    <div style="font-size:10px; color:#94a3b8;">BEST SELLER</div>
+                    <div style="font-size:13px; font-weight:bold; color:#fff;">${point.topProduct || 'N/A'}</div>
+                </div>
+            `;
+            circle.bindTooltip(tooltipContent, { direction: "top", offset: [0, -5], className: "custom-tooltip" });
+
+            // ZOOM BEHAVIOR
+            map.on('zoomend', function() {
+                const z = map.getZoom();
+                if (z > 11) { circle.setRadius(8); circle.setStyle({ color: "#fff", weight: 2 }); } 
+                else { circle.setRadius(3); circle.setStyle({ color: "transparent", weight: 0 }); }
+            });
+
+            // 🟢 CLICK EVENT: Open Reports Modal
+            circle.on('click', () => {
+                openMerchantReport(point.merchantId);
+            });
+        });
+    }
+
+    // --- REPORT MODAL LOGIC ---
+    async function openMerchantReport(merchantId) {
+        const modal = document.getElementById('reportModal');
+        const body = document.getElementById('reportModalBody');
+        const title = document.getElementById('modalShopTitle');
+        const sub = document.getElementById('modalShopId');
+
+        modal.style.display = 'flex';
+        title.innerText = "Loading...";
+        sub.innerText = "ID: " + merchantId;
+        body.innerHTML = '<div style="text-align:center; padding:50px; color:#94a3b8;">Fetching Shop Data...</div>';
+
+        try {
+            // Fetch Details
+            const res = await fetch(buildUrl(`/api/merchant-report/${merchantId}`));
+            const response = await res.json();
+            
+            if(response.success && response.data) {
+                renderFullReportUI(response.data);
+            } else {
+                body.innerHTML = '<div style="text-align:center; padding:50px; color:#ef4444;">No report data available for this shop.</div>';
+            }
+        } catch(e) {
+            body.innerHTML = '<div style="text-align:center; padding:50px; color:#ef4444;">Server Error.</div>';
+        }
+    }
+
+    function renderFullReportUI(data) {
+        const body = document.getElementById('reportModalBody');
+        const sales = data.salesHistory || [];
+        
+        // 1. Calculate KPIs
+        let totalRev = 0, totalBills = 0, totalItems = 0, maxDaily = 0;
+        sales.forEach(d => {
+            totalRev += d.revenue;
+            totalBills += (d.bills || 0);
+            totalItems += (d.total_items || 0);
+            if(d.revenue > maxDaily) maxDaily = d.revenue;
+        });
+
+        document.getElementById('modalShopTitle').innerText = "Shop Reports";
+
+        // 2. Generate HTML (Exact Reports Page UI)
+        let html = `
+            <div class="kpi-grid">
+                <div class="kpi-box">
+                    <div class="kpi-lbl">Total Revenue</div>
+                    <div class="kpi-val" style="color:#10b981">₹${totalRev.toLocaleString('en-IN')}</div>
+                    <div style="position:absolute; bottom:0; left:0; height:3px; width:100%; background: linear-gradient(90deg, #10b981, transparent);"></div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-lbl">Total Bills</div>
+                    <div class="kpi-val" style="color:#6366f1">${totalBills}</div>
+                    <div style="position:absolute; bottom:0; left:0; height:3px; width:100%; background: linear-gradient(90deg, #6366f1, transparent);"></div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-lbl">Items Sold</div>
+                    <div class="kpi-val" style="color:#f59e0b">${totalItems}</div>
+                    <div style="position:absolute; bottom:0; left:0; height:3px; width:100%; background: linear-gradient(90deg, #f59e0b, transparent);"></div>
+                </div>
+            </div>
+
+            <div class="report-table-card">
+                <table class="report-table">
+                    <thead><tr><th>Date</th><th style="text-align:right">Bills</th><th style="text-align:right">Items</th><th style="text-align:right">Revenue</th></tr></thead>
+                    <tbody>
+        `;
+
+        if(sales.length === 0) {
+            html += '<tr><td colspan="4" style="text-align:center; padding:30px; color:#64748b;">No sales history found.</td></tr>';
+        } else {
+            // Sort Date Descending
+            const sortedSales = [...sales].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            sortedSales.forEach((row, idx) => {
+                const barWidth = maxDaily > 0 ? (row.revenue / maxDaily) * 100 : 0;
+                const dateId = `m_row_${idx}`;
+                const productsHtml = (row.products || []).map(p => 
+                    `<span class="product-chip"><span>${p.name}</span><span class="chip-qty">${p.qty}</span></span>`
+                ).join('');
+
+                html += `
+                <tr onclick="toggleDetails('${dateId}')" style="cursor:pointer; position:relative;">
+                    <td>
+                        <div style="color:#fff; font-weight:600;">${new Date(row.date).toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</div>
+                        <div style="font-size:10px; color:#94a3b8;">${row.date}</div>
+                    </td>
+                    <td style="text-align:right;">${row.bills || '-'}</td>
+                    <td style="text-align:right;">${row.total_items || '-'}</td>
+                    <td style="text-align:right; position:relative;">
+                        <div class="trend-bg" style="width:${barWidth * 0.6}px"></div>
+                        <span style="position:relative; z-index:1; font-family:'JetBrains Mono'; color:#10b981; font-weight:700;">₹${row.revenue}</span>
+                    </td>
+                </tr>
+                <tr id="details-${dateId}" class="details-row">
+                    <td colspan="4" style="padding:0;">
+                        <div class="details-content">
+                            <div style="font-size:10px; color:#94a3b8; margin-bottom:5px;">ITEMS SOLD:</div>
+                            ${productsHtml || '<span style="color:#64748b; font-size:12px">No item details</span>'}
+                        </div>
+                    </td>
+                </tr>
+                `;
+            });
+        }
+        
+        html += `</tbody></table></div>`;
+        body.innerHTML = html;
+    }
+
+    function toggleDetails(id) {
+        const row = document.getElementById('details-' + id);
+        if(row.style.display === 'table-row') row.style.display = 'none';
+        else row.style.display = 'table-row';
+    }
+
+    function closeReportModal() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+
+    loadHeatmap();
+</script>
+</body>
+</html>
