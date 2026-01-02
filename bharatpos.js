@@ -1,7 +1,7 @@
 
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
-const API_BASE = 'https://troubleshooting-rack-scale-graphical.trycloudflare.com'; 
+const API_BASE = 'http://localhost:5185'; 
 // ---------------------------
 
 // This function is now available globally
@@ -15,11 +15,35 @@ function buildUrl(endpoint) {
 }
 
 
+// --- HELPER: SYNC TO SERVER (Place this outside other functions) ---
+async function syncBillToServer(billData) {
+    // 1. Get Merchant ID (Required for Khata & Heatmap)
+    let userSettings = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if (!userSettings.merchantId) {
+        // If no ID, generate a temporary one or ask user
+        // For now, we will use a "Guest" ID so it doesn't crash
+        userSettings.merchantId = "GUEST-SHOP-" + Math.floor(Math.random() * 1000);
+        localStorage.setItem('bharatpos_user', JSON.stringify(userSettings));
+    }
 
+    // 2. Add Merchant ID to the bill
+    billData.merchantId = userSettings.merchantId;
 
-
-
-
+    try {
+        // 3. Send to Backend
+        // Ensure buildUrl is available (from bharatpos.js)
+        const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-bill') : '/api/save-bill';
+        
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(billData)
+        });
+        console.log("✅ Bill synced to Server (Khata & Heatmap)");
+    } catch (error) {
+        console.warn("⚠️ Server Sync Failed (Offline Mode):", error);
+    }
+}
 /* ============================================================
    bharatpos.js — FULL & CORRECTED
    Fixed: Udhaar Logic, Syntax Errors, and Cart Syncing
@@ -527,102 +551,41 @@ function toggleTheme(){
     });
   }
 
+
+ 
+
   /* ==========================================================
      UPDATED: COMPLETE SALE (Correctly placed logic)
      ========================================================== */
-  window.completeSale = function(){
-    // 1. Basic Checks
-    let cart = window.cart; 
-    if (!cart || cart.length === 0) {
-        try { cart = JSON.parse(localStorage.getItem('bill_items') || '[]'); } catch(e){}
-    }
-    if (!cart || cart.length === 0) { alert('Cart empty'); return; }
-
-    // 2. Get Form Data
-    const customer = document.getElementById('custName')?.value.trim();
-    const phone = document.getElementById('custPhone')?.value.trim();
-    const discount = Number(document.getElementById('discount')?.value || 0);
-    const payModeEl = document.querySelector('input[name="payMode"]:checked');
-    const paymentMode = payModeEl ? payModeEl.value : 'Cash';
-
-    // 3. UDHAAR VALIDATION
-    if (paymentMode === 'Udhaar') {
-        if (!customer || customer.length < 3) {
-            alert("⚠️ For Udhaar, Customer Name is mandatory!");
-            document.getElementById('custName').focus(); return;
-        }
-        if (!phone || phone.length < 10) {
-            alert("⚠️ For Udhaar, valid Phone Number is mandatory!");
-            document.getElementById('custPhone').focus(); return;
-        }
+ // --- HELPER: SYNC TO SERVER (Place this outside other functions) ---
+async function syncBillToServer(billData) {
+    // 1. Get Merchant ID (Required for Khata & Heatmap)
+    let userSettings = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if (!userSettings.merchantId) {
+        // If no ID, generate a temporary one or ask user
+        // For now, we will use a "Guest" ID so it doesn't crash
+        userSettings.merchantId = "GUEST-SHOP-" + Math.floor(Math.random() * 1000);
+        localStorage.setItem('bharatpos_user', JSON.stringify(userSettings));
     }
 
-    // 4. PROCESS SALE FIRST (Source of Truth)
-    const sale = checkoutCart(cart, customer || 'Walk-in', paymentMode, discount);
+    // 2. Add Merchant ID to the bill
+    billData.merchantId = userSettings.merchantId;
 
-    // 5. SAVE TO LEDGER (Syncing the ID)
-    if (paymentMode === 'Udhaar') {
-        const ledgerEntry = {
-            id: sale.invoiceNo,       
-            date: sale.date,
-            customer: customer,
-            phone: phone,
-            amount: sale.total,
-            items: sale.items, // [FIXED] Saving items list for detailed view 
-            isPaid: false
-        };
+    try {
+        // 3. Send to Backend
+        // Ensure buildUrl is available (from bharatpos.js)
+        const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-bill') : '/api/save-bill';
         
-        const ledger = JSON.parse(localStorage.getItem('bharatpos_ledger') || '[]');
-        ledger.push(ledgerEntry);
-        localStorage.setItem('bharatpos_ledger', JSON.stringify(ledger));
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(billData)
+        });
+        console.log("✅ Bill synced to Server (Khata & Heatmap)");
+    } catch (error) {
+        console.warn("⚠️ Server Sync Failed (Offline Mode):", error);
     }
-
-    // 6. Cleanup
-    window.cart = []; 
-    localStorage.setItem('bill_items', '[]'); 
-    if(window.renderCart) window.renderCart(); 
-    if(typeof window.renderProductGrid === 'function') window.renderProductGrid();
-
-    // 7. Show Invoice Modal
-    const modal = document.getElementById('invoiceModal');
-    const content = document.getElementById('invoiceContent');
-    if (content) {
-        const statusBadge = paymentMode === 'Udhaar' 
-            ? `<div style="background:#dc3545; color:#fff; padding:5px; text-align:center; font-weight:bold; margin-bottom:10px;">⚠️ PAYMENT PENDING (UDHAAR)</div>`
-            : '';
-
-        content.innerHTML = `
-            <h3>🛰️ Bharat POS</h3>
-            ${statusBadge}
-            <div><b>Invoice:</b> ${sale.invoiceNo}</div> 
-            <div><b>Date:</b> ${new Date(sale.date).toLocaleString()}</div>
-            <div><b>Customer:</b> ${sale.customer}</div>
-            <table style="width:100%;margin-top:8px;border-collapse:collapse">
-                <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-                ${sale.items.map(it => `<tr><td>${escapeHTML(it.name)}</td><td>${it.qty}</td><td>₹${it.price.toFixed(2)}</td><td>₹${(it.price * it.qty).toFixed(2)}</td></tr>`).join('')}
-            </table>
-            <div style="text-align:right;margin-top:8px"><b>Grand Total: ₹${sale.total.toFixed(2)}</b></div>
-        `;
-    }
-    if (modal) modal.classList.remove('hidden');
-
-    // 8. Auto-WhatsApp Logic (NOW INSIDE THE FUNCTION CORRECTLY)
-    if (paymentMode === 'Udhaar' && phone) {
-        if(confirm("Send Udhaar record to customer via WhatsApp?")) {
-            const msg = `Hello ${customer}, you have a pending amount of ₹${sale.total.toFixed(2)} at BharatPOS. Invoice: ${sale.invoiceNo}. Please pay soon.`;
-            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-    }
-  }; // <--- Correct closing bracket placement
-
-  window.closeInvoice = ()=>document.getElementById('invoiceModal')?.classList.add('hidden');
-
-  // ----------------- Init -----------------
-  document.addEventListener('DOMContentLoaded', ()=>{
-    renderProductGrid();
-    renderCart();
-  });
-})();
+  }
 
 /* -------------------------
    Universal barcode Enter-key handler
@@ -658,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
       barcodeInput.value = '';
     }
   });
-});
+})});
 
 /* -------------------------
    Utility
@@ -712,15 +675,110 @@ function applyTheme() {
 }
 document.addEventListener("DOMContentLoaded", applyTheme);
 
+/* ==========================================================
+   ✅ COMPLETE SALE FUNCTION
+   (Paste this at the bottom of bharatpos.js, before the last "})();")
+   ========================================================== */
+window.completeSale = function() {
+    // 1. Basic Checks
+    let cart = window.cart;
+    if (!cart || cart.length === 0) {
+        try { cart = JSON.parse(localStorage.getItem('bill_items') || '[]'); } catch (e) {}
+    }
+    if (!cart || cart.length === 0) { alert('Cart empty'); return; }
 
+    // 2. Get Form Data
+    const customer = document.getElementById('custName')?.value.trim();
+    const phone = document.getElementById('custPhone')?.value.trim();
+    const discount = Number(document.getElementById('discount')?.value || 0);
+    const payModeEl = document.querySelector('input[name="payMode"]:checked');
+    const paymentMode = payModeEl ? payModeEl.value : 'Cash';
 
+    // 3. Validation for Udhaar
+    if (paymentMode === 'Udhaar') {
+        if (!customer || customer.length < 3) {
+            alert("⚠️ For Udhaar, Customer Name is mandatory!");
+            document.getElementById('custName').focus(); return;
+        }
+        if (!phone || phone.length < 10) {
+            alert("⚠️ For Udhaar, valid Phone Number is mandatory!");
+            document.getElementById('custPhone').focus(); return;
+        }
+    }
 
+    // 4. PROCESS SALE
+    // (Ensure checkoutCart is available in scope or global)
+    // If checkoutCart is undefined, ensure it is defined in bharatpos.js
+    const sale = checkoutCart(cart, customer || 'Walk-in', paymentMode, discount);
 
+    // 5. PREPARE SERVER DATA
+    const billForServer = {
+        id: sale.invoiceNo,
+        date: sale.date,
+        customerName: customer || "Walk-in",
+        phone: phone || "",
+        amount: sale.total,
+        items: sale.items,
+        paymentMode: paymentMode,
+        isPaid: paymentMode !== 'Udhaar'
+    };
 
+    // 6. SYNC TO SERVER (For Khata & Heatmap)
+    // We check if syncBillToServer exists globally or locally
+    if (typeof syncBillToServer === 'function') {
+        syncBillToServer(billForServer);
+    } else if (typeof window.syncBillToServer === 'function') {
+        window.syncBillToServer(billForServer);
+    } else {
+        console.warn("⚠️ syncBillToServer not found. Bill saved locally only.");
+    }
 
+    // 7. SAVE TO LOCAL LEDGER (Backup)
+    if (paymentMode === 'Udhaar') {
+        const ledgerEntry = { ...billForServer, isPaid: false };
+        const ledger = JSON.parse(localStorage.getItem('bharatpos_ledger') || '[]');
+        ledger.push(ledgerEntry);
+        localStorage.setItem('bharatpos_ledger', JSON.stringify(ledger));
+    }
 
+    // 8. CLEANUP
+    window.cart = [];
+    localStorage.setItem('bill_items', '[]');
+    
+    if (window.renderCart) window.renderCart();
+    if (typeof window._renderProductGrid === 'function') window._renderProductGrid();
 
+    // 9. SHOW INVOICE MODAL
+    const modal = document.getElementById('invoiceModal');
+    const content = document.getElementById('invoiceContent');
+    if (content) {
+        const statusBadge = paymentMode === 'Udhaar' 
+            ? `<div style="background:#dc3545; color:#fff; padding:5px; text-align:center; font-weight:bold; margin-bottom:10px;">⚠️ PAYMENT PENDING (UDHAAR)</div>` 
+            : '';
 
+        content.innerHTML = `
+            <h3>🛰️ Bharat POS</h3>
+            ${statusBadge}
+            <div><b>Invoice:</b> ${sale.invoiceNo}</div> 
+            <div><b>Date:</b> ${new Date(sale.date).toLocaleString()}</div>
+            <div><b>Customer:</b> ${sale.customer}</div>
+            <table style="width:100%;margin-top:8px;border-collapse:collapse">
+                <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                ${sale.items.map(it => `<tr><td>${escapeHTML(it.name)}</td><td>${it.qty}</td><td>₹${it.price.toFixed(2)}</td><td>₹${(it.price * it.qty).toFixed(2)}</td></tr>`).join('')}
+            </table>
+            <div style="text-align:right;margin-top:8px"><b>Grand Total: ₹${sale.total.toFixed(2)}</b></div>
+        `;
+    }
+    if (modal) modal.classList.remove('hidden');
+
+    // 10. WHATSAPP
+    if (paymentMode === 'Udhaar' && phone) {
+        if (confirm("Send Udhaar record to customer via WhatsApp?")) {
+            const msg = `Hello ${customer}, you have a pending amount of ₹${sale.total.toFixed(2)} at BharatPOS. Invoice: ${sale.invoiceNo}. Please pay soon.`;
+            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    }
+};
 
 
 
