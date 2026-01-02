@@ -537,6 +537,144 @@ document.addEventListener("DOMContentLoaded", ()=>{
     window.cart = []; // Reset cart on load
     renderCart();
 });
+
+
+// --- NEW FUNCTION: SYNC TO SERVER ---
+// --- UPDATED: SYNC TO SERVER (With Debugging) ---
+async function syncBillToServer(billData) {
+    // 1. Get User Settings
+    let userSettings = {};
+    try {
+        userSettings = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    } catch (e) { userSettings = {}; }
+
+    // 2. FORCE CHECK: If ID is missing, Ask or Generate
+    if (!userSettings.merchantId) {
+        console.warn("⚠️ No Merchant ID found! Asking user...");
+        
+        // Ask the user clearly
+        let mid = prompt("🌍 HEATMAP SETUP:\n\nPlease enter your Unique Shop ID (e.g., SHOP-DELHI-01) to appear on the map:");
+        
+        // If user cancels, generate a random backup ID so the app doesn't crash
+        if (!mid) {
+            mid = "GUEST-SHOP-" + Math.floor(Math.random() * 9999);
+            alert("⚠️ No ID entered. Using temporary ID: " + mid);
+        }
+        
+        // Save it forever
+        userSettings.merchantId = mid;
+        localStorage.setItem('bharatpos_user', JSON.stringify(userSettings));
+    }
+
+    // 3. ATTACH ID TO BILL
+    // This is the crucial step the map needs
+    billData.merchantId = userSettings.merchantId;
+
+    // 4. DEBUG LOGS (Open Console F12 to see this)
+    console.log("🚀 UPLOADING BILL TO SERVER...");
+    console.log("🆔 Merchant ID Attached:", billData.merchantId); 
+    console.log("📦 Full Data:", billData);
+
+    try {
+        // Use buildUrl if available, otherwise fallback
+        const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-bill') : '/api/save-bill';
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(billData)
+        });
+        
+        const result = await response.json();
+        
+        if(result.success) {
+            console.log("✅ SUCCESS: Bill saved to server!");
+            // Optional: Show a tiny toast notification
+        } else {
+            console.error("❌ SERVER ERROR:", result.message);
+        }
+        
+    } catch (error) {
+        console.error("⚠️ NETWORK ERROR (Is Server Running?):", error);
+    }
+}
+
+// --- 📍 SHOP SETUP & LOCATION MANAGER ---
+async function ensureShopSettings() {
+    let settings = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+
+    // 1. Ensure Merchant ID exists (Crucial for Khata)
+    if (!settings.merchantId) {
+        let mid = prompt("🔹 FIRST TIME SETUP\n\nEnter your Unique Shop ID (e.g., GRO-DELHI-001):");
+        if (!mid) mid = "SHOP-" + Math.floor(Math.random() * 10000); // Fallback
+        settings.merchantId = mid;
+        alert(`✅ Shop ID Set: ${mid}\n\nNext: We will capture your exact location for the Heatmap.`);
+    }
+
+    // 2. Ensure Exact Location (Lat/Lng) exists
+    if (!settings.lat || !settings.lng) {
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+            
+            settings.lat = position.coords.latitude;
+            settings.lng = position.coords.longitude;
+            alert("📍 Location Captured! Your shop will appear exactly here on the map.");
+            
+        } catch (error) {
+            console.warn("Location access denied. Using fallback.");
+            // Default to Central India if GPS denied, but keep the ID
+            settings.lat = 20.5937;
+            settings.lng = 78.9629;
+            alert("⚠️ GPS Denied. Map location will be approximate based on Shop ID.");
+        }
+    }
+
+    // Save back to storage
+    localStorage.setItem('bharatpos_user', JSON.stringify(settings));
+    return settings;
+}
+
+/// --- HELPER: SYNC TO SERVER (Silent Location Attach) ---
+async function syncBillToServer(billData) {
+    // 1. Get User Settings (Saved from Login Page)
+    let userSettings = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+
+    // 2. Validate Merchant ID
+    if (!userSettings.merchantId) {
+        console.warn("⚠️ No Login Found. Using Guest ID.");
+        userSettings.merchantId = "GUEST-" + Math.floor(Math.random() * 1000);
+    }
+
+    // 3. ATTACH DATA TO BILL
+    billData.merchantId = userSettings.merchantId;
+    
+    // 🟢 CRITICAL: Attach the Location captured at Login
+    if (userSettings.lat && userSettings.lng) {
+        billData.shopLocation = {
+            lat: userSettings.lat,
+            lng: userSettings.lng
+        };
+    } else {
+        console.warn("⚠️ No GPS data found in settings. Heatmap will use approximate location.");
+    }
+
+    console.log(`🚀 Uploading Bill for ${billData.merchantId}`);
+
+    try {
+        const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-bill') : '/api/save-bill';
+        
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(billData)
+        });
+        console.log("✅ Bill & Location Synced!");
+    } catch (error) {
+        console.warn("⚠️ Server Sync Failed:", error);
+    }
+}
 </script>
 </body>
 </html>
