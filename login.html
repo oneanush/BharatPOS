@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Login • BharatPOS</title>
+  <title>Merchant Login • BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -27,10 +27,11 @@
       background-color: var(--bg-body);
       color: var(--text-main);
       display: flex; justify-content: center; align-items: center;
-      min-height: 100vh; overflow: hidden;
+      min-height: 100vh; overflow-y: auto; /* Allow scrolling for mobile */
       background-image: 
         radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.1), transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.1), transparent 40%);
+      padding: 20px 0;
     }
 
     /* --- ANIMATIONS --- */
@@ -39,7 +40,7 @@
 
     /* --- FORM CONTAINER --- */
     .login-container {
-      width: 100%; max-width: 400px; padding: 20px;
+      width: 100%; max-width: 480px; padding: 20px;
       display: flex; flex-direction: column; align-items: center;
       animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
@@ -73,6 +74,9 @@
       color: #fff; font-size: 15px; transition: 0.3s;
       appearance: none; font-family: 'Inter', sans-serif;
     }
+
+    /* Grid for side-by-side inputs */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     
     /* Input Focus Effects */
     input:focus, select:focus {
@@ -119,16 +123,22 @@
     .loading .spinner { display: block; }
     .loading .btn-text { display: none; }
 
-    /* --- TOAST NOTIFICATION --- */
-    #toast {
-      visibility: hidden; min-width: 250px; background-color: var(--success, #10b981);
-      color: #fff; text-align: center; border-radius: 8px; padding: 14px;
-      position: fixed; z-index: 1; left: 50%; bottom: 30px; transform: translateX(-50%);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s;
-      font-weight: 600; font-size: 14px;
+    /* --- ID CARD MODAL (Simulated Success) --- */
+    #idModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+      justify-content: center; align-items: center; z-index: 100;
     }
-    #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
-    #toast.error { background-color: #ef4444; }
+    .id-card {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--accent); border-radius: 20px;
+      padding: 30px; text-align: center; max-width: 320px; width: 90%;
+      box-shadow: 0 0 50px rgba(245, 158, 11, 0.3);
+      animation: fadeUp 0.5s ease;
+    }
+    .id-label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .id-value { font-size: 32px; font-weight: 800; color: var(--accent); margin: 10px 0 20px 0; font-family: monospace; }
+    .id-note { font-size: 13px; color: #fff; line-height: 1.5; margin-bottom: 20px; }
 
   </style>
 </head>
@@ -142,14 +152,14 @@
     </div>
 
     <div class="form-box">
-      <h2>Welcome Back</h2>
-      <p class="subtitle">Access your Retail Intelligence System</p>
+      <h2>Merchant Registration</h2>
+      <p class="subtitle">Join the Smart Retail Network</p>
 
       <form id="loginForm">
         
         <div class="input-group">
-          <input type="text" id="retailerName" placeholder=" " required autocomplete="off">
-          <label class="floating-label">Retailer Name</label>
+          <input type="text" id="ownerName" placeholder=" " required autocomplete="off">
+          <label class="floating-label">Owner Name</label>
         </div>
 
         <div class="input-group">
@@ -157,40 +167,84 @@
           <label class="floating-label">Mobile Number</label>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-          <div class="input-group">
-            <select id="country" required>
-              <option value="India" selected>India</option>
-              <option value="USA">USA</option>
-              <option value="Other">Other</option>
-            </select>
-            <label class="floating-label">Country</label>
-          </div>
+        <div class="input-group">
+          <input type="text" id="shopName" placeholder=" " required autocomplete="off">
+          <label class="floating-label">Shop Name (e.g. Raju General Store)</label>
+        </div>
 
+        <div class="input-group">
+          <select id="shopCategory" required>
+            <option value="" disabled selected></option>
+            <option value="GROCERY">Kirana / Grocery Store</option>
+            <option value="MEDICINE">Medical / Pharmacy</option>
+            <option value="CLOTHING">Clothing / Garments</option>
+            <option value="ELECTRONIC">Electronics / Mobile Shop</option>
+            <option value="RESTAURANT">Restaurant / Cafe / Bakery</option>
+            <option value="HARDWARE">Hardware / Sanitary</option>
+            <option value="VEGETABLE">Fruits & Vegetables</option>
+            <option value="OTHER">Other Business</option>
+          </select>
+          <label class="floating-label">Shop Category</label>
+        </div>
+
+        <div class="grid-2">
           <div class="input-group">
             <select id="state" required>
               <option value="" disabled selected></option>
-              <option>Uttar Pradesh</option>
-              <option>Delhi</option>
-              <option>Maharashtra</option>
-              <option>Rajasthan</option>
-              <option>Haryana</option>
-              <option>Other</option>
+              <option value="AN">Andaman and Nicobar Islands</option>
+              <option value="AP">Andhra Pradesh</option>
+              <option value="AR">Arunachal Pradesh</option>
+              <option value="AS">Assam</option>
+              <option value="BR">Bihar</option>
+              <option value="CH">Chandigarh</option>
+              <option value="CT">Chhattisgarh</option>
+              <option value="DN">Dadra and Nagar Haveli</option>
+              <option value="DD">Daman and Diu</option>
+              <option value="DL">Delhi</option>
+              <option value="GA">Goa</option>
+              <option value="GJ">Gujarat</option>
+              <option value="HR">Haryana</option>
+              <option value="HP">Himachal Pradesh</option>
+              <option value="JK">Jammu and Kashmir</option>
+              <option value="JH">Jharkhand</option>
+              <option value="KA">Karnataka</option>
+              <option value="KL">Kerala</option>
+              <option value="LA">Ladakh</option>
+              <option value="LD">Lakshadweep</option>
+              <option value="MP">Madhya Pradesh</option>
+              <option value="MH">Maharashtra</option>
+              <option value="MN">Manipur</option>
+              <option value="ML">Meghalaya</option>
+              <option value="MZ">Mizoram</option>
+              <option value="NL">Nagaland</option>
+              <option value="OR">Odisha</option>
+              <option value="PY">Puducherry</option>
+              <option value="PB">Punjab</option>
+              <option value="RJ">Rajasthan</option>
+              <option value="SK">Sikkim</option>
+              <option value="TN">Tamil Nadu</option>
+              <option value="TG">Telangana</option>
+              <option value="TR">Tripura</option>
+              <option value="UP">Uttar Pradesh</option>
+              <option value="UT">Uttarakhand</option>
+              <option value="WB">West Bengal</option>
             </select>
             <label class="floating-label">State</label>
+          </div>
+
+          <div class="input-group">
+            <input type="text" id="city" placeholder=" " required autocomplete="off">
+            <label class="floating-label">City/District</label>
           </div>
         </div>
 
         <div class="input-group">
-          <select id="type" required>
-            <option value="Retailer" selected>Retailer</option>
-            <option value="Wholesaler">Wholesaler</option>
-          </select>
-          <label class="floating-label">Business Type</label>
+          <input type="number" id="pincode" placeholder=" " required autocomplete="off">
+          <label class="floating-label">Pincode</label>
         </div>
 
         <button type="submit" id="submitBtn">
-          <span class="btn-text">Secure Login</span>
+          <span class="btn-text">Generate Merchant ID & Login</span>
           <div class="spinner"></div>
         </button>
 
@@ -198,61 +252,90 @@
     </div>
   </div>
 
-  <div id="toast">Signed in successfully!</div>
+  <div id="idModal">
+    <div class="id-card">
+      <div class="logo-box" style="width:50px; height:50px; margin: 0 auto 15px auto;">
+        <img src="https://via.placeholder.com/50/f59e0b/000000?text=B" alt="B" class="logo-img">
+      </div>
+      <div class="id-label">Welcome to BharatPOS</div>
+      <h3 style="margin: 5px 0 20px 0; color:white;" id="modalShopName">Shop Name</h3>
+      
+      <div class="id-label">Your Unique Merchant Code</div>
+      <div class="id-value" id="generatedCode">-----</div>
+      
+      <p class="id-note">Use this code for <b>My Khata</b>, <b>Inventory Sync</b>, and <b>Support</b>.</p>
+      
+      <button onclick="finishLogin()">Enter Dashboard</button>
+    </div>
+  </div>
 
 <script>
-// --- UI UTILS ---
-function showToast(msg, isError = false) {
-  const x = document.getElementById("toast");
-  x.innerText = msg;
-  x.className = isError ? "show error" : "show";
-  setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
-}
-
-// --- FORM LOGIC ---
-document.getElementById('loginForm').addEventListener('submit', function(e){
+document.getElementById('loginForm').addEventListener('submit', async function(e){
   e.preventDefault(); 
   
   const btn = document.getElementById('submitBtn');
-  const name = document.getElementById('retailerName').value.trim();
-  const mobile = document.getElementById('mobile').value.trim();
-  const country = document.getElementById('country').value;
-  const state = document.getElementById('state').value;
-  const type = document.getElementById('type').value;
+  btn.classList.add('loading'); // Show spinner
 
-  // 1. Validation
-  if(!name || !mobile || !state){
-    showToast("Please fill all required fields.", true);
+  // 1. COLLECT DATA
+  const formData = {
+    ownerName: document.getElementById('ownerName').value.trim(),
+    mobile: document.getElementById('mobile').value.trim(),
+    shopName: document.getElementById('shopName').value.trim(),
+    category: document.getElementById('shopCategory').value,
+    state: document.getElementById('state').value,
+    city: document.getElementById('city').value.trim(),
+    pincode: document.getElementById('pincode').value.trim()
+  };
+
+  if(!formData.shopName || !formData.mobile) {
+    alert("Please fill in Shop Name and Mobile.");
+    btn.classList.remove('loading');
     return;
   }
 
-  if(!/^[0-9]{10}$/.test(mobile)){
-    showToast("Invalid Mobile Number (10 digits required)", true);
-    return;
+  // 2. GET LOCATION (Crucial Step)
+  try {
+    const position = await new Promise((resolve, reject) => {
+        // Try to get high accuracy location
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000 
+        });
+    });
+
+    // SUCCESS
+    formData.lat = position.coords.latitude;
+    formData.lng = position.coords.longitude;
+    console.log("✅ Location Secured:", formData.lat, formData.lng);
+
+  } catch (error) {
+    // FAILURE
+    console.error("❌ Location Error:", error);
+    alert(`⚠️ Location Failed: ${error.message}\n\n1. Make sure you are using HTTPS (or localhost).\n2. Allow Location permission.\n\nLogin will proceed without Heatmap data.`);
+    formData.lat = null;
+    formData.lng = null;
   }
 
-  // 2. Loading State (UX Delight)
-  btn.classList.add('loading');
-  
-  // 3. Process (Simulate API delay)
-  setTimeout(() => {
-    
-    // Save to localStorage
-    const data = { name, mobile, country, state, type };
-    localStorage.setItem('bharatpos_user', JSON.stringify(data));
+  // 3. GENERATE ID & SAVE
+  const codePrefix = formData.category.substring(0, 3).toUpperCase();
+  const codeSuffix = formData.mobile.substring(6, 10);
+  formData.merchantId = `${codePrefix}-${codeSuffix}`;
+  formData.joinedDate = new Date().toISOString();
 
-    // Success Feedback
-    showToast("Access Granted. Redirecting...");
-    
-    // Redirect
-    setTimeout(() => {
-        window.location.href = "products.html"; 
-    }, 1000);
+  // Save to Database (LocalStorage)
+  localStorage.setItem('bharatpos_user', JSON.stringify(formData));
 
-  }, 1200); // 1.2s delay for "security" feel
+  // 4. SHOW SUCCESS
+  document.getElementById('modalShopName').innerText = formData.shopName;
+  document.getElementById('generatedCode').innerText = formData.merchantId;
+  document.getElementById('idModal').style.display = 'flex';
+  btn.classList.remove('loading');
 });
-</script>
 
+function finishLogin() {
+  window.location.href = "billing.html"; // Go directly to billing
+}
+</script>
 </body>
 </html>
 
