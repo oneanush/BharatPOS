@@ -1,329 +1,478 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>My Khata — Rewards & Dues</title>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <style>
-    /* --- CORE THEME --- */
-    body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; padding-bottom: 60px; position: relative; overflow-x: hidden; }
-    body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle at 50% 10%, rgba(255, 215, 0, 0.1) 0%, transparent 40%), linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%); z-index: -1; pointer-events: none; }
-
-    /* HERO SECTION */
-    .hero { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 40px 20px 100px; text-align: center; border-radius: 0 0 40px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
-    .hero h1 { margin: 0; font-size: 26px; font-weight: 800; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Khata & Shop | Customer App</title>
     
-    .offer-badge { background: #ffcc00; color: #000; padding: 8px 20px; border-radius: 30px; font-weight: bold; font-size: 13px; display: inline-block; margin-top: 15px; box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4); animation: pulse 2s infinite; max-width: 90%; }
-    @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="bharatpos.js"></script>
 
-    /* --- PODIUM --- */
-    .podium-container { max-width: 500px; margin: -80px auto 30px; display: flex; justify-content: center; align-items: flex-end; gap: 10px; position: relative; z-index: 10; }
-    .podium-card { background: white; border-radius: 12px; padding: 10px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.15); width: 100px; display: flex; flex-direction: column; justify-content: flex-end; position: relative; border: 3px solid transparent; transition: transform 0.3s; }
-    .podium-card:hover { transform: translateY(-5px); }
-    .rank-1 { height: 160px; border-color: #fbbf24; order: 2; z-index: 2; transform: scale(1.1); }
-    .rank-2 { height: 130px; border-color: #94a3b8; order: 1; opacity: 0.9; }
-    .rank-3 { height: 120px; border-color: #b45309; order: 3; opacity: 0.9; }
-    .trophy-icon { font-size: 32px; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2)); }
-    .winner-name { font-weight: 700; font-size: 13px; color: #333; margin-top: 15px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .winner-amt { font-size: 11px; color: #555; font-weight: 600; margin-top: 2px; }
-    
-    /* --- INPUT BOX --- */
-    .input-box { max-width: 400px; margin: 0 auto 30px; background: white; padding: 8px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; border: 1px solid #e2e8f0; }
-    input { flex: 1; padding: 12px 20px; border: none; outline: none; background: transparent; font-size: 16px; }
-    .search-btn { background: #1e3a8a; color: white; border: none; padding: 0 25px; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 18px; transition: background 0.2s; }
-    .search-btn:hover { background: #172554; }
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --gold: #f59e0b;
+        }
 
-    /* --- RESULTS & HISTORY BUTTON --- */
-    .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
-    
-    .history-btn-wrap { text-align: center; margin-bottom: 20px; display: none; /* HIDDEN BY DEFAULT */ }
-    .btn-history {
-        background: linear-gradient(135deg, #4f46e5, #4338ca); color: white;
-        border: none; padding: 12px 25px; border-radius: 30px;
-        font-size: 14px; font-weight: 700; cursor: pointer;
-        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
-        display: inline-flex; align-items: center; gap: 8px;
-        transition: transform 0.2s;
-    }
-    .btn-history:hover { transform: translateY(-2px); }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background-color: var(--bg); color: var(--text-main); overflow-x: hidden; padding-bottom: 80px; }
 
-    .summary-card { background: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; display: none; border-left: 5px solid #3b82f6; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-    .total-amt { font-size: 32px; font-weight: 800; color: #dc3545; }
-    
-    .bill-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        /* --- SCREEN MANAGEMENT --- */
+        .screen { display: none; min-height: 100vh; animation: fadeIn 0.3s ease; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    /* TICKER */
-    .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; color: white; height: 40px; display: flex; align-items: center; overflow: hidden; z-index: 99; }
-    .ticker { white-space: nowrap; animation: ticker 20s linear infinite; padding-left: 100%; font-size: 13px; }
-    @keyframes ticker { 100% { transform: translateX(-100%); } }
+        /* --- LOGIN SCREEN --- */
+        #login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; background: white; }
+        .login-card { width: 100%; max-width: 400px; text-align: center; }
+        .hero-icon { background: #eef2ff; color: var(--primary); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+        .input-box { margin-bottom: 15px; text-align: left; }
+        .input-box label { font-size: 12px; font-weight: bold; color: var(--text-muted); display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; transition: 0.2s; background: #f8fafc; }
+        input:focus { border-color: var(--primary); background: white; }
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); transition: transform 0.1s; }
+        .btn-main:active { transform: scale(0.98); }
 
-    /* MODALS */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-    .modal-content { background: white; width: 90%; max-width: 350px; padding: 20px; border-radius: 12px; font-family: monospace; max-height: 80vh; overflow-y: auto; position: relative; }
+        /* --- APP HEADER --- */
+        header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50; }
+        .store-info h2 { margin: 0; font-size: 18px; font-weight: 800; color: var(--primary-dark); }
+        .store-info p { margin: 0; font-size: 12px; color: var(--success); font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        .cart-trigger { background: #eef2ff; color: var(--primary); border: none; padding: 10px; border-radius: 12px; cursor: pointer; position: relative; }
+        #cart-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; border: 2px solid white; }
 
-    /* WINNER MODAL */
-    .winner-box { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #fff, #fffbea); border: 4px solid #ffcc00; }
-    .big-trophy { font-size: 80px; display: block; margin-bottom: 10px; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .win-title { font-size: 24px; font-weight: 800; color: #d97706; margin: 10px 0; }
-    .win-rank { font-size: 18px; color: #333; font-weight: bold; }
-    .win-msg { color: #666; margin: 15px 0; }
-    @keyframes popIn { from{transform:scale(0);} to{transform:scale(1);} }
+        /* --- NAVIGATION TABS --- */
+        .nav-tabs { display: flex; padding: 10px 15px; gap: 10px; background: white; border-bottom: 1px solid #e2e8f0; }
+        .nav-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .nav-btn.active { background: #eef2ff; color: var(--primary); }
 
-    /* HISTORY LIST STYLE */
-    .hist-item { padding: 10px; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; font-size: 12px; }
-    .hist-paid { color: #16a34a; font-weight: bold; }
-    .hist-due { color: #dc2626; font-weight: bold; }
+        /* --- SECTION: KHATA LEDGER --- */
+        .section-view { display: none; padding: 15px; }
+        .section-view.active { display: block; }
 
-  </style>
+        /* Loyalty Card */
+        .loyalty-card { background: linear-gradient(135deg, #0f172a, #334155); color: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; }
+        .coin-box { display: flex; align-items: center; gap: 10px; }
+        .coin-val { font-size: 24px; font-weight: 800; color: var(--gold); }
+        
+        /* Bill List */
+        .bill-card { background: white; padding: 15px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid transparent; }
+        .bill-card.due { border-left-color: var(--danger); }
+        .bill-card.paid { border-left-color: var(--success); }
+        .bill-date { font-weight: 700; color: var(--text-main); font-size: 14px; }
+        .status-badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; margin-top: 4px; display: inline-block; }
+        .badge-due { background: #fee2e2; color: var(--danger); }
+        .badge-paid { background: #dcfce7; color: var(--success); }
+        .pay-link { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 10px; cursor: pointer; }
+
+        /* --- SECTION: INVENTORY (ORDER) --- */
+        .product-card { background: white; padding: 15px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; }
+        .add-btn { background: white; color: var(--primary); border: 2px solid var(--primary); padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .add-btn:active { background: var(--primary); color: white; }
+
+        /* --- DRAWER (CART) --- */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; }
+        .drawer-overlay.active { display: block; }
+        .drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 30px 30px 0 0; padding: 30px 20px; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 101; max-height: 85vh; overflow-y: auto; }
+        .drawer.active { transform: translateY(0); }
+        
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
+        
+        .option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0 25px; }
+        .opt-btn { background: #f1f5f9; border: 2px solid #f1f5f9; padding: 10px; border-radius: 10px; font-weight: bold; color: var(--text-muted); cursor: pointer; font-size: 13px; }
+        .opt-btn.selected { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
+
+        .loc-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+        .loc-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; border: none; }
+        .loc-gps { background: var(--text-main); color: white; }
+        
+        .checkout-footer { margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 18px; font-weight: 800; }
+    </style>
 </head>
 <body>
 
-<div class="hero">
-    <h1>🏆 My Khata Rewards</h1>
-    <div class="offer-badge" id="offerBadgeText">Loading Offer...</div>
-</div>
-
-<div class="podium-container" id="podiumBox">
-    <div style="color:#666; font-size:12px; background:white; padding:10px; border-radius:8px;">Loading Champions...</div>
-</div>
-
-<div class="input-box">
-    <input type="tel" id="userPhone" placeholder="Enter Mobile Number to Check Status" maxlength="10">
-    <button class="search-btn" onclick="handleUserCheck()">➔</button>
-</div>
-
-<div class="container">
-    
-    <div id="historyBtnContainer" class="history-btn-wrap">
-        <button class="btn-history" onclick="showHistory()">
-            <span>📜 View All Past Invoices</span>
-        </button>
-    </div>
-
-    <div id="summaryCard" class="summary-card">
-        <div style="font-size:12px; color:#888;">Pending Dues for <b id="custName">Guest</b></div>
-        <div class="total-amt" id="totalAmt">₹0</div>
-        <div style="font-size:11px; margin-top:5px; color:#666;">Please visit the shop to pay.</div>
-    </div>
-    
-    <div id="billList"></div>
-</div>
-
-<div class="ticker-wrap">
-    <div class="ticker">
-        📢 <b>Bharat POS Offer:</b> Check your rank above! • Top 3 customers get exclusive rewards. • Keep shopping to reach Number 1!
-    </div>
-</div>
-
-<div id="billModal" class="modal-overlay" onclick="closeModal(event, 'billModal')">
-    <div class="modal-content">
-        <div style="text-align:right"><button onclick="document.getElementById('billModal').style.display='none'" style="border:none;background:none;font-size:20px;">&times;</button></div>
-        <h3 style="text-align:center;margin:0;">INVOICE DETAILS</h3>
-        <div style="text-align:center; font-size:12px; color:#666;" id="modId"></div>
-        <hr>
-        <div id="modItems"></div>
-        <hr>
-        <div style="text-align:right; font-weight:bold; font-size:16px;">Total: <span id="modTotal"></span></div>
-        <div style="text-align:center; font-size:11px; color:#999; margin-top:10px;">Generated by Bharat POS</div>
-    </div>
-</div>
-
-<div id="historyModal" class="modal-overlay" onclick="closeModal(event, 'historyModal')">
-    <div class="modal-content" style="max-height: 70vh;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0;">📜 Full History</h3>
-            <button onclick="document.getElementById('historyModal').style.display='none'" style="border:none;background:none;font-size:24px;">&times;</button>
-        </div>
-        <div id="historyListBody" style="font-family:sans-serif;">
+    <div id="login-screen" class="screen active">
+        <div class="login-card">
+            <div class="hero-icon"><i data-lucide="store" size="40"></i></div>
+            <h1 style="margin: 0 0 5px;">My Khata & Shop</h1>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">Connect with your local store</p>
+            
+            <div class="input-box">
+                <label>Merchant ID (Ask Shopkeeper)</label>
+                <input type="text" id="merchant-id" placeholder="e.g. GRO-1234" style="text-transform:uppercase;">
             </div>
-    </div>
-</div>
-
-<div id="winnerModal" class="modal-overlay" onclick="closeModal(event, 'winnerModal')">
-    <div class="modal-content winner-box">
-        <div class="big-trophy" id="winTrophy">🏆</div>
-        <div class="win-title">CONGRATULATIONS!</div>
-        <div class="win-rank" id="winRankText">You are ranked #1</div>
-        <p class="win-msg" id="winCustName">Guest</p>
-        <p style="font-size:12px;">Please visit the shop to claim your special reward!</p>
-        <button onclick="document.getElementById('winnerModal').style.display='none'" style="background:#ffcc00; border:none; padding:10px 20px; border-radius:20px; font-weight:bold; cursor:pointer; margin-top:10px;">WOOHOO! 🎉</button>
-    </div>
-</div>
-
-<script>
-    const formatMoney = (n) => '₹' + Number(n).toLocaleString('en-IN');
-    const safeParse = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } };
-
-    // GLOBAL VARS
-    let currentBillsList = [];
-    let allUserBills = []; // Store full history
-    let currentUserPhone = "";
-
-    document.addEventListener("DOMContentLoaded", () => {
-        loadLeaderboard();
-        loadDynamicOffer();
-    });
-
-    function loadDynamicOffer() {
-        const offer = localStorage.getItem('bharatpos_offer_text') || "📢 This Month's Offer: Top 3 get 20% OFF!";
-        document.getElementById('offerBadgeText').innerText = offer;
-    }
-
-    function loadLeaderboard() {
-        const sales = safeParse('bharatpos_sales');
-        const custMap = {};
-        sales.forEach(s => {
-            const name = (s.customer || "Unknown").trim();
-            if(name.toLowerCase() === 'walk-in') return;
-            if(!custMap[name]) custMap[name] = 0;
-            custMap[name] += Number(s.total);
-        });
-        const sorted = Object.entries(custMap).map(([name, total]) => ({ name, total })).sort((a,b) => b.total - a.total).slice(0, 3);
-        const podium = document.getElementById('podiumBox');
-        if(sorted.length === 0) { podium.innerHTML = `<div style="background:white;padding:10px 20px;border-radius:10px;color:#777;font-size:12px;">No Champions Yet</div>`; return; }
-        const displayOrder = [];
-        if(sorted[1]) displayOrder.push({ ...sorted[1], r: 2, i: '🥈', l: '2nd' });
-        if(sorted[0]) displayOrder.push({ ...sorted[0], r: 1, i: '🏆', l: 'Champ' });
-        if(sorted[2]) displayOrder.push({ ...sorted[2], r: 3, i: '🥉', l: '3rd' });
-        podium.innerHTML = displayOrder.map(c => `<div class="podium-card rank-${c.r}"><div class="trophy-icon">${c.i}</div><span class="winner-name">${c.name}</span><span class="winner-amt">${formatMoney(c.total)}</span><span class="winner-label">${c.l}</span></div>`).join('');
-    }
-
-    // --- MAIN CHECK ---
-    function handleUserCheck() {
-        const phone = document.getElementById('userPhone').value.trim();
-        if(!phone || phone.length < 10) { alert("Enter valid mobile number"); return; }
-        
-        currentUserPhone = phone;
-        
-        const ledger = safeParse('bharatpos_ledger');
-        
-        // 1. Check if user exists at all (any bill, paid or unpaid)
-        const userExists = ledger.some(l => l.phone === phone);
-
-        if (userExists) {
-            // SHOW HISTORY BUTTON
-            document.getElementById('historyBtnContainer').style.display = 'block';
             
-            // Check Rank
-            const custRecord = ledger.find(l => l.phone === phone);
-            if(custRecord && custRecord.customer) checkRankAndCelebrate(custRecord.customer);
+            <div class="input-box">
+                <label>Your Mobile Number</label>
+                <input type="tel" id="user-phone" placeholder="9876543210" maxlength="10">
+            </div>
+
+            <button class="btn-main" id="btn-connect" onclick="connectToShop()">Connect Securely</button>
+        </div>
+    </div>
+
+    <div id="app-screen" class="screen">
+        
+        <header>
+            <div class="store-info">
+                <h2 id="display-shop-name">Loading...</h2>
+                <p id="display-status"><i data-lucide="circle-dot" size="12" fill="currentColor"></i> LIVE STORE</p>
+            </div>
+            <button class="cart-trigger" onclick="toggleCart(true)">
+                <i data-lucide="shopping-bag"></i>
+                <span id="cart-badge">0</span>
+            </button>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="nav-btn active" onclick="switchView('khata', this)">
+                <i data-lucide="book-open" size="16"></i> My Ledger
+            </button>
+            <button class="nav-btn" onclick="switchView('order', this)">
+                <i data-lucide="shopping-cart" size="16"></i> Order Items
+            </button>
+        </div>
+
+        <div id="view-khata" class="section-view active">
             
-            fetchDues(phone);
-        } else {
-            document.getElementById('historyBtnContainer').style.display = 'none';
-            alert("No records found for this number.");
-            document.getElementById('billList').innerHTML = "";
-            document.getElementById('summaryCard').style.display = 'none';
+            <div class="loyalty-card">
+                <div>
+                    <div style="font-size:13px; opacity:0.8;">Welcome,</div>
+                    <div style="font-size:18px; font-weight:700;" id="cust-name">Valued Customer</div>
+                </div>
+                <div class="coin-box">
+                    <div style="text-align:right;">
+                        <div class="coin-val" id="coin-balance">0</div>
+                        <div style="font-size:10px; opacity:0.8;">REWARD POINTS</div>
+                    </div>
+                    <i data-lucide="coins" size="28" color="#f59e0b"></i>
+                </div>
+            </div>
+
+            <h3 style="font-size:14px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:15px;">Pending Dues</h3>
+            <div id="pending-list">
+                <div style="text-align:center; padding:30px; color:#cbd5e1;">No pending dues. Great!</div>
+            </div>
+
+            <h3 style="font-size:14px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin:25px 0 15px;">Paid History</h3>
+            <div id="history-list">
+                </div>
+        </div>
+
+        <div id="view-order" class="section-view">
+            <div id="inventory-list">
+                </div>
+        </div>
+
+    </div>
+
+    <div class="drawer-overlay" id="overlay" onclick="toggleCart(false)"></div>
+    <div class="drawer" id="cart-drawer">
+        <div class="drawer-header">
+            <h2 style="margin:0">Your Bag</h2>
+            <button onclick="toggleCart(false)" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+        </div>
+
+        <div id="cart-items-container" style="margin-bottom:20px;"></div>
+
+        <span style="font-size:12px; font-weight:bold; color:var(--text-muted); text-transform:uppercase;">Delivery Speed</span>
+        <div class="option-grid">
+            <button class="opt-btn selected" onclick="setDelivery('15 min', this)">⚡ 15 Min</button>
+            <button class="opt-btn" onclick="setDelivery('30 min', this)">🕒 30 Min</button>
+            <button class="opt-btn" onclick="setDelivery('Scheduled', this)">📅 Later</button>
+        </div>
+
+        <div class="loc-box">
+            <button class="loc-btn loc-gps" onclick="fetchLocation()">
+                <i data-lucide="map-pin"></i> Share GPS Location
+            </button>
+            <div id="gps-status" style="text-align:center; font-size:12px; color:var(--success); font-weight:bold;"></div>
+        </div>
+
+        <div class="checkout-footer">
+            <div class="total-row">
+                <span>Total</span>
+                <span id="grand-total">₹0</span>
+            </div>
+            <button class="btn-main" style="background:var(--success);" onclick="submitOrder()">Place Order via WhatsApp</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. INITIALIZATION ---
+        lucide.createIcons();
+        
+        let currentState = {
+            merchantId: '',
+            phone: '',
+            cart: [],
+            deliveryTime: '15 min',
+            location: null
+        };
+
+        // --- 2. CONNECT & LOGIN LOGIC ---
+        async function connectToShop() {
+            const mId = document.getElementById('merchant-id').value.trim().toUpperCase();
+            const phone = document.getElementById('user-phone').value.trim();
+            const btn = document.getElementById('btn-connect');
+
+            if(!mId || phone.length < 10) { alert("Invalid details"); return; }
+
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            try {
+                // Fetch Ledger Data (Real Backend Call)
+                const response = await fetch(buildUrl('/api/customer-ledger'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ merchantId: mId, phone: phone })
+                });
+
+                const data = await response.json();
+
+                if(data.success) {
+                    // Success
+                    currentState.merchantId = mId;
+                    currentState.phone = phone;
+                    
+                    // Setup UI
+                    setupDashboard(data.bills, mId);
+                    
+                    // Switch Screen
+                    document.getElementById('login-screen').classList.remove('active');
+                    document.getElementById('app-screen').classList.add('active');
+                    
+                    // Load Mock Inventory (Since no backend for stock yet)
+                    loadInventory();
+
+                } else {
+                    alert("No records found for this Merchant ID & Phone.");
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert("Connection Error. Please try again.");
+            } finally {
+                btn.innerText = "Connect Securely";
+                btn.disabled = false;
+            }
         }
-    }
 
-    function fetchDues(phone) {
-        const ledger = safeParse('bharatpos_ledger');
-        const myBills = ledger.filter(l => l.phone === phone && !l.isPaid);
-        currentBillsList = myBills; // Store globally for clicking
+        function setupDashboard(bills, mId) {
+            document.getElementById('display-shop-name').innerText = "Store: " + mId;
+            
+            // Filter Bills
+            const pending = bills.filter(b => !b.isPaid);
+            const paid = bills.filter(b => b.isPaid);
+            
+            // Customer Name & Points
+            if(bills.length > 0) {
+                document.getElementById('cust-name').innerText = bills[0].customerName || "Customer";
+            }
+            const totalPaid = paid.reduce((sum, b) => sum + Number(b.total || b.amount), 0);
+            const coins = Math.floor(totalPaid / 100);
+            document.getElementById('coin-balance').innerText = coins;
 
-        const summary = document.getElementById('summaryCard');
-        const list = document.getElementById('billList');
+            // Render Ledger Lists
+            renderLedgerList('pending-list', pending, true);
+            renderLedgerList('history-list', paid, false);
 
-        if(myBills.length === 0) {
-            summary.style.display = 'none';
-            list.innerHTML = `<div style="text-align:center;padding:40px;color:#888;"><h3>🎉 No Pending Dues!</h3><p>You are all clear.</p></div>`;
+            if(coins > 50) launchConfetti();
+        }
+
+        function renderLedgerList(elId, list, isPending) {
+            const container = document.getElementById(elId);
+            if(list.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:20px; color:#cbd5e1; font-size:13px;">No items found.</div>`;
+                return;
+            }
+            container.innerHTML = list.map(b => `
+                <div class="bill-card ${isPending ? 'due' : 'paid'}">
+                    <div>
+                        <div class="bill-date">${new Date(b.date).toLocaleDateString()}</div>
+                        <div style="font-size:12px; color:#94a3b8;">#${b.id}</div>
+                        <span class="status-badge ${isPending ? 'badge-due' : 'badge-paid'}">${isPending ? 'UNPAID' : 'PAID'}</span>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <div style="font-size:16px; font-weight:800; color:${isPending ? 'var(--danger)' : 'var(--success)'}">₹${b.total || b.amount}</div>
+                        ${isPending ? `<button class="pay-link" onclick="payBill('${b.id}')">PAY</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- 3. INVENTORY & ORDER LOGIC ---
+       // --- 3. INVENTORY & ORDER LOGIC (REAL DATA) ---
+async function loadInventory() {
+    const container = document.getElementById('inventory-list');
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">Loading Shop Items...</div>';
+
+    try {
+        // 1. Ask Server for THIS Merchant's Stock
+        const response = await fetch(buildUrl('/api/get-merchant-stock'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ merchantId: currentState.merchantId })
+        });
+
+        const data = await response.json();
+        const products = data.products || [];
+
+        if (products.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#cbd5e1;">Shop has not listed any items online yet.</div>';
             return;
         }
 
-        const total = myBills.reduce((acc, c) => acc + Number(c.amount), 0);
-        document.getElementById('custName').innerText = myBills[0].customer;
-        document.getElementById('totalAmt').innerText = formatMoney(total);
-        summary.style.display = 'block';
+        // 2. Render Real Products
+        container.innerHTML = products.map(p => `
+            <div class="product-card">
+                <div>
+                    <h4 style="margin:0 0 4px;">${p.name}</h4>
+                    <div style="font-size:12px; color:#64748b; margin-bottom:4px;">${p.category || 'General'}</div>
+                    <span style="color:var(--primary); font-weight:800;">₹${p.price}</span>
+                    ${p.stock < 5 ? '<span style="font-size:10px; color:red; margin-left:5px;">(Low Stock)</span>' : ''}
+                </div>
+                <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">ADD +</button>
+            </div>
+        `).join('');
 
-        list.innerHTML = myBills.map((b, index) => `
-            <div class="bill-card" onclick="viewBill(${index})">
-                <div><div style="font-weight:bold; color:#333;">${new Date(b.date).toLocaleDateString()}</div><div style="font-size:11px;color:#666;">ID: ${b.id}</div></div>
-                <div style="text-align:right;"><div style="font-weight:bold;color:#dc3545;">${formatMoney(b.amount)}</div><div style="font-size:10px;color:#3b82f6;">View Details ></div></div>
-            </div>`).join('');
+    } catch (e) {
+        console.error("Inventory Load Error:", e);
+        container.innerHTML = '<div style="text-align:center; color:red;">Failed to load items.</div>';
     }
+}
 
-    // --- NEW: SHOW HISTORY FUNCTION ---
-    function showHistory() {
-        const ledger = safeParse('bharatpos_ledger');
-        const allHistory = ledger.filter(l => l.phone === currentUserPhone).sort((a,b) => new Date(b.date) - new Date(a.date));
-        
-        const histDiv = document.getElementById('historyListBody');
-        
-        if (allHistory.length === 0) {
-            histDiv.innerHTML = "<p>No history found.</p>";
-        } else {
-            histDiv.innerHTML = allHistory.map(h => {
-                const statusClass = h.isPaid ? 'hist-paid' : 'hist-due';
-                const statusText = h.isPaid ? 'PAID ✅' : 'PENDING ⚠️';
-                return `
-                <div class="hist-item">
-                    <div>
-                        <div style="font-weight:bold;">${new Date(h.date).toLocaleDateString()}</div>
-                        <div style="color:#666;">Inv #${h.id}</div>
+
+
+
+
+        function addToCart(name, price) {
+            currentState.cart.push({ name, price });
+            updateCartUI();
+            
+            // Visual feedback
+            const badge = document.getElementById('cart-badge');
+            badge.style.transform = "scale(1.5)";
+            setTimeout(() => badge.style.transform = "scale(1)", 200);
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-badge').innerText = currentState.cart.length;
+            
+            const total = currentState.cart.reduce((sum, item) => sum + item.price, 0);
+            document.getElementById('grand-total').innerText = "₹" + total;
+
+            // Render Cart Items List
+            const list = document.getElementById('cart-items-container');
+            if(currentState.cart.length === 0) {
+                list.innerHTML = "<div style='text-align:center; color:#94a3b8; font-size:13px;'>Your bag is empty.</div>";
+            } else {
+                // Group items
+                const grouped = {};
+                currentState.cart.forEach(i => {
+                    if(!grouped[i.name]) grouped[i.name] = { count:0, price: i.price };
+                    grouped[i.name].count++;
+                });
+                
+                list.innerHTML = Object.entries(grouped).map(([name, det]) => `
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
+                        <span>${name} <span style="color:var(--primary); font-weight:bold;">x${det.count}</span></span>
+                        <span>₹${det.price * det.count}</span>
                     </div>
-                    <div style="text-align:right;">
-                        <div style="font-weight:bold;">${formatMoney(h.amount)}</div>
-                        <div class="${statusClass}">${statusText}</div>
-                    </div>
-                </div>`;
-            }).join('');
+                `).join('');
+            }
         }
-        document.getElementById('historyModal').style.display = 'flex';
-    }
 
-    function viewBill(index) {
-        const bill = currentBillsList[index];
-        if(!bill) return;
-
-        const itemsDiv = document.getElementById('modItems');
-        document.getElementById('modId').innerText = "Invoice #" + bill.id;
-        document.getElementById('modTotal').innerText = formatMoney(bill.amount);
-
-        if(bill.items && bill.items.length > 0) {
-            itemsDiv.innerHTML = `<table style="width:100%;font-size:13px;border-collapse:collapse;"><tr style="border-bottom:1px dashed #ccc;"><th style="text-align:left;">Item</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Total</th></tr>${bill.items.map(i => `<tr><td>${i.name}</td><td align="right">x${i.qty}</td><td align="right">₹${Math.round(i.price*i.qty)}</td></tr>`).join('')}</table>`;
-        } else {
-            itemsDiv.innerHTML = `<div style="text-align:center;padding:20px;color:#999;">Item details not available.</div>`;
+        // --- 4. CHECKOUT UTILS ---
+        function toggleCart(show) {
+            const ol = document.getElementById('overlay');
+            const dr = document.getElementById('cart-drawer');
+            if(show) {
+                ol.classList.add('active');
+                dr.classList.add('active');
+                updateCartUI();
+            } else {
+                ol.classList.remove('active');
+                dr.classList.remove('active');
+            }
         }
-        document.getElementById('billModal').style.display = 'flex';
-    }
 
-    function closeModal(e, id) {
-        if(e && e.target !== e.currentTarget) return;
-        document.getElementById(id).style.display = 'none';
-    }
-
-    function checkRankAndCelebrate(custName) {
-        const sales = safeParse('bharatpos_sales');
-        const custMap = {};
-        sales.forEach(s => {
-            const name = (s.customer || "Unknown").trim();
-            if(name.toLowerCase() === 'walk-in') return;
-            if(!custMap[name]) custMap[name] = 0;
-            custMap[name] += Number(s.total);
-        });
-        const sorted = Object.keys(custMap).sort((a,b) => custMap[b] - custMap[a]).slice(0, 3);
-        const rankIndex = sorted.findIndex(name => name.toLowerCase() === custName.toLowerCase());
-
-        if(rankIndex !== -1) {
-            const trophies = ['🏆', '🥈', '🥉'];
-            document.getElementById('winTrophy').innerText = trophies[rankIndex];
-            document.getElementById('winRankText').innerText = `You are ranked #${rankIndex + 1}!`;
-            document.getElementById('winCustName').innerText = custName;
-            launchConfetti();
-            setTimeout(() => { document.getElementById('winnerModal').style.display = 'flex'; }, 500);
+        function setDelivery(time, btn) {
+            currentState.deliveryTime = time;
+            document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
         }
-    }
 
-    function launchConfetti() {
-        var duration = 3 * 1000; var end = Date.now() + duration;
-        (function frame() {
-            confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } });
-            confetti({ particleCount: 7, angle: 120, spread: 55, origin: { x: 1 } });
-            if (Date.now() < end) requestAnimationFrame(frame);
-        }());
-    }
-</script>
+        function fetchLocation() {
+            const status = document.getElementById('gps-status');
+            status.innerText = "Locating...";
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    currentState.location = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
+                    status.innerHTML = `✓ Location Secured`;
+                }, () => {
+                    status.innerText = "Location Denied";
+                    status.style.color = "red";
+                });
+            } else {
+                status.innerText = "GPS Not Supported";
+            }
+        }
+
+        function submitOrder() {
+            if(currentState.cart.length === 0) return alert("Cart is empty!");
+
+            // Create WhatsApp Message
+            let msg = `*New Order from ${currentState.phone}*%0A`;
+            msg += `Merchant: ${currentState.merchantId}%0A`;
+            msg += `Delivery: ${currentState.deliveryTime}%0A`;
+            if(currentState.location) msg += `Location: ${currentState.location}%0A`;
+            msg += `%0A*Items:*%0A`;
+            
+            const grouped = {};
+            currentState.cart.forEach(i => { if(!grouped[i.name]) grouped[i.name]=0; grouped[i.name]++; });
+            Object.entries(grouped).forEach(([n, c]) => { msg += `- ${n} x${c}%0A`; });
+            
+            const total = currentState.cart.reduce((s,i)=>s+i.price, 0);
+            msg += `%0A*Total Value: ₹${total}*`;
+
+            // Open WhatsApp (Mocking Merchant Number logic)
+            // Ideally fetch merchant phone from backend, here we use generic
+            window.open(`https://wa.me/?text=${msg}`, '_blank');
+            
+            alert("Order Prepared! Redirecting to WhatsApp...");
+            currentState.cart = [];
+            toggleCart(false);
+            updateCartUI();
+        }
+
+        // --- 5. VIEW SWITCHER ---
+        function switchView(viewName, btn) {
+            document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewName).classList.add('active');
+
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // --- 6. UTILS ---
+        function payBill(id) {
+            alert(`Initiating UPI payment for Bill #${id}...\n(Integration Pending)`);
+        }
+
+        function launchConfetti() {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+    </script>
 </body>
 </html>
+
