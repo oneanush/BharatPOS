@@ -316,16 +316,146 @@
 </div>
 
 <div id="toast">Message Here</div>
+<div id="aiLoadingOverlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:20;">
+    <div style="font-size:30px; animation:spin 1s infinite;">✨</div>
+    <div style="color:white; font-weight:bold; margin-top:10px; font-size:14px; letter-spacing:1px;">AI IS THINKING...</div>
+</div>
+<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 
 <script>
-// --- UI ENHANCEMENTS ---
-function showToast(msg, isError = false) {
-  const x = document.getElementById("toast");
-  x.innerText = msg;
-  x.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
-  x.className = "show";
-  setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+// --- UPDATED BACKEND SYNC (With Merchant ID) ---
+async function syncStockToBackend(allProducts) {
+    try {
+        // 1. Get Merchant ID from Login Data
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const merchantId = user.merchantId;
+
+        if (!merchantId) {
+            console.warn("⚠️ No Merchant ID found. Stock not synced to cloud.");
+            return;
+        }
+
+        console.log(`📤 Syncing ${allProducts.length} items for ${merchantId}...`);
+        
+        const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-stock') : '/api/save-stock';
+        
+        // 2. Send Secure Payload
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                merchantId: merchantId, // <--- CRITICAL: Prevents Data Leaks
+                products: allProducts
+            })
+        });
+        
+        const result = await res.json();
+        if(result.success) console.log("✅ Cloud Sync Complete");
+
+    } catch (error) {
+        console.error("❌ Sync Failed:", error);
+    }
 }
+
+
+// --- 2. CORE LOGIC ---
+function loadUser(){
+  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+  document.getElementById('profileName').textContent = data.name ? "👤 " + data.name : "👤 Guest";
+}
+loadUser();
+
+function getProducts() {
+    try { return JSON.parse(localStorage.getItem('bharatpos_products') || '[]'); } 
+    catch(e) { return []; }
+}
+
+function renderProducts(){
+  const products = getProducts();
+  
+  if(products.length === 0) { 
+    document.getElementById('productsList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 No products found.</div>'; 
+    return;
+  }
+  
+  let html = '<table><thead><tr><th>Name</th><th>Qty</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr></thead><tbody>';
+  products.forEach(p=>{
+    html += `<tr>
+      <td>${p.name}</td>
+      <td>${p.quantity || '-'}</td>
+      <td style="color:var(--accent);">₹${p.price}</td>
+      <td>${p.stock || 0}</td>
+      <td>${p.taxPercent || 0}%</td>
+      <td>${p.category || '-'}</td>
+      <td><button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('productsList').innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderProducts();
+  // Auto-sync on load just to be safe
+  syncStockToBackend(getProducts());
+  
+  const temp = localStorage.getItem("temp_new_barcode");
+  if (temp) {
+    const field = document.getElementById("productBarcode");
+    if (field) field.value = temp;
+    localStorage.removeItem("temp_new_barcode");
+  }
+});
+
+async function handleAddProduct(event){
+  if(event && event.preventDefault) event.preventDefault();
+  try {
+    const name = document.getElementById('productName').value;
+    const price = document.getElementById('productPrice').value;
+    const qty = document.getElementById('productQuantity').value;
+    const stock = document.getElementById('productStock').value;
+    const tax = document.getElementById('productTax').value;
+    const cat = document.getElementById('productCategory').value;
+    const bar = document.getElementById('productBarcode').value;
+    
+    const products = getProducts();
+    products.push({
+        id: Date.now().toString(),
+        name, price, quantity: qty, stock, taxPercent: tax, category: cat, barcode: bar
+    });
+    
+    // Save Local
+    localStorage.setItem('bharatpos_products', JSON.stringify(products));
+    
+    // 🟢 TRIGGER BACKEND SYNC
+    await syncStockToBackend(products);
+
+    renderProducts();
+    document.getElementById('productForm').reset();
+    showToast("Product Added & Synced!");
+  } catch(err){
+    console.error(err);
+    showToast('Failed to add product', true);
+  }
+}
+
+function deleteProductConfirm(pid){
+  if(!confirm("Are you sure you want to delete this product?")) return;
+  let products = getProducts();
+  products = products.filter(p => p.id !== pid);
+  localStorage.setItem('bharatpos_products', JSON.stringify(products));
+  
+  // 🟢 SYNC DELETION
+  syncStockToBackend(products);
+  
+  renderProducts();
+  showToast("Product deleted");
+}
+
+// --- 3. ENHANCED SCANNER LOGIC ---
+let cameraStream = null;
+let aiScanInterval = null;
+let aiScanLocked = false;          
 
 function uiStartScan() {
   document.getElementById('cameraContainer').style.display = 'block';
@@ -337,109 +467,6 @@ function uiStopScan() {
   stopLiveScan(); 
 }
 
-// --- CORE LOGIC ---
-function loadUser(){
-  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  document.getElementById('profileName').textContent = data.name ? "👤 " + data.name : "👤 Guest";
-}
-loadUser();
-
-function renderProducts(){
-  const products = getProducts(); // Should be defined in bharatpos.js or handle manually
-  // Fallback if getProducts not found
-  const safeProducts = Array.isArray(products) ? products : JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
-
-  if(safeProducts.length===0) { 
-    document.getElementById('productsList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 No products found.</div>'; 
-    return;
-  }
-  
-  let html = '<table><thead><tr><th>Name</th><th>Qty</th><th>Price</th><th>Stock</th><th>Tax %</th><th>Category</th><th>Action</th></tr></thead><tbody>';
-  safeProducts.forEach(p=>{
-    html += `<tr>
-      <td>${p.name}</td>
-      <td>${p.quantity || '-'}</td>
-      <td style="color:var(--accent);">₹${p.price}</td>
-      <td>${p.stock}</td>
-      <td>${p.taxPercent}%</td>
-      <td>${p.category}</td>
-      <td><button class="delete-btn" onclick="deleteProductConfirm('${p.id}')">Delete</button></td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('productsList').innerHTML = html;
-}
-
-// Ensure safe lookup
-function getProducts() {
-    try {
-        return JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
-    } catch(e) { return []; }
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  renderProducts();
-  const temp = localStorage.getItem("temp_new_barcode");
-  if (temp) {
-    const barcodeField = document.getElementById("productBarcode");
-    if (barcodeField) barcodeField.value = temp;
-    localStorage.removeItem("temp_new_barcode");
-  }
-});
-
-function deleteProductConfirm(pid){
-  if(!confirm("Are you sure you want to delete this product?")) return;
-  let products = getProducts();
-  products = products.filter(p => p.id !== pid);
-  localStorage.setItem('bharatpos_products', JSON.stringify(products));
-  renderProducts();
-  showToast("Product deleted successfully!");
-}
-
-async function handleAddProduct(event){
-  if(event && event.preventDefault) event.preventDefault();
-  try {
-    // If addProduct() is in bharatpos.js, call it. Else simulate:
-    if(typeof addProduct === 'function') {
-        await addProduct();
-        // Override Qty input if needed or just re-render
-    } else {
-        // Fallback Logic
-        const name = document.getElementById('productName').value;
-        const price = document.getElementById('productPrice').value;
-        const qty = document.getElementById('productQuantity').value;
-        const stock = document.getElementById('productStock').value;
-        const tax = document.getElementById('productTax').value;
-        const cat = document.getElementById('productCategory').value;
-        const bar = document.getElementById('productBarcode').value;
-        
-        const products = getProducts();
-        products.push({
-            id: Date.now().toString(),
-            name, price, quantity: qty, stock, taxPercent: tax, category: cat, barcode: bar
-        });
-        localStorage.setItem('bharatpos_products', JSON.stringify(products));
-    }
-    renderProducts();
-    document.getElementById('productForm').reset();
-    showToast("Product Added Successfully!");
-  } catch(err){
-    console.error(err);
-    showToast('Failed to add product', true);
-  }
-}
-
-// --- SCANNER LOGIC ---
-let cameraStream = null;
-let aiScanInterval = null;
-let barcodeScanFrameId = null; 
-let aiScanLocked = false;          
-let barcodeDecodeInProgress = false; 
-let lastDetectedBarcode = null;
-let lastBarcodeTime = 0;
-const barcodeCanvas = document.createElement('canvas'); 
-const barcodeCtx = barcodeCanvas.getContext('2d', { willReadFrequently: true });
-
 async function startLiveScan() {
   if (cameraStream) return;
   const video = document.getElementById("cameraPreview");
@@ -450,15 +477,14 @@ async function startLiveScan() {
     video.srcObject = cameraStream;
     video.onloadedmetadata = () => {
       video.play();
-      aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 2500);
-      loopBarcodeScanning();
+      // Scan every 3 seconds to avoid overwhelming the server
+      aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 3000);
     };
   } catch(err) { alert("Camera access denied."); }
 }
 
 function stopLiveScan() {
   if(aiScanInterval) { clearInterval(aiScanInterval); aiScanInterval = null; }
-  if(barcodeScanFrameId) { cancelAnimationFrame(barcodeScanFrameId); barcodeScanFrameId = null; }
   if(cameraStream){ try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){} cameraStream=null; }
   const video = document.getElementById("cameraPreview");
   if(video) try { video.srcObject = null; } catch(e) {}
@@ -467,133 +493,83 @@ function stopLiveScan() {
 async function captureAndSendToAI(){
   const video = document.getElementById("cameraPreview");
   const canvas = document.getElementById("captureCanvas"); 
+  const overlay = document.getElementById("aiLoadingOverlay");
+
   if(!video || !canvas) return;
+  
+  // Capture Frame
   const ctx = canvas.getContext("2d");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
-  aiScanLocked = true;
+  const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1]; // Compressed for speed
+
+  aiScanLocked = true; // Lock scanning
+  if(overlay) overlay.style.display = 'flex'; // Show "Thinking" UI
+
   try{
     const url = (typeof buildUrl === 'function') ? buildUrl('/ai-product-scan') : '/ai-product-scan';
+    
     const res = await fetch(url, {
       method: "POST", headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ imageBase64: base64 })
     });
-    if(!res.ok) return;
+    
+    if(!res.ok) throw new Error("Server Error");
+    
     const data = await res.json();
-    if(data && data.success && hasLogicalData(data.product)){
+    
+    // 🟢 ENHANCEMENT: Check for Valid Data
+    if(data && data.success && data.product && data.product.name){
       fillProductFromAI(data.product);
-      showToast("AI Detected Product!", false);
+      showToast("✨ AI Identified: " + data.product.name, false);
+      
+      // Stop scanning temporarily to let user edit
+      uiStopScan(); 
     } 
-  } catch(e){} finally { aiScanLocked = false; }
-}
-
-function loopBarcodeScanning() {
-  if (!cameraStream) return;
-  const now = Date.now();
-  if (now - lastBarcodeTime > 200 && !barcodeDecodeInProgress) {
-    lastBarcodeTime = now;
-    attemptFastBarcodeDecode();
+  } catch(e){
+    // Silent fail, keep scanning
+  } finally { 
+    aiScanLocked = false; 
+    if(overlay) overlay.style.display = 'none'; // Hide UI
   }
-  barcodeScanFrameId = requestAnimationFrame(loopBarcodeScanning);
 }
-
-function attemptFastBarcodeDecode() {
-  const video = document.getElementById("cameraPreview");
-  if (!video || video.videoWidth === 0) return;
-  const currentVal = document.getElementById("productBarcode")?.value;
-  if (currentVal && currentVal === lastDetectedBarcode) return;
-  barcodeDecodeInProgress = true;
-  const scale = 800 / video.videoWidth; 
-  barcodeCanvas.width = 800;
-  barcodeCanvas.height = video.videoHeight * scale;
-  barcodeCtx.drawImage(video, 0, 0, barcodeCanvas.width, barcodeCanvas.height);
-  const dataUrl = barcodeCanvas.toDataURL("image/png");
-  Quagga.decodeSingle({
-    src: dataUrl, numOfWorkers: 2, inputStream: { size: 800, singleChannel: false },
-    locate: true, locator: { patchSize: "medium", halfSample: true },
-    decoder: { readers: ["ean_reader", "ean_8_reader", "upc_reader", "code_128_reader"] }
-  }, function(result) {
-    barcodeDecodeInProgress = false;
-    if (result && result.codeResult && result.codeResult.code) {
-      const code = result.codeResult.code;
-      if(code.length > 5) {
-        const barcodeField = document.getElementById("productBarcode");
-        if (barcodeField) { barcodeField.value = code; lastDetectedBarcode = code; showToast("Barcode Scanned!"); }
-      }
-    }
-  });
-}
-
-function hasLogicalData(p){ return p && typeof p.name==="string" && p.name.length>2; }
 
 function fillProductFromAI(product){
   const nameEl=document.getElementById("productName");
   const qtyEl=document.getElementById("productQuantity");
   const priceEl=document.getElementById("productPrice");
   const catEl=document.getElementById("productCategory");
-  if(!nameEl) return;
-  nameEl.value = product.name || nameEl.value;
-  if(qtyEl) qtyEl.value = product.quantity || qtyEl.value;
-  if(priceEl) priceEl.value = product.price || priceEl.value;
-  if(catEl) catEl.value = product.category || catEl.value;
-  nameEl.focus();
+
+  // Highlight effect
+  const inputs = [nameEl, qtyEl, priceEl, catEl];
+  inputs.forEach(el => { if(el) el.style.borderColor = "var(--accent)"; });
+
+  if(nameEl) nameEl.value = product.name || "";
+  if(qtyEl) qtyEl.value = product.quantity || "1 pc";
+  if(priceEl) priceEl.value = product.price || "";
+  if(catEl) catEl.value = product.category || "General";
+
+  setTimeout(() => {
+     inputs.forEach(el => { if(el) el.style.borderColor = ""; });
+  }, 2000);
 }
 
 function resetAIScan(){
-  aiScanLocked=false;
-  stopLiveScan();
   document.getElementById("productForm").reset();
-  lastDetectedBarcode = null;
-  startLiveScan();
+  aiScanLocked=false;
+  if(!cameraStream) uiStartScan(); 
 }
 
-// --- ENHANCED RESTOCK LOGIC ---
-window.addEventListener('DOMContentLoaded', (event) => {
-  const params = new URLSearchParams(window.location.search);
-  
-  if (params.has('restock')) {
-    const pName = params.get('restock');
-    
-    // Find form elements
-    const elName = document.getElementById('productName');
-    const elQty = document.getElementById('productQuantity');
-    const elPrice = document.getElementById('productPrice');
-    const elStock = document.getElementById('productStock');
-    const elTax = document.getElementById('productTax');
-    const elCat = document.getElementById('productCategory');
-    const elBarcode = document.getElementById('productBarcode');
-
-    if (elName) {
-        elName.value = pName;
-        
-        // Lookup Existing Data
-        const products = getProducts();
-        const existing = products.find(p => p.name === pName);
-        
-        if (existing) {
-            if(elPrice) elPrice.value = existing.price || '';
-            if(elQty) elQty.value = existing.quantity || '';
-            if(elCat) elCat.value = existing.category || '';
-            if(elTax) elTax.value = existing.taxPercent || '';
-            if(elBarcode) elBarcode.value = existing.barcode || '';
-            
-            // Visual Highlight
-            [elName, elPrice, elStock].forEach(el => {
-                if(el) { el.style.borderColor = "var(--accent)"; setTimeout(()=>el.style.borderColor="", 2000); }
-            });
-            
-            if(elStock) {
-                elStock.focus(); // Focus stock to add more
-                showToast(`Restocking ${pName}`);
-            }
-        } else {
-            elName.focus();
-        }
-    }
-  }
-});
+// Toast UI Helper
+function showToast(msg, isError = false) {
+  const x = document.getElementById("toast");
+  if(!x) return;
+  x.innerText = msg;
+  x.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
+  x.className = "show";
+  setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+}
 </script>
 </body>
 </html>
