@@ -417,14 +417,19 @@
     // Chart Render
     renderChart(sales);
 
-    // Udhaar Render
-    const ledger = safeParse('bharatpos_ledger');
-    const pending = ledger.filter(l => !l.isPaid);
-    const totalPending = pending.reduce((s, i) => s + Number(i.amount || 0), 0);
+ // Udhaar Render (Fixed to read from Sales)
+    // Note: 'sales' variable is already defined at the top of this function
+    const pendingUdhaar = sales.filter(s => 
+        (s.paymentMode === 'Udhaar' && s.isPaid !== true)
+    );
+    
+    const totalPending = pendingUdhaar.reduce((s, i) => s + Number(i.amount || i.total || 0), 0);
+    
     const udhaarEl = document.getElementById('totalUdhaar');
     if(udhaarEl) udhaarEl.textContent = formatCurrency(totalPending);
+    
     const uCount = document.getElementById('udhaarCount');
-    if(uCount) uCount.textContent = pending.length ? `${pending.length} pending` : 'All clear';
+    if(uCount) uCount.textContent = pendingUdhaar.length ? `${pendingUdhaar.length} pending` : 'All clear';
 
     // TRIGGER SNAPSHOT
     sendDashboardSnapshot({ 
@@ -533,6 +538,7 @@
 </script>
 </body>
 </html>
+
 
 
 
