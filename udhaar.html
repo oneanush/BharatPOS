@@ -1,230 +1,308 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Udhaar Ledger - Bharat POS</title>
-  <link rel="stylesheet" href="bharatpos.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>Udhaar - BharatPOS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="bharatpos.js"></script>
+
   <style>
-    /* Page Layout */
-    body { background-color: #f4f6f9; font-family: sans-serif; }
+    /* --- THEME VARIABLES (Matched with Sales/Billing) --- */
+    :root {
+      --bg-body: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --glass: blur(12px);
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --primary: #3b82f6;
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
     
-    .ledger-header {
-        background: #111; color: #fff; padding: 20px;
-        border-radius: 0 0 15px 15px; margin-bottom: 20px;
-        display: flex; justify-content: space-between; align-items: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      padding-bottom: 80px;
     }
 
-    .ledger-container { max-width: 900px; margin: 0 auto; padding: 0 15px; }
+    /* Background Effect */
+    body::before {
+      content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.1), transparent 40%),
+                  radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.05), transparent 40%);
+      z-index: -1; pointer-events: none;
+    }
 
-    /* GROUP CARD (Main List) */
+    /* --- HEADER --- */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 24px; background: rgba(15, 23, 42, 0.95); backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .global-logo { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--accent); }
+    .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; margin-left: 20px; transition: 0.2s; }
+    .nav a:hover { color: var(--accent); }
+
+    /* --- CONTAINER --- */
+    .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+    .page-title {
+      font-size: 20px; font-weight: 700; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .total-dues-card {
+      background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(15,23,42,0.8));
+      border: 1px solid rgba(239,68,68,0.4); border-radius: 16px; padding: 20px;
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+    }
+    .dues-label { font-size: 12px; color: #fca5a5; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .dues-amount { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: #fff; margin-top: 5px; }
+
+    /* --- GROUP LIST --- */
     .group-card {
-        background: #fff; border-radius: 8px; padding: 15px 20px;
-        margin-bottom: 12px; border-left: 6px solid #ffcc00; /* Yellow for Group */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        display: flex; justify-content: space-between; align-items: center;
-        cursor: pointer; transition: transform 0.2s;
+      background: var(--bg-card); backdrop-filter: var(--glass);
+      border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;
+      margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; transition: 0.2s; position: relative; overflow: hidden;
     }
-    .group-card:active { transform: scale(0.98); }
-    .group-name { font-size: 1.1em; font-weight: bold; color: #333; }
-    .group-phone { font-size: 0.9em; color: #666; }
-    .group-count { background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; margin-top:5px; display:inline-block;}
-    .total-debt { font-size: 1.3em; font-weight: 800; color: #dc3545; }
+    .group-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
+    .group-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: var(--accent);
+    }
 
-    /* MODAL COMMON STYLES */
+    .cust-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .cust-phone { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+    .debt-amt { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--danger); }
+    .debt-count { font-size: 10px; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; margin-left: 10px; color: var(--text-muted); }
+
+    /* --- MODAL (Dark Theme) --- */
     .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6); z-index: 1000;
-        align-items: center; justify-content: center; backdrop-filter: blur(2px);
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 1000;
+      align-items: center; justify-content: center; backdrop-filter: blur(5px);
     }
     .modal-box {
-        background: #fff; width: 95%; max-width: 450px;
-        padding: 0; border-radius: 10px; overflow: hidden;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        max-height: 90vh; display: flex; flex-direction: column;
+      background: #1e293b; width: 95%; max-width: 450px;
+      border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-height: 90vh; display: flex; flex-direction: column;
     }
-    .modal-header { background: #eee; padding: 15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; }
-    .modal-body { padding: 10px; overflow-y: auto; }
-    
-    /* CUSTOMER INVOICE LIST (Inside Modal 1) */
+    .modal-header {
+      padding: 15px 20px; background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-body { padding: 0; overflow-y: auto; }
+
+    /* INVOICE LIST INSIDE MODAL */
     .inv-item {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 12px; border-bottom: 1px solid #f0f0f0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 20px; border-bottom: 1px solid var(--border);
     }
-    .inv-item:last-child { border-bottom: none; }
-    .inv-left h4 { margin: 0; font-size: 14px; color: #333; }
-    .inv-left p { margin: 2px 0 0; font-size: 12px; color: #777; }
-    .inv-right { text-align: right; }
-    .inv-amt { font-weight: bold; color: #dc3545; font-size: 14px; }
+    .inv-info h4 { margin: 0 0 4px 0; font-size: 14px; color: #fff; }
+    .inv-info p { margin: 0; font-size: 11px; color: var(--text-muted); }
+    .inv-action { text-align: right; }
+    .inv-price { font-weight: 700; color: var(--danger); font-size: 14px; margin-bottom: 5px; }
     .btn-view {
-        background: #007bff; color: white; border: none; padding: 5px 10px;
-        border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 4px;
+      background: rgba(59, 130, 246, 0.2); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;
     }
 
-    /* RECEIPT STYLE (Inside Modal 2) */
-    .receipt-content { padding: 20px; font-family: 'Courier New', monospace; }
-    .rec-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top:10px; }
-    .rec-table th { text-align: left; border-bottom: 1px dashed #000; }
+    /* RECEIPT MODAL */
+    .receipt-content { padding: 20px; background: #fff; color: #000; font-family: 'Courier New', monospace; }
+    .rec-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top:10px; }
+    .rec-table th { text-align: left; border-bottom: 1px dashed #000; padding-bottom: 5px; }
     .rec-table td { padding: 4px 0; }
-    .rec-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right; font-weight: bold; font-size: 1.2em; }
+    .rec-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right; font-weight: 800; font-size: 1.2em; }
     
-    .btn-pay { width: 100%; padding: 15px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .btn-settle {
+      width: 100%; padding: 15px; background: var(--success); color: #000;
+      border: none; font-size: 14px; font-weight: 800; cursor: pointer;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
     
-    .empty-state { text-align: center; padding: 40px; color: #777; }
+    .empty-state { text-align: center; padding: 50px; color: var(--text-muted); font-size: 14px; }
   </style>
 </head>
 <body>
 
-<div class="ledger-header">
-    <div>
-        <h2 style="margin:0;">📒 Udhaar Khata</h2>
-        <div class="small" style="color:#ccc;">Grouped by Customer Number</div>
+  <div class="header">
+    <div class="brand"><img src="logo.png" class="global-logo"> BharatPOS</div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="sales.html">Sales</a>
     </div>
-    <a href="dashboard.html" style="color:white; text-decoration:none; background:rgba(255,255,255,0.2); padding:8px 12px; border-radius:6px;">⬅ Dashboard</a>
-</div>
+  </div>
 
-<div class="ledger-container" id="groupList">
-    <div class="empty-state">Loading...</div>
-</div>
+  <div class="container">
+    <div class="page-title">
+      <i class="fa-solid fa-book-journal-whills" style="color:var(--accent)"></i> Udhaar Khata
+    </div>
 
-<div id="customerModal" class="modal-overlay">
+    <div class="total-dues-card">
+      <div>
+        <div class="dues-label">Total Pending Collection</div>
+        <div class="dues-amount" id="totalPending">₹0</div>
+      </div>
+      <i class="fa-solid fa-hand-holding-dollar" style="font-size:30px; color:var(--danger); opacity:0.8;"></i>
+    </div>
+
+    <div id="groupList">
+      <div class="empty-state">Loading records...</div>
+    </div>
+  </div>
+
+  <div id="customerModal" class="modal-overlay">
     <div class="modal-box">
-        <div class="modal-header">
-            <div>
-                <h3 style="margin:0;" id="custModalName">Customer</h3>
-                <small id="custModalPhone">Phone</small>
-            </div>
-            <button onclick="closeModal('customerModal')" style="background:none;border:none;font-size:20px;cursor:pointer;">✖</button>
+      <div class="modal-header">
+        <div>
+          <h3 style="margin:0; font-size:16px; color:#fff;" id="custModalName">Customer</h3>
+          <small style="color:var(--text-muted);" id="custModalPhone">Phone</small>
         </div>
-        <div class="modal-body" id="invoiceListBody">
-            </div>
-        <div style="background:#eee; padding:10px; text-align:center; font-size:12px; color:#666;">
-            Select an invoice to view details or pay
-        </div>
+        <button onclick="closeModal('customerModal')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-body" id="invoiceListBody"></div>
     </div>
-</div>
+  </div>
 
-<div id="receiptModal" class="modal-overlay" style="z-index: 1100;">
-    <div class="modal-box" style="max-width:350px;">
-        <div class="modal-header">
-            <strong>Invoice Details</strong>
-            <button onclick="closeModal('receiptModal')" style="background:none;border:none;font-size:20px;cursor:pointer;">✖</button>
+  <div id="receiptModal" class="modal-overlay" style="z-index: 1100;">
+    <div class="modal-box" style="max-width:350px; background:white;">
+      <div class="modal-header" style="background:#f8f9fa; border-bottom:1px solid #ddd; color:#333;">
+        <strong>Invoice Details</strong>
+        <button onclick="closeModal('receiptModal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:#333;">&times;</button>
+      </div>
+      <div class="receipt-content">
+        <div style="text-align:center; margin-bottom:10px;">
+          <h3 style="margin:0;">BHARAT POS</h3>
+          <div style="font-size:10px;" id="rec-id"></div>
+          <div style="font-size:10px;" id="rec-date"></div>
         </div>
-        <div class="receipt-content">
-            <div style="text-align:center; margin-bottom:10px;">
-                <h3 class="shop-name" style="margin:0;">BHARAT POS</h3>
-                <div class="small" id="rec-id"></div>
-                <div class="small" id="rec-date"></div>
-            </div>
-            <div style="font-size:13px; margin-bottom:10px;">
-                Name: <span id="rec-name"></span><br>
-                Phone: <span id="rec-phone"></span>
-            </div>
-            <table class="rec-table">
-                <thead><tr><th>Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Amt</th></tr></thead>
-                <tbody id="rec-items"></tbody>
-            </table>
-            <div class="rec-total">Total: <span id="rec-total"></span></div>
+        <div style="font-size:12px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:5px;">
+          Customer: <span id="rec-name"></span><br>
+          Phone: <span id="rec-phone"></span>
         </div>
-        <button id="btnSettle" class="btn-pay">✅ MARK AS PAID</button>
+        <table class="rec-table">
+          <thead><tr><th>Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Amt</th></tr></thead>
+          <tbody id="rec-items"></tbody>
+        </table>
+        <div class="rec-total">Total: <span id="rec-total"></span></div>
+      </div>
+      <button id="btnSettle" class="btn-settle">✅ Mark Paid (Cash)</button>
     </div>
-</div>
+  </div>
 
 <script>
-    // --- Utilities ---
-    function safeParse(json) { try { return JSON.parse(json); } catch(e) { return []; } }
-    function formatCurrency(n) { return '₹' + Number(n).toFixed(2); }
+    // --- UTILS ---
+    function getSales() { return JSON.parse(localStorage.getItem('bharatpos_sales') || '[]'); }
+    function formatCurrency(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
 
-    // --- Init ---
     document.addEventListener("DOMContentLoaded", () => {
-        loadShopName();
         renderGroups();
     });
 
-    function loadShopName() {
-        const name = localStorage.getItem("shopName");
-        if(name) document.querySelectorAll('.shop-name').forEach(el => el.textContent = name);
-    }
-
     // --- 1. RENDER MAIN LIST (Grouped by Phone) ---
     function renderGroups() {
-        const ledger = safeParse(localStorage.getItem('bharatpos_ledger') || '[]');
+        // 🟢 FIX: Read from 'bharatpos_sales', not 'ledger'
+        const allSales = getSales();
         const container = document.getElementById('groupList');
         
-        // Filter Unpaid
-        const pending = ledger.filter(l => !l.isPaid);
+        // Filter: Only Udhaar AND Not Paid
+        // Also handle cases where isPaid might be undefined (assume unpaid if Udhaar)
+        const pending = allSales.filter(s => 
+            (s.paymentMode === 'Udhaar' && s.isPaid !== true)
+        );
+
+        // Update Total Header
+        const totalPending = pending.reduce((acc, s) => acc + Number(s.amount || s.total || 0), 0);
+        document.getElementById('totalPending').innerText = formatCurrency(totalPending);
 
         if (pending.length === 0) {
-            container.innerHTML = `<div class="empty-state"><h3>No Pending Udhaar! 🎉</h3><p>All clear.</p></div>`;
+            container.innerHTML = `<div class="empty-state"><i class="fa-regular fa-face-smile"></i><br>No pending dues!</div>`;
             return;
         }
 
-        // Group Logic
+        // Group by Phone Number
         const groups = {};
         pending.forEach(inv => {
-            const ph = inv.phone;
+            // Normalize fields
+            const ph = inv.phone || "Unknown";
+            const name = inv.customerName || inv.customer || "Walk-in";
+            const amt = Number(inv.amount || inv.total || 0);
+
             if(!groups[ph]) {
                 groups[ph] = { 
                     phone: ph, 
-                    name: inv.customer, // Takes the first name found
+                    name: name, 
                     total: 0, 
-                    count: 0,
-                    invoices: []
+                    count: 0
                 };
             }
-            // Update name to latest invoice name if multiple exist
-            if(new Date(inv.date) > new Date(groups[ph].latestDate || 0)) {
-                groups[ph].name = inv.customer;
-                groups[ph].latestDate = inv.date;
-            }
+            // If name was generic, try to find a real name in newer bills
+            if(groups[ph].name === "Walk-in" && name !== "Walk-in") groups[ph].name = name;
 
-            groups[ph].total += Number(inv.amount);
+            groups[ph].total += amt;
             groups[ph].count++;
-            groups[ph].invoices.push(inv);
         });
 
-        // Convert to Array & Sort by Amount (Highest debt first)
         const sortedGroups = Object.values(groups).sort((a,b) => b.total - a.total);
 
         container.innerHTML = sortedGroups.map(g => `
             <div class="group-card" onclick="openCustomerModal('${g.phone}')">
                 <div>
-                    <div class="group-name">${g.name}</div>
-                    <div class="group-phone">📞 ${g.phone}</div>
-                    <div class="group-count">${g.count} Invoices Pending</div>
+                    <div class="cust-name">${g.name}</div>
+                    <div class="cust-phone"><i class="fa-solid fa-phone"></i> ${g.phone}</div>
                 </div>
-                <div class="total-debt">${formatCurrency(g.total)}</div>
+                <div style="text-align:right;">
+                    <div class="debt-amt">${formatCurrency(g.total)}</div>
+                    <div class="debt-count">${g.count} Bills</div>
+                </div>
             </div>
         `).join('');
     }
 
-    // --- 2. OPEN CUSTOMER MODAL (List of invoices) ---
+    // --- 2. OPEN CUSTOMER DETAILS ---
     window.openCustomerModal = function(phone) {
-        const ledger = safeParse(localStorage.getItem('bharatpos_ledger') || '[]');
-        // Get specific invoices for this phone
-        const invoices = ledger.filter(l => l.phone === phone && !l.isPaid);
+        const allSales = getSales();
+        // Find bills for this phone that are Udhaar & Unpaid
+        const invoices = allSales.filter(s => 
+            (s.phone === phone || (phone === "Unknown" && !s.phone)) && 
+            s.paymentMode === 'Udhaar' && 
+            s.isPaid !== true
+        );
         
-        // Sort by Date (Oldest first usually, but let's do Newest)
-        invoices.sort((a,b) => new Date(b.date) - new Date(a.date));
+        invoices.sort((a,b) => new Date(b.date) - new Date(a.date)); // Newest first
 
-        // Update Header
-        document.getElementById('custModalName').textContent = invoices[0]?.customer || "Customer";
+        const first = invoices[0];
+        document.getElementById('custModalName').textContent = first.customerName || first.customer || "Customer";
         document.getElementById('custModalPhone').textContent = phone;
 
-        // Render List
         const listBody = document.getElementById('invoiceListBody');
         listBody.innerHTML = invoices.map(inv => {
+            // Safe encode for button
             const dataStr = encodeURIComponent(JSON.stringify(inv));
+            const amt = inv.amount || inv.total || 0;
+            const invId = inv.id || inv.invoiceNo;
+
             return `
             <div class="inv-item">
-                <div class="inv-left">
-                    <h4>${inv.customer}</h4>
-                    <p>📅 ${new Date(inv.date).toLocaleDateString()} • ${inv.id}</p>
+                <div class="inv-info">
+                    <h4>#${invId}</h4>
+                    <p>${new Date(inv.date).toLocaleDateString()} • ${new Date(inv.date).toLocaleTimeString()}</p>
                 </div>
-                <div class="inv-right">
-                    <div class="inv-amt">${formatCurrency(inv.amount)}</div>
-                    <button class="btn-view" onclick="openReceipt('${dataStr}')">View Bill</button>
+                <div class="inv-action">
+                    <div class="inv-price">${formatCurrency(amt)}</div>
+                    <button class="btn-view" onclick="openReceipt('${dataStr}')">Settle</button>
                 </div>
             </div>`;
         }).join('');
@@ -232,17 +310,18 @@
         document.getElementById('customerModal').style.display = 'flex';
     };
 
-    // --- 3. OPEN RECEIPT MODAL (Full Details) ---
+    // --- 3. OPEN SETTLEMENT RECEIPT ---
     window.openReceipt = function(dataStr) {
         const inv = JSON.parse(decodeURIComponent(dataStr));
+        const amt = inv.amount || inv.total || 0;
+        const invId = inv.id || inv.invoiceNo;
 
-        document.getElementById('rec-id').innerText = inv.id;
+        document.getElementById('rec-id').innerText = "INV: " + invId;
         document.getElementById('rec-date').innerText = new Date(inv.date).toLocaleString();
-        document.getElementById('rec-name').innerText = inv.customer;
+        document.getElementById('rec-name').innerText = inv.customerName || inv.customer;
         document.getElementById('rec-phone').innerText = inv.phone;
-        document.getElementById('rec-total').innerText = formatCurrency(inv.amount);
+        document.getElementById('rec-total').innerText = formatCurrency(amt);
 
-        // Items
         const tbody = document.getElementById('rec-items');
         tbody.innerHTML = (inv.items || []).map(i => `
             <tr>
@@ -252,36 +331,38 @@
             </tr>
         `).join('');
 
-        // Bind Pay Button
         const payBtn = document.getElementById('btnSettle');
-        payBtn.onclick = () => settleDebt(inv.id, inv.phone);
+        payBtn.onclick = () => settleDebt(invId);
 
         document.getElementById('receiptModal').style.display = 'flex';
     };
 
-    // --- 4. SETTLE DEBT LOGIC ---
-    function settleDebt(id, phone) {
-        if(!confirm("Mark this invoice as PAID?")) return;
+    // --- 4. SETTLE DEBT LOGIC (Updates Local Storage) ---
+    function settleDebt(id) {
+        if(!confirm("Mark this invoice as PAID? Action cannot be undone.")) return;
 
-        const ledger = safeParse(localStorage.getItem('bharatpos_ledger') || '[]');
-        const index = ledger.findIndex(l => String(l.id) === String(id));
+        // 🟢 FIX: Update the MASTER LIST ('bharatpos_sales')
+        const allSales = getSales();
+        const index = allSales.findIndex(s => (s.id == id || s.invoiceNo == id));
 
         if(index > -1) {
-            ledger[index].isPaid = true;
-            ledger[index].paidDate = new Date().toISOString();
-            localStorage.setItem('bharatpos_ledger', JSON.stringify(ledger));
+            // Update Status
+            allSales[index].isPaid = true;
+            allSales[index].paymentMode = "Cash (Settled)"; // Optional: change mode to reflect settlement
+            allSales[index].settledDate = new Date().toISOString();
 
-            // Close Receipt
+            // Save back
+            localStorage.setItem('bharatpos_sales', JSON.stringify(allSales));
+
+            // Sync to Server (Optional, if you have a settle route)
+            // syncSettlement(allSales[index]); 
+
+            alert("✅ Payment Recorded!");
             closeModal('receiptModal');
-            
-            // Refresh Customer List behind it
-            const remaining = ledger.filter(l => l.phone === phone && !l.isPaid);
-            if(remaining.length > 0) {
-                openCustomerModal(phone); // Refresh inner list
-            } else {
-                closeModal('customerModal'); // Close everything if empty
-            }
-            renderGroups(); // Refresh main list
+            closeModal('customerModal');
+            renderGroups(); // Refresh UI
+        } else {
+            alert("Error: Invoice not found.");
         }
     }
 
