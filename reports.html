@@ -131,17 +131,23 @@ function animateValue(obj, start, end, duration, isCurrency=false) {
   window.requestAnimationFrame(step);
 }
 
-// --- DATA PROCESSING ---
+// --- DATA PROCESSING (Fixed to handle both schema formats) ---
 function groupSalesByDate(){
   const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
   const grouped = {};
-  sales.forEach(sale=>{
+  
+  sales.forEach(sale => {
     let rawDate = sale.date || 'unknown';
     const d = rawDate.substring(0, 10); 
     if(!grouped[d]) grouped[d] = { revenue: 0, bills: 0, totalItems: 0, products: {} };
-    grouped[d].revenue += Number(sale.total || 0);
+    
+    // 🟢 FIXED: Accept either 'total' (Old) or 'amount' (New)
+    const saleAmount = Number(sale.total || sale.amount || 0);
+    grouped[d].revenue += saleAmount;
+    
     grouped[d].bills++;
-    (sale.items || []).forEach(it=>{
+    
+    (sale.items || []).forEach(it => {
       const qty = Number(it.qty || 0);
       grouped[d].totalItems += qty;
       grouped[d].products[it.name] = (grouped[d].products[it.name] || 0) + qty;
@@ -268,7 +274,6 @@ async function handleAISnapshot(data, totalRev) {
        console.log("🚀 Uploading snapshot...");
        updateSyncStatus('syncing');
 
-       // Build URLs safely
        const consultUrl = (typeof buildUrl === 'function') ? buildUrl('/ai-business-consult') : '/ai-business-consult';
        const heatmapUrl = (typeof buildUrl === 'function') ? buildUrl('/api/sync-heatmap-source') : '/api/sync-heatmap-source';
 
@@ -310,3 +315,4 @@ document.addEventListener('DOMContentLoaded', renderReports);
 </script>
 </body>
 </html>
+
