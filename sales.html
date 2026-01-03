@@ -20,10 +20,10 @@
       --border: rgba(255, 255, 255, 0.1);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --accent: #f59e0b; /* Gold */
-      --success: #10b981; /* Emerald */
-      --primary: #3b82f6; /* Blue */
-      --danger: #ef4444; /* Red */
+      --accent: #f59e0b;
+      --success: #10b981;
+      --primary: #3b82f6;
+      --danger: #ef4444;
     }
 
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -36,7 +36,6 @@
       padding-bottom: 80px;
     }
 
-    /* Background Mesh */
     body::before {
       content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.1), transparent 40%),
@@ -66,16 +65,13 @@
       padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
 
-    /* --- TOOLBAR --- */
     .toolbar {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
     }
     .toolbar h3 { margin: 0; font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
     
-    .search-box {
-      position: relative; flex-grow: 1; max-width: 400px;
-    }
+    .search-box { position: relative; flex-grow: 1; max-width: 400px; }
     .search-input {
       width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border);
       color: #fff; padding: 10px 10px 10px 35px; border-radius: 8px; font-family: 'Inter', sans-serif;
@@ -92,7 +88,6 @@
     .btn-clear { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
     .btn-clear:hover { background: var(--danger); color: white; }
 
-    /* --- SALES LIST (Responsive Grid) --- */
     .sales-grid { display: flex; flex-direction: column; gap: 8px; }
     
     .grid-header {
@@ -117,12 +112,10 @@
     }
     .btn-view:hover { opacity: 0.9; }
 
-    /* --- MOBILE RESPONSIVE --- */
     @media (max-width: 768px) {
       .toolbar { flex-direction: column; align-items: stretch; }
       .search-box { max-width: 100%; }
-      .grid-header { display: none; } /* Hide header on mobile */
-      
+      .grid-header { display: none; }
       .sale-row {
         grid-template-columns: 1fr 1fr; gap: 10px;
         position: relative; padding-bottom: 50px;
@@ -134,7 +127,6 @@
       .btn-view { width: 100%; padding: 10px; }
     }
 
-    /* --- MODAL --- */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
@@ -151,11 +143,8 @@
     .modal-footer { padding: 15px; border-top: 1px solid #eee; background: #f8f9fa; display: flex; gap: 10px; }
 
     @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    
-    /* Skeleton Loader */
     .skeleton { height: 50px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 8px; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-
   </style>
 </head>
 
@@ -172,27 +161,16 @@
 
   <div class="container">
     <div class="card">
-      
       <div class="toolbar">
         <h3><i class="fa-solid fa-vault"></i> Sales History</h3>
-        
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
           <input type="text" class="search-input" id="searchBar" placeholder="Search Invoice # or Customer..." oninput="filterSales(this.value)">
         </div>
-
         <div class="actions">
-          <button onclick="downloadSalesCSV()" class="btn btn-export">
-            <i class="fa-solid fa-file-csv"></i> Export
-          </button>
-          <button onclick="clearSales()" class="btn btn-clear">
-            <i class="fa-solid fa-trash"></i> Clean
-          </button>
+          <button onclick="downloadSalesCSV()" class="btn btn-export"><i class="fa-solid fa-file-csv"></i> Export</button>
+          <button onclick="clearSales()" class="btn btn-clear"><i class="fa-solid fa-trash"></i> Clean</button>
         </div>
-      </div>
-
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:15px; display:flex; align-items:center; gap:6px;">
-         <i class="fa-solid fa-circle-info"></i> Records older than 2 years are auto-archived.
       </div>
 
       <div class="grid-header">
@@ -206,7 +184,6 @@
       <div id="salesList" class="sales-grid">
         <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
       </div>
-
     </div>
   </div>
 
@@ -216,8 +193,7 @@
         <strong style="font-size:16px;">Invoice Preview</strong>
         <button onclick="closeModal()" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
       </div>
-      <div class="modal-body" id="invoicePreviewContent">
-        </div>
+      <div class="modal-body" id="invoicePreviewContent"></div>
       <div class="modal-footer">
         <button onclick="triggerPrint()" class="btn" style="flex:1; background:#3b82f6; color:white; justify-content:center;">Print / PDF</button>
         <button onclick="closeModal()" class="btn" style="background:#e5e7eb; color:#333;">Close</button>
@@ -226,16 +202,11 @@
   </div>
 
   <script>
-    // --- 1. DATA LOGIC ---
     function getSales() { return JSON.parse(localStorage.getItem('bharatpos_sales') || '[]'); }
-    function formatCurrency(val) { return '₹' + Number(val).toLocaleString('en-IN', {minimumFractionDigits: 2}); }
+    function formatCurrency(val) { return '₹' + Number(val || 0).toLocaleString('en-IN', {minimumFractionDigits: 2}); }
 
-    // --- 2. INITIALIZATION & RENDER ---
     document.addEventListener("DOMContentLoaded", () => {
-      // Simulate "thinking" delay for premium feel
-      setTimeout(() => {
-        renderSales();
-      }, 500);
+      setTimeout(() => renderSales(), 500);
       pruneOldSales();
     });
 
@@ -249,60 +220,65 @@
 
     let currentData = [];
 
+    // 🟢 FIXED: Normalizing Data Fields to prevent 'undefined' errors
     function renderSales(filterText = "") {
       const allSales = getSales().reverse();
       const container = document.getElementById('salesList');
+      const term = filterText.toLowerCase();
       
-      const filtered = allSales.filter(s => 
-        s.invoiceNo.toLowerCase().includes(filterText.toLowerCase()) || 
-        (s.customer || '').toLowerCase().includes(filterText.toLowerCase())
-      );
+      const filtered = allSales.filter(s => {
+        // Handle mismatched keys (invoiceNo vs id, customer vs customerName)
+        const inv = (s.invoiceNo || s.id || '').toLowerCase();
+        const cust = (s.customer || s.customerName || 'Walk-in').toLowerCase();
+        return inv.includes(term) || cust.includes(term);
+      });
       
       currentData = filtered;
 
       if(filtered.length === 0) {
-        container.innerHTML = `
-          <div style="text-align:center; padding:40px; color:var(--text-muted);">
-            <i class="fa-solid fa-receipt" style="font-size:30px; margin-bottom:10px; opacity:0.5;"></i>
-            <br>No matching records found.
-          </div>`;
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted);">No matching records found.</div>`;
         return;
       }
 
       let html = "";
       filtered.forEach(s => {
+        // Map fields safely
+        const invId = s.invoiceNo || s.id || 'N/A';
+        const dateStr = new Date(s.date).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'});
+        const custName = s.customer || s.customerName || 'Walk-in';
+        const finalAmount = s.total || s.amount || 0;
+
         html += `
           <div class="sale-row">
-            <div class="inv-id">#${s.invoiceNo}</div>
-            <div class="col-date">${new Date(s.date).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'})}</div>
-            <div class="col-cust">${s.customer || 'Walk-in'}</div>
-            <div class="col-amt amount">${formatCurrency(s.total)}</div>
+            <div class="inv-id">#${invId}</div>
+            <div class="col-date">${dateStr}</div>
+            <div class="col-cust">${custName}</div>
+            <div class="col-amt amount">${formatCurrency(finalAmount)}</div>
             <div class="col-action" style="text-align:center">
-              <button onclick='openInvoiceModal("${s.invoiceNo}")' class="btn-view">
-                View Receipt
-              </button>
+              <button onclick='openInvoiceModal("${invId}")' class="btn-view">View</button>
             </div>
           </div>`;
       });
       container.innerHTML = html;
     }
 
-    // --- 3. FILTER LOGIC ---
-    function filterSales(val) {
-      renderSales(val);
-    }
+    function filterSales(val) { renderSales(val); }
 
-    // --- 4. MODAL LOGIC (New "Wow" Feature) ---
     let currentPrintFunction = null;
 
-    function openInvoiceModal(inv) {
-      const sale = getSales().find(s => s.invoiceNo === inv);
+    function openInvoiceModal(invIdInput) {
+      // Find sale using both possible ID fields
+      const sale = getSales().find(s => (s.invoiceNo == invIdInput) || (s.id == invIdInput));
       if(!sale) return;
 
       const shopName = localStorage.getItem('shopName') || "Bharat POS Store";
-      const shopPhone = localStorage.getItem('shopPhone') || "";
       
-      let itemsHtml = sale.items.map((it, i) => `
+      // Normalized Data for Modal
+      const displayId = sale.invoiceNo || sale.id;
+      const displayName = sale.customer || sale.customerName || 'Guest';
+      const displayTotal = sale.total || sale.amount || 0;
+
+      let itemsHtml = (sale.items || []).map((it, i) => `
         <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:4px 0;">
           <span>${i+1}. ${it.name} <span style="color:#666; font-size:10px;">x${it.qty}</span></span>
           <span>${formatCurrency(it.qty * it.price)}</span>
@@ -312,56 +288,45 @@
       const content = `
         <div style="text-align:center; margin-bottom:15px;">
           <h3 style="margin:0;">${shopName}</h3>
-          <div style="color:#666;">${shopPhone}</div>
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #000; padding-bottom:5px;">
-          <span>Inv: ${sale.invoiceNo}</span>
+          <span>Inv: ${displayId}</span>
           <span>${new Date(sale.date).toLocaleDateString()}</span>
         </div>
-        <div style="margin-bottom:15px;">
-           <strong>Customer:</strong> ${sale.customer || 'Guest'}
-        </div>
-        <div style="margin-bottom:15px;">
-          ${itemsHtml}
-        </div>
+        <div style="margin-bottom:15px;"><strong>Customer:</strong> ${displayName}</div>
+        <div style="margin-bottom:15px;">${itemsHtml}</div>
         <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:bold; border-top:1px solid #000; padding-top:10px;">
           <span>TOTAL</span>
-          <span>${formatCurrency(sale.total)}</span>
-        </div>
-        <div style="text-align:center; margin-top:20px; font-size:10px; color:#888;">
-          Generated by BharatPOS
+          <span>${formatCurrency(displayTotal)}</span>
         </div>
       `;
 
       document.getElementById('invoicePreviewContent').innerHTML = content;
       document.getElementById('invoiceModal').style.display = 'flex';
 
-      // Prepare Print Logic (Hidden functionality)
       currentPrintFunction = () => {
         const win = window.open('', '_blank');
-        win.document.write(`<html><head><title>Print ${inv}</title><style>body{font-family:sans-serif; padding:20px;}</style></head><body><div style="max-width:300px; margin:0 auto;">${content}</div><script>window.print();window.close();<\/script></body></html>`);
+        win.document.write(`<html><head><title>Print ${displayId}</title><style>body{font-family:sans-serif; padding:20px;}</style></head><body><div style="max-width:300px; margin:0 auto;">${content}</div><script>window.print();window.close();<\/script></body></html>`);
         win.document.close();
       };
     }
 
-    function closeModal() {
-      document.getElementById('invoiceModal').style.display = 'none';
-    }
+    function closeModal() { document.getElementById('invoiceModal').style.display = 'none'; }
+    function triggerPrint() { if(currentPrintFunction) currentPrintFunction(); }
 
-    function triggerPrint() {
-      if(currentPrintFunction) currentPrintFunction();
-    }
-
-    // --- 5. EXPORT & CLEAR LOGIC (Preserved) ---
     function downloadSalesCSV() {
       if(currentData.length === 0) return alert('No data to export');
       const rows = [];
       currentData.forEach(s => {
-        s.items.forEach(it => {
+        const inv = s.invoiceNo || s.id;
+        const cust = s.customer || s.customerName;
+        const tot = s.total || s.amount;
+        
+        (s.items || []).forEach(it => {
           rows.push({
-            Invoice: s.invoiceNo, Date: new Date(s.date).toLocaleString(),
-            Customer: s.customer, Item: it.name, Qty: it.qty,
-            Price: it.price, Total: s.total
+            Invoice: inv, Date: new Date(s.date).toLocaleString(),
+            Customer: cust, Item: it.name, Qty: it.qty,
+            Price: it.price, Total: tot
           });
         });
       });
