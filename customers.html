@@ -5,15 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Bharat CRM — Customer Loyalty</title>
   <style>
-    /* ... (Same styles as before) ... */
-    /* Copy styles from previous step or keep your current ones, they are fine */
+    /* ... (Keeping existing styles) ... */
     body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; color: #1f2937; }
     .header { background: linear-gradient(135deg, #4c1d95, #6d28d9); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .header h1 { margin: 0; font-size: 22px; }
     .nav-btn { background: rgba(255,255,255,0.2); color: white; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-size: 13px; }
     .container { max-width: 1100px; margin: 0 auto; padding: 25px; }
     
-    /* Podium */
     .podium-box { display: flex; justify-content: center; align-items: flex-end; gap: 15px; margin-bottom: 40px; margin-top: 10px; }
     .podium-card { background: white; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 140px; position: relative; border: 2px solid transparent; }
     .rank-1 { height: 180px; border-color: #fbbf24; z-index: 10; order: 2; }
@@ -23,17 +21,14 @@
     .p-name { font-weight: bold; margin-top: 10px; display: block; color: #374151; }
     .p-amt { font-size: 18px; font-weight: 800; color: #4c1d95; }
 
-    /* Offer Box */
     .settings-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 20px; border: 1px solid #e5e7eb; }
     .imp-inp { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; width: 60%; }
     .save-btn { background: #059669; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-    /* Action Bar */
     .action-bar { display: flex; justify-content: space-between; margin-bottom: 20px; }
     .search-inp { padding: 12px 20px; border: none; border-radius: 30px; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); outline: none; }
     .magic-btn { background: linear-gradient(90deg, #ec4899, #8b5cf6); color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
 
-    /* Grid */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
     .cust-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
     .cust-card:hover { border-color: #8b5cf6; }
@@ -42,22 +37,18 @@
     .tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
     .c-total { font-size: 18px; font-weight: 800; color: #4c1d95; }
 
-    /* Modal */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
     .modal-box { background: white; width: 90%; max-width: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
     .m-header { background: #4c1d95; padding: 20px; color: white; text-align: center; }
     .m-avatar { width: 60px; height: 60px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #4c1d95; font-weight: bold; }
     .m-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
     
-    /* Progress */
     .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-top: 5px; }
     .progress-fill { height: 100%; background: #fbbf24; width: 0%; transition: width 1s; }
     
-    /* Favorites */
     .fav-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .fav-item { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     
-    /* Timeline */
     .timeline { border-top: 1px solid #eee; padding-top: 10px; margin-top: 15px; }
     .t-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #f3f4f6; font-size: 13px; }
     
@@ -126,7 +117,6 @@
     const formatMoney = (n) => '₹' + Number(n).toLocaleString('en-IN');
     const safeParse = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } };
 
-    // GLOBAL CUSTOMER LIST (Important for Indexing)
     let customersList = [];
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -149,13 +139,17 @@
         const custMap = {};
 
         sales.forEach(s => {
-            const key = (s.customer || "Walk-in").trim();
+            // 🟢 ID CORRECTION: Use 'customerName' instead of 'customer'
+            const key = (s.customerName || "Walk-in").trim();
             if(key.toLowerCase() === 'walk-in') return;
 
             if(!custMap[key]) custMap[key] = { name: key, totalSpent: 0, visits: 0, lastVisit: s.date, history: [] };
-            custMap[key].totalSpent += Number(s.total);
+            
+            // 🟢 ID CORRECTION: Use 'amount' instead of 'total'
+            custMap[key].totalSpent += Number(s.amount || s.total || 0);
             custMap[key].visits += 1;
             custMap[key].history.push(s);
+            
             if(new Date(s.date) > new Date(custMap[key].lastVisit)) custMap[key].lastVisit = s.date;
         });
 
@@ -174,7 +168,6 @@
 
     function renderCustomers(query = '') {
         const grid = document.getElementById('customerGrid');
-        // Filter but keep original INDEX reference for clicking
         const displayList = customersList.map((c, index) => ({...c, originalIndex: index}))
                                          .filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
 
@@ -202,7 +195,7 @@
 
     // --- 360 PROFILE LOGIC ---
     function openProfile(index) {
-        const c = customersList[index]; // SAFE ACCESS BY INDEX
+        const c = customersList[index];
         if(!c) return;
 
         document.getElementById('mName').innerText = c.name;
@@ -231,7 +224,15 @@
 
         // History
         const histEl = document.getElementById('mHistory');
-        histEl.innerHTML = c.history.reverse().map(h => `<div class="t-item"><div><div>Sale #${h.invoiceNo}</div><div style="color:#9ca3af;font-size:11px;">${new Date(h.date).toLocaleDateString()}</div></div><div style="font-weight:bold;">${formatMoney(h.total)}</div></div>`).join('');
+        // 🟢 ID CORRECTION: Use 'id' and 'amount'
+        histEl.innerHTML = c.history.reverse().map(h => `
+            <div class="t-item">
+                <div>
+                    <div>Sale #${h.id || h.invoiceNo}</div>
+                    <div style="color:#9ca3af;font-size:11px;">${new Date(h.date).toLocaleDateString()}</div>
+                </div>
+                <div style="font-weight:bold;">${formatMoney(h.amount || h.total)}</div>
+            </div>`).join('');
 
         document.getElementById('profileModal').style.display = 'flex';
     }
