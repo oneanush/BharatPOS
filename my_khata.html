@@ -30,7 +30,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* --- LOGIN SCREEN --- */
-        #login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; background: white; }
+        #login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; background: white; height: 100vh; }
         .login-card { width: 100%; max-width: 400px; text-align: center; }
         .hero-icon { background: #eef2ff; color: var(--primary); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
         .input-box { margin-bottom: 15px; text-align: left; }
@@ -39,13 +39,20 @@
         input:focus { border-color: var(--primary); background: white; }
         .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); transition: transform 0.1s; }
         .btn-main:active { transform: scale(0.98); }
+        .btn-main:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; }
 
         /* --- APP HEADER --- */
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50; }
         .store-info h2 { margin: 0; font-size: 18px; font-weight: 800; color: var(--primary-dark); }
         .store-info p { margin: 0; font-size: 12px; color: var(--success); font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        
+        .header-actions { display: flex; align-items: center; gap: 12px; }
         .cart-trigger { background: #eef2ff; color: var(--primary); border: none; padding: 10px; border-radius: 12px; cursor: pointer; position: relative; }
         #cart-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; border: 2px solid white; }
+        
+        /* LOGOUT BUTTON */
+        .btn-logout { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
+        .btn-logout:hover { background: #fee2e2; }
 
         /* --- NAVIGATION TABS --- */
         .nav-tabs { display: flex; padding: 10px 15px; gap: 10px; background: white; border-bottom: 1px solid #e2e8f0; }
@@ -56,12 +63,10 @@
         .section-view { display: none; padding: 15px; }
         .section-view.active { display: block; }
 
-        /* Loyalty Card */
         .loyalty-card { background: linear-gradient(135deg, #0f172a, #334155); color: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; }
         .coin-box { display: flex; align-items: center; gap: 10px; }
         .coin-val { font-size: 24px; font-weight: 800; color: var(--gold); }
         
-        /* Bill List */
         .bill-card { background: white; padding: 15px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid transparent; }
         .bill-card.due { border-left-color: var(--danger); }
         .bill-card.paid { border-left-color: var(--success); }
@@ -71,7 +76,7 @@
         .badge-paid { background: #dcfce7; color: var(--success); }
         .pay-link { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 10px; cursor: pointer; }
 
-        /* --- SECTION: INVENTORY (ORDER) --- */
+        /* --- SECTION: INVENTORY --- */
         .product-card { background: white; padding: 15px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; }
         .add-btn { background: white; color: var(--primary); border: 2px solid var(--primary); padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .add-btn:active { background: var(--primary); color: white; }
@@ -81,17 +86,13 @@
         .drawer-overlay.active { display: block; }
         .drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 30px 30px 0 0; padding: 30px 20px; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 101; max-height: 85vh; overflow-y: auto; }
         .drawer.active { transform: translateY(0); }
-        
         .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
-        
         .option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0 25px; }
         .opt-btn { background: #f1f5f9; border: 2px solid #f1f5f9; padding: 10px; border-radius: 10px; font-weight: bold; color: var(--text-muted); cursor: pointer; font-size: 13px; }
         .opt-btn.selected { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
-
         .loc-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
         .loc-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; border: none; }
         .loc-gps { background: var(--text-main); color: white; }
-        
         .checkout-footer { margin-top: 20px; }
         .total-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 18px; font-weight: 800; }
     </style>
@@ -101,76 +102,76 @@
     <div id="login-screen" class="screen active">
         <div class="login-card">
             <div class="hero-icon"><i data-lucide="store" size="40"></i></div>
-            <h1 style="margin: 0 0 5px;">My Khata & Shop</h1>
-            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">Connect with your local store</p>
+            <h1 style="margin: 0 0 5px;">My Khata</h1>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">Secure Customer Portal</p>
             
             <div class="input-box">
-                <label>Merchant ID (Ask Shopkeeper)</label>
+                <label>Merchant ID</label>
                 <input type="text" id="merchant-id" placeholder="e.g. GRO-1234" style="text-transform:uppercase;">
             </div>
             
             <div class="input-box">
-                <label>Your Mobile Number</label>
+                <label>Mobile Number</label>
                 <input type="tel" id="user-phone" placeholder="9876543210" maxlength="10">
             </div>
 
-            <button class="btn-main" id="btn-connect" onclick="connectToShop()">Connect Securely</button>
+            <button class="btn-main" id="btn-connect" onclick="manualLogin()">Connect</button>
         </div>
     </div>
 
     <div id="app-screen" class="screen">
-        
         <header>
             <div class="store-info">
-                <h2 id="display-shop-name">Loading...</h2>
-                <p id="display-status"><i data-lucide="circle-dot" size="12" fill="currentColor"></i> LIVE STORE</p>
+                <h2 id="display-shop-name">Store</h2>
+                <p id="display-status"><i data-lucide="circle-dot" size="12" fill="currentColor"></i> ONLINE</p>
             </div>
-            <button class="cart-trigger" onclick="toggleCart(true)">
-                <i data-lucide="shopping-bag"></i>
-                <span id="cart-badge">0</span>
-            </button>
+            <div class="header-actions">
+                <button class="cart-trigger" onclick="toggleCart(true)">
+                    <i data-lucide="shopping-bag"></i>
+                    <span id="cart-badge">0</span>
+                </button>
+                <button class="btn-logout" onclick="logout()">
+                    <i data-lucide="log-out" size="14"></i> Exit
+                </button>
+            </div>
         </header>
 
         <div class="nav-tabs">
             <button class="nav-btn active" onclick="switchView('khata', this)">
-                <i data-lucide="book-open" size="16"></i> My Ledger
+                <i data-lucide="book-open" size="16"></i> Ledger
             </button>
             <button class="nav-btn" onclick="switchView('order', this)">
-                <i data-lucide="shopping-cart" size="16"></i> Order Items
+                <i data-lucide="shopping-cart" size="16"></i> Shop
             </button>
         </div>
 
         <div id="view-khata" class="section-view active">
-            
             <div class="loyalty-card">
                 <div>
                     <div style="font-size:13px; opacity:0.8;">Welcome,</div>
-                    <div style="font-size:18px; font-weight:700;" id="cust-name">Valued Customer</div>
+                    <div style="font-size:18px; font-weight:700;" id="cust-name">Guest</div>
                 </div>
                 <div class="coin-box">
                     <div style="text-align:right;">
                         <div class="coin-val" id="coin-balance">0</div>
-                        <div style="font-size:10px; opacity:0.8;">REWARD POINTS</div>
+                        <div style="font-size:10px; opacity:0.8;">POINTS</div>
                     </div>
                     <i data-lucide="coins" size="28" color="#f59e0b"></i>
                 </div>
             </div>
 
-            <h3 style="font-size:14px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:15px;">Pending Dues</h3>
+            <h3 style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:15px;">Pending Dues</h3>
             <div id="pending-list">
-                <div style="text-align:center; padding:30px; color:#cbd5e1;">No pending dues. Great!</div>
+                <div style="text-align:center; padding:30px; color:#cbd5e1;">All clear!</div>
             </div>
 
-            <h3 style="font-size:14px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin:25px 0 15px;">Paid History</h3>
-            <div id="history-list">
-                </div>
+            <h3 style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin:25px 0 15px;">History</h3>
+            <div id="history-list"></div>
         </div>
 
         <div id="view-order" class="section-view">
-            <div id="inventory-list">
-                </div>
+            <div id="inventory-list"></div>
         </div>
-
     </div>
 
     <div class="drawer-overlay" id="overlay" onclick="toggleCart(false)"></div>
@@ -179,299 +180,212 @@
             <h2 style="margin:0">Your Bag</h2>
             <button onclick="toggleCart(false)" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
         </div>
-
         <div id="cart-items-container" style="margin-bottom:20px;"></div>
-
         <span style="font-size:12px; font-weight:bold; color:var(--text-muted); text-transform:uppercase;">Delivery Speed</span>
         <div class="option-grid">
             <button class="opt-btn selected" onclick="setDelivery('15 min', this)">⚡ 15 Min</button>
             <button class="opt-btn" onclick="setDelivery('30 min', this)">🕒 30 Min</button>
             <button class="opt-btn" onclick="setDelivery('Scheduled', this)">📅 Later</button>
         </div>
-
         <div class="loc-box">
             <button class="loc-btn loc-gps" onclick="fetchLocation()">
                 <i data-lucide="map-pin"></i> Share GPS Location
             </button>
             <div id="gps-status" style="text-align:center; font-size:12px; color:var(--success); font-weight:bold;"></div>
         </div>
-
         <div class="checkout-footer">
-            <div class="total-row">
-                <span>Total</span>
-                <span id="grand-total">₹0</span>
-            </div>
-            <button class="btn-main" style="background:var(--success);" onclick="submitOrder()">Place Order via WhatsApp</button>
+            <div class="total-row"><span>Total</span><span id="grand-total">₹0</span></div>
+            <button class="btn-main" style="background:var(--success);" onclick="submitOrder()">Place Order</button>
         </div>
     </div>
 
     <script>
-        // --- 1. INITIALIZATION ---
+        // --- 1. SETUP ---
         lucide.createIcons();
         
-        let currentState = {
-            merchantId: '',
-            phone: '',
-            cart: [],
-            deliveryTime: '15 min',
-            location: null
+        // Fallback for buildUrl if bharatpos.js missing
+        window.buildUrl = window.buildUrl || function(path) { 
+            return (window.location.hostname === 'localhost' || window.location.protocol === 'file:') 
+                ? 'http://localhost:5185' + path : path;
         };
 
-        // --- 2. CONNECT & LOGIN LOGIC ---
-        async function connectToShop() {
+        let currentState = { merchantId: '', phone: '', cart: [], deliveryTime: '15 min', location: null };
+
+        // --- 2. LOGIN LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedSession = localStorage.getItem('khata_user');
+            if (savedSession) {
+                const user = JSON.parse(savedSession);
+                performLogin(user.mId, user.phone);
+            }
+        });
+
+        function manualLogin() {
             const mId = document.getElementById('merchant-id').value.trim().toUpperCase();
             const phone = document.getElementById('user-phone').value.trim();
-            const btn = document.getElementById('btn-connect');
-
             if(!mId || phone.length < 10) { alert("Invalid details"); return; }
+            performLogin(mId, phone);
+        }
 
-            btn.innerText = "Verifying...";
-            btn.disabled = true;
+        async function performLogin(mId, phone) {
+            const btn = document.getElementById('btn-connect');
+            if(btn) { btn.innerText = "Verifying..."; btn.disabled = true; }
 
             try {
-                // Fetch Ledger Data (Real Backend Call)
                 const response = await fetch(buildUrl('/api/customer-ledger'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ merchantId: mId, phone: phone })
                 });
-
                 const data = await response.json();
 
                 if(data.success) {
-                    // Success
                     currentState.merchantId = mId;
                     currentState.phone = phone;
-                    
-                    // Setup UI
-                    setupDashboard(data.bills, mId);
-                    
-                    // Switch Screen
+                    localStorage.setItem('khata_user', JSON.stringify({ mId, phone }));
+
+                    // 🟢 SWITCH SCREEN IMMEDIATELY
                     document.getElementById('login-screen').classList.remove('active');
                     document.getElementById('app-screen').classList.add('active');
-                    
-                    // Load Mock Inventory (Since no backend for stock yet)
+
+                    // Load Data
+                    setupDashboard(data.bills, mId);
                     loadInventory();
-
                 } else {
-                    alert("No records found for this Merchant ID & Phone.");
+                    alert("Account not found. Ask shopkeeper to create a bill first.");
+                    localStorage.removeItem('khata_user');
                 }
-
             } catch (e) {
                 console.error(e);
-                alert("Connection Error. Please try again.");
+                alert("Connection Error. Is the Server Running?");
             } finally {
-                btn.innerText = "Connect Securely";
-                btn.disabled = false;
+                if(btn) { btn.innerText = "Connect"; btn.disabled = false; }
             }
         }
 
+        function logout() {
+            if(confirm("Sign out?")) {
+                localStorage.removeItem('khata_user');
+                location.reload();
+            }
+        }
+
+        // --- 3. DASHBOARD ---
         function setupDashboard(bills, mId) {
-            document.getElementById('display-shop-name').innerText = "Store: " + mId;
+            document.getElementById('display-shop-name').innerText = mId;
             
-            // Filter Bills
             const pending = bills.filter(b => !b.isPaid);
             const paid = bills.filter(b => b.isPaid);
             
-            // Customer Name & Points
-            if(bills.length > 0) {
-                document.getElementById('cust-name').innerText = bills[0].customerName || "Customer";
-            }
-            const totalPaid = paid.reduce((sum, b) => sum + Number(b.total || b.amount), 0);
-            const coins = Math.floor(totalPaid / 100);
-            document.getElementById('coin-balance').innerText = coins;
+            if(bills.length > 0) document.getElementById('cust-name').innerText = bills[0].customerName || "Customer";
+            
+            const totalPaid = paid.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+            document.getElementById('coin-balance').innerText = Math.floor(totalPaid / 100);
 
-            // Render Ledger Lists
-            renderLedgerList('pending-list', pending, true);
-            renderLedgerList('history-list', paid, false);
-
-            if(coins > 50) launchConfetti();
+            renderList('pending-list', pending, true);
+            renderList('history-list', paid, false);
         }
 
-        function renderLedgerList(elId, list, isPending) {
+        function renderList(elId, list, isPending) {
             const container = document.getElementById(elId);
-            if(list.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:20px; color:#cbd5e1; font-size:13px;">No items found.</div>`;
-                return;
-            }
+            if(list.length === 0) { container.innerHTML = `<div style="text-align:center;padding:20px;color:#cbd5e1;font-size:12px;">No items.</div>`; return; }
+            
             container.innerHTML = list.map(b => `
                 <div class="bill-card ${isPending ? 'due' : 'paid'}">
                     <div>
                         <div class="bill-date">${new Date(b.date).toLocaleDateString()}</div>
-                        <div style="font-size:12px; color:#94a3b8;">#${b.id}</div>
-                        <span class="status-badge ${isPending ? 'badge-due' : 'badge-paid'}">${isPending ? 'UNPAID' : 'PAID'}</span>
+                        <div style="font-size:11px; color:#94a3b8;">#${b.id}</div>
+                        <span class="status-badge ${isPending?'badge-due':'badge-paid'}">${isPending?'UNPAID':'PAID'}</span>
                     </div>
-                    <div style="display:flex; align-items:center;">
-                        <div style="font-size:16px; font-weight:800; color:${isPending ? 'var(--danger)' : 'var(--success)'}">₹${b.total || b.amount}</div>
-                        ${isPending ? `<button class="pay-link" onclick="payBill('${b.id}')">PAY</button>` : ''}
-                    </div>
+                    <div style="font-size:16px; font-weight:800; color:${isPending?'var(--danger)':'var(--success)'}">₹${b.amount}</div>
                 </div>
             `).join('');
         }
 
-        // --- 3. INVENTORY & ORDER LOGIC ---
-       // --- 3. INVENTORY & ORDER LOGIC (REAL DATA) ---
-async function loadInventory() {
-    const container = document.getElementById('inventory-list');
-    container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">Loading Shop Items...</div>';
-
-    try {
-        // 1. Ask Server for THIS Merchant's Stock
-        const response = await fetch(buildUrl('/api/get-merchant-stock'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ merchantId: currentState.merchantId })
-        });
-
-        const data = await response.json();
-        const products = data.products || [];
-
-        if (products.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:#cbd5e1;">Shop has not listed any items online yet.</div>';
-            return;
+        // --- 4. SHOPPING ---
+        async function loadInventory() {
+            const container = document.getElementById('inventory-list');
+            try {
+                const res = await fetch(buildUrl('/api/get-merchant-stock'), {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ merchantId: currentState.merchantId })
+                });
+                const data = await res.json();
+                if(!data.products || data.products.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:20px;color:#cbd5e1;">Store is empty.</div>';
+                    return;
+                }
+                container.innerHTML = data.products.map(p => `
+                    <div class="product-card">
+                        <div>
+                            <h4 style="margin:0 0 4px;">${p.name}</h4>
+                            <span style="color:var(--primary); font-weight:800;">₹${p.price}</span>
+                        </div>
+                        <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">ADD</button>
+                    </div>
+                `).join('');
+            } catch(e) { container.innerHTML = '<div style="text-align:center;color:red;">Failed to load items.</div>'; }
         }
-
-        // 2. Render Real Products
-        container.innerHTML = products.map(p => `
-            <div class="product-card">
-                <div>
-                    <h4 style="margin:0 0 4px;">${p.name}</h4>
-                    <div style="font-size:12px; color:#64748b; margin-bottom:4px;">${p.category || 'General'}</div>
-                    <span style="color:var(--primary); font-weight:800;">₹${p.price}</span>
-                    ${p.stock < 5 ? '<span style="font-size:10px; color:red; margin-left:5px;">(Low Stock)</span>' : ''}
-                </div>
-                <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">ADD +</button>
-            </div>
-        `).join('');
-
-    } catch (e) {
-        console.error("Inventory Load Error:", e);
-        container.innerHTML = '<div style="text-align:center; color:red;">Failed to load items.</div>';
-    }
-}
-
-
-
-
 
         function addToCart(name, price) {
             currentState.cart.push({ name, price });
-            updateCartUI();
-            
-            // Visual feedback
+            updateCart();
             const badge = document.getElementById('cart-badge');
             badge.style.transform = "scale(1.5)";
             setTimeout(() => badge.style.transform = "scale(1)", 200);
         }
 
-        function updateCartUI() {
+        function updateCart() {
             document.getElementById('cart-badge').innerText = currentState.cart.length;
-            
-            const total = currentState.cart.reduce((sum, item) => sum + item.price, 0);
+            const total = currentState.cart.reduce((s, i) => s + i.price, 0);
             document.getElementById('grand-total').innerText = "₹" + total;
-
-            // Render Cart Items List
-            const list = document.getElementById('cart-items-container');
-            if(currentState.cart.length === 0) {
-                list.innerHTML = "<div style='text-align:center; color:#94a3b8; font-size:13px;'>Your bag is empty.</div>";
-            } else {
-                // Group items
-                const grouped = {};
-                currentState.cart.forEach(i => {
-                    if(!grouped[i.name]) grouped[i.name] = { count:0, price: i.price };
-                    grouped[i.name].count++;
-                });
-                
-                list.innerHTML = Object.entries(grouped).map(([name, det]) => `
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">
-                        <span>${name} <span style="color:var(--primary); font-weight:bold;">x${det.count}</span></span>
-                        <span>₹${det.price * det.count}</span>
-                    </div>
-                `).join('');
-            }
-        }
-
-        // --- 4. CHECKOUT UTILS ---
-        function toggleCart(show) {
-            const ol = document.getElementById('overlay');
-            const dr = document.getElementById('cart-drawer');
-            if(show) {
-                ol.classList.add('active');
-                dr.classList.add('active');
-                updateCartUI();
-            } else {
-                ol.classList.remove('active');
-                dr.classList.remove('active');
-            }
-        }
-
-        function setDelivery(time, btn) {
-            currentState.deliveryTime = time;
-            document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-        }
-
-        function fetchLocation() {
-            const status = document.getElementById('gps-status');
-            status.innerText = "Locating...";
             
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    currentState.location = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
-                    status.innerHTML = `✓ Location Secured`;
-                }, () => {
-                    status.innerText = "Location Denied";
-                    status.style.color = "red";
-                });
-            } else {
-                status.innerText = "GPS Not Supported";
+            const list = document.getElementById('cart-items-container');
+            if(currentState.cart.length === 0) list.innerHTML = "<div style='text-align:center;color:#94a3b8;font-size:12px;'>Bag empty</div>";
+            else {
+                const g = {};
+                currentState.cart.forEach(i => { if(!g[i.name]) g[i.name]={c:0,p:i.price}; g[i.name].c++; });
+                list.innerHTML = Object.entries(g).map(([n, d]) => `
+                    <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #f1f5f9;">
+                        <span>${n} <strong style="color:var(--primary)">x${d.c}</strong></span><span>₹${d.p*d.c}</span>
+                    </div>`).join('');
             }
         }
 
         function submitOrder() {
-            if(currentState.cart.length === 0) return alert("Cart is empty!");
-
-            // Create WhatsApp Message
-            let msg = `*New Order from ${currentState.phone}*%0A`;
-            msg += `Merchant: ${currentState.merchantId}%0A`;
-            msg += `Delivery: ${currentState.deliveryTime}%0A`;
-            if(currentState.location) msg += `Location: ${currentState.location}%0A`;
-            msg += `%0A*Items:*%0A`;
-            
-            const grouped = {};
-            currentState.cart.forEach(i => { if(!grouped[i.name]) grouped[i.name]=0; grouped[i.name]++; });
-            Object.entries(grouped).forEach(([n, c]) => { msg += `- ${n} x${c}%0A`; });
-            
-            const total = currentState.cart.reduce((s,i)=>s+i.price, 0);
-            msg += `%0A*Total Value: ₹${total}*`;
-
-            // Open WhatsApp (Mocking Merchant Number logic)
-            // Ideally fetch merchant phone from backend, here we use generic
-            window.open(`https://wa.me/?text=${msg}`, '_blank');
-            
-            alert("Order Prepared! Redirecting to WhatsApp...");
-            currentState.cart = [];
-            toggleCart(false);
-            updateCartUI();
+            if(currentState.cart.length === 0) return alert("Empty Cart!");
+            let msg = `*Order from ${currentState.phone}*\n`;
+            const g = {}; currentState.cart.forEach(i => { if(!g[i.name]) g[i.name]=0; g[i.name]++; });
+            Object.entries(g).forEach(([n, c]) => { msg += `- ${n} x${c}\n`; });
+            msg += `\n*Total: ${document.getElementById('grand-total').innerText}*`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            currentState.cart = []; updateCart(); toggleCart(false);
         }
 
-        // --- 5. VIEW SWITCHER ---
-        function switchView(viewName, btn) {
-            document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-' + viewName).classList.add('active');
-
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        // --- UTILS ---
+        function toggleCart(s) {
+            const el = (id) => document.getElementById(id);
+            if(s) { el('overlay').classList.add('active'); el('cart-drawer').classList.add('active'); updateCart(); }
+            else { el('overlay').classList.remove('active'); el('cart-drawer').classList.remove('active'); }
+        }
+        function switchView(v, btn) {
+            document.querySelectorAll('.section-view').forEach(e => e.classList.remove('active'));
+            document.getElementById('view-'+v).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
             btn.classList.add('active');
         }
-
-        // --- 6. UTILS ---
-        function payBill(id) {
-            alert(`Initiating UPI payment for Bill #${id}...\n(Integration Pending)`);
+        function fetchLocation() {
+            document.getElementById('gps-status').innerText = "Locating...";
+            navigator.geolocation.getCurrentPosition(p => {
+                currentState.location = `${p.coords.latitude},${p.coords.longitude}`;
+                document.getElementById('gps-status').innerText = "✓ Attached";
+            });
         }
-
-        function launchConfetti() {
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        function setDelivery(t, b) {
+            currentState.deliveryTime = t;
+            document.querySelectorAll('.opt-btn').forEach(e => e.classList.remove('selected'));
+            b.classList.add('selected');
         }
+        function launchConfetti() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
     </script>
 </body>
 </html>
