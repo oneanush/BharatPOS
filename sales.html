@@ -6,7 +6,7 @@
   <title>Sales - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script src="bharatpos.js" defer></script>
@@ -220,16 +220,16 @@
 
     let currentData = [];
 
-    // 🟢 FIXED: Normalizing Data Fields to prevent 'undefined' errors
+    // 🟢 FIXED: Prioritizing 'id', 'customerName', 'amount'
     function renderSales(filterText = "") {
       const allSales = getSales().reverse();
       const container = document.getElementById('salesList');
       const term = filterText.toLowerCase();
       
       const filtered = allSales.filter(s => {
-        // Handle mismatched keys (invoiceNo vs id, customer vs customerName)
-        const inv = (s.invoiceNo || s.id || '').toLowerCase();
-        const cust = (s.customer || s.customerName || 'Walk-in').toLowerCase();
+        // Smart Check: New Key (id) || Old Key (invoiceNo)
+        const inv = (s.id || s.invoiceNo || '').toLowerCase();
+        const cust = (s.customerName || s.customer || 'Walk-in').toLowerCase();
         return inv.includes(term) || cust.includes(term);
       });
       
@@ -242,11 +242,11 @@
 
       let html = "";
       filtered.forEach(s => {
-        // Map fields safely
-        const invId = s.invoiceNo || s.id || 'N/A';
+        // 🟢 MAPPING: Primary (New) || Secondary (Old)
+        const invId = s.id || s.invoiceNo || 'N/A';
         const dateStr = new Date(s.date).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'});
-        const custName = s.customer || s.customerName || 'Walk-in';
-        const finalAmount = s.total || s.amount || 0;
+        const custName = s.customerName || s.customer || 'Walk-in';
+        const finalAmount = s.amount || s.total || 0;
 
         html += `
           <div class="sale-row">
@@ -267,16 +267,16 @@
     let currentPrintFunction = null;
 
     function openInvoiceModal(invIdInput) {
-      // Find sale using both possible ID fields
-      const sale = getSales().find(s => (s.invoiceNo == invIdInput) || (s.id == invIdInput));
+      // Find sale using both ID fields
+      const sale = getSales().find(s => (s.id == invIdInput) || (s.invoiceNo == invIdInput));
       if(!sale) return;
 
       const shopName = localStorage.getItem('shopName') || "Bharat POS Store";
       
       // Normalized Data for Modal
-      const displayId = sale.invoiceNo || sale.id;
-      const displayName = sale.customer || sale.customerName || 'Guest';
-      const displayTotal = sale.total || sale.amount || 0;
+      const displayId = sale.id || sale.invoiceNo;
+      const displayName = sale.customerName || sale.customer || 'Guest';
+      const displayTotal = sale.amount || sale.total || 0;
 
       let itemsHtml = (sale.items || []).map((it, i) => `
         <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:4px 0;">
@@ -318,9 +318,9 @@
       if(currentData.length === 0) return alert('No data to export');
       const rows = [];
       currentData.forEach(s => {
-        const inv = s.invoiceNo || s.id;
-        const cust = s.customer || s.customerName;
-        const tot = s.total || s.amount;
+        const inv = s.id || s.invoiceNo;
+        const cust = s.customerName || s.customer;
+        const tot = s.amount || s.total;
         
         (s.items || []).forEach(it => {
           rows.push({
