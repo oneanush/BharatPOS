@@ -12,7 +12,7 @@
   <script src="bharatpos.js"></script>
 
   <style>
-    /* --- THEME VARIABLES (Matched with Sales/Billing) --- */
+    /* --- THEME MATCHING DASHBOARD --- */
     :root {
       --bg-body: #0f172a;
       --bg-card: rgba(30, 41, 59, 0.7);
@@ -36,7 +36,6 @@
       padding-bottom: 80px;
     }
 
-    /* Background Effect */
     body::before {
       content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.1), transparent 40%),
@@ -44,7 +43,7 @@
       z-index: -1; pointer-events: none;
     }
 
-    /* --- HEADER --- */
+    /* HEADER */
     .header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 15px 24px; background: rgba(15, 23, 42, 0.95); backdrop-filter: var(--glass);
@@ -55,13 +54,14 @@
     .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; margin-left: 20px; transition: 0.2s; }
     .nav a:hover { color: var(--accent); }
 
-    /* --- CONTAINER --- */
     .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
 
     .page-title {
       font-size: 20px; font-weight: 700; margin-bottom: 20px;
       display: flex; align-items: center; gap: 10px;
     }
+    
+    /* TOTAL CARD */
     .total-dues-card {
       background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(15,23,42,0.8));
       border: 1px solid rgba(239,68,68,0.4); border-radius: 16px; padding: 20px;
@@ -70,7 +70,7 @@
     .dues-label { font-size: 12px; color: #fca5a5; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
     .dues-amount { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: #fff; margin-top: 5px; }
 
-    /* --- GROUP LIST --- */
+    /* GROUP LIST */
     .group-card {
       background: var(--bg-card); backdrop-filter: var(--glass);
       border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;
@@ -78,17 +78,14 @@
       cursor: pointer; transition: 0.2s; position: relative; overflow: hidden;
     }
     .group-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
-    .group-card::before {
-      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-      background: var(--accent);
-    }
+    .group-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
 
     .cust-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .cust-phone { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
     .debt-amt { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--danger); }
     .debt-count { font-size: 10px; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; margin-left: 10px; color: var(--text-muted); }
 
-    /* --- MODAL (Dark Theme) --- */
+    /* MODAL */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.85); z-index: 1000;
@@ -105,7 +102,7 @@
     }
     .modal-body { padding: 0; overflow-y: auto; }
 
-    /* INVOICE LIST INSIDE MODAL */
+    /* INVOICE LIST */
     .inv-item {
       display: flex; justify-content: space-between; align-items: center;
       padding: 15px 20px; border-bottom: 1px solid var(--border);
@@ -131,7 +128,6 @@
       border: none; font-size: 14px; font-weight: 800; cursor: pointer;
       text-transform: uppercase; letter-spacing: 1px;
     }
-    
     .empty-state { text-align: center; padding: 50px; color: var(--text-muted); font-size: 14px; }
   </style>
 </head>
@@ -211,17 +207,13 @@
         renderGroups();
     });
 
-    // --- 1. RENDER MAIN LIST (Grouped by Phone) ---
+    // --- 1. RENDER MAIN LIST ---
     function renderGroups() {
-        // 🟢 FIX: Read from 'bharatpos_sales', not 'ledger'
         const allSales = getSales();
         const container = document.getElementById('groupList');
         
-        // Filter: Only Udhaar AND Not Paid
-        // Also handle cases where isPaid might be undefined (assume unpaid if Udhaar)
-        const pending = allSales.filter(s => 
-            (s.paymentMode === 'Udhaar' && s.isPaid !== true)
-        );
+        // 🟢 ID CORRECTION: Ensure we look for 'amount' and 'isPaid'
+        const pending = allSales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true));
 
         // Update Total Header
         const totalPending = pending.reduce((acc, s) => acc + Number(s.amount || s.total || 0), 0);
@@ -232,23 +224,16 @@
             return;
         }
 
-        // Group by Phone Number
+        // Group by Phone
         const groups = {};
         pending.forEach(inv => {
-            // Normalize fields
             const ph = inv.phone || "Unknown";
             const name = inv.customerName || inv.customer || "Walk-in";
             const amt = Number(inv.amount || inv.total || 0);
 
-            if(!groups[ph]) {
-                groups[ph] = { 
-                    phone: ph, 
-                    name: name, 
-                    total: 0, 
-                    count: 0
-                };
-            }
-            // If name was generic, try to find a real name in newer bills
+            if(!groups[ph]) groups[ph] = { phone: ph, name: name, total: 0, count: 0 };
+            
+            // Name Normalization
             if(groups[ph].name === "Walk-in" && name !== "Walk-in") groups[ph].name = name;
 
             groups[ph].total += amt;
@@ -274,14 +259,12 @@
     // --- 2. OPEN CUSTOMER DETAILS ---
     window.openCustomerModal = function(phone) {
         const allSales = getSales();
-        // Find bills for this phone that are Udhaar & Unpaid
         const invoices = allSales.filter(s => 
             (s.phone === phone || (phone === "Unknown" && !s.phone)) && 
-            s.paymentMode === 'Udhaar' && 
-            s.isPaid !== true
+            s.paymentMode === 'Udhaar' && s.isPaid !== true
         );
         
-        invoices.sort((a,b) => new Date(b.date) - new Date(a.date)); // Newest first
+        invoices.sort((a,b) => new Date(b.date) - new Date(a.date));
 
         const first = invoices[0];
         document.getElementById('custModalName').textContent = first.customerName || first.customer || "Customer";
@@ -289,16 +272,15 @@
 
         const listBody = document.getElementById('invoiceListBody');
         listBody.innerHTML = invoices.map(inv => {
-            // Safe encode for button
             const dataStr = encodeURIComponent(JSON.stringify(inv));
             const amt = inv.amount || inv.total || 0;
-            const invId = inv.id || inv.invoiceNo;
+            const invId = inv.id || inv.invoiceNo || '???';
 
             return `
             <div class="inv-item">
                 <div class="inv-info">
                     <h4>#${invId}</h4>
-                    <p>${new Date(inv.date).toLocaleDateString()} • ${new Date(inv.date).toLocaleTimeString()}</p>
+                    <p>${new Date(inv.date).toLocaleDateString()}</p>
                 </div>
                 <div class="inv-action">
                     <div class="inv-price">${formatCurrency(amt)}</div>
@@ -324,11 +306,7 @@
 
         const tbody = document.getElementById('rec-items');
         tbody.innerHTML = (inv.items || []).map(i => `
-            <tr>
-                <td>${i.name}</td>
-                <td style="text-align:right">${i.qty}</td>
-                <td style="text-align:right">${Math.round(i.price * i.qty)}</td>
-            </tr>
+            <tr><td>${i.name}</td><td style="text-align:right">${i.qty}</td><td style="text-align:right">${Math.round(i.price * i.qty)}</td></tr>
         `).join('');
 
         const payBtn = document.getElementById('btnSettle');
@@ -337,39 +315,31 @@
         document.getElementById('receiptModal').style.display = 'flex';
     };
 
-    // --- 4. SETTLE DEBT LOGIC (Updates Local Storage) ---
+    // --- 4. SETTLE DEBT (Update Master List) ---
     function settleDebt(id) {
-        if(!confirm("Mark this invoice as PAID? Action cannot be undone.")) return;
+        if(!confirm("Mark as PAID?")) return;
 
-        // 🟢 FIX: Update the MASTER LIST ('bharatpos_sales')
         const allSales = getSales();
+        // 🟢 CONNECTION CORRECTION: Update master list
         const index = allSales.findIndex(s => (s.id == id || s.invoiceNo == id));
 
         if(index > -1) {
-            // Update Status
             allSales[index].isPaid = true;
-            allSales[index].paymentMode = "Cash (Settled)"; // Optional: change mode to reflect settlement
+            allSales[index].paymentMode = "Cash (Settled)"; 
             allSales[index].settledDate = new Date().toISOString();
 
-            // Save back
             localStorage.setItem('bharatpos_sales', JSON.stringify(allSales));
-
-            // Sync to Server (Optional, if you have a settle route)
-            // syncSettlement(allSales[index]); 
 
             alert("✅ Payment Recorded!");
             closeModal('receiptModal');
             closeModal('customerModal');
-            renderGroups(); // Refresh UI
+            renderGroups();
         } else {
             alert("Error: Invoice not found.");
         }
     }
 
-    function closeModal(id) {
-        document.getElementById(id).style.display = 'none';
-    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 </script>
-
 </body>
 </html>
