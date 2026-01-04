@@ -6,13 +6,13 @@
   <title>Settings - Bharat POS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script src="bharatpos.js"></script>
 
   <style>
-    /* --- VARIABLES & RESET --- */
+    /* --- THEME VARIABLES (Consistent with Dashboard) --- */
     :root {
       --bg-body: #0f172a;
       --bg-card: rgba(30, 41, 59, 0.7);
@@ -44,7 +44,7 @@
     /* --- NAVIGATION --- */
     .navbar {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 15px 24px; background: rgba(15, 23, 42, 0.9); backdrop-filter: var(--glass);
+      padding: 15px 24px; background: rgba(15, 23, 42, 0.95); backdrop-filter: var(--glass);
       border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
     }
     .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
@@ -52,20 +52,20 @@
     
     .nav-links { display: flex; gap: 20px; }
     .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
-    .nav-links a:hover { color: var(--accent); }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
     /* --- LAYOUT --- */
-    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+    .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
     
     .page-title {
-        font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 20px; 
-        display: flex; align-items: center; gap: 10px;
+        font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 25px; 
+        display: flex; align-items: center; gap: 12px;
     }
 
     .settings-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 25px;
     }
 
     /* --- CARDS --- */
@@ -73,35 +73,48 @@
       background: var(--bg-card); backdrop-filter: var(--glass);
       border: 1px solid var(--border); border-radius: 16px; padding: 24px;
       display: flex; flex-direction: column; gap: 20px;
-      transition: transform 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative; overflow: hidden;
     }
-    .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
+    .card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+    /* Gradient Border Top */
+    .card::after {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--border-color, var(--primary)), transparent);
+        opacity: 0.7;
+    }
 
     .card-header {
-        display: flex; align-items: center; gap: 10px;
-        font-size: 16px; font-weight: 600; color: #fff; border-bottom: 1px solid var(--border);
-        padding-bottom: 15px; margin-bottom: 5px;
+        display: flex; align-items: center; gap: 12px;
+        font-size: 16px; font-weight: 700; color: #fff;
+        padding-bottom: 15px; border-bottom: 1px dashed var(--border);
     }
-    .card-icon { color: var(--accent); font-size: 18px; }
+    .card-icon { 
+        width: 32px; height: 32px; background: rgba(255,255,255,0.05); 
+        border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        color: var(--accent); font-size: 16px;
+    }
 
     /* --- FORM ELEMENTS --- */
     .input-group { position: relative; }
     .form-control {
-      width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+      width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border);
       color: #fff; padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif;
       transition: 0.2s; font-size: 14px;
     }
     .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
+    .form-control[readonly] { background: rgba(0,0,0,0.2); color: var(--text-muted); cursor: not-allowed; }
     
     .form-label {
-        font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 500;
+        font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 600;
     }
 
     /* --- BUTTONS --- */
     .btn {
       width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
-      font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: 0.2s;
+      font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: 0.2s; letter-spacing: 0.5px;
     }
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover { background: #2563eb; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
@@ -109,6 +122,9 @@
     .btn-success { background: var(--success); color: white; }
     .btn-success:hover { background: #059669; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     
+    .btn-copy { background: rgba(255,255,255,0.1); color: var(--text-main); font-size: 12px; padding: 8px; width: auto; }
+    .btn-copy:hover { background: rgba(255,255,255,0.2); }
+
     .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
     .btn-danger:hover { background: var(--danger); color: white; }
 
@@ -120,9 +136,8 @@
     .upload-zone:hover { border-color: var(--accent); background: rgba(245, 158, 11, 0.05); }
     .upload-input { display: none; }
     
-    /* QR PREVIEW */
     .qr-preview-box {
-        margin-top: 15px; text-align: center; min-height: 100px;
+        margin-top: 15px; text-align: center; min-height: 120px;
         display: flex; align-items: center; justify-content: center;
         background: #fff; border-radius: 8px; padding: 10px;
     }
@@ -133,7 +148,7 @@
     .storage-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 1s; }
     .storage-text { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: 5px; }
 
-    /* Mobile */
+    /* --- MOBILE --- */
     @media (max-width: 600px) {
       .settings-grid { grid-template-columns: 1fr; }
     }
@@ -159,11 +174,46 @@
 
     <div class="settings-grid">
       
-      <div class="card">
-        <div class="card-header"><i class="fa-solid fa-store card-icon"></i> Store Identity</div>
+      <div class="card" style="--border-color: var(--primary);">
+        <div class="card-header">
+            <div class="card-icon" style="color:var(--primary);"><i class="fa-solid fa-globe"></i></div> 
+            Network Identity
+        </div>
         
         <div class="input-group">
-            <label class="form-label">Shop Name (Printed on Bills)</label>
+            <label class="form-label">Merchant ID (Share this with Customers)</label>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="merchantId" class="form-control" readonly value="LOADING..." style="font-family:'JetBrains Mono'; letter-spacing:1px; font-weight:700;">
+                <button onclick="copyMerchantID()" class="btn btn-copy"><i class="fa-solid fa-copy"></i></button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="form-label">Shop Location (For Heatmap)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <div style="flex:1; font-size:12px; color:var(--text-muted);" id="locationStatus">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Checking...
+                </div>
+                <button onclick="updateLocation()" class="btn btn-primary" style="width:auto; font-size:12px; padding:8px 16px;">
+                    <i class="fa-solid fa-location-crosshairs"></i> Calibrate
+                </button>
+            </div>
+        </div>
+      </div>
+
+      <div class="card" style="--border-color: var(--accent);">
+        <div class="card-header">
+            <div class="card-icon"><i class="fa-solid fa-store"></i></div> 
+            Store Profile
+        </div>
+        
+        <div class="input-group">
+            <label class="form-label">Owner Name (Dashboard Greeting)</label>
+            <input type="text" id="ownerName" class="form-control" placeholder="e.g. Rahul Kumar">
+        </div>
+
+        <div class="input-group">
+            <label class="form-label">Shop Name (Bill Header)</label>
             <input type="text" id="shopName" class="form-control" placeholder="e.g. My Super Store">
         </div>
         
@@ -172,32 +222,47 @@
             <input type="text" id="shopPhone" class="form-control" placeholder="e.g. +91 98765 43210">
         </div>
 
-        <button onclick="saveShopDetails()" class="btn btn-primary">
-            <i class="fa-solid fa-floppy-disk"></i> Save Details
+        <button onclick="saveShopDetails()" class="btn btn-success">
+            <i class="fa-solid fa-floppy-disk"></i> Update Profile
         </button>
       </div>
 
-      <div class="card">
-        <div class="card-header"><i class="fa-solid fa-qrcode card-icon"></i> UPI Configuration</div>
+      <div class="card" style="--border-color: #a855f7;">
+        <div class="card-header">
+            <div class="card-icon" style="color:#a855f7;"><i class="fa-solid fa-receipt"></i></div> 
+            Bill Configuration
+        </div>
+
+        <div class="input-group">
+            <label class="form-label">Default Footer Note</label>
+            <input type="text" id="billFooter" class="form-control" placeholder="e.g. Thank you, Visit Again!">
+        </div>
+
+        <div class="card-header" style="margin-top:10px; border-bottom:none; padding-bottom:0;">
+            <div class="card-icon"><i class="fa-solid fa-qrcode"></i></div> 
+            UPI Setup
+        </div>
         
         <label class="upload-zone">
             <input type="file" id="qrUpload" accept="image/*" class="upload-input">
-            <i class="fa-solid fa-cloud-arrow-up" style="font-size:24px; color:var(--text-muted); margin-bottom:8px;"></i>
-            <div style="font-size:13px; color:var(--text-main);">Click to Upload QR Code</div>
-            <div style="font-size:11px; color:var(--text-muted);">Supports JPG, PNG</div>
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size:20px; color:var(--text-muted);"></i>
+            <div style="font-size:12px; margin-top:5px; color:var(--text-main);">Upload QR Code</div>
         </label>
 
         <div class="qr-preview-box" id="qrContainer">
-            <span style="color:#333; font-size:12px;">No QR Code Set</span>
+            <span style="color:#666; font-size:11px;">Preview Area</span>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header"><i class="fa-solid fa-database card-icon"></i> Data Vault</div>
+      <div class="card" style="--border-color: var(--success);">
+        <div class="card-header">
+            <div class="card-icon" style="color:var(--success);"><i class="fa-solid fa-database"></i></div> 
+            Data Vault
+        </div>
         
         <div>
             <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-main); font-weight:600;">
-                <span>Local Storage Usage</span>
+                <span>Local Storage</span>
                 <span id="storagePercent">0%</span>
             </div>
             <div class="storage-bar-bg">
@@ -209,28 +274,31 @@
             </div>
         </div>
 
-        <button onclick="exportAll()" class="btn btn-success" style="margin-top:10px;">
+        <button onclick="exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border);">
             <i class="fa-solid fa-download"></i> Backup Data (JSON)
         </button>
 
         <div style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
             <label class="form-label">Restore Backup</label>
             <div style="display:flex; gap:10px;">
-                <label class="btn" style="background:rgba(255,255,255,0.1); color:white; flex:1;">
+                <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
                     <input type="file" id="importFile" class="upload-input" onchange="document.getElementById('fileName').innerText = this.files[0].name">
-                    Choose File
+                    Select File
                 </label>
-                <button onclick="doImport()" class="btn btn-primary" style="width:auto;">Restore</button>
+                <button onclick="doImport()" class="btn btn-primary" style="width:auto;">Load</button>
             </div>
             <div id="fileName" style="font-size:11px; color:var(--accent); margin-top:5px; text-align:center;"></div>
         </div>
       </div>
 
-      <div class="card" style="border-color: rgba(239,68,68,0.3);">
-        <div class="card-header" style="color:var(--danger); border-color: rgba(239,68,68,0.3);"><i class="fa-solid fa-triangle-exclamation card-icon" style="color:var(--danger)"></i> Danger Zone</div>
+      <div class="card" style="--border-color: var(--danger);">
+        <div class="card-header" style="color:var(--danger); border-color: rgba(239,68,68,0.3);">
+            <div class="card-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div> 
+            Danger Zone
+        </div>
         
-        <p style="font-size:13px; color:var(--text-muted); line-height:1.5;">
-            Resetting the system will permanently delete all sales, products, and customer data. This action cannot be undone.
+        <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+            Resetting wipes all sales, inventory, and customer data permanently.
         </p>
 
         <button onclick="hardReset()" class="btn btn-danger">
@@ -242,20 +310,87 @@
   </div>
 
 <script>
-// --- 1. CORE LOGIC ---
+// --- 1. INITIALIZATION & DATA LOADING ---
+document.addEventListener('DOMContentLoaded', () => {
+    loadSettings();
+    updateStorageMeter();
+    
+    // Load QR
+    const storedQR = localStorage.getItem("upiQR");
+    if (storedQR) renderQR(storedQR);
+});
 
-// Save Shop Details
-function saveShopDetails() {
-    const name = document.getElementById('shopName').value;
-    const phone = document.getElementById('shopPhone').value;
-    localStorage.setItem('shopName', name);
-    localStorage.setItem('shopPhone', phone);
-    alert('✅ Store details updated successfully!');
+function loadSettings() {
+    // Load from 'bharatpos_user' (Standard Object)
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    
+    document.getElementById('merchantId').value = user.merchantId || "NOT SET";
+    document.getElementById('ownerName').value = user.name || "";
+    document.getElementById('shopName').value = localStorage.getItem('shopName') || "";
+    document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || "";
+    document.getElementById('billFooter').value = localStorage.getItem('bharatpos_bill_footer') || "";
+
+    // Load Location Status
+    if (user.lat && user.lng) {
+        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Calibrated: ${user.lat.toFixed(4)}, ${user.lng.toFixed(4)}</span>`;
+    } else {
+        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--danger)">⚠️ Not Set (Heatmap Inactive)</span>`;
+    }
 }
 
-function loadShopDetails() {
-    document.getElementById('shopName').value = localStorage.getItem('shopName') || '';
-    document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || '';
+// --- 2. SAVE LOGIC ---
+function saveShopDetails() {
+    // 1. Update Legacy Keys
+    localStorage.setItem('shopName', document.getElementById('shopName').value);
+    localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
+    localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
+
+    // 2. Update Master User Object
+    let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    user.name = document.getElementById('ownerName').value;
+    
+    // Ensure Merchant ID exists if empty
+    if(!user.merchantId) {
+        user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('merchantId').value = user.merchantId;
+    }
+
+    localStorage.setItem('bharatpos_user', JSON.stringify(user));
+    alert('✅ Profile & Settings Updated Successfully!');
+}
+
+// --- 3. LOCATION LOGIC ---
+function updateLocation() {
+    const status = document.getElementById('locationStatus');
+    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Triangulating...`;
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+                user.lat = pos.coords.latitude;
+                user.lng = pos.coords.longitude;
+                localStorage.setItem('bharatpos_user', JSON.stringify(user));
+                
+                status.innerHTML = `<span style="color:var(--success)">✅ Updated: ${user.lat.toFixed(4)}, ${user.lng.toFixed(4)}</span>`;
+                alert("Location captured! Your shop will now appear accurately on the Heatmap.");
+            },
+            (err) => {
+                status.innerHTML = `<span style="color:var(--danger)">❌ GPS Access Denied</span>`;
+                alert("Error: Could not fetch location. Please allow GPS access.");
+            }
+        );
+    } else {
+        status.innerHTML = "GPS Not Supported";
+    }
+}
+
+// --- 4. UTILS ---
+function copyMerchantID() {
+    const copyText = document.getElementById("merchantId");
+    copyText.select();
+    navigator.clipboard.writeText(copyText.value);
+    alert("Merchant ID Copied: " + copyText.value);
 }
 
 // QR Code Logic
@@ -276,12 +411,10 @@ qrUpload.addEventListener("change", function() {
 });
 
 function renderQR(src) {
-    if(src) {
-        qrContainer.innerHTML = `<img src="${src}" class="qr-img">`;
-    }
+    if(src) qrContainer.innerHTML = `<img src="${src}" class="qr-img">`;
 }
 
-// Import Logic
+// Import/Export Logic
 function doImport() {
     const f = document.getElementById('importFile').files[0];
     if (!f) return alert('Please choose a backup file first.');
@@ -292,29 +425,52 @@ function doImport() {
             else { alert('✅ ' + msg); location.reload(); } 
         });
     } else {
-        alert("System Error: Import function missing in bharatpos.js");
+        // Fallback Import
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                Object.keys(data).forEach(key => localStorage.setItem(key, data[key]));
+                alert("✅ System Restored Successfully!");
+                location.reload();
+            } catch(ex) { alert("Corrupt File"); }
+        };
+        reader.readAsText(f);
     }
 }
 
-// Storage Calculator (Performance Engineering)
+function exportAll() {
+    if (typeof exportAllData === "function") {
+        exportAllData();
+    } else {
+        // Fallback Export
+        const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bharatpos_backup_${Date.now()}.json`;
+        a.click();
+    }
+}
+
+// Storage Meter
 function updateStorageMeter() {
     let total = 0;
     for(let x in localStorage) {
         if(localStorage.hasOwnProperty(x)) total += ((localStorage[x].length + x.length) * 2);
     }
     const kb = (total / 1024).toFixed(2);
-    const limit = 5120; // Approx 5MB limit for LocalStorage
+    const limit = 5120; 
     const pct = Math.min((total / 1024 / limit) * 100, 100).toFixed(1);
     
     document.getElementById('storageBytes').innerText = `${kb} KB used`;
     document.getElementById('storagePercent').innerText = `${pct}%`;
     document.getElementById('storageFill').style.width = `${pct}%`;
     
-    // Warning Color
     if(pct > 80) document.getElementById('storageFill').style.background = 'var(--danger)';
 }
 
-// Hard Reset
 function hardReset() {
     if(confirm('⚠️ CRITICAL WARNING ⚠️\n\nThis will DELETE ALL DATA.\nAre you absolutely sure?')) {
         localStorage.clear();
@@ -322,19 +478,10 @@ function hardReset() {
         location.reload();
     }
 }
-
-// --- INIT ---
-window.onload = function() {
-    loadShopDetails();
-    
-    const storedQR = localStorage.getItem("upiQR");
-    if (storedQR) renderQR(storedQR);
-    
-    updateStorageMeter();
-};
 </script>
 
 </body>
 </html>
+
 
 
