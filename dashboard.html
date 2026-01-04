@@ -300,7 +300,7 @@
     }
   }
 
-  // Endpoint Builder (Fallback if bharatpos.js missing)
+  // Endpoint Builder
   function getApiUrl(endpoint) {
     if (typeof buildUrl === 'function') return buildUrl(endpoint);
     return endpoint; 
@@ -347,11 +347,13 @@
     const productCounts = {};
 
     sales.forEach(s => {
-        const amt = Number(s.total || 0);
+        // 🟢 ID CORRECTION: Use 'amount' or 'total'
+        const amt = Number(s.amount || s.total || 0);
         const sDate = s.date ? s.date.substring(0, 10) : '';
         totalRev += amt;
         if(sDate === todayStr) todayRev += amt;
         if(sDate === yesterStr) yesterdayRev += amt;
+        
         (s.items || []).forEach(i => {
             if(i.name) productCounts[i.name] = (productCounts[i.name] || 0) + Number(i.qty || 0);
         });
@@ -384,7 +386,6 @@
     
     const lowListEl = document.getElementById('lowstock');
     if(lowListEl) {
-        // MODIFIED: Use stock-alert-item class for red alert look
         lowListEl.innerHTML = lowStock.length > 0 
             ? lowStock.map(p => `
                 <div class="stock-alert-item">
@@ -417,13 +418,9 @@
     // Chart Render
     renderChart(sales);
 
- // Udhaar Render (Fixed to read from Sales)
-    // Note: 'sales' variable is already defined at the top of this function
-    const pendingUdhaar = sales.filter(s => 
-        (s.paymentMode === 'Udhaar' && s.isPaid !== true)
-    );
-    
-    const totalPending = pendingUdhaar.reduce((s, i) => s + Number(i.amount || i.total || 0), 0);
+    // 🟢 CONNECTION CORRECTION: Udhaar from Sales List
+    const pendingUdhaar = sales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true));
+    const totalPending = pendingUdhaar.reduce((sum, s) => sum + Number(s.amount || s.total || 0), 0);
     
     const udhaarEl = document.getElementById('totalUdhaar');
     if(udhaarEl) udhaarEl.textContent = formatCurrency(totalPending);
@@ -447,19 +444,17 @@
     let html = '';
     const today = new Date();
     
-    // Find max value for scaling
     let maxVal = 0;
     const daysData = [];
     for(let i=6; i>=0; i--) {
         const d = new Date(today); d.setDate(d.getDate() - i);
         const dStr = d.toISOString().split('T')[0];
-        const dayTotal = sales.filter(s => (s.date||'').startsWith(dStr)).reduce((sum,s)=>sum+Number(s.total||0),0);
+        const dayTotal = sales.filter(s => (s.date||'').startsWith(dStr)).reduce((sum,s)=>sum+Number(s.amount||s.total||0),0);
         if(dayTotal > maxVal) maxVal = dayTotal;
         daysData.push({ date: d, val: dayTotal });
     }
 
     daysData.forEach(item => {
-        // Auto-scale height
         const h = maxVal > 0 ? (item.val / maxVal * 100) : 5; 
         const dateStr = item.date.toLocaleDateString('en-US',{weekday:'short'});
         html += `<div class="bar-group"><div class="bar ${item.val>0?'active':''}" style="height:${h}%"></div><div class="bar-label">${dateStr}</div></div>`;
@@ -493,8 +488,6 @@
                              .map(x=> ({name: x[0], qty: x[1]}))
       };
 
-      console.log("📤 Preparing AI Snapshot:", snapshot);
-      
       if(statusEl) statusEl.className = 'ai-sync-pill syncing';
       if(textEl) textEl.innerText = "Syncing AI...";
       
@@ -511,14 +504,12 @@
           });
           
           if(res.ok) {
-             console.log("✅ AI Snapshot Sent!");
              if(statusEl) statusEl.className = 'ai-sync-pill synced';
              if(textEl) textEl.innerText = "AI Active";
           } else {
              throw new Error(`Server Error: ${res.status}`);
           }
       } catch(e) {
-          console.warn("❌ AI Sync Fail:", e);
           if(statusEl) statusEl.className = 'ai-sync-pill error';
           if(textEl) textEl.innerText = "AI Offline";
       }
