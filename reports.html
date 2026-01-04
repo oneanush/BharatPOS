@@ -131,7 +131,7 @@ function animateValue(obj, start, end, duration, isCurrency=false) {
   window.requestAnimationFrame(step);
 }
 
-// --- DATA PROCESSING (Fixed to handle both schema formats) ---
+// --- DATA PROCESSING (Dual ID Support) ---
 function groupSalesByDate(){
   const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
   const grouped = {};
@@ -141,10 +141,8 @@ function groupSalesByDate(){
     const d = rawDate.substring(0, 10); 
     if(!grouped[d]) grouped[d] = { revenue: 0, bills: 0, totalItems: 0, products: {} };
     
-    // 🟢 FIXED: Accept either 'total' (Old) or 'amount' (New)
-    const saleAmount = Number(sale.total || sale.amount || 0);
+    const saleAmount = Number(sale.amount || sale.total || 0);
     grouped[d].revenue += saleAmount;
-    
     grouped[d].bills++;
     
     (sale.items || []).forEach(it => {
@@ -231,7 +229,7 @@ function renderReports(){
 
   tableBody.innerHTML = historyHtml;
   
-  // TRIGGER AI SNAPSHOT (Safe Call)
+  // TRIGGER AI SNAPSHOT (With Stability Fixes)
   if(typeof handleAISnapshot === 'function') handleAISnapshot(data, totalRev);
 }
 
@@ -266,14 +264,23 @@ function updateSyncStatus(status) {
 async function handleAISnapshot(data, totalRev) {
   try {
     const snapshot = getReportsSnapshot(data, totalRev);
-    const snapshotJson = JSON.stringify(snapshot);
-    const snapshotHash = hashStringDjb2(snapshotJson);
+    
+    // 🟢 FIX 1: Generate a hash based ONLY on data content, ignoring the timestamp
+    // This prevents infinite loops where "new Date()" makes every snapshot look new.
+    const contentToHash = JSON.stringify({ 
+        revenue: snapshot.grand_total_revenue, 
+        history: snapshot.sales_history 
+    });
+    const snapshotHash = hashStringDjb2(contentToHash);
+    
     const lastHash = localStorage.getItem('bharatpos_last_sent_reports_snapshot_hash');
 
+    // Only send if DATA has changed
     if (lastHash !== snapshotHash) {
-       console.log("🚀 Uploading snapshot...");
+       console.log("🚀 Uploading snapshot (Data Changed)...");
        updateSyncStatus('syncing');
 
+       // Build URLs safely
        const consultUrl = (typeof buildUrl === 'function') ? buildUrl('/ai-business-consult') : '/ai-business-consult';
        const heatmapUrl = (typeof buildUrl === 'function') ? buildUrl('/api/sync-heatmap-source') : '/api/sync-heatmap-source';
 
@@ -288,15 +295,27 @@ async function handleAISnapshot(data, totalRev) {
        } else {
            updateSyncStatus('error');
        }
+    } else {
+        console.log("✅ Data unchanged, skipping sync.");
     }
   } catch(e) { console.error("Snapshot Error", e); updateSyncStatus('error'); }
 }
 
 function getReportsSnapshot(groupedData, grandTotalRevenue) {
-  const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  const merchantId = user.merchantId || "UNKNOWN";
+  let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+  
+  // 🟢 FIX 2: Ensure Merchant ID exists. If missing, auto-generate it.
+  // This prevents the Heatmap from rejecting data due to "UNKNOWN" ID.
+  if (!user.merchantId) {
+      user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
+      localStorage.setItem('bharatpos_user', JSON.stringify(user));
+      console.log("⚠️ Merchant ID was missing. Auto-generated:", user.merchantId);
+  }
+
+  const merchantId = user.merchantId;
   const location = { lat: user.lat, lng: user.lng };
   const dates = Object.keys(groupedData).sort();
+  
   const dateEntries = dates.map(date => {
     const d = groupedData[date];
     const products = Object.entries(d.products || {}).map(([name, qty])=>({ name, qty: Number(qty) }));
@@ -308,7 +327,14 @@ function getReportsSnapshot(groupedData, grandTotalRevenue) {
     };
   });
 
-  return { merchantId, location, type: "aggregated_sales_report", generated_at: new Date().toISOString(), grand_total_revenue: Number(grandTotalRevenue || 0), sales_history: dateEntries };
+  return { 
+      merchantId, 
+      location, 
+      type: "aggregated_sales_report", 
+      generated_at: new Date().toISOString(), // Still include for backend, but ignored in hash check
+      grand_total_revenue: Number(grandTotalRevenue || 0), 
+      sales_history: dateEntries 
+  };
 }
 
 document.addEventListener('DOMContentLoaded', renderReports);
