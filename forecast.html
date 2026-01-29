@@ -37,8 +37,9 @@
     /* LOADING OVERLAY */
     #loadingOverlay {
       display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255,255,255,0.8); align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.9); align-items: center; justify-content: center;
       border-radius: 16px; font-weight: 600; color: var(--primary); z-index: 10;
+      flex-direction: column; gap: 10px;
     }
 
     /* INSIGHT BOXES */
@@ -49,43 +50,52 @@
       width: 100%; padding: 12px; background: var(--primary); color: white;
       border: none; border-radius: 10px; font-weight: 600; margin-top: 10px; cursor: pointer;
     }
+
+    /* TIME STAMP BADGE */
+    .time-badge { font-size: 11px; opacity: 0.8; margin-top: 5px; display: block; }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <h1 style="margin:0; font-size:22px;">DemandMitra AI</h1>
-    <p style="margin:5px 0 0; opacity:0.8; font-size:13px;">Real-Time Inventory Forecasting</p>
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div>
+            <h1 style="margin:0; font-size:22px;">DemandMitra AI</h1>
+            <p style="margin:5px 0 0; opacity:0.8; font-size:13px;">Real-Time Inventory Forecasting</p>
+        </div>
+        <div style="text-align:right;">
+            <span id="lastUpdated" class="time-badge">No data yet</span>
+            <span onclick="clearAICache()" style="font-size:10px; text-decoration:underline; cursor:pointer; color:#a5b4fc;">Reset Data</span>
+        </div>
+    </div>
   </div>
 
   <div class="container">
 
-<div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
-  <button onclick="generateBulkForecasts()" style="
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-    color: white; border: none; padding: 10px 20px;
-    border-radius: 30px; font-weight: 700; cursor: pointer;
-    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-    display: flex; align-items: center; gap: 8px;">
-    ⚡ Analyze All Products (1 Click)
-  </button>
-</div>
+    <div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
+      <button onclick="generateBulkForecasts()" style="
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: white; border: none; padding: 10px 20px;
+        border-radius: 30px; font-weight: 700; cursor: pointer;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        display: flex; align-items: center; gap: 8px;">
+        ⚡ Analyze All Products (1 Click)
+      </button>
+    </div>
 
-<div class="controls" id="productChips">
-  </div>
-
-
-    
     <div class="controls" id="productChips">
       <div style="padding:10px; color:#666;">Loading Products...</div>
     </div>
 
     <div class="card" style="position:relative; min-height: 300px;">
-      <div id="loadingOverlay">✨ AI is Analyzing Sales Patterns...</div>
+      <div id="loadingOverlay">
+          <div>✨ AI is Analyzing Sales Patterns...</div>
+          <div style="font-size:12px; color:#666;">Please wait, this ensures accuracy.</div>
+      </div>
       
-      <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-        <b id="chartTitle">Select a Product</b>
-        <span id="trendBadge" style="font-size:12px; padding:4px 8px; border-radius:12px; background:#eee;">--</span>
+      <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+        <b id="chartTitle" style="font-size:16px;">Select a Product</b>
+        <span id="trendBadge" style="font-size:11px; padding:4px 10px; border-radius:12px; background:#eee; font-weight:600;">--</span>
       </div>
       
       <canvas id="demandChart" height="220"></canvas>
@@ -119,11 +129,22 @@
   let myChart = null;
   let currentProduct = null;
   
-  // 1. CACHE: Stores the AI results so we don't ask again
-  let forecastCache = {}; 
+  // 1. PERMANENT CACHE: Load from LocalStorage on startup
+  let forecastCache = JSON.parse(localStorage.getItem('bharatpos_ai_cache') || '{}'); 
 
   document.addEventListener("DOMContentLoaded", () => {
     loadProducts();
+    updateLastTime();
+    
+    // 🟢 AUTO-LOAD: If we have cached data, show the first product immediately
+    const cachedKeys = Object.keys(forecastCache);
+    if(cachedKeys.length > 0) {
+        const firstProdName = cachedKeys[0];
+        const allProducts = safeGet('bharatpos_products');
+        const pObj = allProducts.find(p => p.name === firstProdName);
+        // Load it instantly without API call
+        if(pObj) analyzeProduct(firstProdName, pObj.stock || 0);
+    }
   });
 
 function loadProducts() {
@@ -139,24 +160,43 @@ function loadProducts() {
     `<div class="chip" onclick="analyzeProduct('${p.name}', ${p.stock || 0})">${p.name}</div>`
   ).join('');
 
-  // --- CHANGE IS HERE ---
-  // We REMOVED the line that said: analyzeProduct(stockData[0].name ...)
-  // Instead, we just show a "Ready" message
-  document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
+  if(Object.keys(forecastCache).length === 0) {
+      document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
+  }
   document.getElementById('loadingOverlay').style.display = 'none';
 }
 
+  // --- SAVE DATA TO PERMANENT STORAGE ---
+  function saveToMemory() {
+      localStorage.setItem('bharatpos_ai_cache', JSON.stringify(forecastCache));
+      const now = new Date().toLocaleString('en-IN');
+      localStorage.setItem('bharatpos_ai_time', now);
+      document.getElementById('lastUpdated').innerText = "Updated: " + now;
+  }
 
-  // --- BULK ACTION: The "Single Request" Logic ---
+  function updateLastTime() {
+      const time = localStorage.getItem('bharatpos_ai_time');
+      if(time) document.getElementById('lastUpdated').innerText = "Updated: " + time;
+  }
+
+  function clearAICache() {
+      if(!confirm("Clear saved AI data?")) return;
+      localStorage.removeItem('bharatpos_ai_cache');
+      localStorage.removeItem('bharatpos_ai_time');
+      location.reload();
+  }
+
+  // --- BULK ACTION ---
   async function generateBulkForecasts() {
     const allProducts = safeGet('bharatpos_products');
     if(allProducts.length === 0) return alert("No products to analyze!");
 
-    // UI: Show loading state
     document.getElementById('loadingOverlay').style.display = 'flex';
-    document.getElementById('loadingOverlay').innerText = `⚡ AI is processing ${allProducts.length} products in one go...`;
+    document.getElementById('loadingOverlay').innerHTML = `
+        <div>⚡ AI is processing ${allProducts.length} products...</div>
+        <div style="font-size:12px; color:#666;">This might take a few seconds.</div>
+    `;
 
-    // 1. PREPARE BIG PAYLOAD
     const bulkPayload = allProducts.map(p => {
       return {
         productName: p.name,
@@ -166,8 +206,6 @@ function loadProducts() {
     });
 
     try {
-      // 2. SEND SINGLE REQUEST TO BACKEND
-      // Note: You must ensure your backend has this '/api/predict-demand-bulk' endpoint
       const res = await fetch(buildUrl('/api/predict-demand-bulk'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -177,18 +215,21 @@ function loadProducts() {
       const data = await res.json();
 
       if(data.success && data.predictions) {
-        // 3. SAVE ALL RESULTS TO CACHE
         data.predictions.forEach(prediction => {
-            // Map result by product name for easy lookup
             forecastCache[prediction.productName] = prediction;
         });
-
-        alert("✅ Analysis Complete! Click any product to see its forecast instantly.");
         
-        // Refresh the currently selected product view immediately
+        // 🟢 SAVE PERMANENTLY
+        saveToMemory();
+
+        alert("✅ Analysis Complete & Saved!");
+        
         if(currentProduct) {
              const currentP = allProducts.find(p => p.name === currentProduct);
              analyzeProduct(currentProduct, currentP ? currentP.stock : 0);
+        } else if(allProducts.length > 0) {
+             // Auto open first product if nothing selected
+             analyzeProduct(allProducts[0].name, allProducts[0].stock || 0);
         }
 
       } else {
@@ -197,18 +238,16 @@ function loadProducts() {
 
     } catch (e) {
       console.error(e);
-      alert("Error connecting to AI Server for Bulk Analysis.");
+      alert("Error connecting to AI Server.");
     } finally {
       document.getElementById('loadingOverlay').style.display = 'none';
-      document.getElementById('loadingOverlay').innerText = "✨ AI is Analyzing Sales Patterns..."; // Reset text
     }
   }
 
-  // --- INDIVIDUAL VIEW (Modified to use Cache) ---
+  // --- INDIVIDUAL VIEW ---
   async function analyzeProduct(name, currentStock) {
     currentProduct = name;
     
-    // UI Updates
     document.querySelectorAll('.chip').forEach(c => {
       c.classList.toggle('active', c.innerText === name);
     });
@@ -217,19 +256,18 @@ function loadProducts() {
     document.getElementById('aiMsgBox').style.display = 'none';
     document.getElementById('restockBtn').style.display = 'none';
 
-    // Get History for Graph
     const history = calculateSalesHistory(name);
 
-    // CHECK CACHE FIRST (Instant Load)
+    // 1. CHECK PERMANENT CACHE FIRST
     if (forecastCache[name]) {
-        console.log("Reading from Cache for:", name);
         const cachedPred = forecastCache[name];
         renderChart(history, cachedPred.predicted_sales);
         updateInsights(cachedPred, currentStock);
-        return; // STOP HERE, DO NOT CALL SERVER
+        return; 
     }
 
-    // IF NOT IN CACHE, CALL SERVER (Fallback for single clicks)
+    // 2. FETCH NEW IF NOT IN CACHE
+    document.getElementById('loadingOverlay').innerHTML = `<div>✨ Analyzing ${name}...</div>`;
     document.getElementById('loadingOverlay').style.display = 'flex';
     
     try {
@@ -242,8 +280,8 @@ function loadProducts() {
       const data = await res.json();
       
       if(data.success && data.prediction) {
-        // Save to cache too, just in case
         forecastCache[name] = data.prediction;
+        saveToMemory(); // 🟢 SAVE PERMANENTLY
         
         renderChart(history, data.prediction.predicted_sales);
         updateInsights(data.prediction, currentStock);
@@ -256,7 +294,7 @@ function loadProducts() {
     }
   }
 
-  // --- SALES HISTORY CALCULATION (Unchanged) ---
+  // --- SALES HISTORY CALCULATION ---
   function calculateSalesHistory(productName) {
     const sales = safeGet('bharatpos_sales');
     const dailyCounts = Array(14).fill(0); 
@@ -280,18 +318,18 @@ function loadProducts() {
     return dailyCounts;
   }
 
-  // --- RENDER FUNCTIONS (Unchanged) ---
+  // --- RENDER FUNCTIONS ---
   function renderChart(pastData, futureData) {
     const ctx = document.getElementById('demandChart').getContext('2d');
     if(myChart) myChart.destroy();
 
     const labels = [];
-    for(let i=13; i>=0; i--) labels.push(`Day -${i}`);
-    for(let i=1; i<=7; i++) labels.push(`Day +${i}`);
+    for(let i=13; i>=0; i--) labels.push(`-${i}d`); // Simplified labels
+    for(let i=1; i<=7; i++) labels.push(`+${i}d`);
 
     const pastDataset = [...pastData, ...Array(7).fill(null)];
     const futureDataset = [...Array(14).fill(null), ...futureData];
-    futureDataset[13] = pastData[13];
+    futureDataset[13] = pastData[13]; // Connect lines
 
     myChart = new Chart(ctx, {
       type: 'line',
@@ -299,11 +337,11 @@ function loadProducts() {
         labels: labels,
         datasets: [
           {
-            label: 'Actual Sales',
+            label: 'Sales',
             data: pastDataset,
             borderColor: '#4f46e5',
             backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            fill: true, tension: 0.3
+            fill: true, tension: 0.3, pointRadius: 2
           },
           {
             label: 'AI Forecast',
@@ -311,11 +349,15 @@ function loadProducts() {
             borderColor: '#10b981',
             borderDash: [5, 5],
             pointBackgroundColor: '#10b981',
-            tension: 0.3
+            tension: 0.3, pointRadius: 3
           }
         ]
       },
-      options: { responsive: true }
+      options: { 
+          responsive: true,
+          plugins: { legend: { display: true, position: 'bottom' } },
+          scales: { y: { beginAtZero: true } }
+      }
     });
   }
 
@@ -332,7 +374,6 @@ function loadProducts() {
       const needed = Math.max(0, Math.round(totalPredicted - stock));
       btn.innerText = `GENERATE ORDER (+${needed} units)`;
       
-      // Link to Products page with Restock param
       btn.onclick = () => window.location.href = `products.html?restock=${encodeURIComponent(currentProduct)}`;
       
       document.getElementById('aiMsgBox').style.backgroundColor = "#fee2e2";
