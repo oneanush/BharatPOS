@@ -15,6 +15,26 @@ function buildUrl(endpoint) {
 }
 
 
+
+
+
+// Add this near the top or in your shared JS file (runs on every page)
+window.addEventListener('storage', (e) => {
+  if (!e) return;
+  // When an import happens, settings page writes 'bharatpos_last_import'
+  if (e.key === 'bharatpos_last_import') {
+    console.log('BharatPOS: import detected from another tab -> reloading to sync data.');
+    // Option 1: full reload
+    location.reload();
+
+    // Option 2 (smoother): call a custom refresh function if you prefer
+    // if (typeof refreshFromLocalStorage === 'function') refreshFromLocalStorage();
+  }
+});
+
+
+
+
 // --- HELPER: SYNC TO SERVER (Place this outside other functions) ---
 async function syncBillToServer(billData) {
     // 1. Get Merchant ID (Required for Khata & Heatmap)
@@ -779,6 +799,7 @@ window.completeSale = function() {
         }
     }
 };
+
 
 
 
