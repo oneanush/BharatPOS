@@ -12,7 +12,7 @@
   <script src="bharatpos.js"></script>
 
   <style>
-    /* --- THEME VARIABLES (Consistent with Dashboard) --- */
+    /* --- THEME VARIABLES --- */
     :root {
       --bg-body: #0f172a;
       --bg-card: rgba(30, 41, 59, 0.7);
@@ -34,10 +34,6 @@
       color: var(--text-main);
       font-family: 'Inter', sans-serif;
       min-height: 100vh;
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
-      background-attachment: fixed;
       padding-bottom: 80px;
     }
 
@@ -52,7 +48,7 @@
     
     .nav-links { display: flex; gap: 20px; }
     .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
-    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+    .nav-links a:hover, .nav-links a.active { color: #fff; }
 
     /* --- LAYOUT --- */
     .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
@@ -78,7 +74,6 @@
     }
     .card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
 
-    /* Gradient Border Top */
     .card::after {
         content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
         background: linear-gradient(90deg, transparent, var(--border-color, var(--primary)), transparent);
@@ -106,9 +101,17 @@
     .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
     .form-control[readonly] { background: rgba(0,0,0,0.2); color: var(--text-muted); cursor: not-allowed; }
     
-    .form-label {
-        font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 600;
-    }
+    select.form-control { cursor: pointer; appearance: none; }
+    
+    .form-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 600; }
+
+    /* --- TOGGLE SWITCH --- */
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--success); }
+    input:checked + .slider:before { transform: translateX(20px); }
 
     /* --- BUTTONS --- */
     .btn {
@@ -117,30 +120,17 @@
       transition: 0.2s; letter-spacing: 0.5px;
     }
     .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: #2563eb; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
-    
     .btn-success { background: var(--success); color: white; }
-    .btn-success:hover { background: #059669; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
-    
-    .btn-copy { background: rgba(255,255,255,0.1); color: var(--text-main); font-size: 12px; padding: 8px; width: auto; }
-    .btn-copy:hover { background: rgba(255,255,255,0.2); }
-
     .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-    .btn-danger:hover { background: var(--danger); color: white; }
+    .btn-copy { background: rgba(255,255,255,0.1); color: var(--text-main); font-size: 12px; padding: 8px; width: auto; }
 
-    /* --- FILE UPLOAD ZONE --- */
+    /* --- UPLOAD ZONE --- */
     .upload-zone {
         border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
         text-align: center; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.02);
     }
-    .upload-zone:hover { border-color: var(--accent); background: rgba(245, 158, 11, 0.05); }
     .upload-input { display: none; }
-    
-    .qr-preview-box {
-        margin-top: 15px; text-align: center; min-height: 120px;
-        display: flex; align-items: center; justify-content: center;
-        background: #fff; border-radius: 8px; padding: 10px;
-    }
+    .qr-preview-box { margin-top: 15px; text-align: center; min-height: 120px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; padding: 10px; }
     .qr-img { max-width: 100%; max-height: 150px; }
 
     /* --- STORAGE METER --- */
@@ -148,29 +138,23 @@
     .storage-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 1s; }
     .storage-text { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: 5px; }
 
-    /* --- MOBILE --- */
-    @media (max-width: 600px) {
-      .settings-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 
   <nav class="navbar">
-    <div class="brand">
-      <img src="logo.png" class="global-logo">
-      Bharat POS
-    </div>
+    <div class="brand"><img src="logo.png" class="global-logo">Bharat POS</div>
     <div class="nav-links">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="products.html">Products</a>
-      <a href="sales.html">Sales</a>
+      <a href="dashboard.html">Home</a>
+      <a href="products.html">Stock</a>
+      <a href="sales.html">Bikri</a>
       <a href="settings.html" class="active" style="color:var(--accent)">Settings</a>
     </div>
   </nav>
 
   <div class="container">
-    <div class="page-title"><i class="fa-solid fa-sliders"></i> System Control</div>
+    <div class="page-title"><i class="fa-solid fa-sliders"></i> Dukan Settings</div>
 
     <div class="settings-grid">
       
@@ -179,23 +163,19 @@
             <div class="card-icon" style="color:var(--primary);"><i class="fa-solid fa-globe"></i></div> 
             Network Identity
         </div>
-        
         <div class="input-group">
-            <label class="form-label">Merchant ID (Share this with Customers)</label>
+            <label class="form-label">Merchant ID (Dukan ID)</label>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="merchantId" class="form-control" readonly value="LOADING..." style="font-family:'JetBrains Mono'; letter-spacing:1px; font-weight:700;">
+                <input type="text" id="merchantId" class="form-control" readonly value="LOADING..." style="font-family:'JetBrains Mono'; font-weight:700;">
                 <button onclick="copyMerchantID()" class="btn btn-copy"><i class="fa-solid fa-copy"></i></button>
             </div>
         </div>
-
         <div class="input-group">
-            <label class="form-label">Shop Location (For Heatmap)</label>
+            <label class="form-label">Shop Location (GPS)</label>
             <div style="display:flex; gap:10px; align-items:center;">
-                <div style="flex:1; font-size:12px; color:var(--text-muted);" id="locationStatus">
-                    <i class="fa-solid fa-circle-notch fa-spin"></i> Checking...
-                </div>
+                <div style="flex:1; font-size:12px; color:var(--text-muted);" id="locationStatus">Checking...</div>
                 <button onclick="updateLocation()" class="btn btn-primary" style="width:auto; font-size:12px; padding:8px 16px;">
-                    <i class="fa-solid fa-location-crosshairs"></i> Calibrate
+                    <i class="fa-solid fa-location-crosshairs"></i> Set Location
                 </button>
             </div>
         </div>
@@ -204,279 +184,351 @@
       <div class="card" style="--border-color: var(--accent);">
         <div class="card-header">
             <div class="card-icon"><i class="fa-solid fa-store"></i></div> 
-            Store Profile
+            Store Profile (Dukan Info)
         </div>
-        
         <div class="input-group">
-            <label class="form-label">Owner Name (Dashboard Greeting)</label>
+            <label class="form-label">Owner Name (Maalik Ka Naam)</label>
             <input type="text" id="ownerName" class="form-control" placeholder="e.g. Rahul Kumar">
         </div>
-
         <div class="input-group">
-            <label class="form-label">Shop Name (Bill Header)</label>
+            <label class="form-label">Shop Name (Dukan Ka Naam)</label>
             <input type="text" id="shopName" class="form-control" placeholder="e.g. My Super Store">
         </div>
-        
         <div class="input-group">
-            <label class="form-label">Contact Number</label>
-            <input type="text" id="shopPhone" class="form-control" placeholder="e.g. +91 98765 43210">
+            <label class="form-label">Contact Number (Mobile)</label>
+            <input type="text" id="shopPhone" class="form-control" placeholder="e.g. 9876543210">
         </div>
-
+        <div class="input-group">
+            <label class="form-label">Shop Address (Pata)</label>
+            <input type="text" id="shopAddress" class="form-control" placeholder="e.g. Main Market, Delhi">
+        </div>
         <button onclick="saveShopDetails()" class="btn btn-success">
-            <i class="fa-solid fa-floppy-disk"></i> Update Profile
+            <i class="fa-solid fa-floppy-disk"></i> Save Profile
         </button>
       </div>
 
       <div class="card" style="--border-color: #a855f7;">
         <div class="card-header">
             <div class="card-icon" style="color:#a855f7;"><i class="fa-solid fa-receipt"></i></div> 
-            Bill Configuration
+            Bill & GST Setup
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <label class="form-label" style="margin:0; font-size:14px; color:#fff;">GST Mode Enable</label>
+                    <div style="font-size:11px; color:var(--text-muted);">Products page pe Tax option aayega</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="gstToggle" onchange="toggleGSTFields()">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            
+            <div id="gstFields" style="display:none; margin-top:15px; padding-top:10px; border-top:1px dashed var(--border);">
+                <label class="form-label" style="color:var(--accent);">GSTIN Number</label>
+                <input type="text" id="gstin" class="form-control" placeholder="e.g. 22AAAAA0000A1Z5" style="border-color:var(--accent);">
+            </div>
         </div>
 
         <div class="input-group">
-            <label class="form-label">Default Footer Note</label>
+            <label class="form-label">Bill Footer Note</label>
             <input type="text" id="billFooter" class="form-control" placeholder="e.g. Thank you, Visit Again!">
         </div>
 
-        <div class="card-header" style="margin-top:10px; border-bottom:none; padding-bottom:0;">
-            <div class="card-icon"><i class="fa-solid fa-qrcode"></i></div> 
-            UPI Setup
+        <div class="input-group" style="margin-top:10px;">
+            <label class="form-label">Bill Ka Size</label>
+            <select id="billSize" class="form-control">
+                <option value="thermal">Thermal (Choti Parchi)</option>
+                <option value="a4">A4 (Bada Bill)</option>
+            </select>
         </div>
-        
+
+        <div class="card-header" style="margin-top:20px; border-bottom:none; padding-bottom:0;">
+            <div class="card-icon"><i class="fa-solid fa-qrcode"></i></div> UPI Setup
+        </div>
         <label class="upload-zone">
             <input type="file" id="qrUpload" accept="image/*" class="upload-input">
-            <i class="fa-solid fa-cloud-arrow-up" style="font-size:20px; color:var(--text-muted);"></i>
-            <div style="font-size:12px; margin-top:5px; color:var(--text-main);">Upload QR Code</div>
+            <div style="font-size:12px; color:var(--text-main);">Upload UPI QR Code</div>
         </label>
-
-        <div class="qr-preview-box" id="qrContainer">
-            <span style="color:#666; font-size:11px;">Preview Area</span>
-        </div>
+        <div class="qr-preview-box" id="qrContainer"><span style="color:#666; font-size:11px;">Preview</span></div>
       </div>
 
       <div class="card" style="--border-color: var(--success);">
         <div class="card-header">
-            <div class="card-icon" style="color:var(--success);"><i class="fa-solid fa-database"></i></div> 
-            Data Vault
+            <div class="card-icon" style="color:var(--success);"><i class="fa-solid fa-database"></i></div> Data Backup
         </div>
-        
         <div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-main); font-weight:600;">
-                <span>Local Storage</span>
-                <span id="storagePercent">0%</span>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-main);">
+                <span>Local Storage</span><span id="storagePercent">0%</span>
             </div>
-            <div class="storage-bar-bg">
-                <div class="storage-bar-fill" id="storageFill"></div>
-            </div>
-            <div class="storage-text">
-                <span id="storageBytes">0 KB used</span>
-                <span>5 MB Limit</span>
-            </div>
+            <div class="storage-bar-bg"><div class="storage-bar-fill" id="storageFill"></div></div>
+            <div class="storage-text"><span id="storageBytes">0 KB</span><span>5 MB Limit</span></div>
         </div>
-
-        <button onclick="exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border);">
-            <i class="fa-solid fa-download"></i> Backup Data (JSON)
-        </button>
-
+        <button onclick="exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border);">Backup Data (JSON)</button>
         <div style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
-            <label class="form-label">Restore Backup</label>
-            <div style="display:flex; gap:10px;">
-                <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
-                    <input type="file" id="importFile" class="upload-input" onchange="document.getElementById('fileName').innerText = this.files[0].name">
-                    Select File
-                </label>
-                <button onclick="doImport()" class="btn btn-primary" style="width:auto;">Load</button>
-            </div>
-            <div id="fileName" style="font-size:11px; color:var(--accent); margin-top:5px; text-align:center;"></div>
+           <label class="form-label">Restore Data</label>
+<div style="display:flex; gap:10px;">
+  <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
+    <input type="file" id="importFile" class="upload-input" accept=".json,application/json" onchange="doImport(event)">Select File
+  </label>
+</div>
         </div>
       </div>
 
       <div class="card" style="--border-color: var(--danger);">
         <div class="card-header" style="color:var(--danger); border-color: rgba(239,68,68,0.3);">
-            <div class="card-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div> 
-            Danger Zone
+            <div class="card-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div> Danger Zone
         </div>
-        
-        <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
-            Resetting wipes all sales, inventory, and customer data permanently.
-        </p>
-
-        <button onclick="hardReset()" class="btn btn-danger">
-            <i class="fa-solid fa-trash-can"></i> Factory Reset System
-        </button>
+        <button onclick="hardReset()" class="btn btn-danger">Factory Reset System</button>
       </div>
 
     </div>
   </div>
-
 <script>
-// --- 1. INITIALIZATION & DATA LOADING ---
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     updateStorageMeter();
-    
-    // Load QR
+
+    // QR upload wiring (guarded)
+    const qrUpload = document.getElementById("qrUpload");
+    if (qrUpload) {
+        qrUpload.addEventListener("change", function() {
+            const file = this.files[0];
+            if(file){
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function() {
+                    localStorage.setItem("upiQR", reader.result); 
+                    renderQR(reader.result);
+                    updateStorageMeter();
+                };
+            }
+        });
+    }
+
     const storedQR = localStorage.getItem("upiQR");
     if (storedQR) renderQR(storedQR);
 });
 
 function loadSettings() {
-    // Load from 'bharatpos_user' (Standard Object)
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    
     document.getElementById('merchantId').value = user.merchantId || "NOT SET";
     document.getElementById('ownerName').value = user.name || "";
     document.getElementById('shopName').value = localStorage.getItem('shopName') || "";
     document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || "";
+    document.getElementById('shopAddress').value = localStorage.getItem('shopAddress') || "";
     document.getElementById('billFooter').value = localStorage.getItem('bharatpos_bill_footer') || "";
+    document.getElementById('billSize').value = localStorage.getItem('bharatpos_bill_size') || "thermal";
 
-    // Load Location Status
+    // 🟢 LOAD GST SETTINGS
+    const isGstOn = localStorage.getItem('bharatpos_gst_mode') === 'true';
+    document.getElementById('gstToggle').checked = isGstOn;
+    document.getElementById('gstin').value = localStorage.getItem('bharatpos_gstin') || "";
+    toggleGSTFields();
+
     if (user.lat && user.lng) {
-        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Calibrated: ${user.lat.toFixed(4)}, ${user.lng.toFixed(4)}</span>`;
-    } else {
-        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--danger)">⚠️ Not Set (Heatmap Inactive)</span>`;
+        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Calibrated</span>`;
     }
 }
 
-// --- 2. SAVE LOGIC ---
+function toggleGSTFields() {
+    const isChecked = document.getElementById('gstToggle').checked;
+    document.getElementById('gstFields').style.display = isChecked ? 'block' : 'none';
+}
+
 function saveShopDetails() {
-    // 1. Update Legacy Keys
+    // Save standard fields
     localStorage.setItem('shopName', document.getElementById('shopName').value);
     localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
+    localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
     localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
+    localStorage.setItem('bharatpos_bill_size', document.getElementById('billSize').value);
 
-    // 2. Update Master User Object
+    //      SAVE GST SETTINGS (Force String Conversion)
+    const gstStatus = document.getElementById('gstToggle').checked;
+    localStorage.setItem('bharatpos_gst_mode', gstStatus ? 'true' : 'false');
+    localStorage.setItem('bharatpos_gstin', document.getElementById('gstin').value);
+
     let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     user.name = document.getElementById('ownerName').value;
+    if(!user.merchantId) user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
     
-    // Ensure Merchant ID exists if empty
-    if(!user.merchantId) {
-        user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
-        document.getElementById('merchantId').value = user.merchantId;
-    }
-
     localStorage.setItem('bharatpos_user', JSON.stringify(user));
-    alert('✅ Profile & Settings Updated Successfully!');
+    
+    alert('✅ Settings Saved Successfully!');
+    // Reload to ensure all scripts pick up the new GST mode
+    setTimeout(() => location.reload(), 500); 
 }
 
-// --- 3. LOCATION LOGIC ---
 function updateLocation() {
     const status = document.getElementById('locationStatus');
-    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Triangulating...`;
-
+    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ...`;
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-                user.lat = pos.coords.latitude;
-                user.lng = pos.coords.longitude;
-                localStorage.setItem('bharatpos_user', JSON.stringify(user));
-                
-                status.innerHTML = `<span style="color:var(--success)">✅ Updated: ${user.lat.toFixed(4)}, ${user.lng.toFixed(4)}</span>`;
-                alert("Location captured! Your shop will now appear accurately on the Heatmap.");
-            },
-            (err) => {
-                status.innerHTML = `<span style="color:var(--danger)">❌ GPS Access Denied</span>`;
-                alert("Error: Could not fetch location. Please allow GPS access.");
-            }
-        );
-    } else {
-        status.innerHTML = "GPS Not Supported";
-    }
+        navigator.geolocation.getCurrentPosition(p => {
+            let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            user.lat = p.coords.latitude; user.lng = p.coords.longitude;
+            localStorage.setItem('bharatpos_user', JSON.stringify(user));
+            status.innerHTML = `<span style="color:var(--success)">✅ Updated</span>`;
+            updateStorageMeter();
+        }, err => {
+            status.innerHTML = "GPS Error";
+        });
+    } else status.innerHTML = "GPS Error";
 }
 
-// --- 4. UTILS ---
 function copyMerchantID() {
     const copyText = document.getElementById("merchantId");
-    copyText.select();
-    navigator.clipboard.writeText(copyText.value);
-    alert("Merchant ID Copied: " + copyText.value);
-}
-
-// QR Code Logic
-const qrUpload = document.getElementById("qrUpload");
-const qrContainer = document.getElementById("qrContainer");
-
-qrUpload.addEventListener("change", function() {
-    const file = this.files[0];
-    if(file){
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function() {
-            localStorage.setItem("upiQR", reader.result); 
-            renderQR(reader.result);
-            alert("✅ QR Code Saved");
-        };
-    }
-});
-
-function renderQR(src) {
-    if(src) qrContainer.innerHTML = `<img src="${src}" class="qr-img">`;
-}
-
-// Import/Export Logic
-function doImport() {
-    const f = document.getElementById('importFile').files[0];
-    if (!f) return alert('Please choose a backup file first.');
-    
-    if (typeof importAllFile === "function") {
-        importAllFile(f, function(err, msg) { 
-            if (err) alert('❌ Import Failed: ' + err); 
-            else { alert('✅ ' + msg); location.reload(); } 
+    // For readonly input, select() still works in most browsers; fallback to clipboard API:
+    const value = copyText.value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(()=> alert("Copied!"), ()=> {
+            copyText.select(); document.execCommand('copy'); alert("Copied!");
         });
     } else {
-        // Fallback Import
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                Object.keys(data).forEach(key => localStorage.setItem(key, data[key]));
-                alert("✅ System Restored Successfully!");
-                location.reload();
-            } catch(ex) { alert("Corrupt File"); }
-        };
-        reader.readAsText(f);
+        copyText.select(); document.execCommand('copy'); alert("Copied!");
     }
+}
+
+function renderQR(src) { document.getElementById("qrContainer").innerHTML = `<img src="${src}" class="qr-img">`; }
+
+// IMPORT: read JSON file from file input, validate and import
+/* Replace the doImport function in settings.html with this version.
+   This maps common backup formats (like the one you provided) to the app keys. */
+function doImport(event) {
+  try {
+    const file = event && event.target && event.target.files && event.target.files[0];
+    if (!file) { alert('No file selected.'); return; }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure (expected top-level object).');
+
+        // Ask merge vs replace
+        const action = confirm('Press OK to MERGE imported data into existing storage.\nPress Cancel to REPLACE entire local storage with imported data.') ? 'merge' : 'replace';
+        if (action === 'replace') localStorage.clear();
+
+        const written = [];
+
+        // 1) If file uses 'products'/'sales' (your export), map them to app keys
+        if (Array.isArray(parsed.products)) {
+          localStorage.setItem('bharatpos_products', JSON.stringify(parsed.products));
+          written.push('bharatpos_products');
+        } else if (parsed.bharatpos_products) {
+          localStorage.setItem('bharatpos_products', JSON.stringify(parsed.bharatpos_products));
+          written.push('bharatpos_products');
+        }
+
+        if (Array.isArray(parsed.sales)) {
+          localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.sales));
+          written.push('bharatpos_sales');
+        } else if (parsed.bharatpos_sales) {
+          localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.bharatpos_sales));
+          written.push('bharatpos_sales');
+        }
+
+        // 2) Map settings fields if present
+        if (parsed.settings && typeof parsed.settings === 'object') {
+          const s = parsed.settings;
+          if (s.storeName) { localStorage.setItem('shopName', String(s.storeName)); written.push('shopName'); }
+          if (s.theme) { localStorage.setItem('theme', String(s.theme)); written.push('theme'); }
+          // Save whole settings object too for reference
+          localStorage.setItem('bharatpos_settings', JSON.stringify(s));
+          written.push('bharatpos_settings');
+        }
+
+        // 3) Generic: preserve other top-level keys (store as JSON where appropriate)
+        for (const key in parsed) {
+          if (!Object.prototype.hasOwnProperty.call(parsed, key)) continue;
+          if (['products','sales','settings','bharatpos_products','bharatpos_sales','bharatpos_settings'].includes(key)) continue;
+          const val = parsed[key];
+          // If it's a primitive and the exact key is already mapped, skip
+          // Otherwise store under same key (best-effort)
+          try {
+            if (typeof val === 'object') localStorage.setItem(key, JSON.stringify(val));
+            else localStorage.setItem(key, String(val));
+            written.push(key);
+          } catch (err) {
+            console.warn('Could not write key', key, err);
+          }
+        }
+
+        // 4) If nothing was written using mapping, fall back to storing full object
+        if (written.length === 0) {
+          localStorage.setItem('import_raw_backup', JSON.stringify(parsed));
+          written.push('import_raw_backup');
+        }
+
+        // Write sync marker so other tabs detect import
+        localStorage.setItem('bharatpos_last_import', new Date().toISOString());
+
+        // Update storage meter if present
+        try { if (typeof updateStorageMeter === 'function') updateStorageMeter(); } catch(e){}
+
+        alert('✅ Import complete. Keys written: ' + written.join(', ') + '. The page will reload so changes apply.');
+        setTimeout(()=> location.reload(), 400);
+      } catch (err) {
+        alert('Failed to import data: ' + err.message);
+      }
+    };
+    reader.onerror = function() { alert('Failed to read file.'); };
+    reader.readAsText(file, 'utf-8');
+  } catch (error) {
+    alert('Import error: ' + error.message);
+  }
+}
+// Simple validation to ensure top-level object with string keys
+function validateParsedData(data) {
+    if (typeof data !== 'object' || data === null) return false;
+    // Ensure keys are strings (JSON keys are always strings, but be defensive)
+    return Object.keys(data).every(k => typeof k === 'string');
+}
+
+// EXPORT: gather all localStorage keys/values and download as backup.json
+function gatherAllData() {
+    const result = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const raw = localStorage.getItem(key);
+        // Try to parse stored JSON values back to objects if possible
+        try {
+            result[key] = JSON.parse(raw);
+        } catch (e) {
+            result[key] = raw;
+        }
+    }
+    return result;
 }
 
 function exportAll() {
-    if (typeof exportAllData === "function") {
-        exportAllData();
-    } else {
-        // Fallback Export
-        const data = JSON.stringify(localStorage);
-        const blob = new Blob([data], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `bharatpos_backup_${Date.now()}.json`;
-        a.click();
+    try {
+        const allData = gatherAllData();
+        const jsonData = JSON.stringify(allData, null, 2);
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'backup.json';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        alert('✅ Exported all data successfully!');
+    } catch (error) {
+        alert('Failed to export data: ' + error.message);
     }
 }
 
-// Storage Meter
 function updateStorageMeter() {
-    let total = 0;
-    for(let x in localStorage) {
-        if(localStorage.hasOwnProperty(x)) total += ((localStorage[x].length + x.length) * 2);
-    }
-    const kb = (total / 1024).toFixed(2);
-    const limit = 5120; 
-    const pct = Math.min((total / 1024 / limit) * 100, 100).toFixed(1);
-    
-    document.getElementById('storageBytes').innerText = `${kb} KB used`;
+    let total = 0; for(let x in localStorage) if(localStorage.hasOwnProperty(x)) total += ((localStorage[x].length + x.length) * 2);
+    const pct = Math.min((total / 1024 / 5120) * 100, 100).toFixed(1);
+    document.getElementById('storageBytes').innerText = `${(total/1024).toFixed(0)} KB`;
     document.getElementById('storagePercent').innerText = `${pct}%`;
     document.getElementById('storageFill').style.width = `${pct}%`;
-    
-    if(pct > 80) document.getElementById('storageFill').style.background = 'var(--danger)';
 }
 
 function hardReset() {
-    if(confirm('⚠️ CRITICAL WARNING ⚠️\n\nThis will DELETE ALL DATA.\nAre you absolutely sure?')) {
-        localStorage.clear();
-        alert('System Reset Complete. Reloading...');
-        location.reload();
-    }
+    if(confirm('⚠️ DELETE EVERYTHING?')) { localStorage.clear(); location.reload(); }
 }
 </script>
 
