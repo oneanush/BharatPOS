@@ -1,351 +1,472 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Sales - BharatPOS</title>
+  <title>Sales Audit - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  
   <script src="bharatpos.js" defer></script>
 
   <style>
-    /* --- VARIABLES & RESET --- */
     :root {
-      --bg-body: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.6);
-      --glass: blur(12px);
-      --border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #f59e0b;
-      --success: #10b981;
-      --primary: #3b82f6;
-      --danger: #ef4444;
+      --bg-body: #0f172a; --bg-card: rgba(30, 41, 59, 0.6); --glass: blur(12px);
+      --border: rgba(255, 255, 255, 0.1); --text-main: #f8fafc; --text-muted: #94a3b8;
+      --accent: #f59e0b; --success: #10b981; --primary: #3b82f6; --danger: #ef4444;
     }
 
-    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; outline: none; }
+    body { margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; padding-bottom: 80px; }
     
-    body {
-      margin: 0; padding: 0;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      padding-bottom: 80px;
-    }
-
-    body::before {
-      content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.1), transparent 40%),
-                  radial-gradient(circle at 20% 90%, rgba(59, 130, 246, 0.1), transparent 40%);
-      z-index: -1; pointer-events: none;
-    }
-
-    /* --- NAVIGATION --- */
-    .header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 15px 24px; background: rgba(15, 23, 42, 0.9); backdrop-filter: var(--glass);
-      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
-    }
-    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
-    .global-logo { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--accent); }
-    
-    .nav { display: flex; gap: 20px; }
+    /* HEADER */
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: var(--glass); }
+    .brand { font-size: 18px; font-weight: 800; color: #fff; }
+    .nav { display: flex; gap: 15px; }
     .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
     .nav a:hover, .nav a.active { color: var(--accent); }
 
-    /* --- LAYOUT --- */
-    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+    .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
-    .card {
-      background: var(--bg-card); backdrop-filter: var(--glass);
-      border: 1px solid var(--border); border-radius: 16px;
-      padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-
-    .toolbar {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
-    }
-    .toolbar h3 { margin: 0; font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    /* TOOLBAR */
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
+    .toolbar h3 { margin: 0; font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
     
-    .search-box { position: relative; flex-grow: 1; max-width: 400px; }
-    .search-input {
-      width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border);
-      color: #fff; padding: 10px 10px 10px 35px; border-radius: 8px; font-family: 'Inter', sans-serif;
-    }
-    .search-icon { position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 12px; }
+    .search-box { position: relative; flex-grow: 1; min-width: 200px; }
+    .search-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: #fff; padding: 12px 12px 12px 38px; border-radius: 8px; font-size: 14px; }
+    .search-icon { position: absolute; left: 12px; top: 13px; color: var(--text-muted); font-size: 14px; }
 
-    .actions { display: flex; gap: 10px; }
-    .btn {
-      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
-      cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; transition: 0.2s;
-    }
-    .btn-export { background: rgba(59, 130, 246, 0.1); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); }
-    .btn-export:hover { background: var(--primary); color: white; }
-    .btn-clear { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .btn-clear:hover { background: var(--danger); color: white; }
-
+    .btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; transition: 0.2s; justify-content: center; }
+    .btn-report { background: var(--success); color: white; white-space: nowrap; }
+    
+    /* TABLE STYLES */
     .sales-grid { display: flex; flex-direction: column; gap: 8px; }
     
-    .grid-header {
-      display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 1fr 1fr; 
-      padding: 10px 15px; border-bottom: 1px solid var(--border);
-      color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase;
-    }
-
-    .sale-row {
-      display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 1fr 1fr;
-      padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px;
-      align-items: center; transition: 0.2s; border: 1px solid transparent;
-      color: var(--text-main); font-size: 14px;
-    }
-    .sale-row:hover { background: rgba(255,255,255,0.08); border-color: var(--border); transform: translateX(5px); }
+    /* Desktop Header */
+    .grid-header { display: grid; grid-template-columns: 1.2fr 1.5fr 2fr 1fr 1fr; padding: 10px 15px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    .inv-id { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
-    .amount { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--success); }
-    .btn-view {
-      padding: 6px 12px; background: var(--text-main); color: var(--bg-body);
-      border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: none;
-    }
-    .btn-view:hover { opacity: 0.9; }
+    /* Rows */
+    .sale-row { display: grid; grid-template-columns: 1.2fr 1.5fr 2fr 1fr 1fr; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; align-items: center; transition: 0.2s; color: var(--text-main); font-size: 14px; border: 1px solid transparent; }
+    .sale-row:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+    
+    .btn-view { padding: 6px 12px; background: rgba(255,255,255,0.1); color: #fff; border-radius: 6px; font-size: 11px; border: 1px solid var(--border); cursor: pointer; width: 100%; }
+    .btn-view:hover { background: var(--primary); border-color: var(--primary); }
 
+    /* MOBILE RESPONSIVE */
     @media (max-width: 768px) {
-      .toolbar { flex-direction: column; align-items: stretch; }
-      .search-box { max-width: 100%; }
-      .grid-header { display: none; }
-      .sale-row {
-        grid-template-columns: 1fr 1fr; gap: 10px;
-        position: relative; padding-bottom: 50px;
-      }
-      .col-cust { grid-column: 1 / -1; font-weight: 600; font-size: 16px; order: -1; }
-      .col-date { font-size: 12px; color: var(--text-muted); }
-      .col-amt { text-align: right; font-size: 18px; }
-      .col-action { position: absolute; bottom: 15px; left: 15px; width: calc(100% - 30px); }
-      .btn-view { width: 100%; padding: 10px; }
+        .grid-header { display: none; }
+        .sale-row { display: flex; flex-direction: column; gap: 8px; padding: 15px; background: rgba(30, 41, 59, 0.8); }
+        .row-top { display: flex; justify-content: space-between; width: 100%; }
+        .row-mid { display: flex; flex-direction: column; width: 100%; }
+        .m-id { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--accent); font-size: 12px; }
+        .m-date { font-size: 11px; color: var(--text-muted); }
+        .m-cust { font-weight: 600; color: white; font-size: 15px; }
+        .m-amt { font-weight: 700; color: var(--success); font-size: 16px; }
     }
 
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
-      z-index: 2000; display: none; align-items: center; justify-content: center;
-    }
-    .modal-content {
-      background: #fff; width: 90%; max-width: 500px;
-      border-radius: 12px; overflow: hidden; color: #333;
-      max-height: 90vh; display: flex; flex-direction: column;
-      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-    .modal-body { padding: 20px; overflow-y: auto; flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-    .modal-footer { padding: 15px; border-top: 1px solid #eee; background: #f8f9fa; display: flex; gap: 10px; }
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; }
+    .modal-content { background: #1e293b; width: 100%; max-width: 450px; border-radius: 16px; padding: 25px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    
+    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .date-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; color-scheme: dark; }
+    
+    .quick-filters { display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; }
+    .filter-chip { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .filter-chip.active { background: var(--accent); color: #000; font-weight: 700; border-color: var(--accent); }
+    
+    .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-action { padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
+    .btn-excel { background: #107c41; color: white; }
+    .btn-pdf { background: #ef4444; color: white; }
+    .btn-ca { grid-column: span 2; background: #25d366; color: white; margin-top: 5px; }
 
-    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .skeleton { height: 50px; background: rgba(255,255,255,0.05); margin-bottom: 8px; border-radius: 8px; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    /* FORMAL INVOICE STYLES (A4) */
+    .invoice-paper { background: white; color: #000; width: 100%; max-width: 800px; padding: 30px; font-family: 'Times New Roman', serif; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+    .inv-head { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .inv-title { font-size: 22px; font-weight: bold; text-transform: uppercase; }
+    .inv-grid { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+    .inv-grid th, .inv-grid td { border: 1px solid #ccc; padding: 6px; }
+    .inv-grid th { background: #f3f3f3; font-weight: bold; text-align: center; }
+    .inv-right { text-align: right; }
+    .inv-summary { margin-left: auto; width: 280px; border: 1px solid #000; padding: 10px; font-size: 13px; }
+    .inv-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .inv-bold { font-weight: bold; font-size: 14px; }
+    
+    @media print {
+        body * { visibility: hidden; }
+        .invoice-paper, .invoice-paper * { visibility: visible; }
+        .invoice-paper { position: absolute; left: 0; top: 0; width: 100%; height: auto; box-shadow: none; padding: 0; margin: 0; }
+        .no-print { display: none !important; }
+    }
   </style>
 </head>
-
 <body>
-  
-  <div class="header">
-    <div class="brand"><img src="logo.png" class="global-logo"> BharatPOS</div>
-    <div class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="sales.html" class="active">Sales</a>
-      <a href="settings.html">Settings</a>
-    </div>
+
+<div class="header">
+  <div class="brand">BharatPOS</div>
+  <div class="nav">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="sales.html" class="active">Sales</a>
+    <a href="settings.html">Settings</a>
   </div>
+</div>
 
-  <div class="container">
-    <div class="card">
-      <div class="toolbar">
-        <h3><i class="fa-solid fa-vault"></i> Sales History</h3>
-        <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" class="search-input" id="searchBar" placeholder="Search Invoice # or Customer..." oninput="filterSales(this.value)">
-        </div>
-        <div class="actions">
-          <button onclick="downloadSalesCSV()" class="btn btn-export"><i class="fa-solid fa-file-csv"></i> Export</button>
-          <button onclick="clearSales()" class="btn btn-clear"><i class="fa-solid fa-trash"></i> Clean</button>
-        </div>
+<div class="container">
+  <div class="card">
+    <div class="toolbar">
+      <h3><i class="fa-solid fa-file-invoice-dollar"></i> Sales Register</h3>
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" class="search-input" id="searchBar" placeholder="Search Invoice / Name..." oninput="renderSales(this.value)">
       </div>
-
-      <div class="grid-header">
-        <div>Invoice #</div>
-        <div>Date</div>
-        <div>Customer</div>
-        <div style="text-align:right">Amount</div>
-        <div style="text-align:center">Action</div>
-      </div>
-
-      <div id="salesList" class="sales-grid">
-        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
-      </div>
+      <button onclick="openReportModal()" class="btn btn-report">
+        <i class="fa-solid fa-file-export"></i> Report Center
+      </button>
     </div>
-  </div>
 
-  <div id="invoiceModal" class="modal-overlay">
+    <div class="grid-header">
+      <div>Date</div>
+      <div>Invoice No</div>
+      <div>Customer</div>
+      <div style="text-align:right">Total</div>
+      <div style="text-align:center">View</div>
+    </div>
+
+    <div id="salesList" class="sales-grid">
+      </div>
+  </div>
+</div>
+
+<div id="reportModal" class="modal-overlay">
     <div class="modal-content">
-      <div class="modal-header">
-        <strong style="font-size:16px;">Invoice Preview</strong>
-        <button onclick="closeModal()" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
-      </div>
-      <div class="modal-body" id="invoicePreviewContent"></div>
-      <div class="modal-footer">
-        <button onclick="triggerPrint()" class="btn" style="flex:1; background:#3b82f6; color:white; justify-content:center;">Print / PDF</button>
-        <button onclick="closeModal()" class="btn" style="background:#e5e7eb; color:#333;">Close</button>
-      </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px dashed var(--border); padding-bottom:10px;">
+            <h3 style="margin:0; font-size:18px; color:white;">📅 Audit Reports</h3>
+            <button onclick="document.getElementById('reportModal').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">&times;</button>
+        </div>
+        
+        <div class="quick-filters">
+            <div class="filter-chip active" onclick="setDateFilter('today', this)">Today</div>
+            <div class="filter-chip" onclick="setDateFilter('month', this)">This Month</div>
+            <div class="filter-chip" onclick="setDateFilter('all', this)">All Time</div>
+        </div>
+
+        <div class="date-row">
+            <div><label class="form-label" style="color:var(--text-muted); font-size:11px;">Start</label><input type="date" id="startDate" class="date-input"></div>
+            <div><label class="form-label" style="color:var(--text-muted); font-size:11px;">End</label><input type="date" id="endDate" class="date-input"></div>
+        </div>
+
+        <div class="export-actions">
+            <button onclick="exportExcel()" class="btn-action btn-excel"><i class="fa-solid fa-file-excel"></i> Excel (Detailed)</button>
+            <button onclick="exportPDF()" class="btn-action btn-pdf"><i class="fa-solid fa-file-pdf"></i> PDF Ledger</button>
+            <button onclick="sendToCA()" class="btn-action btn-ca"><i class="fa-brands fa-whatsapp"></i> Send Report to CA</button>
+        </div>
     </div>
-  </div>
+</div>
 
-  <script>
-    function getSales() { return JSON.parse(localStorage.getItem('bharatpos_sales') || '[]'); }
-    function formatCurrency(val) { return '₹' + Number(val || 0).toLocaleString('en-IN', {minimumFractionDigits: 2}); }
+<div id="invoiceModal" class="modal-overlay" style="z-index: 3000;">
+    <div class="invoice-paper" id="invoicePaper">
+        </div>
+</div>
 
-    document.addEventListener("DOMContentLoaded", () => {
-      setTimeout(() => renderSales(), 500);
-      pruneOldSales();
+<script>
+// --- STATE ---
+let allSales = [];
+const isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
+const shopGstin = localStorage.getItem('bharatpos_gstin') || "";
+
+// --- INIT ---
+document.addEventListener("DOMContentLoaded", () => {
+    loadSales();
+    const today = new Date();
+    document.getElementById('endDate').valueAsDate = today;
+    document.getElementById('startDate').valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
+});
+
+function loadSales() {
+    allSales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]').reverse();
+    renderSales();
+}
+
+// 🟢 TAX CALCULATOR HELPER
+function calculateTaxDetails(sale) {
+    let taxable = 0, totalTax = 0;
+    
+    // If tax is already calculated in sale object (from billing page)
+    if(sale.tax > 0) {
+        totalTax = parseFloat(sale.tax);
+        taxable = parseFloat(sale.amount) - totalTax;
+    } else {
+        // Fallback for non-GST bills or old data
+        taxable = parseFloat(sale.amount || sale.total || 0);
+        totalTax = 0;
+    }
+    
+    return {
+        taxable: taxable,
+        totalTax: totalTax,
+        cgst: totalTax / 2,
+        sgst: totalTax / 2,
+        total: parseFloat(sale.amount || sale.total || 0)
+    };
+}
+
+function renderSales(filterText = "") {
+    const container = document.getElementById('salesList');
+    const term = filterText.toLowerCase();
+    
+    const filtered = allSales.filter(s => {
+        const inv = (s.id || s.invoiceNo || '').toLowerCase();
+        const cust = (s.customerName || s.customer || '').toLowerCase();
+        return inv.includes(term) || cust.includes(term);
     });
 
-    function pruneOldSales() {
-      const TWO_YEARS = 2 * 365 * 24 * 60 * 60 * 1000;
-      const now = Date.now();
-      const sales = getSales();
-      const recent = sales.filter(s => now - new Date(s.date).getTime() <= TWO_YEARS);
-      if(sales.length !== recent.length) localStorage.setItem('bharatpos_sales', JSON.stringify(recent));
-    }
-
-    let currentData = [];
-
-    // 🟢 FIXED: Prioritizing 'id', 'customerName', 'amount'
-    function renderSales(filterText = "") {
-      const allSales = getSales().reverse();
-      const container = document.getElementById('salesList');
-      const term = filterText.toLowerCase();
-      
-      const filtered = allSales.filter(s => {
-        // Smart Check: New Key (id) || Old Key (invoiceNo)
-        const inv = (s.id || s.invoiceNo || '').toLowerCase();
-        const cust = (s.customerName || s.customer || 'Walk-in').toLowerCase();
-        return inv.includes(term) || cust.includes(term);
-      });
-      
-      currentData = filtered;
-
-      if(filtered.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted);">No matching records found.</div>`;
+    if(filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted);">No records found.</div>`;
         return;
-      }
-
-      let html = "";
-      filtered.forEach(s => {
-        // 🟢 MAPPING: Primary (New) || Secondary (Old)
-        const invId = s.id || s.invoiceNo || 'N/A';
-        const dateStr = new Date(s.date).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'});
-        const custName = s.customerName || s.customer || 'Walk-in';
-        const finalAmount = s.amount || s.total || 0;
-
-        html += `
-          <div class="sale-row">
-            <div class="inv-id">#${invId}</div>
-            <div class="col-date">${dateStr}</div>
-            <div class="col-cust">${custName}</div>
-            <div class="col-amt amount">${formatCurrency(finalAmount)}</div>
-            <div class="col-action" style="text-align:center">
-              <button onclick='openInvoiceModal("${invId}")' class="btn-view">View</button>
-            </div>
-          </div>`;
-      });
-      container.innerHTML = html;
     }
 
-    function filterSales(val) { renderSales(val); }
+    container.innerHTML = filtered.map(s => {
+        const invId = s.id || s.invoiceNo;
+        const total = Number(s.amount || s.total || 0).toFixed(2);
+        const dateStr = new Date(s.date).toLocaleDateString('en-IN');
+        const custName = s.customerName || 'Walk-in';
 
-    let currentPrintFunction = null;
+        // 🟢 RESPONSIVE LAYOUT SWITCH
+        if(window.innerWidth > 768) {
+            // DESKTOP ROW
+            return `
+            <div class="sale-row">
+                <div style="color:var(--text-muted)">${dateStr}</div>
+                <div style="font-family:'JetBrains Mono'; font-weight:700;">#${invId}</div>
+                <div>${custName}</div>
+                <div style="text-align:right; font-weight:700; color:var(--success);">₹${total}</div>
+                <div style="text-align:center;"><button onclick="viewFormalInvoice('${invId}')" class="btn-view">View Bill</button></div>
+            </div>`;
+        } else {
+            // MOBILE CARD
+            return `
+            <div class="sale-row">
+                <div class="row-top">
+                    <span class="m-id">#${invId}</span>
+                    <span class="m-date">${dateStr}</span>
+                </div>
+                <div class="row-mid">
+                    <span class="m-cust">${custName}</span>
+                    <span class="m-amt">₹${total}</span>
+                </div>
+                <div style="margin-top:10px;">
+                    <button onclick="viewFormalInvoice('${invId}')" class="btn-view">View Invoice</button>
+                </div>
+            </div>`;
+        }
+    }).join('');
+}
 
-    function openInvoiceModal(invIdInput) {
-      // Find sale using both ID fields
-      const sale = getSales().find(s => (s.id == invIdInput) || (s.invoiceNo == invIdInput));
-      if(!sale) return;
+// --- REPORTING ---
+function openReportModal() { document.getElementById('reportModal').style.display = 'flex'; }
 
-      const shopName = localStorage.getItem('shopName') || "Bharat POS Store";
-      
-      // Normalized Data for Modal
-      const displayId = sale.id || sale.invoiceNo;
-      const displayName = sale.customerName || sale.customer || 'Guest';
-      const displayTotal = sale.amount || sale.total || 0;
+function setDateFilter(type, btn) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const end = new Date();
+    let start = new Date();
+    if(type === 'month') start = new Date(end.getFullYear(), end.getMonth(), 1);
+    if(type === 'all') start = new Date('2020-01-01');
+    document.getElementById('endDate').valueAsDate = end;
+    document.getElementById('startDate').valueAsDate = start;
+}
 
-      let itemsHtml = (sale.items || []).map((it, i) => `
-        <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:4px 0;">
-          <span>${i+1}. ${it.name} <span style="color:#666; font-size:10px;">x${it.qty}</span></span>
-          <span>${formatCurrency(it.qty * it.price)}</span>
-        </div>
-      `).join('');
+function getFilteredData() {
+    const s = new Date(document.getElementById('startDate').value);
+    const e = new Date(document.getElementById('endDate').value);
+    e.setHours(23, 59, 59);
+    return allSales.filter(sale => { const d = new Date(sale.date); return d >= s && d <= e; });
+}
 
-      const content = `
-        <div style="text-align:center; margin-bottom:15px;">
-          <h3 style="margin:0;">${shopName}</h3>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #000; padding-bottom:5px;">
-          <span>Inv: ${displayId}</span>
-          <span>${new Date(sale.date).toLocaleDateString()}</span>
-        </div>
-        <div style="margin-bottom:15px;"><strong>Customer:</strong> ${displayName}</div>
-        <div style="margin-bottom:15px;">${itemsHtml}</div>
-        <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:bold; border-top:1px solid #000; padding-top:10px;">
-          <span>TOTAL</span>
-          <span>${formatCurrency(displayTotal)}</span>
-        </div>
-      `;
-
-      document.getElementById('invoicePreviewContent').innerHTML = content;
-      document.getElementById('invoiceModal').style.display = 'flex';
-
-      currentPrintFunction = () => {
-        const win = window.open('', '_blank');
-        win.document.write(`<html><head><title>Print ${displayId}</title><style>body{font-family:sans-serif; padding:20px;}</style></head><body><div style="max-width:300px; margin:0 auto;">${content}</div><script>window.print();window.close();<\/script></body></html>`);
-        win.document.close();
-      };
-    }
-
-    function closeModal() { document.getElementById('invoiceModal').style.display = 'none'; }
-    function triggerPrint() { if(currentPrintFunction) currentPrintFunction(); }
-
-    function downloadSalesCSV() {
-      if(currentData.length === 0) return alert('No data to export');
-      const rows = [];
-      currentData.forEach(s => {
-        const inv = s.id || s.invoiceNo;
-        const cust = s.customerName || s.customer;
-        const tot = s.amount || s.total;
+// 🟢 EXCEL EXPORT (Detailed Tax Columns)
+function exportExcel() {
+    const data = getFilteredData();
+    if(!data.length) return alert("No sales in range.");
+    
+    let rows = [];
+    data.forEach(s => {
+        const taxDetails = calculateTaxDetails(s);
         
-        (s.items || []).forEach(it => {
-          rows.push({
-            Invoice: inv, Date: new Date(s.date).toLocaleString(),
-            Customer: cust, Item: it.name, Qty: it.qty,
-            Price: it.price, Total: tot
-          });
+        // Push main row (Simplified for ledger, detailed item logic can be added if needed)
+        rows.push({
+            "Date": new Date(s.date).toLocaleDateString(),
+            "Invoice No": s.id || s.invoiceNo,
+            "Customer": s.customerName,
+            "GSTIN": shopGstin,
+            "Taxable Value": taxDetails.taxable.toFixed(2),
+            "CGST Amount": taxDetails.cgst.toFixed(2),
+            "SGST Amount": taxDetails.sgst.toFixed(2),
+            "Total Tax": taxDetails.totalTax.toFixed(2),
+            "Total Amount": taxDetails.total.toFixed(2)
         });
-      });
-      const csvContent = "data:text/csv;charset=utf-8," + [Object.keys(rows[0]).join(','), ...rows.map(r => Object.values(r).join(','))].join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "sales_report.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "GST Sales Report");
+    XLSX.writeFile(wb, `BharatPOS_Ledger_${Date.now()}.xlsx`);
+}
+
+// 🟢 PDF LEDGER EXPORT (Fixed jsPDF Logic)
+function exportPDF() {
+    const data = getFilteredData();
+    if(!data.length) return alert("No data.");
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for more columns
+    
+    doc.setFontSize(14); doc.text("Sales Tax Ledger", 14, 15);
+    doc.setFontSize(10); doc.text(`Shop: ${localStorage.getItem('shopName')} | GSTIN: ${shopGstin}`, 14, 22);
+    
+    const tableData = data.map(s => {
+        const t = calculateTaxDetails(s);
+        return [
+            new Date(s.date).toLocaleDateString(),
+            s.id || s.invoiceNo,
+            s.customerName,
+            t.taxable.toFixed(2),
+            t.cgst.toFixed(2),
+            t.sgst.toFixed(2),
+            t.total.toFixed(2)
+        ];
+    });
+
+    doc.autoTable({
+        head: [['Date', 'Inv#', 'Customer', 'Taxable', 'CGST', 'SGST', 'Total']],
+        body: tableData,
+        startY: 30,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] }
+    });
+    
+    doc.save("Sales_Ledger.pdf");
+}
+
+function sendToCA() {
+    const data = getFilteredData();
+    if(!data.length) return alert("No data.");
+    
+    let totalSale = 0, totalTax = 0;
+    data.forEach(s => {
+        const t = calculateTaxDetails(s);
+        totalSale += t.total;
+        totalTax += t.totalTax;
+    });
+    
+    let msg = `*GST Report for CA*%0A`;
+    msg += `Shop: ${localStorage.getItem('shopName')}%0A`;
+    msg += `GSTIN: ${shopGstin}%0A`;
+    msg += `Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}%0A`;
+    msg += `Total Sales: ₹${totalSale.toFixed(2)}%0A`;
+    msg += `Total GST Collected: ₹${totalTax.toFixed(2)}%0A%0A`;
+    msg += `(Please attach the downloaded Excel file)`;
+    
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
+// 🟢 FORMAL INVOICE VIEW
+function viewFormalInvoice(invId) {
+    const sale = allSales.find(s => (s.id == invId) || (s.invoiceNo == invId));
+    if(!sale) return;
+
+    const shop = localStorage.getItem('shopName') || "Bharat POS Store";
+    const address = localStorage.getItem('shopAddress') || "";
+    const t = calculateTaxDetails(sale);
+    const isGST = t.totalTax > 0;
+
+    let rows = (sale.items || []).map((it, idx) => {
+        let baseRate = it.basePrice || it.price;
+        // Calculation fallback if basePrice missing in item
+        if(isGST && !it.basePrice && it.gstRate) {
+             baseRate = it.price / (1 + (it.gstRate/100));
+        }
+        let taxableRow = baseRate * it.qty;
+        
+        return `
+        <tr>
+            <td style="text-align:center">${idx+1}</td>
+            <td>${it.name} ${isGST && it.hsn ? '<br><small>HSN:'+it.hsn+'</small>' : ''}</td>
+            <td style="text-align:center">${it.qty}</td>
+            <td class="inv-right">${baseRate.toFixed(2)}</td>
+            ${isGST ? `<td class="inv-right">${taxableRow.toFixed(2)}</td>` : ''}
+            <td class="inv-right">${(it.qty * it.price).toFixed(2)}</td>
+        </tr>`;
+    }).join('');
+
+    let taxHtml = '';
+    if(isGST) {
+        taxHtml = `
+            <div class="inv-row"><span>Taxable Amount:</span><span>₹${t.taxable.toFixed(2)}</span></div>
+            <div class="inv-row"><span>CGST:</span><span>₹${t.cgst.toFixed(2)}</span></div>
+            <div class="inv-row"><span>SGST:</span><span>₹${t.sgst.toFixed(2)}</span></div>
+            <hr style="margin:5px 0">`;
     }
 
-    function clearSales() {
-      if(!confirm('Delete ALL sales older than 2 years?')) return;
-      pruneOldSales();
-      renderSales();
-      alert('Database optimized.');
-    }
-  </script>
+    const html = `
+        <div class="inv-head">
+            <div>
+                <div class="inv-title">TAX INVOICE</div>
+                <div><strong>${shop}</strong></div>
+                <div style="font-size:12px;">${address}</div>
+                ${shopGstin ? `<div>GSTIN: <strong>${shopGstin}</strong></div>` : ''}
+            </div>
+            <div style="text-align:right">
+                <div>Inv: <strong>${invId}</strong></div>
+                <div>Date: ${new Date(sale.date).toLocaleDateString()}</div>
+            </div>
+        </div>
+        <div style="border:1px solid #ccc; padding:8px; margin-bottom:15px;">
+            <strong>Bill To:</strong> ${sale.customerName} (${sale.phone||'N/A'})
+        </div>
+        <table class="inv-grid">
+            <thead>
+                <tr>
+                    <th style="width:30px">#</th>
+                    <th>Item</th>
+                    <th style="width:40px">Qty</th>
+                    <th class="inv-right">Rate</th>
+                    ${isGST ? '<th class="inv-right">Taxable</th>' : ''}
+                    <th class="inv-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+        
+        <div class="inv-total-box">
+            <div class="inv-summary">
+                <div class="inv-row"><span>SubTotal:</span><span>₹${t.total.toFixed(2)}</span></div>
+                ${taxHtml}
+                <div class="inv-row" style="font-weight:bold; font-size:16px;">
+                    <span>Grand Total:</span><span>₹${t.total.toFixed(2)}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="no-print" style="text-align:center; margin-top:20px;">
+            <button onclick="window.print()" class="btn btn-report" style="display:inline-block;">Print</button>
+            <button onclick="document.getElementById('invoiceModal').style.display='none'" class="btn" style="background:#ccc; display:inline-block;">Close</button>
+        </div>
+    `;
+    
+    document.getElementById('invoicePaper').innerHTML = html;
+    document.getElementById('invoiceModal').style.display = 'flex';
+}
+
+window.addEventListener('resize', () => renderSales(document.getElementById('searchBar').value));
+</script>
 </body>
 </html>
