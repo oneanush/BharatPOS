@@ -60,9 +60,17 @@
     input:focus ~ .floating-label, input:not(:placeholder-shown) ~ .floating-label, select:focus ~ .floating-label, select:valid ~ .floating-label { top: -8px; left: 10px; font-size: 11px; color: var(--accent); background: var(--bg-body); padding: 0 4px; border-radius: 4px; }
     button[type="submit"] { width: 100%; background: var(--success); color: #fff; padding: 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; margin-top: 10px; }
 
+    /* TOGGLE SWITCH */
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--success); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
     /* --- TABLE STYLES --- */
     table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; color: var(--text-muted); font-size: 12px; padding: 10px; border-bottom: 1px solid var(--border); }
+    th { text-align: left; color: var(--text-muted); font-size: 12px; padding: 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
     td { padding: 12px 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
     
     .delete-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
@@ -76,14 +84,8 @@
     
     @media (max-width: 600px) {
       .card { padding: 15px; }
-      
-      /* Hide desktop headers */
       thead { display: none; }
-      
-      /* Block layout for table elements */
       table, tbody, tr, td { display: block; width: 100%; }
-      
-      /* Card style row */
       tr {
         display: grid;
         grid-template-columns: 1fr auto auto; /* Name | Stock | Actions */
@@ -91,33 +93,23 @@
         background: rgba(255,255,255,0.03); margin-bottom: 8px; padding: 12px;
         border-radius: 8px; border: 1px solid var(--border); align-items: center;
       }
-      
       td { padding: 0; border: none; }
-      
-      /* Hide detail columns on mobile */
       .desktop-col { display: none; }
-      
-      /* Show mobile-only elements */
       .mobile-only { display: inline-block; }
-      
-      /* Name Column */
       td:first-child { grid-column: 1; font-weight: 600; font-size: 14px; color: #fff; }
-      
-      /* Stock Column (Targeted by order in JS loop) */
       td.stock-col { grid-column: 2; text-align: right; font-weight: 700; color: var(--accent); }
-      
-      /* Actions Column */
       td.action-col { grid-column: 3; display: flex; justify-content: flex-end; }
     }
 
     /* --- PRODUCT DETAIL MODAL --- */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-    .modal-box { background: #1e293b; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid var(--border); position: relative; }
+    .modal-box { background: #1e293b; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid var(--border); position: relative; max-height: 90vh; overflow-y: auto;}
     .modal-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
     .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
     .detail-label { color: var(--text-muted); }
     .detail-val { color: #fff; font-weight: 600; font-family: 'JetBrains Mono'; }
-    .modal-edit-btn { width: 100%; background: var(--accent); color: #000; font-weight: 800; padding: 12px; border: none; border-radius: 8px; margin-top: 20px; cursor: pointer; }
+    .modal-edit-btn { width: 100%; background: var(--accent); color: #000; font-weight: 800; padding: 12px; border: none; border-radius: 8px; margin-top: 20px; cursor: pointer; transition: 0.2s; }
+    .modal-edit-btn:hover { background: #d97706; }
 
     #toast { visibility: hidden; min-width: 250px; background-color: var(--success); color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; right: 20px; bottom: 30px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
     #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
@@ -181,29 +173,54 @@
     <form id="productForm" onsubmit="handleAddProduct(event);">
       
       <div class="form-row">
-        <input id="productName" placeholder=" " required>
+        <input id="productName" placeholder=" " required autocomplete="off">
         <label for="productName" class="floating-label">Samaan Ka Naam (Item Name)</label>
       </div>
 
-      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <div style="position:relative;">
-            <input id="productQuantity" placeholder=" ">
-            <label for="productQuantity" class="floating-label">Wazan (Qty e.g. 1kg)</label>
-        </div>
-        <div style="position:relative;">
-            <input id="productStock" type="number" placeholder=" ">
-            <label for="productStock" class="floating-label">Stock (Kitna hai?)</label>
-        </div>
-      </div>
-
       <div class="form-row">
-        <input id="productCategory" placeholder=" ">
+        <input id="productCategory" placeholder=" " autocomplete="off">
         <label for="productCategory" class="floating-label">Category (Kis type ka hai?)</label>
       </div>
 
-      <div class="form-row" style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
-        <input type="text" id="productBarcode" placeholder=" " style="font-family:'JetBrains Mono'; color:var(--accent);">
+      <div class="form-row" style="border-bottom:1px dashed var(--border); padding-bottom:15px; margin-bottom:15px;">
+        <input type="text" id="productBarcode" placeholder=" " style="font-family:'JetBrains Mono'; color:var(--accent);" autocomplete="off">
         <label for="productBarcode" class="floating-label">Barcode (Scan Karein)</label>
+      </div>
+
+      <div style="background:rgba(16, 185, 129, 0.05); border:1px dashed var(--success); padding:15px; border-radius:8px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+              <label class="form-label" style="margin:0; font-size:14px; color:#fff;">⚖️ Khula Samaan (Sell by Weight)</label>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Daal, Chawal, Cheeni jise tol kar bechte hain</div>
+          </div>
+          <label class="switch">
+              <input type="checkbox" id="isLooseItem">
+              <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+
+      <div id="variantsContainer">
+          <div class="variant-row">
+              <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div style="position:relative;">
+                    <input id="productQuantity" class="var-type" placeholder=" " autocomplete="off">
+                    <label for="productQuantity" class="floating-label">Type (e.g. 20kg, 1L)</label>
+                </div>
+                <div style="position:relative;">
+                    <input id="productStock" class="var-stock" type="number" step="0.001" placeholder=" ">
+                    <label for="productStock" class="floating-label">Stock (Packs Kitne hain?)</label>
+                </div>
+              </div>
+              <div class="form-row" style="margin-top:15px;">
+                <input id="productPrice" class="var-price" type="number" step="0.01" placeholder=" " required style="font-size:18px; font-weight:bold; color:var(--success);">
+                <label for="productPrice" class="floating-label" id="priceLabel">Poore Pack Ka Rate (₹)</label>
+              </div>
+          </div>
+      </div>
+      
+      <div class="form-row" style="text-align:right; margin-bottom:20px;">
+          <button type="button" onclick="addVariantRow()" style="background:transparent; border:1px dashed var(--accent); color:var(--accent); padding:8px 16px; border-radius:8px; font-size:12px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-plus"></i> Add Other Type</button>
       </div>
 
       <div class="gst-container">
@@ -219,11 +236,6 @@
              </select>
              <label for="priceType" class="floating-label">Rate Type</label>
           </div>
-      </div>
-
-      <div class="form-row" style="margin-top:15px;">
-        <input id="productPrice" type="number" step="0.01" placeholder=" " required style="font-size:18px; font-weight:bold; color:var(--success);">
-        <label for="productPrice" class="floating-label" id="priceLabel">Bechne Ka Rate (₹)</label>
       </div>
 
       <div class="form-row">
@@ -247,6 +259,26 @@
     </div>
 </div>
 
+<template id="variantTemplate">
+  <div class="variant-row" style="padding-top:15px; margin-top:15px; border-top:1px dashed var(--border); position:relative;">
+    <button type="button" onclick="this.parentElement.remove()" style="position:absolute; right:0; top:10px; background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:12px;"><i class="fa-solid fa-trash"></i> Remove</button>
+    <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <div style="position:relative;">
+          <input class="var-type" placeholder=" ">
+          <label class="floating-label">Type (e.g. 1L)</label>
+      </div>
+      <div style="position:relative;">
+          <input class="var-stock" type="number" step="0.001" placeholder=" ">
+          <label class="floating-label">Stock (Packs)</label>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:15px; margin-bottom:0;">
+      <input class="var-price" type="number" step="0.01" placeholder=" " required style="font-size:18px; font-weight:bold; color:var(--success);">
+      <label class="floating-label">Poore Pack Ka Rate (₹)</label>
+    </div>
+  </div>
+</template>
+
 <div id="toast">Message Here</div>
 <div id="aiLoadingOverlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:20;">
     <div style="font-size:30px; animation:spin 1s infinite;">✨</div>
@@ -257,7 +289,7 @@
 <script>
 // --- 1. CORE & GST LOGIC ---
 const isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
-let currentEditingId = null;
+let currentEditingName = null; 
 
 document.addEventListener('DOMContentLoaded', ()=>{
   renderProducts();
@@ -272,7 +304,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   const urlParams = new URLSearchParams(window.location.search);
   const restockName = urlParams.get('restock');
-  if(restockName) loadProductForEdit(restockName);
+  if(restockName) loadProductForEditByName(restockName);
 });
 
 function setupGstUI() {
@@ -296,9 +328,11 @@ function toggleGstQuick() {
 function togglePriceLabel() {
     if(!isGstMode) return;
     const type = document.getElementById('priceType').value;
-    const label = document.getElementById('priceLabel');
-    if(type === 'inclusive') label.innerText = "Final Rate (Tax Mila Ke)";
-    else label.innerText = "Base Rate (Tax Alag Se Lagega)";
+    const labels = document.querySelectorAll('#priceLabel, .var-price + .floating-label');
+    labels.forEach(label => {
+        if(type === 'inclusive') label.innerText = "Final Rate (Tax Mila Ke)";
+        else label.innerText = "Base Rate (Tax Alag Se Lagega)";
+    });
 }
 
 function loadUser(){
@@ -311,7 +345,29 @@ function getProducts() {
     catch(e) { return []; }
 }
 
-// 🟢 RENDER TABLE
+// 🟢 HELPER FOR WEIGHT CALCULATION
+function extractBaseWeightKg(qtyStr) {
+    if (!qtyStr) return 1;
+    const str = String(qtyStr).toLowerCase().replace(/\s/g, '');
+    let num = parseFloat(str);
+    if (isNaN(num) || num <= 0) return 1;
+    
+    if ((str.includes('g') || str.includes('gm')) && !str.includes('kg')) {
+        return num / 1000;
+    }
+    if (str.includes('ml')) {
+        return num / 1000;
+    }
+    return num;
+}
+
+function formatWeight(kg) {
+    if (kg <= 0) return "0";
+    if (kg < 1) return Math.round(kg * 1000) + " g";
+    return parseFloat(kg.toFixed(3)) + " kg";
+}
+
+// 🟢 RENDER TABLE (GROUPED)
 function renderProducts(){
   const products = getProducts();
   const list = document.getElementById('productsList');
@@ -320,34 +376,45 @@ function renderProducts(){
     list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 Stock khali hai.</div>'; 
     return;
   }
+
+  const grouped = {};
+  products.forEach(p => {
+      const key = p.name.trim().toLowerCase();
+      if(!grouped[key]) {
+          grouped[key] = { name: p.name, category: p.category, totalStock: 0, totalLooseKg: 0, variants: [] };
+      }
+      
+      if (p.isLoose) {
+          grouped[key].totalLooseKg += Number(p.stock || 0) * extractBaseWeightKg(p.quantity);
+      } else {
+          grouped[key].totalStock += Number(p.stock || 0);
+      }
+      grouped[key].variants.push(p);
+  });
   
-  // Header Logic
-  let html = '<table><thead><tr><th>Naam</th><th class="desktop-col">Stock</th><th class="desktop-col">Rate</th>';
-  if(isGstMode) html += '<th class="desktop-col">GST %</th><th class="desktop-col">HSN</th>'; 
-  html += '<th class="desktop-col">Type</th><th>Action</th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th>Naam (Name)</th><th>Category</th><th class="desktop-col">Total Stock</th><th>Action</th></tr></thead><tbody>';
   
-  products.forEach(p=>{
+  Object.values(grouped).forEach(g => {
+    const isLoose = g.variants[0].isLoose;
+    const variantText = g.variants.length > 1 ? `<br><span style="font-size:10px; color:var(--accent);">${g.variants.length} Types</span>` : '';
+    const looseBadge = isLoose ? `<span style="background:rgba(16,185,129,0.1); color:var(--success); border:1px solid var(--success); padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px;">⚖️ Loose</span>` : '';
+    const safeName = encodeURIComponent(g.name);
+    
+    // 🟢 Smart formatting
+    const stockDisplay = isLoose ? formatWeight(g.totalLooseKg) : g.totalStock;
+    const isOut = isLoose ? g.totalLooseKg <= 0 : g.totalStock <= 0;
+
     html += `<tr>
       <td>
-        <div style="font-weight:600;">${p.name}</div>
-        <div style="font-size:10px; color:var(--text-muted);">${p.quantity || ''}</div>
+        <div style="font-weight:600; display:flex; align-items:center;">${g.name} ${looseBadge}</div>
+        ${variantText}
       </td>
-      
-      <td class="desktop-col" style="${p.stock<5 ? 'color:var(--danger); font-weight:bold;' : ''}">${p.stock || 0}</td>
-      <td class="desktop-col" style="color:var(--accent);">₹${p.price}</td>`;
-      
-    if(isGstMode) {
-        html += `<td class="desktop-col">${p.gstRate ? p.gstRate+'%' : '-'}</td>
-                 <td class="desktop-col">${p.hsn || '-'}</td>`;
-    }
-    
-    html += `<td class="desktop-col">${p.category || '-'}</td>
-      
-      <td class="mobile-only stock-col">${p.stock || 0}</td>
-
+      <td>${g.category || '-'}</td>
+      <td class="desktop-col" style="${isOut ? 'color:var(--danger); font-weight:bold;' : ''}">${stockDisplay}</td>
+      <td class="mobile-only stock-col">${stockDisplay}</td>
       <td class="action-col">
-          <button class="eye-btn mobile-only" onclick="openDetailModal('${p.id}')"><i class="fa-solid fa-eye"></i></button>
-          <button class="delete-btn" onclick="deleteProductConfirm('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+          <button class="eye-btn" onclick="openDetailModal('${safeName}')"><i class="fa-solid fa-eye"></i> View</button>
+          <button class="delete-btn" onclick="deleteProductConfirm('${safeName}')"><i class="fa-solid fa-trash"></i></button>
       </td>
     </tr>`;
   });
@@ -355,23 +422,44 @@ function renderProducts(){
   list.innerHTML = html;
 }
 
-// 🟢 MODAL LOGIC
-function openDetailModal(id) {
-    const p = getProducts().find(x => x.id === id);
-    if(!p) return;
-    currentEditingId = p.name; // Use name for existing edit logic
+// 🟢 MODAL LOGIC (Grouped View)
+function openDetailModal(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    const products = getProducts().filter(p => p.name.toLowerCase() === name.toLowerCase());
+    if(products.length === 0) return;
+    
+    const base = products[0];
+    currentEditingName = base.name; 
+
+    let variantsHtml = products.map(p => {
+        let stockDisplay = p.stock || 0;
+        
+        if (base.isLoose) {
+            const kg = Number(p.stock) * extractBaseWeightKg(p.quantity);
+            // Shows readable weight, and pack info in small text
+            stockDisplay = `${formatWeight(kg)} <span style="font-size:10px; color:#64748b;">(${parseFloat(Number(p.stock).toFixed(3))} Packs)</span>`;
+        }
+
+        return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-bottom:5px; border-left:3px solid var(--accent);">
+            <div><strong style="color:#fff">${p.quantity || 'Standard'}</strong><br><span style="font-size:11px; color:var(--text-muted);">Stock: ${stockDisplay}</span></div>
+            <div style="text-align:right"><strong style="color:var(--success);">₹${p.price}</strong></div>
+        </div>
+        `;
+    }).join('');
 
     const content = `
-        <div class="detail-row"><span class="detail-label">Name</span><span class="detail-val">${p.name}</span></div>
-        <div class="detail-row"><span class="detail-label">Stock</span><span class="detail-val">${p.stock}</span></div>
-        <div class="detail-row"><span class="detail-label">Price</span><span class="detail-val">₹${p.price}</span></div>
-        <div class="detail-row"><span class="detail-label">Quantity</span><span class="detail-val">${p.quantity || '-'}</span></div>
-        <div class="detail-row"><span class="detail-label">Category</span><span class="detail-val">${p.category || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Name</span><span class="detail-val">${base.name}</span></div>
+        <div class="detail-row"><span class="detail-label">Category</span><span class="detail-val">${base.category || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Billing Mode</span><span class="detail-val" style="color:var(--accent)">${base.isLoose ? '⚖️ By Weight' : '📦 By Quantity'}</span></div>
         ${isGstMode ? `
-        <div class="detail-row"><span class="detail-label">GST Rate</span><span class="detail-val">${p.gstRate || 0}%</span></div>
-        <div class="detail-row"><span class="detail-label">HSN Code</span><span class="detail-val">${p.hsn || '-'}</span></div>
-        <div class="detail-row"><span class="detail-label">Tax Type</span><span class="detail-val">${p.priceType || 'Inclusive'}</span></div>
+        <div class="detail-row"><span class="detail-label">GST Rate</span><span class="detail-val">${base.gstRate || 0}%</span></div>
+        <div class="detail-row"><span class="detail-label">HSN Code</span><span class="detail-val">${base.hsn || '-'}</span></div>
         ` : ''}
+        <div style="margin-top:20px; font-size:11px; color:var(--text-muted); font-weight:bold; letter-spacing:1px; margin-bottom:10px;">AVAILABLE PACKS / TYPES:</div>
+        <div style="max-height: 200px; overflow-y:auto; padding-right:5px;">
+            ${variantsHtml}
+        </div>
     `;
     document.getElementById('modalContent').innerHTML = content;
     document.getElementById('detailModal').style.display = 'flex';
@@ -381,77 +469,129 @@ function closeDetailModal() { document.getElementById('detailModal').style.displ
 
 function editFromModal() {
     closeDetailModal();
-    if(currentEditingId) loadProductForEdit(currentEditingId);
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    if(currentEditingName) loadProductForEditByName(currentEditingName);
 }
 
+// 🟢 VARIANT UI LOGIC
+function addVariantRow() {
+    const template = document.getElementById('variantTemplate');
+    const clone = template.content.cloneNode(true);
+    document.getElementById('variantsContainer').appendChild(clone);
+}
+
+function resetVariants() {
+    const container = document.getElementById('variantsContainer');
+    while(container.children.length > 1) {
+        container.removeChild(container.lastChild);
+    }
+    document.getElementById('isLooseItem').checked = false; // Reset toggle
+}
+
+// 🟢 ADD/SAVE LOGIC
 async function handleAddProduct(event){
   if(event) event.preventDefault();
   try {
-    const name = document.getElementById('productName').value;
-    const price = document.getElementById('productPrice').value;
-    const qty = document.getElementById('productQuantity').value;
-    const stock = document.getElementById('productStock').value;
-    const cat = document.getElementById('productCategory').value;
-    const bar = document.getElementById('productBarcode').value;
+    const name = document.getElementById('productName').value.trim();
+    const cat = document.getElementById('productCategory').value.trim();
+    const bar = document.getElementById('productBarcode').value.trim();
+    const isLoose = document.getElementById('isLooseItem').checked;
     
-    const hsn = document.getElementById('hsnCode').value;
-    const gstRate = document.getElementById('gstRate').value;
-    const priceType = document.getElementById('priceType').value;
+    const hsn = isGstMode ? document.getElementById('hsnCode').value : "";
+    const gstRate = isGstMode ? document.getElementById('gstRate').value : "";
+    const priceType = isGstMode ? document.getElementById('priceType').value : "inclusive";
     
     let products = getProducts();
-    const existingIndex = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase() || (bar && p.barcode === bar));
     
-    const productData = {
-        name, price, quantity: qty, stock, category: cat, barcode: bar,
-        hsn: isGstMode ? hsn : "",
-        gstRate: isGstMode ? gstRate : "",
-        priceType: isGstMode ? priceType : "inclusive"
-    };
-
-    if (existingIndex > -1) {
-        products[existingIndex] = { ...products[existingIndex], ...productData };
-        showToast("✅ Updated!");
-    } else {
-        products.push({ id: Date.now().toString(), ...productData });
-        showToast("✅ Added!");
+    if (currentEditingName) {
+        products = products.filter(p => p.name.toLowerCase() !== currentEditingName.toLowerCase());
     }
+
+    const rows = document.querySelectorAll('.variant-row');
     
+    rows.forEach((row, index) => {
+        const typeInput = row.querySelector('.var-type');
+        const stockInput = row.querySelector('.var-stock');
+        const priceInput = row.querySelector('.var-price');
+
+        const qty = typeInput.value.trim();
+        const stock = stockInput.value ? parseFloat(stockInput.value) : 0;
+        const price = priceInput.value;
+
+        if(!price) return; 
+
+        const productData = {
+            id: Date.now().toString() + index, 
+            name, price, quantity: qty, stock, category: cat, barcode: bar,
+            hsn: isGstMode ? hsn : "",
+            gstRate: isGstMode ? gstRate : "",
+            priceType: isGstMode ? priceType : "inclusive",
+            isLoose: isLoose // 🟢 Save flag
+        };
+
+        let existingIndex = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase() && (p.quantity||'').toLowerCase() === qty.toLowerCase());
+
+        if (existingIndex > -1) {
+            products[existingIndex] = { ...products[existingIndex], ...productData };
+        } else {
+            products.push(productData);
+        }
+    });
+
+    showToast("✅ Saved Successfully!");
     localStorage.setItem('bharatpos_products', JSON.stringify(products));
     await syncStockToBackend(products);
 
     renderProducts();
     document.getElementById('productForm').reset();
+    resetVariants();
+    currentEditingName = null; 
     
-  } catch(err){ console.error(err); showToast('Error', true); }
+  } catch(err){ console.error(err); showToast('Error saving data', true); }
 }
 
-function loadProductForEdit(name) {
-    const products = getProducts();
-    const p = products.find(i => i.name === name);
-    if(p) {
-        document.getElementById('productName').value = p.name;
-        document.getElementById('productQuantity').value = p.quantity || "";
-        document.getElementById('productPrice').value = p.price;
-        document.getElementById('productStock').value = ""; 
-        document.getElementById('productStock').placeholder = `Current: ${p.stock}`;
-        document.getElementById('productCategory').value = p.category || "";
-        document.getElementById('productBarcode').value = p.barcode || "";
-        
-        if(isGstMode && p.gstRate) {
-            document.getElementById('hsnCode').value = p.hsn || "";
-            document.getElementById('gstRate').value = p.gstRate || "";
-            document.getElementById('priceType').value = p.priceType || "inclusive";
-        }
-        
-        document.getElementById('productStock').focus();
-        showToast(`Editing: ${p.name}`);
+function loadProductForEditByName(name) {
+    const products = getProducts().filter(p => p.name.toLowerCase() === name.toLowerCase());
+    if(products.length === 0) return;
+    
+    const base = products[0];
+    currentEditingName = base.name;
+    
+    document.getElementById('productName').value = base.name;
+    document.getElementById('productCategory').value = base.category || "";
+    document.getElementById('productBarcode').value = base.barcode || "";
+    document.getElementById('isLooseItem').checked = base.isLoose || false; // Load flag
+    
+    if(isGstMode) {
+        document.getElementById('hsnCode').value = base.hsn || "";
+        document.getElementById('gstRate').value = base.gstRate || "";
+        document.getElementById('priceType').value = base.priceType || "inclusive";
     }
+
+    resetVariants(); 
+    
+    const rows = document.getElementById('variantsContainer').children;
+    const firstRow = rows[0];
+    firstRow.querySelector('.var-type').value = products[0].quantity || "";
+    firstRow.querySelector('.var-stock').value = products[0].stock || 0;
+    firstRow.querySelector('.var-price').value = products[0].price;
+
+    for(let i=1; i<products.length; i++) {
+        addVariantRow();
+        const newRow = document.getElementById('variantsContainer').lastElementChild;
+        newRow.querySelector('.var-type').value = products[i].quantity || "";
+        newRow.querySelector('.var-stock').value = products[i].stock || 0;
+        newRow.querySelector('.var-price').value = products[i].price;
+    }
+    
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    document.getElementById('productName').focus();
+    showToast(`Editing: ${base.name}`);
 }
 
-function deleteProductConfirm(pid){
-  if(!confirm("Delete?")) return;
-  let products = getProducts().filter(p => p.id !== pid);
+function deleteProductConfirm(encodedName){
+  const name = decodeURIComponent(encodedName);
+  if(!confirm(`Delete all variants of ${name}?`)) return;
+  let products = getProducts().filter(p => p.name.toLowerCase() !== name.toLowerCase());
   localStorage.setItem('bharatpos_products', JSON.stringify(products));
   syncStockToBackend(products);
   renderProducts();
@@ -522,12 +662,15 @@ async function captureAndSendToAI(){
 
 function fillProductFromAI(product){
   document.getElementById("productName").value = product.name || "";
-  document.getElementById("productQuantity").value = product.quantity || "1 pc";
-  document.getElementById("productPrice").value = product.price || "";
+  const firstRow = document.querySelector('.variant-row');
+  if(firstRow) {
+      firstRow.querySelector('.var-type').value = product.quantity || "1 pc";
+      firstRow.querySelector('.var-price').value = product.price || "";
+  }
   document.getElementById("productCategory").value = product.category || "General";
 }
 
-function resetAIScan(){ document.getElementById("productForm").reset(); aiScanLocked=false; if(!cameraStream) uiStartScan(); }
+function resetAIScan(){ document.getElementById("productForm").reset(); resetVariants(); aiScanLocked=false; if(!cameraStream) uiStartScan(); currentEditingName = null;}
 
 function showToast(msg, isError = false) {
   const x = document.getElementById("toast");
@@ -537,8 +680,5 @@ function showToast(msg, isError = false) {
 </script>
 </body>
 </html>
-
-
-
 
 
