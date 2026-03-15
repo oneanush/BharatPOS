@@ -14,6 +14,212 @@ function buildUrl(endpoint) {
   return normalizedBase + '/' + ep;
 }
 
+/* ==========================================================
+   🏢 MULTI-BRANCH FUNCTIONS
+   ========================================================== */
+/* ==========================================================
+   🏢 REBUILT MULTI-SHOP ENGINE (Fortified & Isolated)
+   ========================================================== */
+
+async function loadOwnedShops(mobileNum) {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const searchMobile = mobileNum || user.mobile || user.phone;
+    if (!searchMobile) return [];
+
+    try {
+        const res = await fetch(buildUrl('/api/get-user-shops'), {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mobile: searchMobile })
+        });
+        const data = await res.json();
+        if (data.success && data.shops && data.shops.length > 0) {
+            localStorage.setItem('bharatpos_all_shops', JSON.stringify(data.shops));
+            return data.shops;
+        }
+    } catch (e) {
+        console.warn("Failed to fetch shops. Using cache.");
+    }
+    return JSON.parse(localStorage.getItem('bharatpos_all_shops') || '[]');
+}
+/* ==========================================================
+   🏢 STRICT MULTI-BRANCH ENGINE (Prevents Cross-Account Bleed)
+   ========================================================== */
+
+async function loadOwnedShops(mobileNum) {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const searchMobile = mobileNum || user.mobile || user.phone;
+    if (!searchMobile) return [];
+
+    try {
+        const res = await fetch(buildUrl('/api/get-user-shops'), {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mobile: searchMobile })
+        });
+        const data = await res.json();
+        if (data.success && data.shops && data.shops.length > 0) {
+            // 🟢 Store cache specifically tied to THIS mobile number to avoid account mixing
+            localStorage.setItem(`bharatpos_shops_${searchMobile}`, JSON.stringify(data.shops));
+            return data.shops;
+        }
+    } catch (e) {
+        console.warn("Failed to fetch shops. Using cache.");
+    }
+    // Read from the secure mobile-specific cache
+    return JSON.parse(localStorage.getItem(`bharatpos_shops_${searchMobile}`) || '[]');
+}
+
+async function switchActiveShop(targetMerchantId) {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if(user.merchantId === targetMerchantId) return; 
+    
+    // Save the current identity securely before wiping
+    const savedMobile = user.mobile || user.phone;
+
+    // Backup current data
+    if (typeof pushFullBackupToServer === 'function') {
+        try { await pushFullBackupToServer(); } catch(e){}
+    }
+
+    try {
+        const res = await fetch(buildUrl('/api/restore-data'), {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ merchantId: targetMerchantId })
+        });
+        const data = await res.json();
+        
+        // 🟢 WIPE LOCAL MEMORY SO IT BEHAVES AS A 100% SEPARATE ACCOUNT
+        localStorage.removeItem('bharatpos_products');
+        localStorage.removeItem('bharatpos_sales');
+        localStorage.removeItem('bharatpos_customers');
+        localStorage.removeItem('bill_items');
+
+        if (data.success) {
+            let merchant = data.merchantData || {};
+            
+            // 🟢 CRITICAL: Force the correct ID and Mobile so it doesn't get confused
+            merchant.merchantId = targetMerchantId;
+            merchant.mobile = savedMobile; 
+            
+            localStorage.setItem('bharatpos_user', JSON.stringify(merchant));
+            
+            if (data.stock && data.stock.length > 0) localStorage.setItem('bharatpos_products', JSON.stringify(data.stock));
+            if (data.customers && data.customers.length > 0) localStorage.setItem('bharatpos_customers', JSON.stringify(data.customers));
+            if (data.backup && data.backup.bharatpos_sales && data.backup.bharatpos_sales.length > 0) {
+                localStorage.setItem('bharatpos_sales', JSON.stringify(data.backup.bharatpos_sales));
+            }
+            localStorage.setItem('shopName', merchant.shopName || '');
+            
+            alert(`✅ Switched to: ${merchant.shopName}`);
+            window.location.href = 'dashboard.html'; 
+        } else {
+            // No data present (Empty Branch) - Initialize safely
+            const allShops = await loadOwnedShops(savedMobile);
+            const targetShopInfo = allShops.find(s => s.merchantId === targetMerchantId);
+            
+            if(targetShopInfo) {
+                const newProfile = { 
+                    ...user, 
+                    merchantId: targetMerchantId, 
+                    shopName: targetShopInfo.shopName, 
+                    category: targetShopInfo.category,
+                    mobile: savedMobile // Securely pass mobile to new branch
+                };
+                localStorage.setItem('bharatpos_user', JSON.stringify(newProfile));
+                localStorage.setItem('shopName', targetShopInfo.shopName);
+                
+                alert(`✅ Logged into empty branch: ${targetShopInfo.shopName}`);
+                window.location.href = 'dashboard.html';
+            } else {
+                alert("Failed to locate branch info.");
+                window.location.reload();
+            }
+        }
+    } catch(e) {
+        alert("Network error while switching.");
+        window.location.reload();
+    }
+}
+
+
+
+// Collect a canonical set of local keys used across pages.
+// You can extend this list if you add more keys later.
+function gatherFullLocalBackup() {
+  const keysOfInterest = [
+    'bharatpos_products','bharatpos_sales','bharatpos_customers','bharatpos_settings',
+    'shopName','shopPhone','shopAddress','bharatpos_bill_footer','bharatpos_bill_size',
+    'upiQR','bharatpos_user','bill_items','temp_add_product_id','temp_new_barcode',
+    'bharatpos_last_import','bharatpos_last_sent_reports_snapshot_hash'
+  ];
+
+  const backup = {};
+  // Add keys explicitly
+  keysOfInterest.forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v !== null && v !== undefined) {
+      // try parse JSON to keep original types; otherwise store raw string
+      try { backup[k] = JSON.parse(v); } catch(e) { backup[k] = v; }
+    }
+  });
+
+  // Also include any other bharatpos_ prefixed keys for future-proofing
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (k.startsWith('bharatpos_') && !backup.hasOwnProperty(k)) {
+      try { backup[k] = JSON.parse(localStorage.getItem(k)); } catch(e) { backup[k] = localStorage.getItem(k); }
+    }
+  }
+
+  // Metadata
+  try {
+    backup._meta = {
+      generatedAt: new Date().toISOString(),
+      userAgent: navigator.userAgent
+    };
+  } catch(e){}
+
+  return backup;
+}
+
+let _fullBackupTimer = null;
+function pushFullBackupToServerDebounced(delay = 1000) {
+  try { if (_fullBackupTimer) clearTimeout(_fullBackupTimer); } catch(e){}
+  _fullBackupTimer = setTimeout(() => { pushFullBackupToServer().catch(()=>{}); }, delay);
+}
+
+async function pushFullBackupToServer() {
+  try {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const merchantId = user.merchantId;
+    if (!merchantId) return; // do not send without merchantId
+
+    const payload = gatherFullLocalBackup();
+    const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-backup') : '/api/save-backup';
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchantId, backup: payload })
+    });
+
+    if (resp.ok) console.log('🔁 Full backup pushed for', merchantId);
+    else console.warn('Full backup responded with status', resp.status);
+  } catch (err) {
+    console.warn('Full backup failed', err);
+  }
+}
+function saveProducts(arr){
+  localStorage.setItem(LS_KEYS.PRODUCTS, JSON.stringify(arr));
+  // existing debounced product push...
+  // then:
+  pushFullBackupToServerDebounced();
+}
+function saveCustomers(arr){
+  localStorage.setItem('bharatpos_customers', JSON.stringify(arr));
+  try { if (_customerSyncTimer) clearTimeout(_customerSyncTimer); } catch(e){}
+  _customerSyncTimer = setTimeout(()=> { pushCustomersToServer(); pushFullBackupToServerDebounced(); }, 900);
+}
 
 
 
