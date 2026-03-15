@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <script src="bharatpos.js"></script>
+
   <style>
     /* --- VARIABLES & RESET --- */
     :root {
@@ -40,7 +42,7 @@
 
     /* --- FORM CONTAINER --- */
     .login-container {
-      width: 100%; max-width: 480px; padding: 20px;
+      width: 100%; max-width: 640px; padding: 20px;
       display: flex; flex-direction: column; align-items: center;
       animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
@@ -58,25 +60,30 @@
     .form-box {
       background: var(--glass); backdrop-filter: blur(20px);
       border: 1px solid var(--border); border-radius: 24px;
-      padding: 40px 30px; width: 100%;
+      padding: 28px; width: 100%;
       box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
 
-    h2 { text-align: center; margin: 0 0 8px 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-    .subtitle { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 30px; }
+    h2 { text-align: center; margin: 0 0 8px 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    .subtitle { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+
+    /* mode toggle */
+    .mode-select { display:flex; gap:10px; justify-content:center; margin-bottom:14px; }
+    .mode-select button { padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--text-muted); cursor:pointer; }
+    .mode-select button.active { background:var(--accent); color:#000; font-weight:700; border-color:transparent; }
 
     /* --- FLOATING LABEL INPUTS --- */
-    .input-group { position: relative; margin-bottom: 20px; }
+    .input-group { position: relative; margin-bottom: 12px; }
     
     input, select {
-      width: 100%; padding: 14px 15px; background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border); border-radius: 12px;
+      width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border); border-radius: 10px;
       color: #fff; font-size: 15px; transition: 0.3s;
       appearance: none; font-family: 'Inter', sans-serif;
     }
 
     /* Grid for side-by-side inputs */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     
     /* Input Focus Effects */
     input:focus, select:focus {
@@ -86,8 +93,8 @@
 
     /* Floating Label Logic */
     .floating-label {
-      position: absolute; left: 15px; top: 14px;
-      color: var(--text-muted); font-size: 15px; pointer-events: none;
+      position: absolute; left: 14px; top: 12px;
+      color: var(--text-muted); font-size: 14px; pointer-events: none;
       transition: 0.2s ease all;
     }
     
@@ -101,19 +108,23 @@
     }
 
     /* --- BUTTON --- */
-    button {
-      width: 100%; padding: 16px; margin-top: 10px;
+    button.primary {
+      width: 100%; padding: 14px; margin-top: 10px;
       background: var(--primary-gradient); color: #000;
-      font-size: 16px; font-weight: 700; border-radius: 12px;
+      font-size: 15px; font-weight: 700; border-radius: 10px;
       border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-      display: flex; justify-content: center; align-items: center; gap: 10px;
+      display: flex; justify-content: center; align-items: center; gap: 8px;
     }
-    button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
-    button:active { transform: scale(0.98); }
+    button.secondary {
+      padding: 10px 12px; border-radius: 8px; border:1px solid rgba(255,255,255,0.04);
+      background: transparent; color:var(--text-main); cursor:pointer;
+    }
+    button.primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
+    button.primary:active { transform: scale(0.98); }
 
     /* Loading Spinner */
     .spinner {
-      width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.3);
+      width: 18px; height: 18px; border: 3px solid rgba(0,0,0,0.3);
       border-top-color: #000; border-radius: 50%;
       animation: spin 0.8s linear infinite; display: none;
     }
@@ -123,23 +134,26 @@
     .loading .spinner { display: block; }
     .loading .btn-text { display: none; }
 
-    /* --- ID CARD MODAL (Simulated Success) --- */
-    #idModal {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
-      justify-content: center; align-items: center; z-index: 100;
+    /* OTP Modal */
+    #otpModal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      justify-content: center; align-items: center; z-index: 200;
     }
-    .id-card {
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      border: 1px solid var(--accent); border-radius: 20px;
-      padding: 30px; text-align: center; max-width: 320px; width: 90%;
-      box-shadow: 0 0 50px rgba(245, 158, 11, 0.3);
-      animation: fadeUp 0.5s ease;
+    .otp-box {
+      background: linear-gradient(180deg,#0b1220,#0f172a); border:1px solid rgba(255,255,255,0.08);
+      padding: 22px; border-radius: 12px; max-width: 420px; width: 90%; text-align:center;
     }
-    .id-label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-    .id-value { font-size: 32px; font-weight: 800; color: var(--accent); margin: 10px 0 20px 0; font-family: monospace; }
-    .id-note { font-size: 13px; color: #fff; line-height: 1.5; margin-bottom: 20px; }
+    .otp-input { width: 100%; padding: 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); margin-top:8px; }
 
+    /* id modal */
+    #idModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:300; }
+    .id-card { background:linear-gradient(135deg,#1e293b,#0f172a); padding:24px; border-radius:12px; text-align:center; border:1px solid var(--accent); }
+    .id-value { font-family:monospace; font-weight:800; color:var(--accent); font-size:28px; margin:8px 0; }
+
+    @media (max-width:600px) {
+      .form-box { padding:18px; }
+      .login-container { padding:12px; }
+    }
   </style>
 </head>
 
@@ -152,28 +166,50 @@
     </div>
 
     <div class="form-box">
-      <h2>Merchant Registration</h2>
-      <p class="subtitle">Join the Smart Retail Network</p>
+      <h2>Merchant Login / Register</h2>
+      <p class="subtitle">Quick — pick Registered or New</p>
 
-      <form id="loginForm">
+      <div class="mode-select" role="tablist" aria-label="Login mode">
+        <button id="btnModeRegistered" class="active" aria-pressed="true">Registered</button>
+        <button id="btnModeNew" aria-pressed="false">New Merchant</button>
+      </div>
+
+      <div id="registeredPane">
+        <div class="input-group">
+          <input type="tel" id="reg_mobile" placeholder=" " maxlength="10" inputmode="numeric" autocomplete="tel">
+          <label class="floating-label">Mobile Number</label>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button class="primary" id="regSendOtpBtn"><span class="btn-text">Send OTP & Login</span><div class="spinner"></div></button>
+          <button class="secondary" id="switchToNewBtn">Register New</button>
+        </div>
+
+        <div style="margin-top:12px; color:var(--text-muted); font-size:13px;">
+          Enter your mobile to receive OTP. If we find a merchant for this number we will restore your data.
+        </div>
+        <div id="regStatus" style="margin-top:8px; font-size:13px;"></div>
+      </div>
+
+      <form id="newPane" style="display:none; margin-top:10px;">
         
         <div class="input-group">
-          <input type="text" id="ownerName" placeholder=" " required autocomplete="off">
+          <input type="text" id="ownerName" placeholder=" " autocomplete="name">
           <label class="floating-label">Owner Name</label>
         </div>
 
         <div class="input-group">
-          <input type="tel" id="mobile" placeholder=" " maxlength="10" pattern="[0-9]{10}" required autocomplete="off">
+          <input type="tel" id="mobile" placeholder=" " maxlength="10" pattern="[0-9]{10}" autocomplete="tel">
           <label class="floating-label">Mobile Number</label>
         </div>
 
         <div class="input-group">
-          <input type="text" id="shopName" placeholder=" " required autocomplete="off">
+          <input type="text" id="shopName" placeholder=" " autocomplete="organization">
           <label class="floating-label">Shop Name (e.g. Raju General Store)</label>
         </div>
 
         <div class="input-group">
-          <select id="shopCategory" required>
+          <select id="shopCategory">
             <option value="" disabled selected></option>
             <option value="GROCERY">Kirana / Grocery Store</option>
             <option value="MEDICINE">Medical / Pharmacy</option>
@@ -189,7 +225,7 @@
 
         <div class="grid-2">
           <div class="input-group">
-            <select id="state" required>
+            <select id="state">
               <option value="" disabled selected></option>
               <option value="AN">Andaman and Nicobar Islands</option>
               <option value="AP">Andhra Pradesh</option>
@@ -233,22 +269,23 @@
           </div>
 
           <div class="input-group">
-            <input type="text" id="city" placeholder=" " required autocomplete="off">
+            <input type="text" id="city" placeholder=" " autocomplete="address-level2">
             <label class="floating-label">City/District</label>
           </div>
         </div>
 
         <div class="input-group">
-          <input type="number" id="pincode" placeholder=" " required autocomplete="off">
+          <input type="number" id="pincode" placeholder=" " autocomplete="postal-code">
           <label class="floating-label">Pincode</label>
         </div>
 
-        <button type="submit" id="submitBtn">
-          <span class="btn-text">Generate Merchant ID & Login</span>
-          <div class="spinner"></div>
-        </button>
+        <div style="display:flex; gap:10px;">
+          <button type="button" id="newSendOtpBtn" class="primary"><span class="btn-text">Send OTP & Register</span><div class="spinner"></div></button>
+          <button type="button" id="switchToRegistered" class="secondary">I have account</button>
+        </div>
 
       </form>
+
     </div>
   </div>
 
@@ -258,85 +295,438 @@
         <img src="logo.png" alt="B" class="logo-img">
       </div>
       <div class="id-label">Welcome to BharatPOS</div>
-      <h3 style="margin: 5px 0 20px 0; color:white;" id="modalShopName">Shop Name</h3>
+      <h3 style="margin: 5px 0 12px 0; color:white;" id="modalShopName">Shop Name</h3>
       
       <div class="id-label">Your Unique Merchant Code</div>
       <div class="id-value" id="generatedCode">-----</div>
       
       <p class="id-note">Use this code for <b>My Khata</b>, <b>Inventory Sync</b>, and <b>Support</b>.</p>
       
-      <button onclick="finishLogin()">Enter Dashboard</button>
+      <button class="primary" onclick="finishLogin()">Enter Dashboard</button>
+    </div>
+  </div>
+
+  <div id="otpModal">
+    <div class="otp-box">
+      <div style="font-weight:700; font-size:16px; margin-bottom:8px;">Verify Mobile Number</div>
+      <div style="font-size:13px; color:var(--text-muted);" id="otpMsg">We sent an OTP to your mobile.</div>
+      <input id="otpInput" class="otp-input" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric">
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button id="verifyOtpBtn" class="primary" style="flex:1;"><span class="btn-text">Verify</span><div class="spinner"></div></button>
+        <button id="resendOtpBtn" class="secondary" style="flex:1;">Resend</button>
+      </div>
+      <div style="margin-top:10px; font-size:12px;"><button id="otpCancel" class="secondary">Cancel</button></div>
+    </div>
+  </div>
+
+  <div id="shopSelectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; z-index:3000; backdrop-filter:blur(5px);">
+    <div style="background:linear-gradient(135deg,#1e293b,#0f172a); padding:24px; border-radius:12px; text-align:center; border:1px solid var(--accent); max-width: 400px; width: 90%;">
+      <h3 style="margin-top:0; color:#fff;">🏢 Select Shop</h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Multiple accounts found for this number.</p>
+      <div id="shopSelectList" style="display:flex; flex-direction:column; max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+      <button class="secondary" style="margin-top:15px; width:100%;" onclick="document.getElementById('shopSelectModal').style.display='none'">Cancel</button>
     </div>
   </div>
 
 <script>
-document.getElementById('loginForm').addEventListener('submit', async function(e){
-  e.preventDefault(); 
-  
-  const btn = document.getElementById('submitBtn');
-  btn.classList.add('loading'); // Show spinner
+/* Helpers (reuse buildUrl from bharatpos.js which is loaded above) */
+async function sendOtpToServer(mobile) {
+  try {
+    const res = await fetch(buildUrl('/api/auth/send-otp'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobile })
+    });
+    return await res.json();
+  } catch (e) { console.warn('OTP send failed', e); return { success:false, message:'Network' }; }
+}
+async function verifyOtpOnServer(mobile, otp) {
+  try {
+    const res = await fetch(buildUrl('/api/auth/verify-otp'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobile, otp })
+    });
+    return await res.json();
+  } catch (e) { console.warn('OTP verify failed', e); return { success:false, message:'Network' }; }
+}
+async function registerMerchantOnServer(payload) {
+  try {
+    const res = await fetch(buildUrl('/api/register-merchant'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (e) { console.warn('Register failed', e); return { success:false, message:'Network' }; }
+}
+async function fetchRestoreData(merchantId) {
+  try {
+    const res = await fetch(buildUrl('/api/restore-data'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchantId })
+    });
+    return await res.json();
+  } catch (e) { console.warn('Restore failed', e); return { success:false, message:'Network' }; }
+}
+async function backupProductsToServer(merchantId, products) {
+  try {
+    await fetch(buildUrl('/api/save-stock'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchantId, products })
+    });
+  } catch (e) { console.warn('Backup products failed', e); }
+}
+async function backupCustomersToServer(merchantId, customers) {
+  try {
+    await fetch(buildUrl('/api/sync-customers'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchantId, customers })
+    });
+  } catch (e) { console.warn('Backup customers failed', e); }
+}
 
-  // 1. COLLECT DATA
-  const formData = {
-    ownerName: document.getElementById('ownerName').value.trim(),
-    mobile: document.getElementById('mobile').value.trim(),
-    shopName: document.getElementById('shopName').value.trim(),
-    category: document.getElementById('shopCategory').value,
-    state: document.getElementById('state').value,
-    city: document.getElementById('city').value.trim(),
-    pincode: document.getElementById('pincode').value.trim()
-  };
+function applyServerBackupPayload(payload, merchantId) {
+  try {
+    let applied = false;
+    if (!payload) return false;
+    if (typeof payload === 'object' && !Array.isArray(payload)) {
+      Object.keys(payload).forEach(k => {
+        if (k === '_meta') return;
+        try {
+          const val = payload[k];
+          if (typeof val === 'object') localStorage.setItem(k, JSON.stringify(val));
+          else localStorage.setItem(k, String(val));
+          applied = true;
+        } catch (e) { console.warn('restore key write failed', k, e); }
+      });
+    }
+    try {
+      const existing = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+      existing.merchantId = existing.merchantId || merchantId;
+      localStorage.setItem('bharatpos_user', JSON.stringify(existing));
+    } catch (e){}
+    return applied;
+  } catch (err) { console.error('applyServerBackupPayload error', err); return false; }
+}
 
-  if(!formData.shopName || !formData.mobile) {
-    alert("Please fill in Shop Name and Mobile.");
+/* UI elements */
+const btnModeRegistered = document.getElementById('btnModeRegistered');
+const btnModeNew = document.getElementById('btnModeNew');
+const registeredPane = document.getElementById('registeredPane');
+const newPaneForm = document.getElementById('newPane');
+
+function setMode(mode) {
+  if (mode === 'registered') {
+    btnModeRegistered.classList.add('active'); btnModeRegistered.setAttribute('aria-pressed','true');
+    btnModeNew.classList.remove('active'); btnModeNew.setAttribute('aria-pressed','false');
+    registeredPane.style.display = 'block';
+    newPaneForm.style.display = 'none';
+  } else {
+    btnModeNew.classList.add('active'); btnModeNew.setAttribute('aria-pressed','true');
+    btnModeRegistered.classList.remove('active'); btnModeRegistered.setAttribute('aria-pressed','false');
+    registeredPane.style.display = 'none';
+    newPaneForm.style.display = 'block';
+  }
+}
+btnModeRegistered.addEventListener('click', ()=> setMode('registered'));
+btnModeNew.addEventListener('click', ()=> setMode('new'));
+document.getElementById('switchToNewBtn').addEventListener('click', ()=> setMode('new'));
+document.getElementById('switchToRegistered').addEventListener('click', ()=> setMode('registered'));
+
+// 🟢 CRITICAL WIPE & INJECT LOGIC (Prevents Account Bleed)
+async function triggerRestoreSequence(mid, statusEl, cleanupCallback, explicitMobile) {
+    if(cleanupCallback) cleanupCallback();
+    document.getElementById('shopSelectModal').style.display = 'none';
+    if(statusEl) statusEl.innerText = `Restoring data for ${mid}...`;
+    
+    try {
+        const restored = await fetch(buildUrl('/api/restore-data'), {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ merchantId: mid })
+        }).then(r => r.json());
+        
+        // 1. ANNIHILATE ALL OLD SESSION DATA
+        localStorage.removeItem('bharatpos_products');
+        localStorage.removeItem('bharatpos_sales');
+        localStorage.removeItem('bharatpos_customers');
+        localStorage.removeItem('bill_items');
+        localStorage.removeItem('bharatpos_user'); // 🟢 THIS is what was causing the bug!
+
+        // 2. Start a 100% fresh identity map
+        let user = { merchantId: mid, mobile: explicitMobile };
+
+        if (restored && restored.success) {
+            // Safely apply server backup
+            if (restored.backup) applyServerBackupPayload(restored.backup, mid);
+            if (Array.isArray(restored.stock) && restored.stock.length > 0) localStorage.setItem('bharatpos_products', JSON.stringify(restored.stock));
+            if (Array.isArray(restored.customers) && restored.customers.length > 0) localStorage.setItem('bharatpos_customers', JSON.stringify(restored.customers));
+            
+            // Merge valid server profile data with our fresh identity
+            if (restored.merchantData) {
+                user = { ...user, ...restored.merchantData, merchantId: mid, mobile: explicitMobile };
+            }
+        } else {
+            // New empty branch scenario
+            user.shopName = "Fresh Account";
+        }
+
+        // 3. Save the strictly isolated identity
+        localStorage.setItem('bharatpos_user', JSON.stringify(user));
+        localStorage.setItem('bharatpos_pending_restore', mid);
+
+        // 4. Proceed to dashboard
+        document.getElementById('modalShopName').innerText = user.shopName || 'Shop Restored';
+        document.getElementById('generatedCode').innerText = mid;
+        document.getElementById('idModal').style.display = 'flex';
+        setTimeout(()=> window.location.href = 'dashboard.html', 1500);
+
+    } catch (e) {
+        console.warn('restore error', e);
+        if(statusEl) statusEl.innerText = 'Restore failed: network/server error';
+    }
+}
+
+/* Registered flow: only mobile -> OTP -> lookup & restore/login */
+document.getElementById('regSendOtpBtn').addEventListener('click', async function(){
+  const btn = this; const status = document.getElementById('regStatus');
+  const mobile = (document.getElementById('reg_mobile').value || '').trim();
+  if (!mobile || mobile.length !== 10) { status.innerText = 'Enter valid 10-digit mobile'; return; }
+  btn.classList.add('loading'); status.innerText = 'Sending OTP...';
+  const sent = await sendOtpToServer(mobile);
+  if (!sent || !sent.success) {
+    status.innerText = 'Could not send OTP: ' + (sent && sent.message ? sent.message : 'Network');
     btn.classList.remove('loading');
     return;
   }
-
-  // 2. GET LOCATION (Crucial Step)
-  try {
-    const position = await new Promise((resolve, reject) => {
-        // Try to get high accuracy location
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000 
-        });
-    });
-
-    // SUCCESS
-    formData.lat = position.coords.latitude;
-    formData.lng = position.coords.longitude;
-    console.log("✅ Location Secured:", formData.lat, formData.lng);
-
-  } catch (error) {
-    // FAILURE
-    console.error("❌ Location Error:", error);
-    alert(`⚠️ Location Failed: ${error.message}\n\n1. Make sure you are using HTTPS (or localhost).\n2. Allow Location permission.\n\nLogin will proceed without Heatmap data.`);
-    formData.lat = null;
-    formData.lng = null;
-  }
-
-  // 3. GENERATE ID & SAVE
-  const codePrefix = formData.category.substring(0, 3).toUpperCase();
-  const codeSuffix = formData.mobile.substring(6, 10);
-  formData.merchantId = `${codePrefix}-${codeSuffix}`;
-  formData.joinedDate = new Date().toISOString();
-
-  // Save to Database (LocalStorage)
-  localStorage.setItem('bharatpos_user', JSON.stringify(formData));
-
-  // 4. SHOW SUCCESS
-  document.getElementById('modalShopName').innerText = formData.shopName;
-  document.getElementById('generatedCode').innerText = formData.merchantId;
-  document.getElementById('idModal').style.display = 'flex';
-  btn.classList.remove('loading');
+  // show OTP modal and on verify, call register-merchant({mobile}) to detect existing merchant
+  showOtpModalForRegisteredLookup(mobile, status, btn);
 });
 
-function finishLogin() {
-  window.location.href = "billing.html"; // Go directly to billing
+/* New registration flow: full form -> OTP -> register */
+document.getElementById('newSendOtpBtn').addEventListener('click', async function(){
+  const btn = this; btn.classList.add('loading');
+  const formData = {
+    ownerName: (document.getElementById('ownerName').value || '').trim(),
+    mobile: (document.getElementById('mobile').value || '').trim(),
+    shopName: (document.getElementById('shopName').value || '').trim(),
+    category: (document.getElementById('shopCategory').value || '').trim(),
+    state: (document.getElementById('state').value || '').trim(),
+    city: (document.getElementById('city').value || '').trim(),
+    pincode: (document.getElementById('pincode').value || '').trim()
+  };
+  if (!formData.shopName || !formData.mobile) { alert('Please fill Shop Name and Mobile'); btn.classList.remove('loading'); return; }
+
+  // 🟢 ENHANCED ACCURACY LOCATION LOGIC
+  // Uses maximumAge:0 to ignore cached locations and high timeout to allow GPS warm-up
+     // Use improved multi-sample geolocation helper
+       try {
+      const pos = await getAccuratePosition({ desiredAccuracy: 50, maxWait: 25000, enableHighAccuracy: true });
+      if (pos && pos.latitude != null) {
+        formData.lat = pos.latitude;
+        formData.lng = pos.longitude;
+        console.log("✅ High Accuracy Location Secured:", formData.lat, formData.lng, "accuracy:", pos.accuracy);
+      } else {
+        formData.lat = null; formData.lng = null;
+        console.warn("⚠️ High Accuracy Location failed; proceeding without geo.");
+      }
+    } catch (e) {
+      console.warn("⚠️ Location capture failed:", e);
+      formData.lat = null; formData.lng = null;
+    }
+
+  // send OTP
+  const sent = await sendOtpToServer(formData.mobile);
+  if (!sent || !sent.success) {
+    const proceedOffline = confirm("Could not send OTP (offline). Continue in offline mode? OK = continue, Cancel = abort.");
+    if (!proceedOffline) { btn.classList.remove('loading'); return; }
+    // offline: finalize local registration
+    finalizeLocalRegistration(formData, btn);
+    return;
+  }
+  // show OTP modal and on verify, register merchant with full payload
+  showOtpModalForRegistration(formData.mobile, formData, btn);
+});
+
+/* OTP modal shared flows for registered lookup and new registration */
+function showOtpModalForRegisteredLookup(mobile, statusEl, triggerBtn) {
+  const modal = document.getElementById('otpModal');
+  const otpMsg = document.getElementById('otpMsg');
+  const otpInput = document.getElementById('otpInput');
+  const verifyBtn = document.getElementById('verifyOtpBtn');
+  const resendBtn = document.getElementById('resendOtpBtn');
+  const cancelBtn = document.getElementById('otpCancel');
+
+  otpMsg.innerText = `We sent an OTP to +91 ${mobile}. Enter it here.`;
+  otpInput.value = '';
+  modal.style.display = 'flex';
+  triggerBtn.classList.remove('loading');
+
+  const cleanup = () => { verifyBtn.onclick = null; resendBtn.onclick = null; cancelBtn.onclick = null; modal.style.display = 'none'; };
+
+  verifyBtn.onclick = async () => {
+    const otp = (otpInput.value || '').trim();
+    if (!otp) return alert('Enter OTP');
+    
+    verifyBtn.classList.add('loading');
+    const v = await verifyOtpOnServer(mobile, otp);
+    verifyBtn.classList.remove('loading');
+    
+    if (!v || !v.success) return alert('OTP verification failed');
+
+    statusEl.innerText = 'Looking up accounts...';
+    
+    try {
+        const regResp = await fetch(buildUrl('/api/get-user-shops'), {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({mobile})
+        }).then(r => r.json()).catch(() => null);
+
+        if (regResp && regResp.success && regResp.shops && regResp.shops.length > 0) {
+            
+            if (regResp.shops.length === 1) {
+                // Single Shop: Pass the explicit mobile parameter!
+                triggerRestoreSequence(regResp.shops[0].merchantId, statusEl, cleanup, mobile);
+            } else {
+                // Multi-Shop
+                cleanup();
+                const listHtml = regResp.shops.map(shop => `
+                    <button type="button" class="shop-btn" onclick="triggerRestoreSequence('${shop.merchantId}', document.getElementById('regStatus'), null, '${mobile}')">
+                        <div>
+                            <strong style="font-size:16px; color: var(--accent);">${shop.shopName} ${shop.isMain ? '<span style="font-size:10px; color:#fff; background:var(--primary); padding:2px 6px; border-radius:4px; margin-left:5px;">Main</span>' : ''}</strong>
+                            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">${shop.category || 'Retail'} • ID: ${shop.merchantId}</div>
+                        </div>
+                        <div style="color:var(--text-muted);"><i class="fa-solid fa-chevron-right"></i></div>
+                    </button>
+                `).join('');
+                
+                document.getElementById('shopSelectList').innerHTML = listHtml;
+                document.getElementById('shopSelectModal').style.display = 'flex';
+            }
+        } else {
+            const legacyReg = await registerMerchantOnServer({ mobile });
+            if (legacyReg && legacyReg.success && legacyReg.isRestore) {
+                triggerRestoreSequence(legacyReg.merchantId, statusEl, cleanup, mobile);
+            } else {
+                statusEl.innerText = 'No account found for this mobile. Switch to New Merchant to register.';
+                cleanup();
+            }
+        }
+    } catch(e) { 
+        statusEl.innerText = 'Lookup failed: network/server error.';
+        cleanup();
+    }
+  };
+
+  resendBtn.onclick = async () => {
+    resendBtn.disabled = true;
+    await sendOtpToServer(mobile);
+    resendBtn.disabled = false;
+    otpMsg.innerText = `OTP resent to +91 ${mobile}`;
+  };
+
+  cancelBtn.onclick = () => { modal.style.display = 'none'; statusEl.innerText = ''; };
 }
+
+
+function showOtpModalForRegistration(mobile, formDataOrMobile, triggerBtn) {
+  // formDataOrMobile can be full formData (object) for new registration, or mobile string for other flows
+  const modal = document.getElementById('otpModal');
+  const otpMsg = document.getElementById('otpMsg');
+  const otpInput = document.getElementById('otpInput');
+  const verifyBtn = document.getElementById('verifyOtpBtn');
+  const resendBtn = document.getElementById('resendOtpBtn');
+  const cancelBtn = document.getElementById('otpCancel');
+
+  const mobileNum = typeof formDataOrMobile === 'string' ? formDataOrMobile : (formDataOrMobile.mobile || '');
+  otpMsg.innerText = `We sent an OTP to +91 ${mobileNum}. Enter it here.`;
+  otpInput.value = '';
+  modal.style.display = 'flex';
+  triggerBtn.classList.remove('loading');
+
+  const cleanup = () => {
+    verifyBtn.onclick = null; resendBtn.onclick = null; cancelBtn.onclick = null; modal.style.display = 'none';
+  };
+
+  verifyBtn.onclick = async () => {
+    const otp = (otpInput.value || '').trim();
+    if (!otp) return alert('Enter OTP');
+    verifyBtn.classList.add('loading');
+    const v = await verifyOtpOnServer(mobileNum, otp);
+    verifyBtn.classList.remove('loading');
+    if (!v || !v.success) return alert('OTP verification failed: ' + (v && v.message ? v.message : 'Invalid OTP'));
+
+    // If formDataOrMobile is an object -> registration flow
+    if (typeof formDataOrMobile === 'object') {
+      const payload = formDataOrMobile; // full merchant details already collected
+      // call register-merchant with full payload
+      const serverReg = await registerMerchantOnServer(payload);
+      if (serverReg && serverReg.success) {
+        const user = { ...payload, merchantId: serverReg.merchantId || null };
+        localStorage.setItem('bharatpos_user', JSON.stringify(user));
+        // push local backups to server for first-time merchants
+        try {
+          const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+          const customers = JSON.parse(localStorage.getItem('bharatpos_customers') || '[]');
+          if (Array.isArray(products) && products.length) await backupProductsToServer(user.merchantId, products);
+          if (Array.isArray(customers) && customers.length) await backupCustomersToServer(user.merchantId, customers);
+        } catch(e){ console.warn('backup push error', e); }
+
+        // show id modal and redirect
+        document.getElementById('modalShopName').innerText = user.shopName;
+        document.getElementById('generatedCode').innerText = user.merchantId || '----';
+        document.getElementById('idModal').style.display = 'flex';
+        localStorage.setItem('bharatpos_pending_restore', user.merchantId || '');
+        cleanup();
+        setTimeout(()=> window.location.href = 'settings.html', 900);
+        return;
+      } else {
+        alert('Registration failed: ' + (serverReg && serverReg.message ? serverReg.message : 'Server error'));
+      }
+    }
+
+    cleanup();
+  };
+
+  resendBtn.onclick = async () => {
+    resendBtn.disabled = true;
+    const r = await sendOtpToServer(mobileNum);
+    resendBtn.disabled = false;
+    if (r && r.success) otpMsg.innerText = `OTP resent to +91 ${mobileNum}`;
+    else alert('Could not resend OTP.');
+  };
+
+  cancelBtn.onclick = () => { modal.style.display = 'none'; };
+}
+
+/* Local offline registration fallback */
+function finalizeLocalRegistration(formData, triggerBtn) {
+  try {
+    const codePrefix = (formData.category || 'SHP').substring(0, 3).toUpperCase();
+    const codeSuffix = (formData.mobile || '0000000000').substring(6, 10);
+    formData.merchantId = `${codePrefix}-${codeSuffix}`;
+    formData.joinedDate = new Date().toISOString();
+    localStorage.setItem('bharatpos_user', JSON.stringify(formData));
+    document.getElementById('modalShopName').innerText = formData.shopName;
+    document.getElementById('generatedCode').innerText = formData.merchantId;
+    document.getElementById('idModal').style.display = 'flex';
+    localStorage.setItem('bharatpos_pending_restore', formData.merchantId);
+    setTimeout(()=> { window.location.href = 'settings.html'; }, 900);
+  } finally {
+    triggerBtn.classList.remove('loading');
+  }
+}
+
+/* finish login */
+function finishLogin() { window.location.href = 'settings.html'; }
+
+/* small enhancement: when pressing Enter in mobile fields, trigger respective buttons */
+document.getElementById('reg_mobile').addEventListener('keydown', (e)=> { if (e.key === 'Enter') document.getElementById('regSendOtpBtn').click(); });
+document.getElementById('mobile').addEventListener('keydown', (e)=> { if (e.key === 'Enter') document.getElementById('newSendOtpBtn').click(); });
+
+/* initial mode */
+setMode('registered');
 </script>
 </body>
 </html>
-
-
