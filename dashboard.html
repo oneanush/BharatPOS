@@ -454,36 +454,54 @@
           document.getElementById('shopSwitcher').value = currentUser.merchantId;
       }
   }
-
-  async function submitNewBranch(event) {
+async function submitNewBranch(event) {
       const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
       const shopName = document.getElementById('newBranchName').value.trim();
       const category = document.getElementById('newBranchCat').value;
       
       if(!shopName) return alert("Enter Branch Name");
-      if(!user.mobile || !user.merchantId) return alert("Session invalid. Re-login required.");
+      
+      // 🟢 SMART RECOVERY: If mobile is missing due to old data, ask for it without forcing re-login!
+      let mobileNum = user.mobile || user.phone;
+      if(!mobileNum) {
+          mobileNum = prompt("Branch link karne ke liye apna 10-digit Mobile Number confirm karein:");
+          if(!mobileNum || mobileNum.trim().length !== 10) return alert("Sahi mobile number jaruri hai.");
+          
+          // Permanently save the recovered number so it never asks again
+          user.mobile = mobileNum.trim();
+          localStorage.setItem('bharatpos_user', JSON.stringify(user));
+      }
+
+      if(!user.merchantId) return alert("Critical Error: Merchant ID missing. Please re-login.");
 
       try {
           const btn = event.target;
           btn.innerText = "Creating...";
+          
           const res = await fetch(getApiUrl('/api/add-branch'), {
-              method: 'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ mobile: user.mobile, masterId: user.merchantId, shopName, category })
+              method: 'POST', 
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ 
+                  mobile: mobileNum, 
+                  masterId: user.merchantId, 
+                  shopName, 
+                  category 
+              })
           });
           const data = await res.json();
           
           if(data.success) {
-              alert(`Branch '${shopName}' created! You are still on your main shop. Use the dropdown to switch to it.`);
+              alert(`Branch '${shopName}' created successfully! You are still on your current shop. Select the new branch from the dropdown menu to switch to it.`);
               document.getElementById('addBranchModal').style.display='none';
               document.getElementById('newBranchName').value = '';
               btn.innerText = "Create Branch";
-              initShopSwitcher(); // refresh dropdown
+              initShopSwitcher(); // Refresh dropdown to show new branch immediately
           } else {
               alert("Failed to create branch on server.");
               btn.innerText = "Create Branch";
           }
       } catch(e) { 
-          alert("Network Error.");
+          alert("Network error. Since you moved to a cloud URL, please double-check your API_BASE in bharatpos.js!");
           event.target.innerText = "Create Branch";
       }
   }
