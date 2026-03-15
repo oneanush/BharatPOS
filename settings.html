@@ -168,6 +168,9 @@
             <div style="display:flex; gap:10px;">
                 <input type="text" id="merchantId" class="form-control" readonly value="LOADING..." style="font-family:'JetBrains Mono'; font-weight:700;">
                 <button onclick="copyMerchantID()" class="btn btn-copy"><i class="fa-solid fa-copy"></i></button>
+                <button onclick="restoreNow()" title="Restore Now" class="btn btn-primary" style="width:auto; font-size:12px; padding:8px 12px;">
+                  <i class="fa-solid fa-cloud-arrow-down"></i> Restore Now
+                </button>
             </div>
         </div>
         <div class="input-group">
@@ -272,6 +275,7 @@
   <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
     <input type="file" id="importFile" class="upload-input" accept=".json,application/json" onchange="doImport(event)">Select File
   </label>
+  <button class="btn btn-primary" style="width:auto; align-self:center;" onclick="triggerImportFile()">Choose & Import</button>
 </div>
         </div>
       </div>
@@ -286,6 +290,11 @@
     </div>
   </div>
 <script>
+/* NOTE: buildUrl() is provided by bharatpos.js (loaded above) */
+
+/* -------------------------
+   Page init
+   ------------------------- */
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     updateStorageMeter();
@@ -309,8 +318,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const storedQR = localStorage.getItem("upiQR");
     if (storedQR) renderQR(storedQR);
+
+    // If a pending restore marker exists, run factory-reset + restore
+    const pending = localStorage.getItem('bharatpos_pending_restore');
+    if (pending) {
+        const statusEl = document.getElementById('locationStatus');
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Restoring account ${pending} ...</span>`;
+        performFactoryResetAndRestore(pending);
+    }
 });
 
+/* -------------------------
+   Settings load / save
+   ------------------------- */
 function loadSettings() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     document.getElementById('merchantId').value = user.merchantId || "NOT SET";
@@ -321,7 +341,6 @@ function loadSettings() {
     document.getElementById('billFooter').value = localStorage.getItem('bharatpos_bill_footer') || "";
     document.getElementById('billSize').value = localStorage.getItem('bharatpos_bill_size') || "thermal";
 
-    // 🟢 LOAD GST SETTINGS
     const isGstOn = localStorage.getItem('bharatpos_gst_mode') === 'true';
     document.getElementById('gstToggle').checked = isGstOn;
     document.getElementById('gstin').value = localStorage.getItem('bharatpos_gstin') || "";
@@ -332,69 +351,141 @@ function loadSettings() {
     }
 }
 
-function toggleGSTFields() {
-    const isChecked = document.getElementById('gstToggle').checked;
-    document.getElementById('gstFields').style.display = isChecked ? 'block' : 'none';
+/* -------------------------
+   Restore Now (manual)
+   ------------------------- */
+function restoreNow() {
+    // Determine merchantId to restore: prefer bharatpos_user, else merchantId input value
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const mem = user.merchantId || document.getElementById('merchantId')?.value;
+    if (!mem) {
+        alert('No Merchant ID found. Please login/register first.');
+        return;
+    }
+
+    if (!confirm(`This will clear local data and attempt to restore server backup for ${mem}. Continue?`)) return;
+
+    // Place marker and trigger same restore flow used on page load
+    localStorage.setItem('bharatpos_pending_restore', mem);
+    performFactoryResetAndRestore(mem);
 }
 
-function saveShopDetails() {
-    // Save standard fields
-    localStorage.setItem('shopName', document.getElementById('shopName').value);
-    localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
-    localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
-    localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
-    localStorage.setItem('bharatpos_bill_size', document.getElementById('billSize').value);
 
-    //      SAVE GST SETTINGS (Force String Conversion)
-    const gstStatus = document.getElementById('gstToggle').checked;
-    localStorage.setItem('bharatpos_gst_mode', gstStatus ? 'true' : 'false');
-    localStorage.setItem('bharatpos_gstin', document.getElementById('gstin').value);
 
-    let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    user.name = document.getElementById('ownerName').value;
-    if(!user.merchantId) user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
-    
-    localStorage.setItem('bharatpos_user', JSON.stringify(user));
-    
-    alert('✅ Settings Saved Successfully!');
-    // Reload to ensure all scripts pick up the new GST mode
-    setTimeout(() => location.reload(), 500); 
+async function performFactoryResetAndRestore(merchantId) {
+    try {
+        const preserveKey = 'bharatpos_pending_restore';
+        // 1) Soft reset: collect keys to remove but keep the pending marker
+        const keys = [];
+        for (let i=0; i<localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k) continue;
+            if (k === preserveKey) continue;
+            keys.push(k);
+        }
+        keys.forEach(k => localStorage.removeItem(k));
+
+        // 2) Call server to restore
+        let restored = null;
+        try {
+            const resp = await fetch(buildUrl('/api/restore-data'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ merchantId })
+            });
+            restored = await resp.json();
+            // After fetching restored = await resp.json();
+if (restored && restored.backup) {
+  try {
+    const backup = restored.backup;
+    // Write top-level keys directly
+    Object.keys(backup).forEach(k => {
+      if (k === '_meta') return;
+      try {
+        const val = backup[k];
+        // If val is an object or array, stringify; primitives store as string for compatibility
+        if (typeof val === 'object') localStorage.setItem(k, JSON.stringify(val));
+        else localStorage.setItem(k, String(val));
+      } catch (e) { console.warn('Could not restore key', k, e); }
+    });
+    appliedAny = true;
+  } catch(e){ console.warn('Applying backup failed', e); }
 }
+        } 
+ 
+        catch (err) {
+            console.warn('Restore call failed', err);
+            const statusEl = document.getElementById('locationStatus');
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger)">Restore failed (network)</span>`;
+        }
 
-function updateLocation() {
-    const status = document.getElementById('locationStatus');
-    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ...`;
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(p => {
-            let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-            user.lat = p.coords.latitude; user.lng = p.coords.longitude;
-            localStorage.setItem('bharatpos_user', JSON.stringify(user));
-            status.innerHTML = `<span style="color:var(--success)">✅ Updated</span>`;
-            updateStorageMeter();
-        }, err => {
-            status.innerHTML = "GPS Error";
-        });
-    } else status.innerHTML = "GPS Error";
-}
+        // 3) Nimble mapping: server may return stock/customers under different keys
+        const serverStock = (restored && (restored.stock || restored.products || restored.data?.stock)) || [];
+        const serverCustomers = (restored && (restored.customers || restored.customersList || restored.data?.customers)) || [];
+        const serverSales = (restored && (restored.sales || restored.orders || restored.data?.sales)) || [];
 
-function copyMerchantID() {
-    const copyText = document.getElementById("merchantId");
-    // For readonly input, select() still works in most browsers; fallback to clipboard API:
-    const value = copyText.value;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(value).then(()=> alert("Copied!"), ()=> {
-            copyText.select(); document.execCommand('copy'); alert("Copied!");
-        });
-    } else {
-        copyText.select(); document.execCommand('copy'); alert("Copied!");
+        let appliedAny = false;
+
+        if (Array.isArray(serverStock) && serverStock.length > 0) {
+            localStorage.setItem('bharatpos_products', JSON.stringify(serverStock));
+            appliedAny = true;
+        }
+
+        if (Array.isArray(serverCustomers) && serverCustomers.length > 0) {
+            // canonical key used across app
+            localStorage.setItem('bharatpos_customers', JSON.stringify(serverCustomers));
+            appliedAny = true;
+        }
+
+        if (Array.isArray(serverSales) && serverSales.length > 0) {
+            // store sales if server provided them
+            localStorage.setItem('bharatpos_sales', JSON.stringify(serverSales));
+            appliedAny = true;
+        }
+
+        // If server returned merchant profile info anywhere, merge it into bharatpos_user and shopName/shopPhone
+        const md = restored && (restored.merchantData || restored.data?.merchantData || restored.merchant || null);
+        if (md && typeof md === 'object') {
+            if (md.shopName) localStorage.setItem('shopName', md.shopName);
+            if (md.mobile) localStorage.setItem('shopPhone', md.mobile);
+            const existingUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            const mergedUser = { ...existingUser, merchantId: merchantId, name: md.ownerName || md.name || existingUser.name || '', lat: md.lat, lng: md.lng, shopName: md.shopName || existingUser.shopName };
+            localStorage.setItem('bharatpos_user', JSON.stringify(mergedUser));
+        } else {
+            // Ensure merchantId is recorded even if no merchantData returned
+            const existingUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            existingUser.merchantId = merchantId;
+            localStorage.setItem('bharatpos_user', JSON.stringify(existingUser));
+        }
+
+        // 4) UI message
+        if (appliedAny) {
+            document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Server data restored for ${merchantId}</span>`;
+        } else {
+            document.getElementById('locationStatus').innerHTML = `<span style="color:var(--danger)">No server backup for ${merchantId}. Factory reset completed.</span>`;
+        }
+
+    } catch (err) {
+        console.error('Factory reset / restore error', err);
+        const statusEl = document.getElementById('locationStatus');
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger)">Restore error</span>`;
+    } finally {
+        // 5) Remove pending marker and reload so all pages pick up new state
+        try { localStorage.removeItem('bharatpos_pending_restore'); } catch(e) {}
+        try { updateStorageMeter(); } catch(e) {}
+        setTimeout(()=> { location.reload(); }, 800);
     }
 }
+/* ========================================================== */
 
-function renderQR(src) { document.getElementById("qrContainer").innerHTML = `<img src="${src}" class="qr-img">`; }
+/* -------------------------
+   Import / Export & helpers (unchanged)
+   ------------------------- */
+function triggerImportFile() {
+  const f = document.getElementById('importFile');
+  if (f) f.click();
+}
 
-// IMPORT: read JSON file from file input, validate and import
-/* Replace the doImport function in settings.html with this version.
-   This maps common backup formats (like the one you provided) to the app keys. */
 function doImport(event) {
   try {
     const file = event && event.target && event.target.files && event.target.files[0];
@@ -406,13 +497,11 @@ function doImport(event) {
         const parsed = JSON.parse(e.target.result);
         if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure (expected top-level object).');
 
-        // Ask merge vs replace
         const action = confirm('Press OK to MERGE imported data into existing storage.\nPress Cancel to REPLACE entire local storage with imported data.') ? 'merge' : 'replace';
         if (action === 'replace') localStorage.clear();
 
         const written = [];
 
-        // 1) If file uses 'products'/'sales' (your export), map them to app keys
         if (Array.isArray(parsed.products)) {
           localStorage.setItem('bharatpos_products', JSON.stringify(parsed.products));
           written.push('bharatpos_products');
@@ -429,23 +518,18 @@ function doImport(event) {
           written.push('bharatpos_sales');
         }
 
-        // 2) Map settings fields if present
         if (parsed.settings && typeof parsed.settings === 'object') {
           const s = parsed.settings;
           if (s.storeName) { localStorage.setItem('shopName', String(s.storeName)); written.push('shopName'); }
           if (s.theme) { localStorage.setItem('theme', String(s.theme)); written.push('theme'); }
-          // Save whole settings object too for reference
           localStorage.setItem('bharatpos_settings', JSON.stringify(s));
           written.push('bharatpos_settings');
         }
 
-        // 3) Generic: preserve other top-level keys (store as JSON where appropriate)
         for (const key in parsed) {
           if (!Object.prototype.hasOwnProperty.call(parsed, key)) continue;
           if (['products','sales','settings','bharatpos_products','bharatpos_sales','bharatpos_settings'].includes(key)) continue;
           const val = parsed[key];
-          // If it's a primitive and the exact key is already mapped, skip
-          // Otherwise store under same key (best-effort)
           try {
             if (typeof val === 'object') localStorage.setItem(key, JSON.stringify(val));
             else localStorage.setItem(key, String(val));
@@ -455,16 +539,12 @@ function doImport(event) {
           }
         }
 
-        // 4) If nothing was written using mapping, fall back to storing full object
         if (written.length === 0) {
           localStorage.setItem('import_raw_backup', JSON.stringify(parsed));
           written.push('import_raw_backup');
         }
 
-        // Write sync marker so other tabs detect import
         localStorage.setItem('bharatpos_last_import', new Date().toISOString());
-
-        // Update storage meter if present
         try { if (typeof updateStorageMeter === 'function') updateStorageMeter(); } catch(e){}
 
         alert('✅ Import complete. Keys written: ' + written.join(', ') + '. The page will reload so changes apply.');
@@ -479,20 +559,12 @@ function doImport(event) {
     alert('Import error: ' + error.message);
   }
 }
-// Simple validation to ensure top-level object with string keys
-function validateParsedData(data) {
-    if (typeof data !== 'object' || data === null) return false;
-    // Ensure keys are strings (JSON keys are always strings, but be defensive)
-    return Object.keys(data).every(k => typeof k === 'string');
-}
 
-// EXPORT: gather all localStorage keys/values and download as backup.json
 function gatherAllData() {
     const result = {};
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         const raw = localStorage.getItem(key);
-        // Try to parse stored JSON values back to objects if possible
         try {
             result[key] = JSON.parse(raw);
         } catch (e) {
@@ -527,13 +599,242 @@ function updateStorageMeter() {
     document.getElementById('storageFill').style.width = `${pct}%`;
 }
 
+
+
+function toggleGSTFields() {
+    const gstCheckbox = document.getElementById('gstToggle');
+    const gstFields = document.getElementById('gstFields');
+    if (!gstCheckbox || !gstFields) return;
+    const isChecked = !!gstCheckbox.checked;
+    gstFields.style.display = isChecked ? 'block' : 'none';
+    // Persist immediately
+    localStorage.setItem('bharatpos_gst_mode', isChecked ? 'true' : 'false');
+}
+
+
 function hardReset() {
     if(confirm('⚠️ DELETE EVERYTHING?')) { localStorage.clear(); location.reload(); }
 }
+
+
+
+
+
+async function saveShopDetails() {
+    // Save standard fields
+    localStorage.setItem('shopName', document.getElementById('shopName').value);
+    localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
+    localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
+    localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
+    localStorage.setItem('bharatpos_bill_size', document.getElementById('billSize').value);
+
+    // SAVE GST SETTINGS (Force String Conversion)
+    const gstStatus = document.getElementById('gstToggle').checked;
+    localStorage.setItem('bharatpos_gst_mode', gstStatus ? 'true' : 'false');
+    localStorage.setItem('bharatpos_gstin', document.getElementById('gstin').value);
+
+    // Update local bharatpos_user
+    let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    user.name = document.getElementById('ownerName').value;
+    user.shopName = document.getElementById('shopName').value;
+    if(!user.merchantId) user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
+    
+    localStorage.setItem('bharatpos_user', JSON.stringify(user));
+
+    // Call server to register/update merchant profile and push backups
+    try {
+        if (typeof registerOrUpdateMerchantProfile === 'function') {
+            await registerOrUpdateMerchantProfile();
+        } else {
+            // Fallback: attempt direct fetch using buildUrl
+            const merchantId = user.merchantId;
+            const payload = {
+              ownerName: user.name,
+              mobile: user.mobile || localStorage.getItem('shopPhone') || '',
+              shopName: user.shopName || localStorage.getItem('shopName') || '',
+              category: user.category || '',
+              state: user.state || '',
+              city: user.city || '',
+              pincode: user.pincode || ''
+            };
+            if (payload.mobile) {
+              await fetch(buildUrl('/api/register-merchant'), {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+              });
+            }
+            try { await pushProductsToServer(); } catch(e){}
+            try { await pushCustomersToServer(); } catch(e){}
+             try { await pushFullBackupToServer(); } catch(e) { console.warn('full backup after save failed', e); }
+        }
+    } catch (err) {
+        console.warn('Profile update / backup push failed', err);
+    }
+    
+    alert('✅ Settings Saved Successfully!');
+    // Reload to ensure all scripts pick up the new GST mode
+    setTimeout(() => location.reload(), 500); 
+}
+
+/* wiring */
+document.addEventListener('DOMContentLoaded', () => {
+    // restore UI
+    const gstCheckbox = document.getElementById('gstToggle');
+    if (gstCheckbox) {
+        gstCheckbox.addEventListener('change', toggleGSTFields);
+    }
+});
+
+
+
+
+
+
+
+
+
+
+// Replaces existing updateLocation() — improved accuracy via watchPosition sampling
+function updateLocation() {
+    const status = document.getElementById('locationStatus');
+    if (!status) return;
+
+    // UI: show working state
+    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Acquiring location... (high accuracy)`;
+
+    if (!navigator.geolocation) {
+        status.innerHTML = "GPS not supported";
+        return;
+    }
+
+    // Strategy:
+    // 1) Use watchPosition to gather multiple samples (prefer sample with smallest accuracy).
+    // 2) Stop watching when we have a good sample (accuracy <= desiredAccuracy) or after timeout/maxSamples.
+    // 3) If watchPosition isn't available/works poorly, fallback to getCurrentPosition (highAccuracy).
+    // 4) Persist lat/lng into bharatpos_user and update UI.
+
+    const desiredAccuracy = 50; // meters - target accuracy threshold
+    const maxSamples = 6;       // collect up to 6 samples
+    const maxTimeout = 18000;   // overall timeout 18s
+
+    let samples = [];
+    let watcherId = null;
+    let finished = false;
+
+    const finalize = (chosen) => {
+        if (finished) return;
+        finished = true;
+        if (watcherId !== null) {
+            try { navigator.geolocation.clearWatch(watcherId); } catch (e) {}
+        }
+
+        if (chosen) {
+            try {
+                let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+                user.lat = chosen.coords.latitude;
+                user.lng = chosen.coords.longitude;
+                user.location_accuracy = chosen.coords.accuracy || null;
+                localStorage.setItem('bharatpos_user', JSON.stringify(user));
+                status.innerHTML = `<span style="color:var(--success)">✅ Updated (${(chosen.coords.accuracy||'—')}m)</span>`;
+                // call updateStorageMeter if present to refresh UI
+                try { if (typeof updateStorageMeter === 'function') updateStorageMeter(); } catch(e){}
+            } catch (e) {
+                console.warn('Saving location failed', e);
+                status.innerHTML = `<span style="color:var(--danger)">Saved failed</span>`;
+            }
+        } else {
+            status.innerHTML = `GPS Error`;
+        }
+    };
+
+    // Pick best sample (lowest accuracy value). If accuracy missing, use most recent.
+    const pickBestSample = () => {
+        if (!samples.length) return null;
+        const withAccuracy = samples.filter(s => typeof s.coords.accuracy === 'number' && !isNaN(s.coords.accuracy));
+        if (withAccuracy.length) {
+            withAccuracy.sort((a,b) => a.coords.accuracy - b.coords.accuracy);
+            return withAccuracy[0];
+        }
+        // fallback: most recent
+        return samples[samples.length - 1];
+    };
+
+    // Try watchPosition first for more stable readings
+    try {
+        watcherId = navigator.geolocation.watchPosition(
+            (pos) => {
+                if (finished) return;
+                samples.push(pos);
+
+                // If accuracy is very good, finish early
+                const acc = pos.coords && pos.coords.accuracy;
+                if (typeof acc === 'number' && acc <= desiredAccuracy) {
+                    finalize(pos);
+                    return;
+                }
+
+                // If we have enough samples, pick best and finish
+                if (samples.length >= maxSamples) {
+                    const best = pickBestSample();
+                    finalize(best);
+                }
+            },
+            (err) => {
+                // On error while watching, fallback to single high-accuracy getCurrentPosition attempt
+                console.warn('watchPosition error', err);
+                // If error is PERMISSION_DENIED, abort
+                if (err && err.code === err.PERMISSION_DENIED) {
+                    finalize(null);
+                    return;
+                }
+                // fallback:
+                try {
+                    if (watcherId !== null) navigator.geolocation.clearWatch(watcherId);
+                } catch (e) {}
+                watcherId = null;
+                // Try one-shot high-accuracy getCurrentPosition
+                navigator.geolocation.getCurrentPosition(
+                    (p) => finalize(p),
+                    (e2) => { console.warn('getCurrentPosition fallback error', e2); finalize(null); },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: maxTimeout }
+        );
+    } catch (e) {
+        console.warn('watchPosition not available or failed', e);
+        // Fallback to getCurrentPosition
+        navigator.geolocation.getCurrentPosition(
+            (p) => finalize(p),
+            (err) => { console.warn('getCurrentPosition failed', err); finalize(null); },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    }
+
+    // Safety timeout: ensure we finish after maxTimeout
+    setTimeout(() => {
+        if (finished) return;
+        const best = pickBestSample();
+        if (best) finalize(best);
+        else {
+            // Try one more getCurrentPosition attempt before giving up
+            navigator.geolocation.getCurrentPosition(
+                (p) => finalize(p),
+                (e) => { console.warn('Final fallback failed', e); finalize(null); },
+                { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            );
+        }
+    }, maxTimeout + 2000);
+}
+
+
+
+
+
 </script>
 
 </body>
 </html>
-
 
 
