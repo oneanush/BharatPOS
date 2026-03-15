@@ -7,194 +7,103 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script src="bharatpos.js"></script> 
   
   <style>
     /* --- THEME VARIABLES --- */
     :root {
-      --bg-body: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.7);
-      --border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #f59e0b;
-      --success: #10b981;
-      --danger: #ef4444;
-      --glass: blur(12px);
+      --bg-body: #0f172a; --bg-card: rgba(30, 41, 59, 0.7); --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc; --text-muted: #94a3b8; --accent: #f59e0b;
+      --success: #10b981; --danger: #ef4444; --primary: #3b82f6; --glass: blur(12px);
       --ease: cubic-bezier(0.23, 1, 0.32, 1);
     }
 
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-    body {
-      margin: 0; padding: 0;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      overflow-x: hidden;
-      padding-bottom: 80px;
-    }
-
-    /* BACKGROUND MESH */
-    body::before {
-      content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
-      background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.05), transparent 40%);
-      z-index: -1; pointer-events: none;
-    }
-
+    body { margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; padding-bottom: 80px; }
+    body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.05), transparent 40%); z-index: -1; pointer-events: none; }
     a { text-decoration: none; color: inherit; transition: 0.2s; }
 
+    /* --- HAMBURGER MENU --- */
+    .menu-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 5px; }
+    .side-menu { position: fixed; top: 0; left: -260px; width: 260px; height: 100vh; background: #0f172a; z-index: 9999; transition: 0.3s ease; padding: 20px; box-shadow: 5px 0 20px rgba(0,0,0,0.5); border-right: 1px solid var(--border); }
+    .side-menu.open { left: 0; }
+    .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9998; backdrop-filter: blur(2px); }
+    .side-menu-links { display: flex; flex-direction: column; gap: 10px; margin-top: 30px; }
+    .side-menu-links a { padding: 12px 15px; border-radius: 8px; font-size: 15px; color: var(--text-main); font-weight: 500; display: flex; align-items: center; gap: 12px; }
+    .side-menu-links a:hover { background: rgba(255,255,255,0.05); color: var(--accent); }
+    .side-menu-links i { width: 20px; text-align: center; color: var(--text-muted); }
+
     /* --- NAVIGATION --- */
-    .navbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 24px;
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: var(--glass);
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 100;
-    }
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
     .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: #fff; }
     .global-logo { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
     .brand span { color: var(--accent); }
-    
-    .nav-links { display: flex; gap: 20px; }
-    .nav-links a { font-size: 14px; font-weight: 500; color: var(--text-muted); padding: 6px 10px; border-radius: 6px; }
-    .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
-    
-    .profile-pill {
-      font-size: 13px; font-weight: 600; background: rgba(245, 158, 11, 0.15);
-      color: var(--accent); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.3);
-    }
+    .nav-btn-bill { background: var(--success); color: #000; font-weight: 800; padding: 8px 16px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+    .nav-btn-bill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+    .profile-pill { font-size: 13px; font-weight: 600; background: rgba(245, 158, 11, 0.15); color: var(--accent); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.3); display: none;}
+    @media(min-width: 600px) { .profile-pill { display: block; } .mobile-hide { display: inline-block; } }
+    @media(max-width: 599px) { .mobile-hide { display: none; } }
 
     /* --- LAYOUT GRID --- */
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    
     .welcome-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; animation: fadeUp 0.6s var(--ease); }
     .welcome-sub { color: var(--text-muted); font-size: 14px; }
     .welcome-title { font-size: 24px; font-weight: 700; margin: 4px 0 0; }
-
-    /* AI Sync Status Indicator */
-    .ai-sync-pill {
-        font-size: 11px; padding: 6px 12px; border-radius: 20px;
-        background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-        display: flex; align-items: center; gap: 6px; color: var(--text-muted);
-        transition: 0.3s;
-    }
+    .ai-sync-pill { font-size: 11px; padding: 6px 12px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; color: var(--text-muted); transition: 0.3s; }
     .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; transition: 0.3s; }
     .syncing .sync-dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 1s infinite; }
     .synced .sync-dot { background: var(--success); box-shadow: 0 0 5px var(--success); }
     .error .sync-dot { background: var(--danger); }
-    
     @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-    .grid-dashboard {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-auto-rows: minmax(160px, auto);
-      gap: 20px;
-    }
-
-    /* Card Styling */
-    .card {
-      background: var(--bg-card); backdrop-filter: var(--glass);
-      border: 1px solid var(--border); border-radius: 16px;
-      padding: 20px; position: relative; overflow: hidden;
-      display: flex; flex-direction: column; justify-content: space-between;
-      transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
-      animation: fadeUp 0.8s var(--ease) backwards;
-      cursor: pointer;
-    }
+    .grid-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(160px, auto); gap: 20px; }
+    .card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); animation: fadeUp 0.8s var(--ease) backwards; cursor: pointer; }
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.2); }
-    
     .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 0 0 10px 0; font-weight: 700; }
     .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .stat-sub { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
-
     .span-2 { grid-column: span 2; }
     .span-4 { grid-column: span 4; }
     
-    @media (max-width: 900px) {
-      .grid-dashboard { grid-template-columns: 1fr 1fr; }
-      .span-2, .span-4 { grid-column: span 2; }
-    }
-    @media (max-width: 600px) {
-      .grid-dashboard { display: flex; flex-direction: column; }
-      .navbar { flex-direction: column; gap: 10px; align-items: flex-start; }
-      .nav-links { width: 100%; overflow-x: auto; }
-    }
+    @media (max-width: 900px) { .grid-dashboard { grid-template-columns: 1fr 1fr; } .span-2, .span-4 { grid-column: span 2; } }
+    @media (max-width: 600px) { .grid-dashboard { display: flex; flex-direction: column; } }
 
-    /* --- CHART COMPONENTS --- */
-    .chart-box { 
-        height: 180px; display: flex; align-items: flex-end; justify-content: space-between; 
-        padding-top: 20px; padding-left: 10px; padding-bottom: 5px;
-        border-left: 2px solid rgba(255,255,255,0.1); 
-        border-bottom: 2px solid rgba(255,255,255,0.1);
-        background: linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 100% 25%;
-    }
+    .chart-box { height: 180px; display: flex; align-items: flex-end; justify-content: space-between; padding-top: 20px; padding-left: 10px; padding-bottom: 5px; border-left: 2px solid rgba(255,255,255,0.1); border-bottom: 2px solid rgba(255,255,255,0.1); background: linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 100% 25%; }
     .bar-group { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 12%; height: 100%; }
     .bar { width: 40%; background: #334155; border-radius: 4px 4px 0 0; transition: height 1s var(--ease); position: relative; min-height: 4px; }
     .bar.active { background: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     .bar-label { font-size: 10px; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
 
-    /* --- STOCK ALERT --- */
-    .stock-alert-item {
-        background: rgba(239, 68, 68, 0.1);
-        border-left: 3px solid var(--danger);
-        padding: 10px; margin-bottom: 8px; border-radius: 4px;
-        display: flex; justify-content: space-between; align-items: center;
-        transition: transform 0.2s;
-    }
+    .stock-alert-item { background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--danger); padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; }
     .stock-alert-item:hover { transform: translateX(3px); background: rgba(239, 68, 68, 0.15); }
     .stock-name { font-weight: 600; font-size: 13px; color: #f8fafc; display: block; }
     .stock-qty { color: var(--danger); font-size: 11px; margin-top:2px; }
-
-    .btn-action { 
-        background: var(--text-main); color: var(--bg-body); padding: 6px 12px; 
-        border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; 
-        display: inline-block;
-    }
+    .btn-action { background: var(--text-main); color: var(--bg-body); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; display: inline-block; }
     .text-good { color: var(--success); } .text-bad { color: var(--danger); } .text-warn { color: var(--accent); }
-
-    /* CRM CARD SPECIAL */
     .card-crm { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(99, 102, 241, 0.3); }
     .card-crm:hover { border-color: #6366f1; }
 
-    /* --- UDHAAR SECTION STYLES --- */
     #udhaarView { display: none; animation: fadeIn 0.4s ease; }
-    
     .udhaar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
     .btn-back { background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
     .btn-back:hover { background: rgba(255,255,255,0.2); }
-
-    .total-dues-card {
-      background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(15,23,42,0.8));
-      border: 1px solid rgba(239,68,68,0.4); border-radius: 16px; padding: 20px;
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
-    }
+    .total-dues-card { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(15,23,42,0.8)); border: 1px solid rgba(239,68,68,0.4); border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
     .dues-label { font-size: 12px; color: #fca5a5; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
     .dues-amount { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: #fff; margin-top: 5px; }
-
-    .group-card {
-      background: var(--bg-card); backdrop-filter: var(--glass);
-      border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;
-      margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
-      cursor: pointer; transition: 0.2s; position: relative; overflow: hidden;
-    }
+    .group-card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
     .group-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
     .group-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
-
     .cust-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .cust-phone { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
     .debt-amt { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--danger); }
     .debt-count { font-size: 10px; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; margin-left: 10px; color: var(--text-muted); }
 
-    /* UDHAAR MODALS */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     .modal-box { background: #1e293b; width: 95%; max-width: 450px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-height: 90vh; display: flex; flex-direction: column; }
     .modal-header { padding: 15px 20px; background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .modal-body { padding: 0; overflow-y: auto; }
-
     .inv-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border); }
     .inv-info h4 { margin: 0 0 4px 0; font-size: 14px; color: #fff; }
     .inv-info p { margin: 0; font-size: 11px; color: var(--text-muted); }
@@ -209,7 +118,6 @@
     .rec-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right; font-weight: 800; font-size: 1.2em; }
     .btn-settle { width: 100%; padding: 15px; background: var(--success); color: #000; border: none; font-size: 14px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* FOOTER */
     .footer-zone { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid var(--border); }
     .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; }
     .btn-danger:hover { background: var(--danger); color: white; }
@@ -217,82 +125,21 @@
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+    .dash-ticker-wrap { background: #020617; border-bottom: 1px solid #334155; height: 40px; display: flex; align-items: center; overflow: hidden; position: relative; z-index: 90; }
+    .dt-label { background: #ef4444; color: white; padding: 0 15px; height: 100%; display: flex; align-items: center; font-weight: 800; font-size: 11px; letter-spacing: 1px; z-index: 10; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+    .dt-content { white-space: nowrap; animation: ticker 20s linear infinite; color: #f1f5f9; font-family: 'JetBrains Mono', monospace; font-size: 13px; padding-left: 20px; }
+    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-/* --- LIVE TICKER STYLES --- */
-.dash-ticker-wrap {
-    background: #020617;
-    border-bottom: 1px solid #334155;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    position: relative;
-    z-index: 90;
-}
-.dt-label {
-    background: #ef4444;
-    color: white;
-    padding: 0 15px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    font-weight: 800;
-    font-size: 11px;
-    letter-spacing: 1px;
-    z-index: 10;
-    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-}
-.dt-content {
-    white-space: nowrap;
-    animation: ticker 20s linear infinite;
-    color: #f1f5f9;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    padding-left: 20px;
-}
-@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-/* --- BROADCAST MODAL STYLES --- */
-.broadcast-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 9999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(8px);
-}
-.broadcast-box {
-    background: #1e293b;
-    border: 1px solid #6366f1;
-    width: 90%; max-width: 400px;
-    padding: 30px;
-    border-radius: 20px;
-    text-align: center;
-    box-shadow: 0 0 50px rgba(99, 102, 241, 0.3);
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.bc-icon { font-size: 45px; color: #f59e0b; margin-bottom: 20px; }
-.broadcast-box h2 { color: #fff; margin: 0 0 10px 0; font-size: 22px; }
-.broadcast-box p { color: #cbd5e1; margin-bottom: 25px; line-height: 1.6; font-size: 14px; }
-.broadcast-box button {
-    background: #6366f1; color: white;
-    border: none; padding: 12px 30px;
-    border-radius: 10px; font-weight: 800;
-    cursor: pointer; transition: 0.2s;
-    text-transform: uppercase; letter-spacing: 1px;
-}
-.broadcast-box button:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
-
-@keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-
-
-
+    .broadcast-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+    .broadcast-box { background: #1e293b; border: 1px solid #6366f1; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 0 50px rgba(99, 102, 241, 0.3); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .bc-icon { font-size: 45px; color: #f59e0b; margin-bottom: 20px; }
+    .broadcast-box h2 { color: #fff; margin: 0 0 10px 0; font-size: 22px; }
+    .broadcast-box p { color: #cbd5e1; margin-bottom: 25px; line-height: 1.6; font-size: 14px; }
+    .broadcast-box button { background: #6366f1; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
   </style>
 </head>
 <body>
-
-
 
 <div id="dashboardTicker" class="dash-ticker-wrap" style="display:none;">
     <div class="dt-label">📢 UPDATE</div>
@@ -308,22 +155,42 @@
     </div>
 </div>
 
-
-
+<div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
+<div id="sideMenu" class="side-menu">
+    <button onclick="toggleMenu()" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
+    <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:40px; margin-top:10px;">
+        Bharat<span style="color:var(--accent);">POS</span>
+    </div>
+    <div class="side-menu-links">
+        <a href="dashboard.html" style="color:var(--accent); background:rgba(245,158,11,0.1);"><i class="fa-solid fa-home"></i> Home</a>
+        <a href="products.html"><i class="fa-solid fa-box-open"></i> Stock / Inventory</a>
+        <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Purani Bikri</a>
+        <a href="reports.html"><i class="fa-solid fa-file-invoice-dollar"></i> Reports</a>
+        <a href="ai.html"><i class="fa-solid fa-robot" style="color:var(--accent);"></i> AI Madad</a>
+        <a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a>
+    </div>
+</div>
 
 <nav class="navbar">
-  <div class="brand">
-    <img src="logo.png" class="global-logo" alt="Logo">
-    Bharat<span>POS</span>
+  <div style="display:flex; align-items:center; gap:15px;">
+      <button class="menu-btn" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
+      <div class="brand">
+        <img src="logo.png" class="global-logo" alt="Logo">
+        Bharat<span>POS</span>
+      </div>
   </div>
-  <div class="nav-links">
-    <a href="#" class="active">Home</a>
-    <a href="billing.html">Bill Banao</a>
-    <a href="products.html">Stock (Samaan)</a>
-    <a href="sales.html">Bikri Report</a>
-    <a href="ai.html" style="color:var(--accent)">AI Madad</a>
+  
+  <div style="display:flex; align-items:center; gap:12px;">
+      <a href="billing.html" class="nav-btn-bill"><i class="fa-solid fa-file-invoice"></i> <span class="mobile-hide">Bill Banao</span></a>
+      
+      <select id="shopSwitcher" onchange="handleShopChange(this.value)" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff; padding:6px 8px; border-radius:8px; font-size:12px; outline:none; cursor:pointer; max-width:120px; text-overflow: ellipsis;">
+          <option value="" disabled>Loading...</option>
+      </select>
+      
+      <button onclick="document.getElementById('addBranchModal').style.display='flex'" style="background:var(--primary); border:none; color:white; width:32px; height:32px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(59,130,246,0.3);"><i class="fa-solid fa-store"></i><span style="font-size:10px; margin-left:2px;">+</span></button>
+              
+      <div id="profileName" class="profile-pill">Guest</div>
   </div>
-  <div id="profileName" class="profile-pill">Guest</div>
 </nav>
 
 <div class="container">
@@ -448,9 +315,9 @@
       </div>
       <div class="modal-body" id="invoiceListBody"></div>
     </div>
-  </div>
+</div>
 
-  <div id="receiptModal" class="modal-overlay" style="z-index: 2200;">
+<div id="receiptModal" class="modal-overlay" style="z-index: 2200;">
     <div class="modal-box" style="max-width:350px; background:white;">
       <div class="modal-header" style="background:#f8f9fa; border-bottom:1px solid #ddd; color:#333;">
         <strong>Invoice Details</strong>
@@ -474,7 +341,33 @@
       </div>
       <button id="btnSettle" class="btn-settle">✅ Mark Paid (Cash)</button>
     </div>
-  </div>
+</div>
+
+<div id="addBranchModal" class="modal-overlay" style="z-index:3000;">
+    <div class="modal-box" style="padding:25px; width:90%; max-width:400px; max-height:none; background:#1e293b;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; color:#fff; font-size:18px;">🏪 Add Branch Shop</h3>
+            <button onclick="document.getElementById('addBranchModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <label style="font-size:12px; color:var(--text-muted); font-weight:bold;">Branch Name</label>
+            <input type="text" id="newBranchName" placeholder="e.g. Branch - South Area" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; color:#fff; margin-top:5px; outline:none;">
+        </div>
+        
+        <div style="margin-bottom:25px;">
+            <label style="font-size:12px; color:var(--text-muted); font-weight:bold;">Category</label>
+            <select id="newBranchCat" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; color:#fff; margin-top:5px; outline:none;">
+                <option value="GROCERY">Kirana / Grocery</option>
+                <option value="MEDICAL">Pharmacy / Medical</option>
+                <option value="ELECTRONIC">Electronics</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
+        
+        <button onclick="submitNewBranch(event)" style="width:100%; padding:14px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; transition:0.2s;">Create Branch</button>
+    </div>
+</div>
 
 <script>
   // --- 1. UTILS & HELPERS ---
@@ -522,7 +415,80 @@
     document.getElementById('greetingDisplay').textContent = txt + ", Seth Ji";
   }
 
-  // --- 2. MAIN DASHBOARD LOGIC ---
+  function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      const overlay = document.getElementById('menuOverlay');
+      if(menu.classList.contains('open')) {
+          menu.classList.remove('open');
+          overlay.style.display = 'none';
+      } else {
+          menu.classList.add('open');
+          overlay.style.display = 'block';
+      }
+  }
+// 🟢 2. MULTI-SHOP UI & LOGIC
+  async function initShopSwitcher() {
+      const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+      if(typeof loadOwnedShops === 'function') {
+          // 🟢 Pass the mobile explicitly to ensure the server recognizes the user
+          const shops = await loadOwnedShops(currentUser.mobile);
+          const switcher = document.getElementById('shopSwitcher');
+          
+          if(shops && shops.length > 0) {
+              switcher.innerHTML = shops.map(s => 
+                  `<option value="${s.merchantId}" ${s.merchantId === currentUser.merchantId ? 'selected' : ''}>
+                      ${s.shopName} ${s.isMain ? '(Main)' : ''}
+                  </option>`
+              ).join('');
+          } else {
+              switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
+          }
+      }
+  }
+
+  function handleShopChange(val) {
+      if(confirm("Switching shops will reload the dashboard. Continue?")) {
+          if(typeof switchActiveShop === 'function') switchActiveShop(val); 
+      } else {
+          const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+          document.getElementById('shopSwitcher').value = currentUser.merchantId;
+      }
+  }
+
+  async function submitNewBranch(event) {
+      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+      const shopName = document.getElementById('newBranchName').value.trim();
+      const category = document.getElementById('newBranchCat').value;
+      
+      if(!shopName) return alert("Enter Branch Name");
+      if(!user.mobile || !user.merchantId) return alert("Session invalid. Re-login required.");
+
+      try {
+          const btn = event.target;
+          btn.innerText = "Creating...";
+          const res = await fetch(getApiUrl('/api/add-branch'), {
+              method: 'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ mobile: user.mobile, masterId: user.merchantId, shopName, category })
+          });
+          const data = await res.json();
+          
+          if(data.success) {
+              alert(`Branch '${shopName}' created! You are still on your main shop. Use the dropdown to switch to it.`);
+              document.getElementById('addBranchModal').style.display='none';
+              document.getElementById('newBranchName').value = '';
+              btn.innerText = "Create Branch";
+              initShopSwitcher(); // refresh dropdown
+          } else {
+              alert("Failed to create branch on server.");
+              btn.innerText = "Create Branch";
+          }
+      } catch(e) { 
+          alert("Network Error.");
+          event.target.innerText = "Create Branch";
+      }
+  }
+
+  // --- 3. MAIN DASHBOARD LOGIC ---
   function loadUser(){
     try {
       const u = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
@@ -638,7 +604,7 @@
     ctx.innerHTML = html;
   }
 
-  // --- 3. UDHAAR VIEW LOGIC (Merged) ---
+  // --- 4. UDHAAR VIEW LOGIC (Merged) ---
   function openUdhaarSection() {
       document.getElementById('mainDashboard').style.display = 'none';
       document.getElementById('udhaarView').style.display = 'block';
@@ -764,6 +730,8 @@
           document.getElementById('receiptModal').style.display='none';
           document.getElementById('customerModal').style.display='none';
           renderUdhaarGroups(); // Refresh list
+          
+          if(typeof pushFullBackupToServerDebounced === 'function') pushFullBackupToServerDebounced();
       } else {
           alert("Error: Invoice not found.");
       }
@@ -776,7 +744,7 @@
     }
   }
 
-  // --- 4. AI SYNC LOGIC ---
+  // --- 5. AI SYNC LOGIC ---
   async function sendDashboardSnapshot(metrics) {
       const statusEl = document.getElementById('aiSyncStatus');
       const textEl = document.getElementById('aiSyncText');
@@ -822,10 +790,11 @@
       }
   }
 
-  // --- 5. EXECUTION START ---
+  // --- 6. EXECUTION START ---
   document.addEventListener("DOMContentLoaded", () => {
       setGreeting();
       loadUser();
+      initShopSwitcher(); // Call the newly injected logic
       setTimeout(renderDashboard, 100);
   });
 
@@ -833,73 +802,60 @@
       if (!document.hidden) renderDashboard(); 
   });
 
+  // --- 7. RECEIVER LOGIC ---
 
+  // Poll for messages every 10 seconds
+  setInterval(checkIncomingMessages, 10000);
 
+  async function checkIncomingMessages() {
+      try {
+          // 1. Check for Live Ticker
+          const tRes = await fetch(getApiUrl('/api/get-ticker'));
+          const tData = await tRes.json();
+          
+          if(tData.success && tData.text) {
+              const bar = document.getElementById('dashboardTicker');
+              const txt = document.getElementById('dashTickerText');
+              
+              // Only update if changed
+              if(txt.innerText !== tData.text) {
+                  txt.innerText = tData.text;
+                  // Duplicate text for smooth scrolling loop
+                  txt.innerHTML = `<span>${tData.text}</span> &nbsp;&nbsp;&bull;&nbsp;&nbsp; <span>${tData.text}</span>`;
+                  bar.style.display = 'flex';
+              }
+          }
 
+          // 2. Check for Global Broadcasts
+          const bRes = await fetch(getApiUrl('/api/get-broadcast'));
+          const bData = await bRes.json();
+          
+          if(bData.success && bData.data) {
+              const lastSeen = localStorage.getItem('last_broadcast_id');
+              const msg = bData.data;
+              
+              // If this is a new message (based on timestamp/ID)
+              if(msg.time > (lastSeen || 0)) {
+                  document.getElementById('bcTitle').innerText = msg.title;
+                  document.getElementById('bcBody').innerText = msg.body;
+                  document.getElementById('broadcastModal').style.display = 'flex';
+                  
+                  // Play Alert Sound
+                  const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                  audio.play().catch(e => console.log("Audio blocked"));
+                  
+                  // Mark as seen
+                  localStorage.setItem('last_broadcast_id', msg.time);
+              }
+          }
+      } catch(e) { 
+          console.log("Sync Silent Fail"); 
+      }
+  }
 
-
-// --- RECEIVER LOGIC ---
-
-// Poll for messages every 5 seconds
-setInterval(checkIncomingMessages, 10000);
-
-async function checkIncomingMessages() {
-    try {
-        // 1. Check for Live Ticker
-        // (Assuming you add GET /api/get-ticker to server.js)
-        const tRes = await fetch(getApiUrl('/api/get-ticker'));
-        const tData = await tRes.json();
-        
-        if(tData.success && tData.text) {
-            const bar = document.getElementById('dashboardTicker');
-            const txt = document.getElementById('dashTickerText');
-            
-            // Only update if changed
-            if(txt.innerText !== tData.text) {
-                txt.innerText = tData.text;
-                // Duplicate text for smooth scrolling loop
-                txt.innerHTML = `<span>${tData.text}</span> &nbsp;&nbsp;&bull;&nbsp;&nbsp; <span>${tData.text}</span>`;
-                bar.style.display = 'flex';
-            }
-        }
-
-        // 2. Check for Global Broadcasts
-        // (Assuming you add GET /api/get-broadcast)
-        const bRes = await fetch(getApiUrl('/api/get-broadcast'));
-        const bData = await bRes.json();
-        
-        if(bData.success && bData.data) {
-            const lastSeen = localStorage.getItem('last_broadcast_id');
-            const msg = bData.data;
-            
-            // If this is a new message (based on timestamp/ID)
-            if(msg.time > (lastSeen || 0)) {
-                document.getElementById('bcTitle').innerText = msg.title;
-                document.getElementById('bcBody').innerText = msg.body;
-                document.getElementById('broadcastModal').style.display = 'flex';
-                
-                // Play Alert Sound
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.play().catch(e => console.log("Audio blocked"));
-                
-                // Mark as seen
-                localStorage.setItem('last_broadcast_id', msg.time);
-            }
-        }
-    } catch(e) { 
-        console.log("Sync Silent Fail"); 
-    }
-}
-
-function closeBroadcast() {
-    document.getElementById('broadcastModal').style.display = 'none';
-}
-
-
-
-
-
+  function closeBroadcast() {
+      document.getElementById('broadcastModal').style.display = 'none';
+  }
 </script>
 </body>
 </html>
-
