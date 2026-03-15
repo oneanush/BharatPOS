@@ -1,7 +1,7 @@
 
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
-const API_BASE = 'http://localhost:5185'; 
+const API_BASE = 'https://sbjct-against-stated-stopping.trycloudflare.com'; 
 // ---------------------------
 
 // This function is now available globally
