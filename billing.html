@@ -40,18 +40,18 @@
     .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
     
     .product-scroll-area { flex-grow: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; }
-    #productList { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
-    .prod-card { background: var(--bg-panel); border-radius: 8px; padding: 10px; border: 1px solid var(--border); cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; min-height: 90px; position: relative; overflow: hidden; transition: 0.1s; }
+    #productList { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+    .prod-card { background: var(--bg-panel); border-radius: 8px; padding: 12px 10px; border: 1px solid var(--border); cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; min-height: 95px; position: relative; overflow: hidden; transition: 0.1s; }
     .prod-card:active { transform: scale(0.95); border-color: var(--accent); }
-    .prod-name { font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .prod-name { font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; }
     .prod-unit { font-size: 10px; color: var(--text-muted); }
-    .prod-price { font-size: 13px; color: var(--accent); font-weight: 700; margin-top: 4px; }
+    .prod-price { font-size: 13px; color: var(--success); font-weight: 700; margin-top: 6px; }
     .out-stock { opacity: 0.5; filter: grayscale(1); border: 1px dashed var(--danger); pointer-events: none; }
 
     /* CART */
     .cart-panel { background: #111827; border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; z-index: 500; }
-    .cart-header { padding: 15px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-    .cart-title { font-weight: 700; font-size: 15px; color: #fff; }
+    .cart-header { padding: 15px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: relative; }
+    .cart-title { font-weight: 700; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 10px; }
     .cart-body { flex: 1; overflow-y: auto; padding: 0; }
     .cart-items-list table { width: 100%; border-collapse: collapse; }
     .cart-items-list td { padding: 10px 15px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; }
@@ -64,19 +64,10 @@
     .fancy-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.05); color: #fff; font-size: 13px; }
     
     /* SUGGESTIONS */
-    .suggestions-box {
-        position: absolute; top: 100%; left: 0; width: 60%; 
-        background: #1e293b; border: 1px solid var(--primary); border-radius: 6px;
-        z-index: 1000; max-height: 150px; overflow-y: auto; display: none;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
-    .suggestion-item {
-        padding: 10px; font-size: 12px; color: #e2e8f0; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05);
-        display: flex; justify-content: space-between;
-    }
+    .suggestions-box { position: absolute; top: 100%; left: 0; width: 60%; background: #1e293b; border: 1px solid var(--primary); border-radius: 6px; z-index: 1000; max-height: 150px; overflow-y: auto; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .suggestion-item { padding: 10px; font-size: 12px; color: #e2e8f0; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; }
     .suggestion-item:hover { background: var(--primary); color: white; }
     .suggestion-phone { color: var(--text-muted); font-size: 10px; }
-    .suggestion-item:hover .suggestion-phone { color: rgba(255,255,255,0.8); }
 
     .payment-area { padding: 15px; }
     .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; color: var(--text-muted); }
@@ -91,46 +82,53 @@
     .checkout-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; }
     .checkout-btn:hover { opacity: 0.9; }
 
-    /* MOBILE */
+    /* MOBILE EXTENSIONS */
+    .mobile-only { display: none; }
+    .swipe-handle { display: none; width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); }
+    .close-cart-btn { display: none; background: rgba(255,255,255,0.1); border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+    
     @media (max-width: 900px) {
       .app-layout { grid-template-columns: 1fr; display: block; height: calc(100vh - 60px); }
-      .cart-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 85vh; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.5); transform: translateY(calc(100% - 70px)); transition: transform 0.3s; z-index: 2000; }
+      .cart-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 85vh; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.5); transform: translateY(calc(100% - 70px)); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 2000; }
       .cart-panel.open { transform: translateY(0); }
       .cart-toggle-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 70px; background: #1e293b; border-bottom: 1px solid var(--border); width: 100%; cursor: pointer; }
       .mini-cart-info { display: flex; flex-direction: column; }
       .mini-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
       .mini-total { font-size: 18px; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace; }
       .mini-btn { background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-      .cart-header { display: none; } 
+      
+      .cart-header { display: none; padding-top: 20px; } /* Room for handle */
       .cart-panel.open .cart-header { display: flex; }
       .cart-panel.open .cart-toggle-bar { display: none; }
+      .swipe-handle { display: block; }
+      .mobile-only { display: block; }
+      .close-cart-btn { display: block; }
     }
 
-    /* MODALS & INVOICE */
+    /* MODALS */
     .scanner-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 3000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-    .ar-wrapper { position: relative; width: 100%; max-width: 600px; height: 450px; background: #000; overflow: hidden; border-radius: 12px; border: 1px solid var(--border); }
-    #arVideo { width: 100%; height: 100%; object-fit: cover; }
-    #arCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    .ar-controls { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 20; }
-    .btn-confirm-ar { background: var(--success); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
-    .btn-close-ar { background: rgba(255,255,255,0.2); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .scan-laser { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--danger); box-shadow: 0 0 15px red; animation: scan 2s infinite; z-index: 10; pointer-events: none; }
-    @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+    
+    .variant-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 4000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .variant-box { background: #1e293b; width: 90%; max-width: 350px; border-radius: 12px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+    .variant-option { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+    .variant-option:hover { background: rgba(59, 130, 246, 0.2); border-color: var(--primary); }
+
+    /* 🟢 LOOSE WEIGHT BUTTONS */
+    .loose-btn { background: rgba(255,255,255,0.05); color: #fff; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    .loose-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
 
     /* INVOICE MODAL */
-    .invoice-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 4000; align-items: center; justify-content: center; }
-    .invoice-paper { background: white; color: black; width: 350px; padding: 20px; font-family: 'Courier New', Courier, monospace; font-size: 12px; max-height: 90vh; overflow-y: auto; }
+    .invoice-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center; }
+    .invoice-paper { background: white; color: black; width: 380px; padding: 20px; font-family: 'Courier New', Courier, monospace; font-size: 12px; max-height: 90vh; overflow-y: auto; }
     .inv-header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
     .inv-shop { font-size: 16px; font-weight: bold; }
-    .inv-meta { display: flex; justify-content: space-between; margin-bottom: 5px; }
     .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-    .inv-table th { text-align: left; border-bottom: 1px solid #000; padding: 4px 0; }
-    .inv-table td { padding: 4px 0; }
+    .inv-table th { text-align: left; border-bottom: 1px solid #000; padding: 4px 0; font-size: 11px; }
+    .inv-table td { padding: 4px 0; vertical-align: top; }
     .inv-totals { border-top: 1px dashed #000; padding-top: 5px; text-align: right; }
     .inv-row { display: flex; justify-content: space-between; }
-    .inv-bold { font-weight: bold; font-size: 14px; }
     .inv-btn-grp { display: flex; gap: 10px; margin-top: 15px; }
-    .inv-btn { flex: 1; padding: 10px; background: #000; color: white; border: none; cursor: pointer; font-weight: bold; text-align: center; }
+    .inv-btn { flex: 1; padding: 10px; background: #000; color: white; border: none; cursor: pointer; font-weight: bold; }
     .inv-close { background: #ccc; color: #000; }
   </style>
 </head>
@@ -150,7 +148,6 @@
     <div class="search-area">
       <div class="search-bar-wrap">
         <input type="text" id="productSearch" placeholder="Item dhundo (Search)..." oninput="handleSearch(this.value)">
-        <button class="btn-scan" onclick="startShelfScan()" style="color:var(--accent); margin-right:5px;"><i class="fa-solid fa-layer-group"></i></button>
         <button class="btn-scan" onclick="openBarcodeScanner()"><i class="fa-solid fa-barcode"></i></button>
       </div>
     </div>
@@ -160,11 +157,16 @@
 
   <div class="cart-panel" id="cartPanel">
     <div class="cart-toggle-bar" onclick="toggleCart()">
-        <div class="mini-cart-info"><span class="mini-label">Total</span><span class="mini-total" id="miniTotal">₹0</span></div>
+        <div class="mini-cart-info"><span class="mini-label">Total Bill</span><span class="mini-total" id="miniTotal">₹0</span></div>
         <div class="mini-btn">Bill Dekho ⬆</div>
     </div>
-    <div class="cart-header">
-      <div class="cart-title">🛒 Bill Details</div>
+
+    <div class="cart-header" id="cartHeaderHandle">
+      <div class="swipe-handle"></div>
+      <div class="cart-title">
+          <button class="close-cart-btn" onclick="toggleCart()"><i class="fa-solid fa-chevron-down"></i></button> 
+          🛒 Bill Details
+      </div>
       <button onclick="window.cart=[]; renderCart();" style="color:var(--danger); background:none; border:none; font-weight:bold; cursor:pointer;">Khali Karein</button>
     </div>
     
@@ -177,21 +179,16 @@
           <input type="number" id="custPhone" class="fancy-input" placeholder="Mobile Number">
           <div id="customerSuggestions" class="suggestions-box"></div>
         </div>
-        <button onclick="sendWhatsAppBill()" style="width:100%; background:rgba(37, 211, 102, 0.1); color:#25d366; border:1px solid #25d366; padding:8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; margin-top:5px;">
-          <i class="fa-brands fa-whatsapp"></i> WhatsApp Bill
-        </button>
       </div>
 
      <div class="payment-area">
         <div class="summary-row"><span>Kul Daam (Subtotal)</span><span id="subTotalVal">₹0</span></div>
-        
         <div class="summary-row" id="taxInfoRow" style="display:none; color:var(--text-muted);">
-            <span>Tax (CGST+SGST)</span><span id="taxTotalVal">₹0</span>
+            <span>GST (Tax)</span><span id="taxTotalVal">₹0</span>
         </div>
-
         <div class="summary-row" style="align-items:center;">
           <span>Discount</span>
-          <input id="discount" type="number" placeholder="0" style="width:60px; padding:4px; border-radius:4px; text-align:right;" oninput="renderCart()">
+          <input id="discount" type="number" placeholder="0" style="width:60px; padding:4px; border-radius:4px; text-align:right; background:rgba(0,0,0,0.3); color:white; border:1px solid var(--border);" oninput="renderCart()">
         </div>
         
         <div class="grand-total"><span>FINAL TOTAL</span><span id="grandTotal">₹0</span></div>
@@ -213,28 +210,47 @@
   </div>
 </div>
 
-<div id="invoiceModal" class="invoice-overlay">
-    <div class="invoice-paper" id="invoicePaper">
+<div id="variantModal" class="variant-overlay">
+    <div class="variant-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.1); padding-bottom:10px;">
+            <h3 id="variantModalName" style="margin:0; color:#fff; font-size:16px;">Select Type</h3>
+            <button onclick="document.getElementById('variantModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
         </div>
+        <div id="variantModalList" style="display:flex; flex-direction:column;"></div>
+    </div>
 </div>
 
-<div id="shelfScanModal" class="scanner-modal">
-  <div class="ar-wrapper">
-    <video id="arVideo" autoplay playsinline></video>
-    <canvas id="arCanvas"></canvas>
-    <div class="ar-controls">
-        <button class="btn-close-ar" onclick="stopShelfScan()">&times;</button>
-        <button class="btn-confirm-ar" onclick="finalizeShelfScan()">Jodein (Add)</button>
+<div id="looseModal" class="variant-overlay">
+  <div class="variant-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.1); padding-bottom:10px;">
+        <h3 id="looseModalName" style="margin:0; color:#fff; font-size:16px;">Kitna Tolna Hai?</h3>
+        <button onclick="document.getElementById('looseModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+        <button class="loose-btn" onclick="addLooseItem(0.100)">100g</button>
+        <button class="loose-btn" onclick="addLooseItem(0.250)">250g</button>
+        <button class="loose-btn" onclick="addLooseItem(0.500)">500g</button>
+        <button class="loose-btn" onclick="addLooseItem(0.750)">750g</button>
+        <button class="loose-btn" onclick="addLooseItem(1.000)" style="grid-column: span 2; background:var(--primary); border-color:var(--primary);">1 KG</button>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+        <input type="number" id="customWeight" step="0.001" placeholder="Custom (e.g. 0.167)" style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.3); color:#fff; outline:none; font-size:14px;">
+        <span style="color:var(--text-muted); font-size:14px; font-weight:bold;">KG</span>
+        <button class="checkout-btn" style="width:auto; padding:12px 20px;" onclick="addCustomLooseItem()">Add</button>
     </div>
   </div>
+</div>
+
+<div id="invoiceModal" class="invoice-overlay">
+    <div class="invoice-paper" id="invoicePaper"></div>
 </div>
 
 <div id="scannerModal" class="scanner-modal">
   <div style="width:100%; height:300px; background:black; position:relative; max-width:500px;">
     <div id="cameraPreview" style="width:100%; height:100%;"></div>
-    <div class="scan-laser"></div>
+    <div class="scan-laser" style="position:absolute;top:0;left:0;width:100%;height:2px;background:red;animation:scan 2s infinite;"></div>
   </div>
-  <button onclick="closeBarcodeScanner()" style="margin-top:20px; padding:10px 20px; background:white; border:none; border-radius:20px; font-weight:bold;">Band Karo</button>
+  <button onclick="closeBarcodeScanner()" style="margin-top:20px; padding:10px 20px; background:white; border:none; border-radius:20px; font-weight:bold; color:black;">Band Karo</button>
 </div>
 
 <script>
@@ -242,20 +258,14 @@
 window.cart = [];
 let isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
 
-// AR / Scanner state (added to support shelf scanning)
-let isARScanning = false;
-let isScanBusy = false;
-let detectedSessionItems = [];
-
-// --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     renderBillCategories();
     renderBillGrid();
     renderCart();
     setupAutocomplete();
+    setupMobileCartDrag();
 });
 
-// --- CORE FUNCTIONS ---
 function getProducts() { try { return JSON.parse(localStorage.getItem('bharatpos_products') || '[]'); } catch(e) { return []; } }
 
 function renderBillCategories() {
@@ -271,81 +281,197 @@ function filterCat(btn, cat) {
     renderBillGrid(cat);
 }
 
-function renderBillGrid(cat='All'){
+// 🟢 DISPLAY LOGIC (GROUPED)
+function displayProducts(productArray) {
     const container = document.getElementById('productList');
-    const products = getProducts();
     container.innerHTML = '';
-    const filtered = cat === 'All' ? products : products.filter(p => p.category === cat);
-    if(!filtered.length){ container.innerHTML='<div style="grid-column:1/-1; text-align:center; padding:30px; color:#64748b;">Khali Hai</div>'; return; }
     
-    filtered.forEach(p => {
-        const isOut = p.stock <= 0;
+    const grouped = {};
+    productArray.forEach(p => {
+        const key = p.name.trim().toLowerCase();
+        if(!grouped[key]) grouped[key] = { name: p.name, totalStock: 0, variants: [] };
+        grouped[key].totalStock += Number(p.stock || 0);
+        grouped[key].variants.push(p);
+    });
+
+    const groups = Object.values(grouped);
+    if(groups.length === 0){ container.innerHTML='<div style="grid-column:1/-1; text-align:center; padding:30px; color:#64748b;">Khali Hai</div>'; return; }
+    
+    groups.forEach(g => {
+        const isOut = g.totalStock <= 0;
+        const isLoose = g.variants[0].isLoose;
         const div = document.createElement('div');
         div.className = `prod-card ${isOut ? 'out-stock' : ''}`;
-        div.onclick = () => { if(!isOut) window.addToBill(p.id); };
+        
+        div.onclick = () => { if(!isOut) handleCardTap(g.name); };
+        
+        let priceText = `₹${g.variants[0].price}`;
+        if (g.variants.length > 1) {
+            const prices = g.variants.map(v => Number(v.price));
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            priceText = min === max ? `₹${min}` : `₹${min} - ₹${max}`;
+        }
+        
+        const typeText = g.variants.length > 1 ? `<span style="background:rgba(245, 158, 11, 0.1); color:var(--accent); padding:2px 6px; border-radius:4px; font-size:9px; border:1px solid rgba(245, 158, 11, 0.3);">${g.variants.length} Types</span>` : (g.variants[0].quantity || '');
+
         div.innerHTML = `
-            <div class="prod-name">${p.name}</div>
-            <div class="prod-unit" style="font-size:10px; color:#94a3b8;">${p.quantity || ''}</div>
-            <div class="prod-price">₹${p.price}</div>
-            ${isOut ? '<div style="font-size:10px; color:#ef4444; font-weight:bold;">KHATAM</div>' : ''}
+            <div class="prod-name">${g.name} ${isLoose ? '⚖️' : ''}</div>
+            <div class="prod-unit" style="font-size:10px; color:#94a3b8; margin-top:2px;">${typeText}</div>
+            <div class="prod-price">${priceText}</div>
+            ${isOut ? '<div style="position:absolute; top:0; left:0; width:100%; text-align:center; background:rgba(239,68,68,0.9); color:white; font-size:10px; font-weight:bold; padding:2px 0;">OUT OF STOCK</div>' : ''}
         `;
         container.appendChild(div);
     });
 }
 
-function handleSearch(q){
-    const ps = getProducts();
-    const g = document.getElementById('productList');
-    g.innerHTML = '';
-    const f = ps.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || (p.barcode && p.barcode.includes(q)));
-    if(f.length === 0) { g.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Nahi mila</div>'; return; }
-    f.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'prod-card';
-        div.onclick = () => { window.addToBill(p.id); };
-        div.innerHTML = `<div class="prod-name">${p.name}</div><div class="prod-price">₹${p.price}</div>`;
-        g.appendChild(div);
-    });
+function renderBillGrid(cat='All'){
+    const products = getProducts();
+    const filtered = cat === 'All' ? products : products.filter(p => p.category === cat);
+    displayProducts(filtered);
 }
 
-// 🟢 ADD TO BILL (WITH GST LOGIC)
-window.addToBill = function(productId) {
+function handleSearch(q){
+    const ps = getProducts();
+    const f = ps.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || (p.barcode && p.barcode.includes(q)));
+    displayProducts(f);
+}
+
+// 🟢 SMART TAP HANDLER
+function handleCardTap(productName) {
+    const validVariants = getProducts().filter(p => p.name === productName && Number(p.stock) > 0);
+    if (validVariants.length === 0) return;
+    
+    if (validVariants.length === 1) {
+        if (validVariants[0].isLoose) {
+            openLooseWeightModal(validVariants[0]);
+        } else {
+            window.addToBill(validVariants[0].id, 1);
+        }
+    } else {
+        openVariantSelector(productName, validVariants);
+    }
+}
+
+// 🟢 STANDARD VARIANT MODAL
+function openVariantSelector(productName, validVariants) {
+    document.getElementById('variantModalName').innerText = productName;
+    const list = document.getElementById('variantModalList');
+    
+    list.innerHTML = validVariants.map(p => `
+        <div class="variant-option" onclick="selectVariantAndClose('${p.id}')">
+            <div>
+                <div style="font-weight:700; color:#fff; font-size:14px;">${p.quantity || 'Standard'} ${p.isLoose ? '⚖️' : ''}</div>
+                <div style="font-size:10px; color:var(--text-muted);">Stock: ${p.isLoose ? Number(p.stock).toFixed(3) + ' kg' : p.stock}</div>
+            </div>
+            <div style="color:var(--success); font-weight:800; font-size:16px;">₹${p.price}</div>
+        </div>
+    `).join('');
+    
+    document.getElementById('variantModal').style.display = 'flex';
+}
+
+function selectVariantAndClose(id) {
+    document.getElementById('variantModal').style.display = 'none';
+    const p = getProducts().find(x => x.id === id);
+    if (p.isLoose) {
+        openLooseWeightModal(p);
+    } else {
+        window.addToBill(id, 1);
+    }
+}
+
+// 🟢 LOOSE WEIGHT MODAL
+let currentLooseProduct = null;
+function openLooseWeightModal(product) {
+    currentLooseProduct = product;
+    document.getElementById('looseModalName').innerText = product.name + (product.quantity ? ` (${product.quantity})` : '');
+    document.getElementById('customWeight').value = '';
+    document.getElementById('looseModal').style.display = 'flex';
+}
+
+function addLooseItem(weightStr) {
+    const weight = parseFloat(weightStr);
+    if (weight > 0 && currentLooseProduct) {
+        window.addToBill(currentLooseProduct.id, weight);
+        document.getElementById('looseModal').style.display = 'none';
+    }
+}
+
+function addCustomLooseItem() {
+    const w = document.getElementById('customWeight').value;
+    if(w) addLooseItem(w);
+}
+
+// 🟢 BULK TO PER-KG MATH ENGINE
+function extractBaseWeightKg(qtyStr) {
+    if (!qtyStr) return 1;
+    const str = String(qtyStr).toLowerCase().replace(/\s/g, '');
+    let num = parseFloat(str);
+    if (isNaN(num) || num <= 0) return 1; // Failsafe
+    
+    // If unit is grams/ml (and not kg), convert to fraction of kg/L
+    if ((str.includes('g') || str.includes('gm')) && !str.includes('kg')) {
+        return num / 1000;
+    }
+    if (str.includes('ml')) {
+        return num / 1000;
+    }
+    return num; // Default assumes standard KG or L
+}
+
+// 🟢 ADD TO BILL
+window.addToBill = function(productId, qtyToAdd = 1) {
     const products = getProducts();
     const p = products.find(i => i.id == productId);
     if(!p) return;
     
     const existing = window.cart.find(i => i.id == productId);
     if(existing) {
-        existing.qty++;
+        existing.qty += parseFloat(qtyToAdd);
     } else {
-        // Calculate Base & Tax
         let finalRate = parseFloat(p.price);
+        let packWeightKg = 1;
+        let unitLabel = "";
+
+        // 🧠 Intelligent Price Calculation for Loose Items
+        if (p.isLoose) {
+            packWeightKg = extractBaseWeightKg(p.quantity);
+            finalRate = finalRate / packWeightKg; // Cost per 1 standard KG
+            unitLabel = "/kg";
+        }
+
         let tax = 0;
         let base = finalRate;
         const gstRate = parseFloat(p.gstRate) || 0;
 
         if (isGstMode && gstRate > 0) {
             if (p.priceType === 'exclusive') {
-                // Rate + Tax
                 base = finalRate;
                 tax = base * (gstRate / 100);
                 finalRate = base + tax;
             } else {
-                // Rate includes Tax
                 base = finalRate / (1 + (gstRate / 100));
                 tax = finalRate - base;
             }
         }
 
+        const typeHint = p.quantity ? `<span style="color:#94a3b8; font-size:10px;">(${p.quantity})</span>` : '';
+        const displayName = p.isLoose ? `⚖️ ${p.name} ${typeHint}` : `${p.name} ${typeHint}`;
+
         window.cart.push({
             id: p.id,
-            name: p.name,
-            qty: 1,
-            price: finalRate, // Always displayed price (Total for item)
+            name: displayName,
+            printName: p.quantity ? `${p.name} (${p.quantity})` : p.name,
+            qty: parseFloat(qtyToAdd),
+            price: finalRate, // This is now per-kg price if loose
             basePrice: base,
             taxAmt: tax,
             gstRate: gstRate,
-            hsn: p.hsn
+            hsn: p.hsn,
+            isLoose: p.isLoose,
+            unitLabel: unitLabel,
+            packWeightKg: packWeightKg // Stored for accurate stock deduction
         });
     }
     playBeep();
@@ -369,8 +495,7 @@ function renderCart() {
     const miniTotal = document.getElementById('miniTotal');
     const discInput = document.getElementById('discount');
 
-    let subTotal = 0;
-    let totalTax = 0;
+    let subTotal = 0, totalTax = 0;
 
     window.cart.forEach(i => { 
         subTotal += i.price * i.qty; 
@@ -394,29 +519,34 @@ function renderCart() {
     if(list) {
         if(window.cart.length === 0) list.innerHTML = '<div style="text-align:center; padding:30px; color:#4b5563;">Empty</div>';
         else {
-            list.innerHTML = window.cart.map((item, i) => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:white;">
-                    <div>
-                        <div style="font-size:13px;">${item.name}</div>
-                        <div style="font-size:11px; color:#94a3b8;">
-                            ₹${item.price.toFixed(2)} x ${item.qty} 
+            list.innerHTML = window.cart.map((item, i) => {
+                const qtyDisplay = item.isLoose ? `${item.qty.toFixed(3)} kg` : item.qty;
+                const stepAmount = item.isLoose ? 0.1 : 1; 
+                
+                return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:1px solid rgba(255,255,255,0.05); color:white;">
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:600;">${item.name}</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:3px;">
+                            ₹${item.price.toFixed(2)}${item.unitLabel} x ${qtyDisplay} 
                             ${isGstMode && item.gstRate ? `<span style="color:var(--accent)">(${item.gstRate}%)</span>` : ''}
                         </div>
                     </div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <span style="font-weight:bold;">₹${(item.price * item.qty).toFixed(2)}</span>
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <span style="font-weight:bold; font-size:14px; color:var(--success);">₹${(item.price * item.qty).toFixed(2)}</span>
                         <div class="qty-ctrl">
-                            <button class="qty-btn" onclick="updateQty(${i}, -1)">-</button>
-                            <button class="qty-btn" onclick="updateQty(${i}, 1)">+</button>
+                            <button class="qty-btn" onclick="updateQty(${i}, -${stepAmount})">-</button>
+                            <span style="font-size:12px; font-weight:bold; width:45px; text-align:center;">${qtyDisplay}</span>
+                            <button class="qty-btn" onclick="updateQty(${i}, ${stepAmount})">+</button>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
     }
 }
 
-// 🟢 INVOICE GENERATION
+// 🟢 SMART STOCK DEDUCTION
 function completeSale() {
     if(window.cart.length === 0) return alert("Cart khali hai!");
 
@@ -436,7 +566,18 @@ function completeSale() {
     const billId = "INV-" + Math.floor(1000 + Math.random() * 9000);
     const dateStr = new Date().toLocaleString('en-IN');
 
-    // Save Data
+    let allProducts = getProducts();
+    window.cart.forEach(cartItem => {
+        let pIndex = allProducts.findIndex(p => p.id === cartItem.id);
+        if(pIndex > -1) {
+            // Deduct exact fraction of the original pack!
+            // If selling 0.5kg from a 20kg pack, deduction = 0.5 / 20 = 0.025 packs.
+            const deductionValue = cartItem.qty / (cartItem.packWeightKg || 1);
+            allProducts[pIndex].stock = Math.max(0, allProducts[pIndex].stock - deductionValue);
+        }
+    });
+    localStorage.setItem('bharatpos_products', JSON.stringify(allProducts));
+
     const billData = {
         id: billId, date: new Date().toISOString(), customerName: custName, phone: custPhone,
         items: window.cart, totalItems, amount: finalTotal, subTotal, tax: totalTax,
@@ -447,22 +588,13 @@ function completeSale() {
     localSales.push(billData);
     localStorage.setItem('bharatpos_sales', JSON.stringify(localSales));
     
-    // Update Customer
-    if(custPhone) {
-        let customers = JSON.parse(localStorage.getItem('bharatpos_customers') || '[]');
-        let exists = customers.find(c => c.phone === custPhone);
-        if(exists) { exists.totalSpent += finalTotal; exists.lastVisit = billData.date; }
-        else customers.push({ name: custName, phone: custPhone, totalSpent: finalTotal, lastVisit: billData.date });
-        localStorage.setItem('bharatpos_customers', JSON.stringify(customers));
-    }
-
-    // Show Invoice Modal
     generateInvoiceHTML(billData, dateStr);
     
-    // Reset Form
     window.cart = []; renderCart();
     document.getElementById('custName').value = "";
     document.getElementById('custPhone').value = "";
+    document.getElementById('discount').value = "";
+    renderBillGrid(); 
 }
 
 function generateInvoiceHTML(bill, dateStr) {
@@ -470,14 +602,25 @@ function generateInvoiceHTML(bill, dateStr) {
     const shopAddr = localStorage.getItem('shopAddress') || "";
     const gstin = localStorage.getItem('bharatpos_gstin');
     
-    let itemsHTML = bill.items.map(i => `
+    let gstHeader = isGstMode ? '<th style="text-align:right">GST</th>' : '';
+    
+    let itemsHTML = bill.items.map(i => {
+        let taxVal = (i.taxAmt * i.qty).toFixed(2);
+        let gstCell = isGstMode ? `<td style="text-align:right">${taxVal}<br><small>(${i.gstRate}%)</small></td>` : '';
+        let qtyPrint = i.isLoose ? `${i.qty.toFixed(3)}kg` : i.qty;
+        
+        return `
         <tr>
-            <td>${i.name} ${isGstMode && i.hsn ? '<br><small>HSN:'+i.hsn+'</small>' : ''}</td>
-            <td style="text-align:center">${i.qty}</td>
-            <td style="text-align:right">${i.price.toFixed(2)}</td>
+            <td>
+                ${i.printName} 
+                ${isGstMode && i.hsn ? '<br><small>HSN:'+i.hsn+'</small>' : ''}
+            </td>
+            <td style="text-align:center">${qtyPrint}</td>
+            <td style="text-align:right">${i.price.toFixed(2)}${i.unitLabel}</td>
+            ${gstCell}
             <td style="text-align:right">${(i.price*i.qty).toFixed(2)}</td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 
     let taxRowHTML = "";
     if (isGstMode && bill.tax > 0) {
@@ -501,7 +644,15 @@ function generateInvoiceHTML(bill, dateStr) {
             <span>${bill.phone}</span>
         </div>
         <table class="inv-table">
-            <thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amt</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th style="text-align:center">Qty</th>
+                    <th style="text-align:right">Rate</th>
+                    ${gstHeader}
+                    <th style="text-align:right">Amt</th>
+                </tr>
+            </thead>
             <tbody>${itemsHTML}</tbody>
         </table>
         <div class="inv-totals">
@@ -523,26 +674,29 @@ function generateInvoiceHTML(bill, dateStr) {
     document.getElementById('invoiceModal').style.display = "flex";
 }
 
-function sendWhatsAppBill() {
-    const phone = document.getElementById('custPhone').value; 
-    const shop = localStorage.getItem('shopName') || "Our Shop";
-    if (!phone || phone.length < 10) { alert("Sahi Number Dalein"); return; }
-    
-    let total = 0; window.cart.forEach(i => total += i.price * i.qty);
-    const disc = parseFloat(document.getElementById('discount').value) || 0;
-    const final = Math.max(0, total - disc);
-    
-    // 🟢 UPDATED MESSAGE WITH LINK
-    let msg = `*Bill from ${shop}*%0A`;
-    msg += `Total Amount: ₹${final}%0A`;
-    msg += `View your full bill & ledger here:%0A`;
-    msg += `👉 oneanush.github.io/BharatPOS/my_khata.html%0A%0A`;
-    msg += `Thank you!`;
-    
-    window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
+// --- UTILS & MOBILE DRAG LOGIC ---
+function toggleCart() { document.getElementById('cartPanel').classList.toggle('open'); }
+function playBeep() { const a=new(window.AudioContext||window.webkitAudioContext);const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=800;g.gain.value=0.1;o.start();setTimeout(()=>o.stop(),100); }
+
+function setupMobileCartDrag() {
+    const cartHeader = document.getElementById('cartHeaderHandle');
+    const cartPanel = document.getElementById('cartPanel');
+    let startY = 0;
+
+    cartHeader.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+    }, {passive: true});
+
+    cartHeader.addEventListener('touchmove', (e) => {
+        if (!startY) return;
+        const currentY = e.touches[0].clientY;
+        if (currentY - startY > 40) { // Dragged down by 40px
+            cartPanel.classList.remove('open');
+            startY = 0; // Reset
+        }
+    }, {passive: true});
 }
 
-// --- UTILS ---
 function setupAutocomplete() {
     const custInput = document.getElementById('custName');
     const list = document.getElementById('customerSuggestions');
@@ -559,98 +713,32 @@ function setupAutocomplete() {
     document.addEventListener('click', e => { if (!custInput.contains(e.target) && !list.contains(e.target)) list.style.display = 'none'; });
 }
 function selectCustomer(n, p) { document.getElementById('custName').value = n; document.getElementById('custPhone').value = p; document.getElementById('customerSuggestions').style.display = 'none'; }
-function toggleCart() { document.getElementById('cartPanel').classList.toggle('open'); }
-function playBeep() { const a=new(window.AudioContext||window.webkitAudioContext);const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=800;g.gain.value=0.1;o.start();setTimeout(()=>o.stop(),100); }
 
-// --- SCANNER / AR FUNCTIONS (filled from the other file you provided) ---
-async function startShelfScan() {
-    const modal = document.getElementById('shelfScanModal');
-    const video = document.getElementById('arVideo');
-    modal.style.display = 'flex';
-    detectedSessionItems = []; 
-    isScanBusy = false;
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } });
-        video.srcObject = stream;
-        video.onloadedmetadata = () => { video.play(); isARScanning = true; smartScanLoop(); };
-    } catch(e) { alert("Camera Error"); stopShelfScan(); }
-}
-function stopShelfScan() {
-    const modal = document.getElementById('shelfScanModal');
-    const video = document.getElementById('arVideo');
-    modal.style.display = 'none';
-    isARScanning = false;
-    isScanBusy = false;
-    if(video && video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-}
-async function smartScanLoop() {
-    if (!isARScanning) return;
-    if (!isScanBusy) { isScanBusy = true; await scanFrame(); isScanBusy = false; }
-    if (isARScanning) setTimeout(smartScanLoop, 4000); 
-}
-async function scanFrame() {
-    const video = document.getElementById('arVideo');
-    const canvas = document.getElementById('arCanvas');
-    if(!video || video.paused || video.ended) return;
-    const ctx = canvas.getContext('2d');
-    if(canvas.width !== video.videoWidth) { canvas.width = video.videoWidth; canvas.height = video.videoHeight; }
-    ctx.drawImage(video, 0, 0);
-    const base64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const localProducts = getProducts(); 
-    try {
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const res = await fetch((typeof buildUrl === 'function') ? buildUrl('/api/ai-shelf-scan') : '/api/ai-shelf-scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64, merchantId: user.merchantId || "GUEST" }) });
-        const data = await res.json();
-        if (data.success && data.items && data.items.length > 0) {
-            const validItems = [];
-            data.items.forEach(backendItem => {
-                const match = localProducts.find(p => p.name.toLowerCase().includes(backendItem.name.toLowerCase()) || backendItem.name.toLowerCase().includes(p.name.toLowerCase()));
-                if (match) {
-                    validItems.push({ ...match, box_2d: backendItem.box_2d });
-                    if (!detectedSessionItems.find(d => d.id === match.id)) { detectedSessionItems.push(match); playBeep(); }
-                }
-            });
-            renderAROverlay(ctx, validItems, canvas.width, canvas.height);
-        }
-    } catch (e) {}
-}
-function renderAROverlay(ctx, items, w, h) {
-    items.forEach(item => {
-        const [ymin, xmin, ymax, xmax] = item.box_2d;
-        const x = (xmin / 1000) * w; const y = (ymin / 1000) * h;
-        const width = ((xmax - xmin) / 1000) * w; const height = ((ymax - ymin) / 1000) * h;
-        ctx.strokeStyle = "#10b981"; ctx.lineWidth = 4; ctx.strokeRect(x, y, width, height);
-        const priceTag = `₹${item.price}`;
-        ctx.fillStyle = "#10b981"; ctx.fillRect(x, y - 30, 80, 30);
-        ctx.fillStyle = "white"; ctx.font = "bold 18px Inter"; ctx.fillText(priceTag, x + 10, y - 8);
-    });
-}
-function finalizeShelfScan() {
-    if (detectedSessionItems.length === 0) { alert("Koi item detect nahi hua."); return; }
-    detectedSessionItems.forEach(p => { window.addToBill(p.id); });
-    stopShelfScan();
-    alert(`✅ ${detectedSessionItems.length} items cart mein jud gaye.`);
-}
+// --- SCANNER ---
+let isScanning = false;
 function openBarcodeScanner() {
     document.getElementById('scannerModal').style.display = 'flex';
-    try {
-        Quagga.init({ inputStream: { target: document.querySelector('#cameraPreview') }, decoder: { readers: ['ean_reader'] } }, (err) => { if(!err) Quagga.start(); });
-        Quagga.onDetected(res => { 
-            document.getElementById('productSearch').value = res.codeResult.code; 
-            handleSearch(res.codeResult.code); 
-            closeBarcodeScanner(); 
-        });
-    } catch (e) {
-        console.error('Quagga init error', e);
-        alert('Barcode scanner error');
-        closeBarcodeScanner();
-    }
+    if(isScanning) return;
+    isScanning = true;
+    Quagga.init({
+        inputStream: { type: "LiveStream", target: document.querySelector('#cameraPreview'), constraints: { facingMode: "environment" } },
+        decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
+    }, function(err) { if (err) { console.log(err); return; } Quagga.start(); });
+
+    Quagga.onDetected(function(result) {
+        const code = result.codeResult.code;
+        const products = getProducts();
+        const p = products.find(x => x.barcode === code && Number(x.stock) > 0);
+        if(p) {
+            closeBarcodeScanner();
+            if (p.isLoose) { openLooseWeightModal(p); } 
+            else { window.addToBill(p.id, 1); }
+        }
+    });
 }
 function closeBarcodeScanner() { 
-    const modal = document.getElementById('scannerModal');
-    if (modal) modal.style.display = 'none';
-    try { Quagga.stop(); } catch(e) {}
+    document.getElementById('scannerModal').style.display = 'none'; 
+    if(isScanning) { Quagga.stop(); isScanning = false; }
 }
 </script>
 </body>
