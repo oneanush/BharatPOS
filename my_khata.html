@@ -2,390 +2,618 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Khata & Shop | Customer App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mera Khata - Customer App</title>
     
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="bharatpos.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #3730a3;
-            --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --gold: #f59e0b;
+            --primary: #4f46e5; --primary-light: #818cf8; --primary-dark: #312e81;
+            --bg-base: #f8fafc; --surface: #ffffff;
+            --text-dark: #0f172a; --text-muted: #64748b;
+            --danger: #f43f5e; --danger-light: #ffe4e6;
+            --success: #10b981; --success-light: #d1fae5;
+            --border: #e2e8f0; --gold: #f59e0b;
         }
 
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background-color: var(--bg); color: var(--text-main); overflow-x: hidden; padding-bottom: 80px; }
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body { background-color: var(--bg-base); color: var(--text-dark); padding-bottom: 80px; overflow-x: hidden; }
 
-        /* --- SCREEN MANAGEMENT --- */
-        .screen { display: none; min-height: 100vh; animation: fadeIn 0.3s ease; }
+        .screen { display: none; min-height: 100vh; animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
         .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
         /* --- LOGIN SCREEN --- */
-        #login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; background: white; height: 100vh; }
-        .login-card { width: 100%; max-width: 400px; text-align: center; }
-        .hero-icon { background: #eef2ff; color: var(--primary); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
-        .input-box { margin-bottom: 15px; text-align: left; }
-        .input-box label { font-size: 12px; font-weight: bold; color: var(--text-muted); display: block; margin-bottom: 5px; }
-        input { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; transition: 0.2s; background: #f8fafc; }
-        input:focus { border-color: var(--primary); background: white; }
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); transition: transform 0.1s; }
-        .btn-main:active { transform: scale(0.98); }
-        .btn-main:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; }
+        #login-screen { background: linear-gradient(-45deg, #3b82f6, #4f46e5, #312e81, #8b5cf6); background-size: 400% 400%; animation: gradientShift 15s ease infinite; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow: hidden; }
+        #login-screen::before { content: ''; position: absolute; width: 300px; height: 300px; background: rgba(255,255,255,0.1); filter: blur(50px); border-radius: 50%; top: -100px; right: -100px; pointer-events: none; }
+        .login-box { background: rgba(255,255,255,0.15); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.3); padding: 40px 30px; border-radius: 30px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.2); }
+        .hero-icon-wrap { background: rgba(255,255,255,0.9); width: 80px; height: 80px; border-radius: 25px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); transform: rotate(-5deg); }
+        .login-box h1 { font-size: 32px; font-weight: 800; margin-bottom: 5px; color: #fff; letter-spacing: -0.5px; }
+        .login-box p { color: #e0e7ff; font-size: 15px; margin-bottom: 30px; font-weight: 500; }
+        .input-group { text-align: left; margin-bottom: 18px; position: relative; }
+        .input-group label { display: block; font-size: 11px; font-weight: 700; color: #e0e7ff; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .input-group input { width: 100%; padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.2); font-size: 16px; font-weight: 600; background: rgba(0,0,0,0.2); color: #fff; outline: none; transition: 0.3s; }
+        .input-group input:focus { background: rgba(0,0,0,0.4); border-color: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,0.1); }
+        .input-group input::placeholder { color: rgba(255,255,255,0.4); font-weight: 500; }
+        .btn-login { width: 100%; background: #fff; color: var(--primary-dark); padding: 18px; border-radius: 16px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 15px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-login:active { transform: scale(0.96); }
 
-        /* --- APP HEADER --- */
-        header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50; }
-        .store-info h2 { margin: 0; font-size: 18px; font-weight: 800; color: var(--primary-dark); }
-        .store-info p { margin: 0; font-size: 12px; color: var(--success); font-weight: bold; display: flex; align-items: center; gap: 4px; }
-        
-        .header-actions { display: flex; align-items: center; gap: 12px; }
-        .cart-trigger { background: #eef2ff; color: var(--primary); border: none; padding: 10px; border-radius: 12px; cursor: pointer; position: relative; }
-        #cart-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; border: 2px solid white; }
-        
-        /* LOGOUT BUTTON */
-        .btn-logout { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
-        .btn-logout:hover { background: #fee2e2; }
+        /* --- DASHBOARD HEADER --- */
+        .header { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .shop-title { font-size: 18px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .cart-trigger { background: var(--bg-base); color: var(--text-dark); border: 1px solid var(--border); padding: 10px; border-radius: 50%; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .cart-trigger:active { background: var(--border); }
+        #cart-badge { position: absolute; top: -4px; right: -4px; background: var(--primary); color: white; font-size: 10px; font-weight: 800; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid white; display: none; }
+        .profile-bubble { display: flex; align-items: center; gap: 8px; background: var(--bg-base); border: 1px solid var(--border); padding: 4px 12px 4px 4px; border-radius: 30px; cursor: pointer; transition: 0.2s; }
+        .profile-bubble:active { background: #e2e8f0; }
+        .profile-avatar { width: 28px; height: 28px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
+        .profile-name { font-size: 13px; font-weight: 700; color: var(--text-dark); max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* --- NAVIGATION TABS --- */
-        .nav-tabs { display: flex; padding: 10px 15px; gap: 10px; background: white; border-bottom: 1px solid #e2e8f0; }
-        .nav-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .nav-btn.active { background: #eef2ff; color: var(--primary); }
+        .nav-tabs { display: flex; padding: 15px 20px; gap: 8px; background: transparent; overflow-x: auto; scrollbar-width: none; }
+        .nav-tabs::-webkit-scrollbar { display: none; }
+        .nav-btn { flex: 1; min-width: max-content; padding: 12px 14px; border: none; background: var(--surface); color: var(--text-muted); font-weight: 700; font-size: 13px; border-radius: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid transparent; }
+        .nav-btn.active { background: var(--primary); color: white; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25); border-color: var(--primary); }
 
-        /* --- SECTION: KHATA LEDGER --- */
-        .section-view { display: none; padding: 15px; }
-        .section-view.active { display: block; }
+        /* --- SECTION CONTROLS --- */
+        .section-view { display: none; padding: 0 20px 20px; }
+        .section-view.active { display: block; animation: fadeUp 0.4s ease; }
 
-        .loyalty-card { background: linear-gradient(135deg, #0f172a, #334155); color: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; }
-        .coin-box { display: flex; align-items: center; gap: 10px; }
-        .coin-val { font-size: 24px; font-weight: 800; color: var(--gold); }
+        /* --- KHATA SECTION --- */
+        .balance-card { background: linear-gradient(110deg, #0f172a 0%, #1e293b 100%); color: white; border-radius: 24px; padding: 25px; margin-top: 10px; margin-bottom: 30px; box-shadow: 0 15px 30px rgba(15, 23, 42, 0.15); display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+        .balance-card::after { content:''; position:absolute; top:0; right:0; width:150px; height:150px; background: radial-gradient(circle, rgba(79,70,229,0.4) 0%, transparent 70%); border-radius:50%; transform: translate(30%, -30%); }
+        .bal-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 6px; }
+        .bal-amount { font-size: 36px; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
+        .bal-amount.clear { color: var(--success); } .bal-amount.due { color: var(--danger); }
+        .section-title { font-size: 13px; font-weight: 800; color: var(--text-dark); margin: 0 0 15px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .bill-card { background: var(--surface); padding: 18px; border-radius: 20px; margin-bottom: 15px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.02); transition: 0.2s; cursor: pointer; }
+        .bill-card:active { transform: scale(0.98); background: #f8fafc; }
+        .bill-header { display: flex; justify-content: space-between; align-items: center; }
+        .b-date { font-weight: 800; font-size: 15px; color: var(--text-dark); margin-bottom: 2px; }
+        .b-id { font-size: 11px; color: var(--text-muted); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+        .b-amt { font-size: 18px; font-weight: 800; text-align: right; font-family: 'JetBrains Mono', monospace; }
+        .status-pill { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; letter-spacing: 0.5px; }
+        .status-pill.due { background: var(--danger-light); color: var(--danger); }
+        .status-pill.paid { background: var(--success-light); color: var(--success); }
+
+        /* --- ORDER SECTION --- */
+        .store-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .product-card { background: var(--surface); border-radius: 20px; padding: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.2s; }
+        .product-card:active { transform: scale(0.96); }
+        .p-icon-box { background: #f8fafc; border-radius: 14px; height: 100px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--text-muted); }
+        .p-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; color: var(--text-dark); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .p-price { color: var(--primary); font-weight: 800; font-size: 16px; margin-bottom: 15px; font-family: 'JetBrains Mono', monospace; }
+        .btn-add { background: var(--text-dark); color: white; border: none; padding: 10px; border-radius: 12px; font-weight: 700; font-size: 13px; width: 100%; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-add:active { background: var(--primary); transform: scale(0.95); }
+
+        /* --- 🟢 NEW GLOBAL MAP SEARCH SECTION --- */
+        #view-search { padding: 0; height: calc(100vh - 145px); position: relative; overflow: hidden; }
+        #map { width: 100%; height: 100%; z-index: 1; }
+        .map-search-bar { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 400; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 16px; display: flex; align-items: center; padding: 6px 6px 6px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        .map-search-bar input { border: none; background: transparent; flex: 1; font-size: 15px; font-weight: 600; outline: none; padding: 10px 0; color: var(--text-dark); }
+        .map-search-bar button { background: var(--primary); color: white; border: none; border-radius: 12px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .map-search-bar button:active { transform: scale(0.95); }
         
-        .bill-card { background: white; padding: 15px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid transparent; }
-        .bill-card.due { border-left-color: var(--danger); }
-        .bill-card.paid { border-left-color: var(--success); }
-        .bill-date { font-weight: 700; color: var(--text-main); font-size: 14px; }
-        .status-badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; margin-top: 4px; display: inline-block; }
-        .badge-due { background: #fee2e2; color: var(--danger); }
-        .badge-paid { background: #dcfce7; color: var(--success); }
-        .pay-link { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 10px; cursor: pointer; }
-
-        /* --- SECTION: INVENTORY --- */
-        .product-card { background: white; padding: 15px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; }
-        .add-btn { background: white; color: var(--primary); border: 2px solid var(--primary); padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .add-btn:active { background: var(--primary); color: white; }
-
-        /* --- DRAWER (CART) --- */
-        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; }
-        .drawer-overlay.active { display: block; }
-        .drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 30px 30px 0 0; padding: 30px 20px; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 101; max-height: 85vh; overflow-y: auto; }
+        .map-drawer { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: 32px 32px 0 0; z-index: 400; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 -10px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; max-height: 55%; }
+        .map-drawer.active { transform: translateY(0); }
+        .map-drawer-handle { width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; margin: 15px auto 10px; }
+        .map-results { overflow-y: auto; padding: 0 20px 20px; flex-grow: 1; }
+        .map-result-item { padding: 15px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .map-result-item:last-child { border-bottom: none; }
+        
+        /* --- DRAWERS (CART & INVOICE) --- */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; display: none; opacity: 0; transition: opacity 0.3s; }
+        .drawer-overlay.active { display: block; opacity: 1; }
+        .drawer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: 32px 32px 0 0; padding: 10px 24px 30px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1001; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 -20px 40px rgba(0,0,0,0.1); }
         .drawer.active { transform: translateY(0); }
-        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
-        .option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0 25px; }
-        .opt-btn { background: #f1f5f9; border: 2px solid #f1f5f9; padding: 10px; border-radius: 10px; font-weight: bold; color: var(--text-muted); cursor: pointer; font-size: 13px; }
-        .opt-btn.selected { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
-        .loc-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
-        .loc-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; border: none; }
-        .loc-gps { background: var(--text-main); color: white; }
-        .checkout-footer { margin-top: 20px; }
-        .total-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 18px; font-weight: 800; }
+        .drawer-handle { width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; margin: 0 auto 20px; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; flex-shrink: 0; }
+        .drawer-header h2 { font-size: 20px; font-weight: 800; color: var(--text-dark); }
+        
+        #cart-items-container { overflow-y: auto; flex-grow: 1; margin-bottom: 20px; padding-right: 5px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px dashed #e2e8f0; }
+        .cart-item-name { font-weight: 700; color: var(--text-dark); font-size: 15px; margin-bottom: 4px; }
+        .cart-item-price { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        .cart-item-ctrl { display: flex; align-items: center; gap: 12px; background: #f8fafc; border-radius: 12px; padding: 4px; border: 1px solid var(--border); }
+        .cart-item-ctrl button { background: white; border: none; border-radius: 8px; width: 28px; height: 28px; font-weight: bold; cursor: pointer; color: var(--text-dark); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .cart-item-ctrl button:active { background: #e2e8f0; }
+
+        .checkout-footer { flex-shrink: 0; background: var(--bg-base); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
+        .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .total-row span:first-child { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .total-row span:last-child { font-size: 24px; font-weight: 800; color: var(--text-dark); font-family: 'JetBrains Mono', monospace; }
+        .btn-order { background: var(--text-dark); color: white; border: none; width: 100%; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15); }
+        .btn-order:active { transform: scale(0.96); }
+
+        #invoice-drawer { padding: 0; }
+        .inv-table th, .inv-table td { padding: 10px 0; }
+        .inv-table tr { border-bottom: 1px dashed #e2e8f0; }
+        .inv-table tr:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
     <div id="login-screen" class="screen active">
-        <div class="login-card">
-            <div class="hero-icon"><i data-lucide="store" size="40"></i></div>
-            <h1 style="margin: 0 0 5px;">My Khata</h1>
-            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">Secure Customer Portal</p>
+        <div class="login-box">
+            <div class="hero-icon-wrap"><i data-lucide="store" size="40" color="var(--primary-dark)"></i></div>
+            <h1>Mera Khata</h1>
+            <p>Connect instantly to your store</p>
             
-            <div class="input-box">
-                <label>Merchant ID</label>
-                <input type="text" id="merchant-id" placeholder="e.g. GRO-1234" style="text-transform:uppercase;">
+            <div class="input-group">
+                <label>Aapka Naam (Your Name)</label>
+                <input type="text" id="user-name" placeholder="e.g. Rahul Kumar" autocomplete="off">
             </div>
-            
-            <div class="input-box">
+            <div class="input-group">
                 <label>Mobile Number</label>
-                <input type="tel" id="user-phone" placeholder="9876543210" maxlength="10">
+                <input type="tel" id="user-phone" placeholder="9876543210" maxlength="10" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>Dukandaar ID (Shop Code)</label>
+                <input type="text" id="merchant-id" placeholder="e.g. GRO-1234" style="text-transform:uppercase;" autocomplete="off">
             </div>
 
-            <button class="btn-main" id="btn-connect" onclick="manualLogin()">Connect</button>
+            <button class="btn-login" id="btn-connect" onclick="manualLogin()">Log In <i data-lucide="arrow-right" size="18"></i></button>
         </div>
     </div>
 
     <div id="app-screen" class="screen">
-        <header>
-            <div class="store-info">
-                <h2 id="display-shop-name">Store</h2>
-                <p id="display-status"><i data-lucide="circle-dot" size="12" fill="currentColor"></i> ONLINE</p>
+        <header class="header">
+            <div class="shop-title">
+                <div style="background:var(--primary-light); color:white; width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="store" size="18"></i>
+                </div>
+                <span id="display-shop-name">Dukan</span>
             </div>
             <div class="header-actions">
                 <button class="cart-trigger" onclick="toggleCart(true)">
-                    <i data-lucide="shopping-bag"></i>
+                    <i data-lucide="shopping-bag" size="20"></i>
                     <span id="cart-badge">0</span>
                 </button>
-                <button class="btn-logout" onclick="logout()">
-                    <i data-lucide="log-out" size="14"></i> Exit
-                </button>
+                <div class="profile-bubble" onclick="logout()">
+                    <div class="profile-avatar" id="top-avatar">G</div>
+                    <div class="profile-name" id="top-name">Guest</div>
+                </div>
             </div>
         </header>
 
         <div class="nav-tabs">
-            <button class="nav-btn active" onclick="switchView('khata', this)">
-                <i data-lucide="book-open" size="16"></i> Ledger
-            </button>
-            <button class="nav-btn" onclick="switchView('order', this)">
-                <i data-lucide="shopping-cart" size="16"></i> Shop
-            </button>
+            <button class="nav-btn active" onclick="switchView('khata', this)"><i data-lucide="wallet" size="18"></i> Mera Khata</button>
+            <button class="nav-btn" onclick="switchView('order', this)"><i data-lucide="package-plus" size="18"></i> Order Karein</button>
+            <button class="nav-btn" onclick="switchView('search', this)"><i data-lucide="globe" size="18"></i> Khoj</button>
         </div>
 
         <div id="view-khata" class="section-view active">
-            <div class="loyalty-card">
+            <div class="balance-card">
                 <div>
-                    <div style="font-size:13px; opacity:0.8;">Welcome,</div>
-                    <div style="font-size:18px; font-weight:700;" id="cust-name">Guest</div>
+                    <div class="bal-label" id="cust-name-label">Hi, Customer</div>
+                    <div style="font-size:11px; opacity:0.7; margin-top:20px;">TOTAL BAKI UDHAAR</div>
+                    <div class="bal-amount" id="total-due-amount">₹0</div>
                 </div>
-                <div class="coin-box">
-                    <div style="text-align:right;">
-                        <div class="coin-val" id="coin-balance">0</div>
-                        <div style="font-size:10px; opacity:0.8;">POINTS</div>
-                    </div>
-                    <i data-lucide="coins" size="28" color="#f59e0b"></i>
-                </div>
+                <i data-lucide="credit-card" size="48" style="opacity:0.1; position:absolute; right:20px; bottom:20px;"></i>
             </div>
-
-            <h3 style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:15px;">Pending Dues</h3>
-            <div id="pending-list">
-                <div style="text-align:center; padding:30px; color:#cbd5e1;">All clear!</div>
-            </div>
-
-            <h3 style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin:25px 0 15px;">History</h3>
+            <div class="section-title"><i data-lucide="clock" size="16"></i> Baki Bill (Pending)</div>
+            <div id="pending-list"><div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px; background:white; border-radius:20px;">Sab clear hai! 🎉</div></div>
+            <div class="section-title" style="margin-top:30px;"><i data-lucide="check-circle" size="16"></i> Purana Hisab (Paid)</div>
             <div id="history-list"></div>
         </div>
 
         <div id="view-order" class="section-view">
-            <div id="inventory-list"></div>
+            <div class="section-title" style="margin-top:0;"><i data-lucide="package-search" size="16"></i> Dukan Ka Samaan</div>
+            <div id="inventory-list" class="store-grid">
+                <div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); font-size:13px; background:white; border-radius:20px;">Samaan load ho raha hai...</div>
+            </div>
+        </div>
+
+        <div id="view-search" class="section-view">
+            <div class="map-search-bar">
+                <i data-lucide="search" size="20" color="var(--text-muted)" style="margin-right:10px;"></i>
+                <input type="text" id="global-search-input" placeholder="Search products globally..." onkeypress="if(event.key==='Enter') performGlobalSearch()">
+                <button onclick="performGlobalSearch()"><i data-lucide="arrow-right" size="20"></i></button>
+            </div>
+            <div id="map"></div>
+            
+            <div class="map-drawer" id="map-results-drawer">
+                <div class="map-drawer-handle" onclick="closeMapDrawer()"></div>
+                <div style="padding: 0 20px 10px; font-weight:800; color:var(--text-dark); display:flex; justify-content:space-between;">
+                    <span>Nearby Results</span>
+                    <span id="map-results-count" style="color:var(--primary);">0 found</span>
+                </div>
+                <div class="map-results" id="map-results-list"></div>
+            </div>
         </div>
     </div>
 
     <div class="drawer-overlay" id="overlay" onclick="toggleCart(false)"></div>
     <div class="drawer" id="cart-drawer">
+        <div class="drawer-handle"></div>
         <div class="drawer-header">
-            <h2 style="margin:0">Your Bag</h2>
-            <button onclick="toggleCart(false)" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+            <h2>Aapka Thaila</h2>
+            <button onclick="toggleCart(false)" style="background:var(--bg-base); border:none; cursor:pointer; color:var(--text-dark); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i data-lucide="x" size="18"></i></button>
         </div>
-        <div id="cart-items-container" style="margin-bottom:20px;"></div>
-        <span style="font-size:12px; font-weight:bold; color:var(--text-muted); text-transform:uppercase;">Delivery Speed</span>
-        <div class="option-grid">
-            <button class="opt-btn selected" onclick="setDelivery('15 min', this)">⚡ 15 Min</button>
-            <button class="opt-btn" onclick="setDelivery('30 min', this)">🕒 30 Min</button>
-            <button class="opt-btn" onclick="setDelivery('Scheduled', this)">📅 Later</button>
-        </div>
-        <div class="loc-box">
-            <button class="loc-btn loc-gps" onclick="fetchLocation()">
-                <i data-lucide="map-pin"></i> Share GPS Location
-            </button>
-            <div id="gps-status" style="text-align:center; font-size:12px; color:var(--success); font-weight:bold;"></div>
-        </div>
+        <div id="cart-items-container"></div>
         <div class="checkout-footer">
-            <div class="total-row"><span>Total</span><span id="grand-total">₹0</span></div>
-            <button class="btn-main" style="background:var(--success);" onclick="submitOrder()">Place Order</button>
+            <div class="total-row"><span>Total Bill</span><span id="grand-total">₹0</span></div>
+            <button class="btn-order" id="btn-submit-order" onclick="submitOrder()">Dukan Par Bhejein <i data-lucide="arrow-right" size="18"></i></button>
+        </div>
+    </div>
+
+    <div class="drawer-overlay" id="invoice-overlay" onclick="closeInvoice()"></div>
+    <div class="drawer" id="invoice-drawer">
+        <div style="padding: 20px 20px 15px; background: var(--bg-base); border-bottom: 1px dashed #cbd5e1; text-align: center; border-radius: 32px 32px 0 0;">
+            <div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+                <i data-lucide="store" size="18" color="var(--primary)"></i>
+                <h2 style="font-size:18px; font-weight:800; margin:0; color:var(--text-dark);" id="inv-shop-name">Shop Name</h2>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:8px; font-weight:600;" id="inv-date">Date</div>
+            <div style="font-size:11px; font-weight:700; font-family:'JetBrains Mono', monospace; margin-top:8px; background: #e2e8f0; display:inline-block; padding:4px 10px; border-radius:12px; letter-spacing:0.5px;">INV #<span id="inv-id"></span></div>
+        </div>
+        <div style="padding: 10px 20px; max-height: 40vh; overflow-y: auto;" id="inv-body"></div>
+        <div style="padding: 20px; background: var(--bg-base); border-top: 1px dashed #cbd5e1;">
+            <div class="total-row" style="margin-bottom: 8px;"><span>Subtotal</span><span id="inv-subtotal" style="font-size:16px;">₹0</span></div>
+            <div class="total-row" style="margin-bottom: 8px; display:none;" id="inv-tax-row"><span>GST</span><span id="inv-tax" style="font-size:16px;">₹0</span></div>
+            <div class="total-row" style="margin-bottom: 12px; display:none; color:var(--success);" id="inv-discount-row"><span style="color:var(--success);">Discount</span><span id="inv-discount" style="font-size:16px; color:var(--success);">-₹0</span></div>
+            <div class="total-row" style="margin-bottom: 0; padding-top: 15px; border-top: 1px solid #cbd5e1;">
+                <span style="color:var(--text-dark);">Grand Total</span>
+                <span id="inv-total" style="color:var(--primary);">₹0</span>
+            </div>
+        </div>
+        <div style="padding: 15px 20px 25px;">
+            <button class="btn-order" style="background: var(--surface); border: 2px solid var(--border); color: var(--text-dark); box-shadow:none;" onclick="closeInvoice()">Close Receipt</button>
         </div>
     </div>
 
     <script>
-        // --- 1. SETUP ---
         lucide.createIcons();
-        
-        // Fallback for buildUrl if bharatpos.js missing
-        window.buildUrl = window.buildUrl || function(path) { 
-            return (window.location.hostname === 'localhost' || window.location.protocol === 'file:') 
-                ? 'http://localhost:5185' + path : path;
-        };
+        function buildUrl(path) { if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') return 'http://localhost:5185' + path; return window.location.origin + path; }
 
-        let currentState = { merchantId: '', phone: '', cart: [], deliveryTime: '15 min', location: null };
+        let currentState = { merchantId: '', name: '', phone: '', cart: [], bills: [], userLat: null, userLng: null };
 
-        // --- 2. LOGIN LOGIC ---
         document.addEventListener('DOMContentLoaded', () => {
             const savedSession = localStorage.getItem('khata_user');
             if (savedSession) {
                 const user = JSON.parse(savedSession);
-                performLogin(user.mId, user.phone);
+                document.getElementById('user-name').value = user.name || "";
+                document.getElementById('merchant-id').value = user.mId || "";
+                document.getElementById('user-phone').value = user.phone || "";
+                performLogin(user.name, user.mId, user.phone);
             }
         });
 
         function manualLogin() {
+            const name = document.getElementById('user-name').value.trim();
             const mId = document.getElementById('merchant-id').value.trim().toUpperCase();
             const phone = document.getElementById('user-phone').value.trim();
-            if(!mId || phone.length < 10) { alert("Invalid details"); return; }
-            performLogin(mId, phone);
+            if(!name || !mId || phone.length < 10) { alert("Puri details sahi se bharein."); return; }
+            performLogin(name, mId, phone);
         }
 
-        async function performLogin(mId, phone) {
+        async function performLogin(name, mId, phone) {
             const btn = document.getElementById('btn-connect');
-            if(btn) { btn.innerText = "Verifying..."; btn.disabled = true; }
+            if(btn) { btn.innerHTML = `<i data-lucide="loader" class="spin"></i>`; lucide.createIcons(); btn.disabled = true; }
 
             try {
-                const response = await fetch(buildUrl('/api/customer-ledger'), {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ merchantId: mId, phone: phone })
+                const response = await fetch(buildUrl('/api/customer-ledger'), { 
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ merchantId: mId, phone: phone }) 
                 });
                 const data = await response.json();
 
-                if(data.success) {
-                    currentState.merchantId = mId;
-                    currentState.phone = phone;
-                    localStorage.setItem('khata_user', JSON.stringify({ mId, phone }));
+                if(data.success || data.message === "No records found for this number") {
+                    currentState.merchantId = mId; currentState.phone = phone; currentState.name = name;
+                    localStorage.setItem('khata_user', JSON.stringify({ name, mId, phone }));
 
-                    // 🟢 SWITCH SCREEN IMMEDIATELY
-                    document.getElementById('login-screen').classList.remove('active');
-                    document.getElementById('app-screen').classList.add('active');
-
-                    // Load Data
-                    setupDashboard(data.bills, mId);
+                    const loginScreen = document.getElementById('login-screen');
+                    loginScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loginScreen.classList.remove('active'); loginScreen.style.display = 'none';
+                        document.getElementById('app-screen').classList.add('active');
+                    }, 300);
+                    
+                    document.getElementById('top-avatar').innerText = name.charAt(0).toUpperCase();
+                    document.getElementById('top-name').innerText = name.split(' ')[0];
+                    document.getElementById('display-shop-name').innerText = data.shopName || mId;
+                    
+                    currentState.bills = data.bills || [];
+                    setupLedger(currentState.bills);
                     loadInventory();
-                } else {
-                    alert("Account not found. Ask shopkeeper to create a bill first.");
-                    localStorage.removeItem('khata_user');
-                }
-            } catch (e) {
-                console.error(e);
-                alert("Connection Error. Is the Server Running?");
-            } finally {
-                if(btn) { btn.innerText = "Connect"; btn.disabled = false; }
-            }
+                    
+                    // Request GPS early for map
+                    if(navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(pos => {
+                            currentState.userLat = pos.coords.latitude;
+                            currentState.userLng = pos.coords.longitude;
+                        });
+                    }
+                } else { alert("Dukandaar ID galat hai."); localStorage.removeItem('khata_user'); }
+            } catch (e) { alert("Connection Error. Check internet."); } 
+            finally { if(btn) { btn.innerHTML = `Log In <i data-lucide="arrow-right" size="18"></i>`; lucide.createIcons(); btn.disabled = false; } }
         }
 
-        function logout() {
-            if(confirm("Sign out?")) {
-                localStorage.removeItem('khata_user');
-                location.reload();
-            }
+        function logout() { if(confirm("Logout karna chahte hain?")) { localStorage.removeItem('khata_user'); location.reload(); } }
+
+        function setupLedger(bills) {
+            const pending = bills.filter(b => !b.isPaid && b.paymentMode === 'Udhaar');
+            const paid = bills.filter(b => b.isPaid || b.paymentMode !== 'Udhaar');
+            document.getElementById('cust-name-label').innerText = `Hi, ${currentState.name}`;
+            const totalDue = pending.reduce((sum, b) => sum + Number(b.amount || b.total || 0), 0);
+            const dueEl = document.getElementById('total-due-amount');
+            dueEl.innerText = `₹${totalDue.toFixed(2)}`;
+            if(totalDue === 0) { dueEl.classList.add('clear'); dueEl.classList.remove('due'); } 
+            else { dueEl.classList.add('due'); dueEl.classList.remove('clear'); }
+            renderBills('pending-list', pending, true);
+            renderBills('history-list', paid, false);
         }
 
-        // --- 3. DASHBOARD ---
-        function setupDashboard(bills, mId) {
-            document.getElementById('display-shop-name').innerText = mId;
-            
-            const pending = bills.filter(b => !b.isPaid);
-            const paid = bills.filter(b => b.isPaid);
-            
-            if(bills.length > 0) document.getElementById('cust-name').innerText = bills[0].customerName || "Customer";
-            
-            const totalPaid = paid.reduce((sum, b) => sum + Number(b.amount || 0), 0);
-            document.getElementById('coin-balance').innerText = Math.floor(totalPaid / 100);
-
-            renderList('pending-list', pending, true);
-            renderList('history-list', paid, false);
-        }
-
-        function renderList(elId, list, isPending) {
-            const container = document.getElementById(elId);
-            if(list.length === 0) { container.innerHTML = `<div style="text-align:center;padding:20px;color:#cbd5e1;font-size:12px;">No items.</div>`; return; }
-            
-            container.innerHTML = list.map(b => `
-                <div class="bill-card ${isPending ? 'due' : 'paid'}">
-                    <div>
-                        <div class="bill-date">${new Date(b.date).toLocaleDateString()}</div>
-                        <div style="font-size:11px; color:#94a3b8;">#${b.id}</div>
-                        <span class="status-badge ${isPending?'badge-due':'badge-paid'}">${isPending?'UNPAID':'PAID'}</span>
+        function renderBills(elementId, list, isPending) {
+            const container = document.getElementById(elementId);
+            if(list.length === 0) { container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px; background:white; border-radius:20px;">Sab clear hai! 🎉</div>`; return; }
+            container.innerHTML = list.map(b => {
+                const amt = Number(b.amount || b.total || 0).toFixed(2);
+                const dateStr = new Date(b.date).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+                return `
+                <div class="bill-card" onclick="openInvoice('${b.id || b.invoiceNo}')">
+                    <div class="bill-header">
+                        <div>
+                            <div class="b-date">${dateStr}</div><div class="b-id">INV #${b.id || b.invoiceNo}</div>
+                            <div class="status-pill ${isPending ? 'due' : 'paid'}">
+                                <i data-lucide="${isPending ? 'alert-circle' : 'check-circle-2'}" size="12"></i> ${isPending ? 'BAKI HAI' : 'PAID'}
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="b-amt" style="color: ${isPending ? 'var(--danger)' : 'var(--text-dark)'}">₹${amt}</div>
+                            <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:6px;">View Bill <i data-lucide="chevron-right" size="10" style="vertical-align:middle;"></i></div>
+                        </div>
                     </div>
-                    <div style="font-size:16px; font-weight:800; color:${isPending?'var(--danger)':'var(--success)'}">₹${b.amount}</div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
+            lucide.createIcons();
         }
 
-        // --- 4. SHOPPING ---
+        function openInvoice(id) {
+            const bill = currentState.bills.find(b => b.id === id || b.invoiceNo === id);
+            if(!bill) return;
+            document.getElementById('inv-shop-name').innerText = document.getElementById('display-shop-name').innerText;
+            document.getElementById('inv-date').innerText = new Date(bill.date).toLocaleString('en-IN', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+            document.getElementById('inv-id').innerText = bill.id || bill.invoiceNo;
+            let hasGst = Number(bill.tax || 0) > 0;
+            let itemsHtml = `<table class="inv-table" style="width:100%; border-collapse: collapse; font-size:13px;">
+                <thead><tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); text-align:left;"><th style="padding-bottom:8px; font-weight:600;">Item</th><th style="padding-bottom:8px; text-align:center; font-weight:600;">Qty</th><th style="padding-bottom:8px; text-align:right; font-weight:600;">Rate</th>${hasGst ? '<th style="padding-bottom:8px; text-align:right; font-weight:600;">GST</th>' : ''}<th style="padding-bottom:8px; text-align:right; font-weight:600;">Amt</th></tr></thead><tbody>`;
+            (bill.items || []).forEach(item => {
+                let qtyPrint = item.isLoose ? `${parseFloat(item.qty).toFixed(3)}kg` : item.qty;
+                let taxAmt = parseFloat(item.taxAmt || 0) * parseFloat(item.qty || 1);
+                let taxCell = hasGst ? `<td style="text-align:right; color:var(--text-muted); font-size:11px;">₹${taxAmt.toFixed(2)}<br>(${item.gstRate || 0}%)</td>` : '';
+                itemsHtml += `<tr><td style="font-weight:600; color:var(--text-dark);">${item.printName || item.name}</td><td style="text-align:center; color:var(--text-muted); font-weight:500;">${qtyPrint}</td><td style="text-align:right; color:var(--text-muted); font-weight:500;">₹${Number(item.price).toFixed(2)}</td>${taxCell}<td style="text-align:right; font-weight:700; font-family:'JetBrains Mono', monospace; color:var(--text-dark);">₹${(item.price * item.qty).toFixed(2)}</td></tr>`;
+            });
+            itemsHtml += `</tbody></table>`;
+            document.getElementById('inv-body').innerHTML = itemsHtml;
+            document.getElementById('inv-subtotal').innerText = `₹${Number(bill.subTotal || bill.amount).toFixed(2)}`;
+            if(hasGst) { document.getElementById('inv-tax-row').style.display = 'flex'; document.getElementById('inv-tax').innerText = `₹${Number(bill.tax).toFixed(2)}`; } else { document.getElementById('inv-tax-row').style.display = 'none'; }
+            if(Number(bill.discount || 0) > 0) { document.getElementById('inv-discount-row').style.display = 'flex'; document.getElementById('inv-discount').innerText = `-₹${Number(bill.discount).toFixed(2)}`; } else { document.getElementById('inv-discount-row').style.display = 'none'; }
+            document.getElementById('inv-total').innerText = `₹${Number(bill.amount || bill.total).toFixed(2)}`;
+            document.getElementById('invoice-overlay').classList.add('active');
+            setTimeout(() => document.getElementById('invoice-drawer').classList.add('active'), 10);
+        }
+
+        function closeInvoice() { document.getElementById('invoice-drawer').classList.remove('active'); setTimeout(() => document.getElementById('invoice-overlay').classList.remove('active'), 300); }
+
         async function loadInventory() {
             const container = document.getElementById('inventory-list');
             try {
-                const res = await fetch(buildUrl('/api/get-merchant-stock'), {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ merchantId: currentState.merchantId })
-                });
+                const res = await fetch(buildUrl('/api/get-merchant-stock'), { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ merchantId: currentState.merchantId }) });
                 const data = await res.json();
-                if(!data.products || data.products.length === 0) {
-                    container.innerHTML = '<div style="text-align:center;padding:20px;color:#cbd5e1;">Store is empty.</div>';
-                    return;
-                }
+                if(!data.products || data.products.length === 0) { container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); background:white; border-radius:20px;">Dukandaar ki list abhi khali hai.</div>'; return; }
                 container.innerHTML = data.products.map(p => `
                     <div class="product-card">
-                        <div>
-                            <h4 style="margin:0 0 4px;">${p.name}</h4>
-                            <span style="color:var(--primary); font-weight:800;">₹${p.price}</span>
-                        </div>
-                        <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">ADD</button>
-                    </div>
-                `).join('');
-            } catch(e) { container.innerHTML = '<div style="text-align:center;color:red;">Failed to load items.</div>'; }
-        }
-
-        function addToCart(name, price) {
-            currentState.cart.push({ name, price });
-            updateCart();
-            const badge = document.getElementById('cart-badge');
-            badge.style.transform = "scale(1.5)";
-            setTimeout(() => badge.style.transform = "scale(1)", 200);
-        }
-
-        function updateCart() {
-            document.getElementById('cart-badge').innerText = currentState.cart.length;
-            const total = currentState.cart.reduce((s, i) => s + i.price, 0);
-            document.getElementById('grand-total').innerText = "₹" + total;
-            
-            const list = document.getElementById('cart-items-container');
-            if(currentState.cart.length === 0) list.innerHTML = "<div style='text-align:center;color:#94a3b8;font-size:12px;'>Bag empty</div>";
-            else {
-                const g = {};
-                currentState.cart.forEach(i => { if(!g[i.name]) g[i.name]={c:0,p:i.price}; g[i.name].c++; });
-                list.innerHTML = Object.entries(g).map(([n, d]) => `
-                    <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #f1f5f9;">
-                        <span>${n} <strong style="color:var(--primary)">x${d.c}</strong></span><span>₹${d.p*d.c}</span>
+                        <div class="p-icon-box"><i data-lucide="package" size="32"></i></div>
+                        <div><h4 class="p-name">${p.name}</h4><div class="p-price">₹${p.price}</div></div>
+                        <button class="btn-add" onclick="addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price})"><i data-lucide="plus" size="14"></i> ADD</button>
                     </div>`).join('');
+                lucide.createIcons();
+            } catch(e) { container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:red;">Connection error.</div>'; }
+        }
+
+        function addToCart(id, name, price) { 
+            const existing = currentState.cart.find(i => i.id === id);
+            if(existing) existing.qty += 1; else currentState.cart.push({ id, name, price, qty: 1 });
+            updateCartUI(); 
+            const badge = document.getElementById('cart-badge');
+            badge.style.transform = 'scale(1.4)'; setTimeout(()=> badge.style.transform = 'scale(1)', 200);
+        }
+
+        function adjustQty(id, delta) {
+            const item = currentState.cart.find(i => i.id === id);
+            if(item) { item.qty += delta; if(item.qty <= 0) currentState.cart = currentState.cart.filter(i => i.id !== id); updateCartUI(); }
+        }
+
+        function updateCartUI() {
+            const badge = document.getElementById('cart-badge');
+            const totalItems = currentState.cart.reduce((s, i) => s + i.qty, 0);
+            badge.innerText = totalItems; badge.style.display = totalItems > 0 ? 'flex' : 'none';
+            const total = currentState.cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            document.getElementById('grand-total').innerText = "₹" + total.toFixed(2);
+            const list = document.getElementById('cart-items-container');
+            if(currentState.cart.length === 0) { list.innerHTML = "<div style='text-align:center; color:var(--text-muted); font-size:14px; padding:40px; background:var(--bg-base); border-radius:20px; margin-top:10px;'>🛒 Thaila Khali Hai</div>"; } 
+            else {
+                list.innerHTML = currentState.cart.map(item => `
+                    <div class="cart-item">
+                        <div style="flex:1;"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">₹${item.price}</div></div>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <span style="font-weight:800; color:var(--text-dark); font-family: 'JetBrains Mono', monospace;">₹${(item.price * item.qty).toFixed(2)}</span>
+                            <div class="cart-item-ctrl"><button onclick="adjustQty('${item.id}', -1)"><i data-lucide="minus" size="14"></i></button><span style="font-weight:800; font-size:14px; width:24px; text-align:center;">${item.qty}</span><button onclick="adjustQty('${item.id}', 1)"><i data-lucide="plus" size="14"></i></button></div>
+                        </div>
+                    </div>`).join('');
+                lucide.createIcons();
             }
         }
 
-        function submitOrder() {
-            if(currentState.cart.length === 0) return alert("Empty Cart!");
-            let msg = `*Order from ${currentState.phone}*\n`;
-            const g = {}; currentState.cart.forEach(i => { if(!g[i.name]) g[i.name]=0; g[i.name]++; });
-            Object.entries(g).forEach(([n, c]) => { msg += `- ${n} x${c}\n`; });
-            msg += `\n*Total: ${document.getElementById('grand-total').innerText}*`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-            currentState.cart = []; updateCart(); toggleCart(false);
+        async function submitOrder() {
+            if(currentState.cart.length === 0) return alert("Pehle samaan select karein!");
+            const btn = document.getElementById('btn-submit-order');
+            btn.innerHTML = `<i data-lucide="loader" class="spin"></i> Bhej rahe hain...`; lucide.createIcons(); btn.disabled = true;
+            try {
+                const res = await fetch(buildUrl('/api/submit-order'), {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ merchantId: currentState.merchantId, customerName: currentState.name, phone: currentState.phone, cart: currentState.cart, total: document.getElementById('grand-total').innerText })
+                });
+                const data = await res.json();
+                if(data.success) { alert("✅ Order Dukan Par Bhej Diya Gaya Hai!"); currentState.cart = []; updateCartUI(); toggleCart(false); } 
+                else { alert("Failed to send order."); }
+            } catch(e) { alert("Network Error. Order fail ho gaya."); }
+            btn.innerHTML = `Dukan Par Bhejein <i data-lucide="arrow-right" size="18"></i>`; lucide.createIcons(); btn.disabled = false;
         }
 
-        // --- UTILS ---
-        function toggleCart(s) {
-            const el = (id) => document.getElementById(id);
-            if(s) { el('overlay').classList.add('active'); el('cart-drawer').classList.add('active'); updateCart(); }
-            else { el('overlay').classList.remove('active'); el('cart-drawer').classList.remove('active'); }
+        function toggleCart(show) { 
+            const ov = document.getElementById('overlay'), dr = document.getElementById('cart-drawer');
+            if(show) { ov.classList.add('active'); setTimeout(() => dr.classList.add('active'), 10); updateCartUI(); } 
+            else { dr.classList.remove('active'); setTimeout(() => ov.classList.remove('active'), 300); } 
         }
-        function switchView(v, btn) {
-            document.querySelectorAll('.section-view').forEach(e => e.classList.remove('active'));
-            document.getElementById('view-'+v).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
-            btn.classList.add('active');
+
+        function switchView(viewName, btnNode) { 
+            document.querySelectorAll('.section-view').forEach(e => e.classList.remove('active')); 
+            document.getElementById('view-' + viewName).classList.add('active'); 
+            document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active')); 
+            btnNode.classList.add('active'); 
+            
+            // 🟢 Initialize Map when tab is opened
+            if(viewName === 'search') initGlobalMap();
         }
-        function fetchLocation() {
-            document.getElementById('gps-status').innerText = "Locating...";
-            navigator.geolocation.getCurrentPosition(p => {
-                currentState.location = `${p.coords.latitude},${p.coords.longitude}`;
-                document.getElementById('gps-status').innerText = "✓ Attached";
-            });
+
+        // ==============================================================
+        // 🌍 GLOBAL SEARCH & MAP LOGIC
+        // ==============================================================
+        let globalMap = null;
+        let globalMarkers = {};
+        
+        const standardIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+        const highlightIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+
+        async function initGlobalMap() {
+            if(globalMap) { globalMap.invalidateSize(); return; }
+            
+            // Initialize map centered on India
+            globalMap = L.map('map').setView([20.5937, 78.9629], 5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: 'BharatPOS Map'
+            }).addTo(globalMap);
+
+            // Fetch and place all shops
+            try {
+                const res = await fetch(buildUrl('/api/global-shops'));
+                const data = await res.json();
+                if(data.success && data.shops) {
+                    data.shops.forEach(shop => {
+                        const m = L.marker([shop.lat, shop.lng], {icon: standardIcon}).addTo(globalMap)
+                                   .bindPopup(`<b>${shop.shopName}</b><br>${shop.merchantId}`);
+                        globalMarkers[shop.merchantId] = m;
+                    });
+                }
+            } catch(e) { console.error("Failed to load map shops"); }
+
+            // If user has GPS, zoom to them
+            if(currentState.userLat && currentState.userLng) {
+                globalMap.flyTo([currentState.userLat, currentState.userLng], 13);
+                L.circleMarker([currentState.userLat, currentState.userLng], {color: '#4f46e5', radius: 8, fillOpacity: 0.8})
+                 .addTo(globalMap).bindPopup("You are here");
+            }
         }
-        function setDelivery(t, b) {
-            currentState.deliveryTime = t;
-            document.querySelectorAll('.opt-btn').forEach(e => e.classList.remove('selected'));
-            b.classList.add('selected');
+
+        // Haversine Distance Formula
+        function calcDistanceKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
-        function launchConfetti() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
+
+        async function performGlobalSearch() {
+            const q = document.getElementById('global-search-input').value.trim();
+            if(!q) return;
+
+            try {
+                const res = await fetch(buildUrl('/api/global-product-search'), {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ query: q })
+                });
+                const data = await res.json();
+                
+                let results = data.results || [];
+                
+                // Sort by distance if user location is known
+                if(currentState.userLat && currentState.userLng) {
+                    results.forEach(r => {
+                        r.distance = calcDistanceKm(currentState.userLat, currentState.userLng, r.lat, r.lng);
+                    });
+                    results.sort((a,b) => a.distance - b.distance);
+                }
+
+                document.getElementById('map-results-count').innerText = `${results.length} found`;
+                const listEl = document.getElementById('map-results-list');
+                
+                if(results.length === 0) {
+                    listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No shops found with this product.</div>`;
+                } else {
+                    listEl.innerHTML = results.map(r => `
+                        <div class="map-result-item" onclick="focusShopOnMap('${r.merchantId}', ${r.lat}, ${r.lng})">
+                            <div>
+                                <div style="font-weight:700; color:var(--text-dark);">${r.productName}</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;"><i data-lucide="store" size="12"></i> ${r.shopName}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-weight:800; color:var(--primary); font-family:'JetBrains Mono', monospace;">₹${r.price}</div>
+                                ${r.distance !== undefined ? `<div style="font-size:11px; color:var(--success); margin-top:4px;">${r.distance.toFixed(1)} km away</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                    lucide.createIcons();
+                }
+                
+                // Open Drawer
+                document.getElementById('map-results-drawer').classList.add('active');
+
+            } catch(e) {
+                alert("Search failed.");
+            }
+        }
+
+        function closeMapDrawer() {
+            document.getElementById('map-results-drawer').classList.remove('active');
+        }
+
+        function focusShopOnMap(merchantId, lat, lng) {
+            closeMapDrawer();
+            
+            // Reset all markers to blue
+            Object.values(globalMarkers).forEach(m => m.setIcon(standardIcon));
+            
+            // Highlight selected marker in Red
+            if(globalMarkers[merchantId]) {
+                globalMarkers[merchantId].setIcon(highlightIcon);
+                globalMarkers[merchantId].openPopup();
+            }
+            
+            // Fly to location
+            if(globalMap) {
+                globalMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
+            }
+        }
     </script>
 </body>
 </html>
