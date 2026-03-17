@@ -24,7 +24,7 @@
     .header { height: 60px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; z-index: 100; backdrop-filter: var(--glass); flex-shrink: 0; }
     .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #fff; }
     .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); }
-    .nav { display: flex; gap: 15px; } .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; } .nav a.active { color: var(--accent); }
+    .nav { display: flex; gap: 15px; align-items: center; } .nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; } .nav a.active { color: var(--accent); }
 
     /* CATALOG */
     .catalog-panel { display: flex; flex-direction: column; height: 100%; background: radial-gradient(circle at 0% 0%, rgba(59,130,246,0.05), transparent 50%); overflow: hidden; }
@@ -113,7 +113,7 @@
     .variant-option { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
     .variant-option:hover { background: rgba(59, 130, 246, 0.2); border-color: var(--primary); }
 
-    /* 🟢 LOOSE WEIGHT BUTTONS */
+    /* LOOSE WEIGHT BUTTONS */
     .loose-btn { background: rgba(255,255,255,0.05); color: #fff; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 14px; }
     .loose-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
 
@@ -130,6 +130,10 @@
     .inv-btn-grp { display: flex; gap: 10px; margin-top: 15px; }
     .inv-btn { flex: 1; padding: 10px; background: #000; color: white; border: none; cursor: pointer; font-weight: bold; }
     .inv-close { background: #ccc; color: #000; }
+    
+    /* ONLINE ORDERS MODAL */
+    .oo-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(59,130,246,0.3); }
+    .oo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -137,6 +141,10 @@
 <div class="header">
   <div class="brand"><img src="logo.png" class="global-logo"> Bharat POS</div>
   <div class="nav">
+    <button id="onlineOrderBtn" onclick="document.getElementById('onlineOrdersModal').style.display='flex'" style="position:relative; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px; margin-right:10px; transition:0.2s;">
+        <i class="fa-solid fa-bell"></i>
+        <span id="onlineOrderBadge" style="display:none; position:absolute; top:-6px; right:-6px; background:var(--danger); color:white; font-size:10px; font-weight:bold; border-radius:50%; padding:2px 5px; border:2px solid #0f172a;">0</span>
+    </button>
     <a href="dashboard.html">Home</a>
     <a href="products.html">Stock</a>
     <a href="sales.html">Bikri</a>
@@ -210,6 +218,18 @@
   </div>
 </div>
 
+<div id="onlineOrdersModal" class="variant-overlay">
+    <div class="variant-box" style="max-width: 450px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.1); padding-bottom:10px;">
+            <h3 style="margin:0; color:#fff; font-size:18px;">🛒 Live Customer Orders</h3>
+            <button onclick="document.getElementById('onlineOrdersModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="onlineOrdersList" style="max-height: 60vh; overflow-y: auto;">
+            <div style="text-align:center; padding:30px; color:var(--text-muted);">Koi naya order nahi hai.</div>
+        </div>
+    </div>
+</div>
+
 <div id="variantModal" class="variant-overlay">
     <div class="variant-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.1); padding-bottom:10px;">
@@ -258,13 +278,110 @@
 window.cart = [];
 let isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
 
+// 🟢 LIVE ONLINE ORDERS QUEUE
+let liveOrdersArray = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     renderBillCategories();
     renderBillGrid();
     renderCart();
     setupAutocomplete();
     setupMobileCartDrag();
+    
+    // Start Polling for online orders every 10 seconds
+    fetchOnlineOrders();
+    setInterval(fetchOnlineOrders, 10000);
 });
+
+// 🟢 ONLINE ORDERS LOGIC (Injected without breaking existing functions)
+async function fetchOnlineOrders() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if(!user.merchantId) return;
+    
+    try {
+        const url = window.buildUrl ? buildUrl('/api/get-pending-orders') : '/api/get-pending-orders';
+        const res = await fetch(url, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ merchantId: user.merchantId })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            liveOrdersArray = data.orders || [];
+            
+            const badge = document.getElementById('onlineOrderBadge');
+            const btn = document.getElementById('onlineOrderBtn');
+            
+            if (liveOrdersArray.length > 0) {
+                badge.innerText = liveOrdersArray.length;
+                badge.style.display = 'inline-block';
+                btn.style.color = '#fff';
+            } else {
+                badge.style.display = 'none';
+                btn.style.color = 'var(--text-muted)';
+            }
+            renderOnlineOrdersModal();
+        }
+    } catch(e) {}
+}
+
+function renderOnlineOrdersModal() {
+    const list = document.getElementById('onlineOrdersList');
+    if (liveOrdersArray.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">Koi naya order nahi hai.</div>';
+        return;
+    }
+    
+    list.innerHTML = liveOrdersArray.map(o => {
+        const d = new Date(o.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        return `
+        <div class="oo-card">
+            <div class="oo-header">
+                <div>
+                    <div style="font-weight:700; color:#fff;">${o.customerName}</div>
+                    <div style="font-size:11px; color:var(--text-muted);"><i class="fa-solid fa-phone"></i> ${o.phone} • ${d}</div>
+                </div>
+                <div style="font-weight:800; color:var(--success); font-size:16px;">${o.total}</div>
+            </div>
+            <div style="font-size:12px; color:#cbd5e1; margin-bottom:10px;">
+                ${o.cart.map(c => `• ${c.name} (x${c.qty})`).join('<br>')}
+            </div>
+            <button class="checkout-btn" style="padding:8px; font-size:12px;" onclick="loadOrderIntoCart('${o.orderId}')">
+                <i class="fa-solid fa-cart-arrow-down"></i> Load into Cart
+            </button>
+        </div>`;
+    }).join('');
+}
+
+async function loadOrderIntoCart(orderId) {
+    const order = liveOrdersArray.find(o => o.orderId === orderId);
+    if(!order) return;
+    
+    // Clear current billing screen
+    window.cart = [];
+    
+    // Auto-fill customer details
+    document.getElementById('custName').value = order.customerName || "";
+    document.getElementById('custPhone').value = order.phone || "";
+    
+    // Gracefully use existing addToBill logic so GST and loose logic still works!
+    order.cart.forEach(item => {
+        window.addToBill(item.id, item.qty);
+    });
+    
+    document.getElementById('onlineOrdersModal').style.display = 'none';
+    if(window.innerWidth <= 900) toggleCart(); // pop open cart on mobile
+    
+    // Tell server order is cleared
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const url = window.buildUrl ? buildUrl('/api/clear-order') : '/api/clear-order';
+    await fetch(url, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ merchantId: user.merchantId, orderId: orderId })
+    });
+    
+    fetchOnlineOrders(); // Refresh queue
+}
 
 function getProducts() { try { return JSON.parse(localStorage.getItem('bharatpos_products') || '[]'); } catch(e) { return []; } }
 
@@ -408,16 +525,10 @@ function extractBaseWeightKg(qtyStr) {
     if (!qtyStr) return 1;
     const str = String(qtyStr).toLowerCase().replace(/\s/g, '');
     let num = parseFloat(str);
-    if (isNaN(num) || num <= 0) return 1; // Failsafe
-    
-    // If unit is grams/ml (and not kg), convert to fraction of kg/L
-    if ((str.includes('g') || str.includes('gm')) && !str.includes('kg')) {
-        return num / 1000;
-    }
-    if (str.includes('ml')) {
-        return num / 1000;
-    }
-    return num; // Default assumes standard KG or L
+    if (isNaN(num) || num <= 0) return 1; 
+    if ((str.includes('g') || str.includes('gm')) && !str.includes('kg')) { return num / 1000; }
+    if (str.includes('ml')) { return num / 1000; }
+    return num; 
 }
 
 // 🟢 ADD TO BILL
@@ -434,10 +545,9 @@ window.addToBill = function(productId, qtyToAdd = 1) {
         let packWeightKg = 1;
         let unitLabel = "";
 
-        // 🧠 Intelligent Price Calculation for Loose Items
         if (p.isLoose) {
             packWeightKg = extractBaseWeightKg(p.quantity);
-            finalRate = finalRate / packWeightKg; // Cost per 1 standard KG
+            finalRate = finalRate / packWeightKg;
             unitLabel = "/kg";
         }
 
@@ -464,14 +574,14 @@ window.addToBill = function(productId, qtyToAdd = 1) {
             name: displayName,
             printName: p.quantity ? `${p.name} (${p.quantity})` : p.name,
             qty: parseFloat(qtyToAdd),
-            price: finalRate, // This is now per-kg price if loose
+            price: finalRate, 
             basePrice: base,
             taxAmt: tax,
             gstRate: gstRate,
             hsn: p.hsn,
             isLoose: p.isLoose,
             unitLabel: unitLabel,
-            packWeightKg: packWeightKg // Stored for accurate stock deduction
+            packWeightKg: packWeightKg 
         });
     }
     playBeep();
@@ -570,8 +680,6 @@ function completeSale() {
     window.cart.forEach(cartItem => {
         let pIndex = allProducts.findIndex(p => p.id === cartItem.id);
         if(pIndex > -1) {
-            // Deduct exact fraction of the original pack!
-            // If selling 0.5kg from a 20kg pack, deduction = 0.5 / 20 = 0.025 packs.
             const deductionValue = cartItem.qty / (cartItem.packWeightKg || 1);
             allProducts[pIndex].stock = Math.max(0, allProducts[pIndex].stock - deductionValue);
         }
@@ -587,6 +695,8 @@ function completeSale() {
     const localSales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
     localSales.push(billData);
     localStorage.setItem('bharatpos_sales', JSON.stringify(localSales));
+    
+    if (typeof syncBillToServer === 'function') syncBillToServer(billData); // Trigger background sync
     
     generateInvoiceHTML(billData, dateStr);
     
@@ -690,9 +800,9 @@ function setupMobileCartDrag() {
     cartHeader.addEventListener('touchmove', (e) => {
         if (!startY) return;
         const currentY = e.touches[0].clientY;
-        if (currentY - startY > 40) { // Dragged down by 40px
+        if (currentY - startY > 40) { 
             cartPanel.classList.remove('open');
-            startY = 0; // Reset
+            startY = 0; 
         }
     }, {passive: true});
 }
