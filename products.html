@@ -58,7 +58,8 @@
     input::placeholder { color: transparent; } 
     .floating-label { position: absolute; left: 12px; top: 14px; color: var(--text-muted); font-size: 14px; pointer-events: none; transition: 0.2s; }
     input:focus ~ .floating-label, input:not(:placeholder-shown) ~ .floating-label, select:focus ~ .floating-label, select:valid ~ .floating-label { top: -8px; left: 10px; font-size: 11px; color: var(--accent); background: var(--bg-body); padding: 0 4px; border-radius: 4px; }
-    button[type="submit"] { width: 100%; background: var(--success); color: #fff; padding: 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; margin-top: 10px; }
+    button[type="submit"] { width: 100%; background: var(--success); color: #fff; padding: 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; margin-top: 10px; transition: 0.2s; }
+    button[type="submit"]:active { transform: scale(0.98); }
 
     /* TOGGLE SWITCH */
     .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -88,7 +89,7 @@
       table, tbody, tr, td { display: block; width: 100%; }
       tr {
         display: grid;
-        grid-template-columns: 1fr auto auto; /* Name | Stock | Actions */
+        grid-template-columns: 1fr auto auto;
         gap: 10px;
         background: rgba(255,255,255,0.03); margin-bottom: 8px; padding: 12px;
         border-radius: 8px; border: 1px solid var(--border); align-items: center;
@@ -165,9 +166,16 @@
 <div class="main-container">
   
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>Naya Maal Jodein</h3>
-        <button class="gst-quick-btn" onclick="toggleGstQuick()" id="gstQuickBtn">GST: OFF</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <h3 style="margin:0; border:none; padding:0;">Naya Maal Jodein</h3>
+        
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button class="gst-quick-btn" onclick="toggleGstQuick()" id="gstQuickBtn">GST: OFF</button>
+            
+            <button onclick="openGlobalCatalog()" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); transition: 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fa-solid fa-database"></i> Auto-Fill from Master DB
+            </button>
+        </div>
     </div>
     
     <form id="productForm" onsubmit="handleAddProduct(event);">
@@ -286,6 +294,28 @@
 </div>
 <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 
+<div id="globalCatalogModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
+    <div style="background:#1e293b; width:90%; max-width:500px; border-radius:16px; border:1px solid rgba(99,102,241,0.3); display:flex; flex-direction:column; max-height:85vh;">
+        
+        <div style="padding:20px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; color:#fff; display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-server" style="color:#a855f7;"></i> Master Database</h3>
+            <button onclick="document.getElementById('globalCatalogModal').style.display='none'" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div style="padding:20px; border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div style="position:relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:16px; color:#64748b;"></i>
+                <input type="text" id="globalCatalogSearch" placeholder="Search product or category..." style="width:100%; padding:14px 14px 14px 40px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff; outline:none;" oninput="filterGlobalCatalog()">
+            </div>
+        </div>
+
+        <div id="globalCatalogList" style="flex:1; overflow-y:auto; padding:15px 20px;">
+            <div style="text-align:center; color:#64748b; margin-top:20px;">Loading database...</div>
+        </div>
+
+    </div>
+</div>
+
 <script>
 // --- 1. CORE & GST LOGIC ---
 const isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
@@ -345,19 +375,13 @@ function getProducts() {
     catch(e) { return []; }
 }
 
-// 🟢 HELPER FOR WEIGHT CALCULATION
 function extractBaseWeightKg(qtyStr) {
     if (!qtyStr) return 1;
     const str = String(qtyStr).toLowerCase().replace(/\s/g, '');
     let num = parseFloat(str);
     if (isNaN(num) || num <= 0) return 1;
-    
-    if ((str.includes('g') || str.includes('gm')) && !str.includes('kg')) {
-        return num / 1000;
-    }
-    if (str.includes('ml')) {
-        return num / 1000;
-    }
+    if ((str.includes('g') || str.includes('gm')) && !str.includes('kg')) return num / 1000;
+    if (str.includes('ml')) return num / 1000;
     return num;
 }
 
@@ -367,7 +391,6 @@ function formatWeight(kg) {
     return parseFloat(kg.toFixed(3)) + " kg";
 }
 
-// 🟢 RENDER TABLE (GROUPED)
 function renderProducts(){
   const products = getProducts();
   const list = document.getElementById('productsList');
@@ -380,15 +403,9 @@ function renderProducts(){
   const grouped = {};
   products.forEach(p => {
       const key = p.name.trim().toLowerCase();
-      if(!grouped[key]) {
-          grouped[key] = { name: p.name, category: p.category, totalStock: 0, totalLooseKg: 0, variants: [] };
-      }
-      
-      if (p.isLoose) {
-          grouped[key].totalLooseKg += Number(p.stock || 0) * extractBaseWeightKg(p.quantity);
-      } else {
-          grouped[key].totalStock += Number(p.stock || 0);
-      }
+      if(!grouped[key]) grouped[key] = { name: p.name, category: p.category, totalStock: 0, totalLooseKg: 0, variants: [] };
+      if (p.isLoose) grouped[key].totalLooseKg += Number(p.stock || 0) * extractBaseWeightKg(p.quantity);
+      else grouped[key].totalStock += Number(p.stock || 0);
       grouped[key].variants.push(p);
   });
   
@@ -399,16 +416,11 @@ function renderProducts(){
     const variantText = g.variants.length > 1 ? `<br><span style="font-size:10px; color:var(--accent);">${g.variants.length} Types</span>` : '';
     const looseBadge = isLoose ? `<span style="background:rgba(16,185,129,0.1); color:var(--success); border:1px solid var(--success); padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px;">⚖️ Loose</span>` : '';
     const safeName = encodeURIComponent(g.name);
-    
-    // 🟢 Smart formatting
     const stockDisplay = isLoose ? formatWeight(g.totalLooseKg) : g.totalStock;
     const isOut = isLoose ? g.totalLooseKg <= 0 : g.totalStock <= 0;
 
     html += `<tr>
-      <td>
-        <div style="font-weight:600; display:flex; align-items:center;">${g.name} ${looseBadge}</div>
-        ${variantText}
-      </td>
+      <td><div style="font-weight:600; display:flex; align-items:center;">${g.name} ${looseBadge}</div>${variantText}</td>
       <td>${g.category || '-'}</td>
       <td class="desktop-col" style="${isOut ? 'color:var(--danger); font-weight:bold;' : ''}">${stockDisplay}</td>
       <td class="mobile-only stock-col">${stockDisplay}</td>
@@ -422,7 +434,6 @@ function renderProducts(){
   list.innerHTML = html;
 }
 
-// 🟢 MODAL LOGIC (Grouped View)
 function openDetailModal(encodedName) {
     const name = decodeURIComponent(encodedName);
     const products = getProducts().filter(p => p.name.toLowerCase() === name.toLowerCase());
@@ -433,19 +444,15 @@ function openDetailModal(encodedName) {
 
     let variantsHtml = products.map(p => {
         let stockDisplay = p.stock || 0;
-        
         if (base.isLoose) {
             const kg = Number(p.stock) * extractBaseWeightKg(p.quantity);
-            // Shows readable weight, and pack info in small text
             stockDisplay = `${formatWeight(kg)} <span style="font-size:10px; color:#64748b;">(${parseFloat(Number(p.stock).toFixed(3))} Packs)</span>`;
         }
-
         return `
         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-bottom:5px; border-left:3px solid var(--accent);">
             <div><strong style="color:#fff">${p.quantity || 'Standard'}</strong><br><span style="font-size:11px; color:var(--text-muted);">Stock: ${stockDisplay}</span></div>
             <div style="text-align:right"><strong style="color:var(--success);">₹${p.price}</strong></div>
-        </div>
-        `;
+        </div>`;
     }).join('');
 
     const content = `
@@ -457,22 +464,15 @@ function openDetailModal(encodedName) {
         <div class="detail-row"><span class="detail-label">HSN Code</span><span class="detail-val">${base.hsn || '-'}</span></div>
         ` : ''}
         <div style="margin-top:20px; font-size:11px; color:var(--text-muted); font-weight:bold; letter-spacing:1px; margin-bottom:10px;">AVAILABLE PACKS / TYPES:</div>
-        <div style="max-height: 200px; overflow-y:auto; padding-right:5px;">
-            ${variantsHtml}
-        </div>
+        <div style="max-height: 200px; overflow-y:auto; padding-right:5px;">${variantsHtml}</div>
     `;
     document.getElementById('modalContent').innerHTML = content;
     document.getElementById('detailModal').style.display = 'flex';
 }
 
 function closeDetailModal() { document.getElementById('detailModal').style.display = 'none'; }
+function editFromModal() { closeDetailModal(); if(currentEditingName) loadProductForEditByName(currentEditingName); }
 
-function editFromModal() {
-    closeDetailModal();
-    if(currentEditingName) loadProductForEditByName(currentEditingName);
-}
-
-// 🟢 VARIANT UI LOGIC
 function addVariantRow() {
     const template = document.getElementById('variantTemplate');
     const clone = template.content.cloneNode(true);
@@ -481,13 +481,10 @@ function addVariantRow() {
 
 function resetVariants() {
     const container = document.getElementById('variantsContainer');
-    while(container.children.length > 1) {
-        container.removeChild(container.lastChild);
-    }
-    document.getElementById('isLooseItem').checked = false; // Reset toggle
+    while(container.children.length > 1) container.removeChild(container.lastChild);
+    document.getElementById('isLooseItem').checked = false;
 }
 
-// 🟢 ADD/SAVE LOGIC
 async function handleAddProduct(event){
   if(event) event.preventDefault();
   try {
@@ -501,51 +498,36 @@ async function handleAddProduct(event){
     const priceType = isGstMode ? document.getElementById('priceType').value : "inclusive";
     
     let products = getProducts();
-    
-    if (currentEditingName) {
-        products = products.filter(p => p.name.toLowerCase() !== currentEditingName.toLowerCase());
-    }
+    if (currentEditingName) products = products.filter(p => p.name.toLowerCase() !== currentEditingName.toLowerCase());
 
     const rows = document.querySelectorAll('.variant-row');
-    
     rows.forEach((row, index) => {
-        const typeInput = row.querySelector('.var-type');
+        const qty = row.querySelector('.var-type').value.trim();
         const stockInput = row.querySelector('.var-stock');
-        const priceInput = row.querySelector('.var-price');
-
-        const qty = typeInput.value.trim();
         const stock = stockInput.value ? parseFloat(stockInput.value) : 0;
-        const price = priceInput.value;
+        const price = row.querySelector('.var-price').value;
 
         if(!price) return; 
 
         const productData = {
             id: Date.now().toString() + index, 
             name, price, quantity: qty, stock, category: cat, barcode: bar,
-            hsn: isGstMode ? hsn : "",
-            gstRate: isGstMode ? gstRate : "",
-            priceType: isGstMode ? priceType : "inclusive",
-            isLoose: isLoose // 🟢 Save flag
+            hsn: isGstMode ? hsn : "", gstRate: isGstMode ? gstRate : "",
+            priceType: isGstMode ? priceType : "inclusive", isLoose: isLoose
         };
 
         let existingIndex = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase() && (p.quantity||'').toLowerCase() === qty.toLowerCase());
-
-        if (existingIndex > -1) {
-            products[existingIndex] = { ...products[existingIndex], ...productData };
-        } else {
-            products.push(productData);
-        }
+        if (existingIndex > -1) products[existingIndex] = { ...products[existingIndex], ...productData };
+        else products.push(productData);
     });
 
     showToast("✅ Saved Successfully!");
     localStorage.setItem('bharatpos_products', JSON.stringify(products));
     await syncStockToBackend(products);
-
     renderProducts();
     document.getElementById('productForm').reset();
     resetVariants();
     currentEditingName = null; 
-    
   } catch(err){ console.error(err); showToast('Error saving data', true); }
 }
 
@@ -559,7 +541,7 @@ function loadProductForEditByName(name) {
     document.getElementById('productName').value = base.name;
     document.getElementById('productCategory').value = base.category || "";
     document.getElementById('productBarcode').value = base.barcode || "";
-    document.getElementById('isLooseItem').checked = base.isLoose || false; // Load flag
+    document.getElementById('isLooseItem').checked = base.isLoose || false; 
     
     if(isGstMode) {
         document.getElementById('hsnCode').value = base.hsn || "";
@@ -606,79 +588,146 @@ async function syncStockToBackend(allProducts) {
     } catch (error) { console.error("Sync Failed:", error); }
 }
 
-// --- 3. SCANNER LOGIC (Unchanged) ---
-let cameraStream = null;
-let aiScanInterval = null;
-let aiScanLocked = false;          
-
+// --- 3. SCANNER LOGIC ---
+let cameraStream = null; let aiScanInterval = null; let aiScanLocked = false;          
 function uiStartScan() { document.getElementById('cameraContainer').style.display = 'block'; startLiveScan(); }
 function uiStopScan() { document.getElementById('cameraContainer').style.display = 'none'; stopLiveScan(); }
-
 async function startLiveScan() {
   if (cameraStream) return;
   const video = document.getElementById("cameraPreview");
   try {
     cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } }); 
     video.srcObject = cameraStream;
-    video.onloadedmetadata = () => {
-      video.play();
-      aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 3000);
-    };
+    video.onloadedmetadata = () => { video.play(); aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 3000); };
   } catch(err) { alert("Camera Error"); }
 }
-
 function stopLiveScan() {
   if(aiScanInterval) { clearInterval(aiScanInterval); aiScanInterval = null; }
   if(cameraStream){ try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){} cameraStream=null; }
   const video = document.getElementById("cameraPreview");
   if(video) try { video.srcObject = null; } catch(e) {}
 }
-
 async function captureAndSendToAI(){
-  const video = document.getElementById("cameraPreview");
-  const canvas = document.getElementById("captureCanvas"); 
-  const overlay = document.getElementById("aiLoadingOverlay");
+  const video = document.getElementById("cameraPreview"); const canvas = document.getElementById("captureCanvas"); const overlay = document.getElementById("aiLoadingOverlay");
   if(!video || !canvas) return;
-  
-  const ctx = canvas.getContext("2d");
-  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d"); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1]; 
-
   aiScanLocked = true; if(overlay) overlay.style.display = 'flex'; 
-
   try{
     const url = (typeof buildUrl === 'function') ? buildUrl('/ai-product-scan') : '/ai-product-scan';
     const res = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: base64 }) });
     const data = await res.json();
     if(data && data.success && data.product){
-      fillProductFromAI(data.product);
-      showToast("✨ AI: " + data.product.name, false);
-      uiStopScan(); 
+      fillProductFromAI(data.product); showToast("✨ AI: " + data.product.name, false); uiStopScan(); 
     } 
-  } catch(e){} 
-  finally { aiScanLocked = false; if(overlay) overlay.style.display = 'none'; }
+  } catch(e){} finally { aiScanLocked = false; if(overlay) overlay.style.display = 'none'; }
 }
-
 function fillProductFromAI(product){
   document.getElementById("productName").value = product.name || "";
   const firstRow = document.querySelector('.variant-row');
-  if(firstRow) {
-      firstRow.querySelector('.var-type').value = product.quantity || "1 pc";
-      firstRow.querySelector('.var-price').value = product.price || "";
-  }
+  if(firstRow) { firstRow.querySelector('.var-type').value = product.quantity || "1 pc"; firstRow.querySelector('.var-price').value = product.price || ""; }
   document.getElementById("productCategory").value = product.category || "General";
 }
-
 function resetAIScan(){ document.getElementById("productForm").reset(); resetVariants(); aiScanLocked=false; if(!cameraStream) uiStartScan(); currentEditingName = null;}
-
 function showToast(msg, isError = false) {
-  const x = document.getElementById("toast");
-  x.innerText = msg; x.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
+  const x = document.getElementById("toast"); x.innerText = msg; x.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
   x.className = "show"; setTimeout(() => x.className = "", 3000);
+}
+
+// 🟢 GLOBAL CATALOG MASTER DATABASE LOGIC 
+let masterCatalog = [];
+
+async function openGlobalCatalog() {
+    document.getElementById('globalCatalogModal').style.display = 'flex';
+    const list = document.getElementById('globalCatalogList');
+    list.innerHTML = '<div style="text-align:center; color:#64748b; margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching Master Catalog...</div>';
+    
+    try {
+        const url = (typeof buildUrl === 'function') ? buildUrl('/api/get-master-db') : '/api/get-master-db';
+        const res = await fetch(url);
+        const data = await res.json();
+        if(data.success && data.database) {
+            masterCatalog = data.database;
+            filterGlobalCatalog(); // Render all initially with categories
+        } else {
+            list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Database empty or offline.</div>';
+        }
+    } catch(e) {
+        list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Connection Error. Check server.</div>';
+    }
+}
+
+function filterGlobalCatalog() {
+    const q = document.getElementById('globalCatalogSearch').value.toLowerCase();
+    const list = document.getElementById('globalCatalogList');
+    
+    const filtered = masterCatalog.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        (p.category && p.category.toLowerCase().includes(q))
+    );
+    
+    if(filtered.length === 0) {
+        list.innerHTML = '<div style="text-align:center; color:#64748b; margin-top:20px;">No matching items found.</div>';
+        return;
+    }
+
+    // 🟢 Group by Category for UI Distribution
+    const groups = {};
+    filtered.forEach(p => {
+        const cat = p.category || "General";
+        if(!groups[cat]) groups[cat] = [];
+        groups[cat].push(p);
+    });
+
+    let html = '';
+    Object.entries(groups).forEach(([cat, prods]) => {
+        html += `<div style="font-family: 'JetBrains Mono', monospace; color: #a855f7; font-size: 12px; font-weight: 800; border-bottom: 1px dashed rgba(168,85,247,0.4); padding-bottom: 5px; margin: 15px 0 10px; text-transform: uppercase;">📁 ${cat}</div>`;
+        
+        html += prods.map(p => `
+            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#a855f7'; this.style.background='rgba(168,85,247,0.1)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.background='rgba(255,255,255,0.05)'" onclick='importProductFromCatalog(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+                <div>
+                    <div style="font-weight:700; color:#fff; font-size:14px;">${p.name} ${p.isLoose ? '⚖️' : ''}</div>
+                    <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${p.quantity || '-'} • GST: ${p.gstRate || 0}%</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="color:var(--success); font-weight:800; font-size:15px;">₹${p.price}</div>
+                    <div style="font-size:10px; color:#fff; background:var(--primary); font-weight:700; padding:4px 8px; border-radius:6px; margin-top:6px; display:inline-block;">AUTO-FILL <i class="fa-solid fa-bolt"></i></div>
+                </div>
+            </div>
+        `).join('');
+    });
+
+    list.innerHTML = html;
+}
+
+// 🟢 Correctly mapped Import Logic
+function importProductFromCatalog(product) {
+    document.getElementById('globalCatalogModal').style.display = 'none';
+
+    // Auto-fill standard form inputs using exact IDs
+    document.getElementById('productName').value = product.name || '';
+    document.getElementById('productCategory').value = product.category || '';
+    document.getElementById('productBarcode').value = product.barcode || '';
+    document.getElementById('isLooseItem').checked = product.isLoose === true;
+
+    // Auto-fill the first Variant Row (Type and Price)
+    const firstRow = document.querySelector('.variant-row');
+    if(firstRow) {
+        firstRow.querySelector('.var-type').value = product.quantity || '';
+        firstRow.querySelector('.var-price').value = product.price || '';
+        firstRow.querySelector('.var-stock').value = ''; // Leave blank for merchant to enter their stock
+    }
+    
+    // Auto-fill Advanced GST/HSN fields if they exist in your UI
+    if(document.getElementById('gstRate')) document.getElementById('gstRate').value = product.gstRate || '0';
+    if(document.getElementById('hsnCode')) document.getElementById('hsnCode').value = product.hsn || '';
+    if(document.getElementById('priceType')) document.getElementById('priceType').value = product.priceType || 'inclusive';
+    
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    document.getElementById('productStock').focus(); // Prompt user to enter stock
+    showToast("✅ Auto-filled! Enter your stock and click Save.");
 }
 </script>
 </body>
 </html>
-
-
