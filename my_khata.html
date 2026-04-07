@@ -10,7 +10,9 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
- <script src="bharatpos.js"></script>
+    
+    <script src="https://oneanush.github.io/BharatPOS/bharatpos.js"></script>
+    
     <style>
         :root {
             --primary: #4f46e5; --primary-light: #818cf8; --primary-dark: #312e81;
@@ -221,8 +223,7 @@
                 <input type="text" id="order-search-input" placeholder="Search products..." oninput="filterOrderItems()">
             </div>
 
-            <div class="cat-scroll" id="order-categories">
-                </div>
+            <div class="cat-scroll" id="order-categories"></div>
 
             <div id="inventory-list" class="store-grid">
                 <div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); font-size:13px; background:white; border-radius:20px;">Samaan load ho raha hai...</div>
@@ -288,12 +289,12 @@
     </div>
 
     <script>
+        // 🟢 FIXED: The local buildUrl function is completely removed.
+        // It will now automatically use buildUrl from bharatpos.js!
+        
         lucide.createIcons();
-       
 
         let currentState = { merchantId: '', name: '', phone: '', cart: [], bills: [], userLat: null, userLng: null };
-        
-        // 🟢 Global state for loaded inventory and category tracking
         let shopInventory = [];
         let currentOrderCategory = 'All';
 
@@ -321,6 +322,9 @@
             if(btn) { btn.innerHTML = `<i data-lucide="loader" class="spin"></i>`; lucide.createIcons(); btn.disabled = true; }
 
             try {
+                // Ensure we wait for bharatpos.js to load buildUrl
+                if(typeof buildUrl !== 'function') throw new Error("API Settings not loaded yet.");
+                
                 const response = await fetch(buildUrl('/api/customer-ledger'), { 
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ merchantId: mId, phone: phone }) 
@@ -424,7 +428,6 @@
 
         function closeInvoice() { document.getElementById('invoice-drawer').classList.remove('active'); setTimeout(() => document.getElementById('invoice-overlay').classList.remove('active'), 300); }
 
-        // 🟢 INVENTORY LOAD & FILTERING LOGIC
         async function loadInventory() {
             const container = document.getElementById('inventory-list');
             try {
@@ -435,24 +438,16 @@
                     document.getElementById('order-categories').innerHTML = '';
                     return; 
                 }
-                
-                // Store fetched data globally so we can filter without re-fetching
                 shopInventory = data.products;
-                
                 renderOrderCategories();
-                filterOrderItems(); // Initially renders "All" products
-
+                filterOrderItems();
             } catch(e) { container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:red;">Connection error.</div>'; }
         }
 
         function renderOrderCategories() {
-            // Extract unique categories, ignoring empty/null ones
             const cats = ['All', ...new Set(shopInventory.map(p => p.category).filter(Boolean))];
             const catContainer = document.getElementById('order-categories');
-            
-            catContainer.innerHTML = cats.map(c => 
-                `<button class="cat-pill ${c === currentOrderCategory ? 'active' : ''}" onclick="selectOrderCategory('${c}', this)">${c}</button>`
-            ).join('');
+            catContainer.innerHTML = cats.map(c => `<button class="cat-pill ${c === currentOrderCategory ? 'active' : ''}" onclick="selectOrderCategory('${c}', this)">${c}</button>`).join('');
         }
 
         function selectOrderCategory(cat, btnNode) {
@@ -465,18 +460,15 @@
         function filterOrderItems() {
             const query = document.getElementById('order-search-input').value.toLowerCase().trim();
             const container = document.getElementById('inventory-list');
-            
             const filtered = shopInventory.filter(p => {
                 const matchesCat = currentOrderCategory === 'All' || p.category === currentOrderCategory;
                 const matchesSearch = p.name.toLowerCase().includes(query) || (p.barcode && p.barcode.includes(query));
                 return matchesCat && matchesSearch;
             });
-            
             if (filtered.length === 0) {
                 container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); background:white; border-radius:20px;">Koi match nahi mila.</div>';
                 return;
             }
-            
             container.innerHTML = filtered.map(p => `
                 <div class="product-card">
                     <div class="p-icon-box"><i data-lucide="package" size="32"></i></div>
@@ -486,7 +478,6 @@
             lucide.createIcons();
         }
 
-        // CART INTERACTIONS
         function addToCart(id, name, price) { 
             const existing = currentState.cart.find(i => i.id === id);
             if(existing) existing.qty += 1; else currentState.cart.push({ id, name, price, qty: 1 });
@@ -548,16 +539,11 @@
             document.getElementById('view-' + viewName).classList.add('active'); 
             document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active')); 
             btnNode.classList.add('active'); 
-            
             if(viewName === 'search') initGlobalMap();
         }
 
-        // ==============================================================
-        // 🌍 GLOBAL SEARCH & MAP LOGIC
-        // ==============================================================
         let globalMap = null;
         let globalMarkers = {};
-        
         const standardIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
         const highlightIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
 
@@ -574,7 +560,7 @@
                         globalMarkers[shop.merchantId] = m;
                     });
                 }
-            } catch(e) { console.error("Failed to load map shops"); }
+            } catch(e) {}
             if(currentState.userLat && currentState.userLng) {
                 globalMap.flyTo([currentState.userLat, currentState.userLng], 13);
                 L.circleMarker([currentState.userLat, currentState.userLng], {color: '#4f46e5', radius: 8, fillOpacity: 0.8}).addTo(globalMap).bindPopup("You are here");
