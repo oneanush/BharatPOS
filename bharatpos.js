@@ -1,7 +1,7 @@
 
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
-const API_BASE = 'https://expenditures-hey-unsigned-submission.trycloudflare.com'; 
+const API_BASE = 'https://revised-coaching-chairman-either.trycloudflare.com'; 
 // ---------------------------
 
 // This function is now available globally
