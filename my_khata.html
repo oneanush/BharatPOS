@@ -10,7 +10,7 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="bharatpos.js"></script>
+ <script src="bharatpos.js"></script>
     <style>
         :root {
             --primary: #4f46e5; --primary-light: #818cf8; --primary-dark: #312e81;
@@ -83,7 +83,16 @@
         .status-pill.due { background: var(--danger-light); color: var(--danger); }
         .status-pill.paid { background: var(--success-light); color: var(--success); }
 
-        /* --- ORDER SECTION --- */
+        /* --- 🟢 ORDER SECTION (NEW SEARCH & CATEGORIES) --- */
+        .search-wrap { display: flex; align-items: center; gap: 10px; background: var(--surface); padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .search-wrap input { border: none; background: transparent; flex: 1; outline: none; font-size: 15px; color: var(--text-dark); font-weight: 600; }
+        .search-wrap input::placeholder { color: var(--text-muted); font-weight: 500; }
+        
+        .cat-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; scrollbar-width: none; }
+        .cat-scroll::-webkit-scrollbar { display: none; }
+        .cat-pill { white-space: nowrap; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .cat-pill.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); }
+
         .store-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .product-card { background: var(--surface); border-radius: 20px; padding: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.2s; }
         .product-card:active { transform: scale(0.96); }
@@ -93,7 +102,7 @@
         .btn-add { background: var(--text-dark); color: white; border: none; padding: 10px; border-radius: 12px; font-weight: 700; font-size: 13px; width: 100%; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-add:active { background: var(--primary); transform: scale(0.95); }
 
-        /* --- 🟢 NEW GLOBAL MAP SEARCH SECTION --- */
+        /* --- GLOBAL MAP SEARCH SECTION --- */
         #view-search { padding: 0; height: calc(100vh - 145px); position: relative; overflow: hidden; }
         #map { width: 100%; height: 100%; z-index: 1; }
         .map-search-bar { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 400; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 16px; display: flex; align-items: center; padding: 6px 6px 6px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid var(--border); }
@@ -184,8 +193,8 @@
         </header>
 
         <div class="nav-tabs">
-            <button class="nav-btn active" onclick="switchView('khata', this)"><i data-lucide="wallet" size="18"></i> Mera Khata</button>
-            <button class="nav-btn" onclick="switchView('order', this)"><i data-lucide="package-plus" size="18"></i> Order Karein</button>
+            <button class="nav-btn active" onclick="switchView('khata', this)"><i data-lucide="wallet" size="18"></i> Khata</button>
+            <button class="nav-btn" onclick="switchView('order', this)"><i data-lucide="package-plus" size="18"></i> Order</button>
             <button class="nav-btn" onclick="switchView('search', this)"><i data-lucide="globe" size="18"></i> Khoj</button>
         </div>
 
@@ -206,6 +215,15 @@
 
         <div id="view-order" class="section-view">
             <div class="section-title" style="margin-top:0;"><i data-lucide="package-search" size="16"></i> Dukan Ka Samaan</div>
+            
+            <div class="search-wrap">
+                <i data-lucide="search" size="20" color="var(--text-muted)"></i>
+                <input type="text" id="order-search-input" placeholder="Search products..." oninput="filterOrderItems()">
+            </div>
+
+            <div class="cat-scroll" id="order-categories">
+                </div>
+
             <div id="inventory-list" class="store-grid">
                 <div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); font-size:13px; background:white; border-radius:20px;">Samaan load ho raha hai...</div>
             </div>
@@ -274,6 +292,10 @@
         function buildUrl(path) { if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') return 'http://localhost:5185' + path; return window.location.origin + path; }
 
         let currentState = { merchantId: '', name: '', phone: '', cart: [], bills: [], userLat: null, userLng: null };
+        
+        // 🟢 Global state for loaded inventory and category tracking
+        let shopInventory = [];
+        let currentOrderCategory = 'All';
 
         document.addEventListener('DOMContentLoaded', () => {
             const savedSession = localStorage.getItem('khata_user');
@@ -324,7 +346,6 @@
                     setupLedger(currentState.bills);
                     loadInventory();
                     
-                    // Request GPS early for map
                     if(navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(pos => {
                             currentState.userLat = pos.coords.latitude;
@@ -403,22 +424,69 @@
 
         function closeInvoice() { document.getElementById('invoice-drawer').classList.remove('active'); setTimeout(() => document.getElementById('invoice-overlay').classList.remove('active'), 300); }
 
+        // 🟢 INVENTORY LOAD & FILTERING LOGIC
         async function loadInventory() {
             const container = document.getElementById('inventory-list');
             try {
                 const res = await fetch(buildUrl('/api/get-merchant-stock'), { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ merchantId: currentState.merchantId }) });
                 const data = await res.json();
-                if(!data.products || data.products.length === 0) { container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); background:white; border-radius:20px;">Dukandaar ki list abhi khali hai.</div>'; return; }
-                container.innerHTML = data.products.map(p => `
-                    <div class="product-card">
-                        <div class="p-icon-box"><i data-lucide="package" size="32"></i></div>
-                        <div><h4 class="p-name">${p.name}</h4><div class="p-price">₹${p.price}</div></div>
-                        <button class="btn-add" onclick="addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price})"><i data-lucide="plus" size="14"></i> ADD</button>
-                    </div>`).join('');
-                lucide.createIcons();
+                if(!data.products || data.products.length === 0) { 
+                    container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); background:white; border-radius:20px;">Dukandaar ki list abhi khali hai.</div>'; 
+                    document.getElementById('order-categories').innerHTML = '';
+                    return; 
+                }
+                
+                // Store fetched data globally so we can filter without re-fetching
+                shopInventory = data.products;
+                
+                renderOrderCategories();
+                filterOrderItems(); // Initially renders "All" products
+
             } catch(e) { container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:red;">Connection error.</div>'; }
         }
 
+        function renderOrderCategories() {
+            // Extract unique categories, ignoring empty/null ones
+            const cats = ['All', ...new Set(shopInventory.map(p => p.category).filter(Boolean))];
+            const catContainer = document.getElementById('order-categories');
+            
+            catContainer.innerHTML = cats.map(c => 
+                `<button class="cat-pill ${c === currentOrderCategory ? 'active' : ''}" onclick="selectOrderCategory('${c}', this)">${c}</button>`
+            ).join('');
+        }
+
+        function selectOrderCategory(cat, btnNode) {
+            currentOrderCategory = cat;
+            document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+            btnNode.classList.add('active');
+            filterOrderItems();
+        }
+
+        function filterOrderItems() {
+            const query = document.getElementById('order-search-input').value.toLowerCase().trim();
+            const container = document.getElementById('inventory-list');
+            
+            const filtered = shopInventory.filter(p => {
+                const matchesCat = currentOrderCategory === 'All' || p.category === currentOrderCategory;
+                const matchesSearch = p.name.toLowerCase().includes(query) || (p.barcode && p.barcode.includes(query));
+                return matchesCat && matchesSearch;
+            });
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); background:white; border-radius:20px;">Koi match nahi mila.</div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(p => `
+                <div class="product-card">
+                    <div class="p-icon-box"><i data-lucide="package" size="32"></i></div>
+                    <div><h4 class="p-name">${p.name}</h4><div class="p-price">₹${p.price}</div></div>
+                    <button class="btn-add" onclick="addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price})"><i data-lucide="plus" size="14"></i> ADD</button>
+                </div>`).join('');
+            lucide.createIcons();
+        }
+
+        // CART INTERACTIONS
         function addToCart(id, name, price) { 
             const existing = currentState.cart.find(i => i.id === id);
             if(existing) existing.qty += 1; else currentState.cart.push({ id, name, price, qty: 1 });
@@ -481,7 +549,6 @@
             document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active')); 
             btnNode.classList.add('active'); 
             
-            // 🟢 Initialize Map when tab is opened
             if(viewName === 'search') initGlobalMap();
         }
 
@@ -491,85 +558,50 @@
         let globalMap = null;
         let globalMarkers = {};
         
-        const standardIcon = new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-        });
-        const highlightIcon = new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-        });
+        const standardIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+        const highlightIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
 
         async function initGlobalMap() {
             if(globalMap) { globalMap.invalidateSize(); return; }
-            
-            // Initialize map centered on India
             globalMap = L.map('map').setView([20.5937, 78.9629], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: 'BharatPOS Map'
-            }).addTo(globalMap);
-
-            // Fetch and place all shops
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: 'BharatPOS Map' }).addTo(globalMap);
             try {
                 const res = await fetch(buildUrl('/api/global-shops'));
                 const data = await res.json();
                 if(data.success && data.shops) {
                     data.shops.forEach(shop => {
-                        const m = L.marker([shop.lat, shop.lng], {icon: standardIcon}).addTo(globalMap)
-                                   .bindPopup(`<b>${shop.shopName}</b><br>${shop.merchantId}`);
+                        const m = L.marker([shop.lat, shop.lng], {icon: standardIcon}).addTo(globalMap).bindPopup(`<b>${shop.shopName}</b><br>${shop.merchantId}`);
                         globalMarkers[shop.merchantId] = m;
                     });
                 }
             } catch(e) { console.error("Failed to load map shops"); }
-
-            // If user has GPS, zoom to them
             if(currentState.userLat && currentState.userLng) {
                 globalMap.flyTo([currentState.userLat, currentState.userLng], 13);
-                L.circleMarker([currentState.userLat, currentState.userLng], {color: '#4f46e5', radius: 8, fillOpacity: 0.8})
-                 .addTo(globalMap).bindPopup("You are here");
+                L.circleMarker([currentState.userLat, currentState.userLng], {color: '#4f46e5', radius: 8, fillOpacity: 0.8}).addTo(globalMap).bindPopup("You are here");
             }
         }
 
-        // Haversine Distance Formula
         function calcDistanceKm(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
         async function performGlobalSearch() {
             const q = document.getElementById('global-search-input').value.trim();
             if(!q) return;
-
             try {
-                const res = await fetch(buildUrl('/api/global-product-search'), {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ query: q })
-                });
+                const res = await fetch(buildUrl('/api/global-product-search'), { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ query: q }) });
                 const data = await res.json();
-                
                 let results = data.results || [];
-                
-                // Sort by distance if user location is known
                 if(currentState.userLat && currentState.userLng) {
-                    results.forEach(r => {
-                        r.distance = calcDistanceKm(currentState.userLat, currentState.userLng, r.lat, r.lng);
-                    });
+                    results.forEach(r => { r.distance = calcDistanceKm(currentState.userLat, currentState.userLng, r.lat, r.lng); });
                     results.sort((a,b) => a.distance - b.distance);
                 }
-
                 document.getElementById('map-results-count').innerText = `${results.length} found`;
                 const listEl = document.getElementById('map-results-list');
-                
-                if(results.length === 0) {
-                    listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No shops found with this product.</div>`;
-                } else {
+                if(results.length === 0) { listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No shops found with this product.</div>`; } 
+                else {
                     listEl.innerHTML = results.map(r => `
                         <div class="map-result-item" onclick="focusShopOnMap('${r.merchantId}', ${r.lat}, ${r.lng})">
                             <div>
@@ -580,41 +612,20 @@
                                 <div style="font-weight:800; color:var(--primary); font-family:'JetBrains Mono', monospace;">₹${r.price}</div>
                                 ${r.distance !== undefined ? `<div style="font-size:11px; color:var(--success); margin-top:4px;">${r.distance.toFixed(1)} km away</div>` : ''}
                             </div>
-                        </div>
-                    `).join('');
+                        </div>`).join('');
                     lucide.createIcons();
                 }
-                
-                // Open Drawer
                 document.getElementById('map-results-drawer').classList.add('active');
-
-            } catch(e) {
-                alert("Search failed.");
-            }
+            } catch(e) { alert("Search failed."); }
         }
 
-        function closeMapDrawer() {
-            document.getElementById('map-results-drawer').classList.remove('active');
-        }
-
+        function closeMapDrawer() { document.getElementById('map-results-drawer').classList.remove('active'); }
         function focusShopOnMap(merchantId, lat, lng) {
             closeMapDrawer();
-            
-            // Reset all markers to blue
             Object.values(globalMarkers).forEach(m => m.setIcon(standardIcon));
-            
-            // Highlight selected marker in Red
-            if(globalMarkers[merchantId]) {
-                globalMarkers[merchantId].setIcon(highlightIcon);
-                globalMarkers[merchantId].openPopup();
-            }
-            
-            // Fly to location
-            if(globalMap) {
-                globalMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
-            }
+            if(globalMarkers[merchantId]) { globalMarkers[merchantId].setIcon(highlightIcon); globalMarkers[merchantId].openPopup(); }
+            if(globalMap) { globalMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 }); }
         }
     </script>
 </body>
 </html>
-
