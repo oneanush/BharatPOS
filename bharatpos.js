@@ -1,7 +1,7 @@
 
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
-const API_BASE = 'https://kit-expiration-workflow-about.trycloudflare.com'; 
+const API_BASE = 'https://leaders-tan-boulevard-plays.trycloudflare.com'; 
 // ---------------------------
 
 // This function is now available globally
