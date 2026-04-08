@@ -13,7 +13,6 @@ function buildUrl(endpoint) {
   if (normalizedBase.endsWith('/' + ep) || normalizedBase.endsWith(ep)) return normalizedBase;
   return normalizedBase + '/' + ep;
 }
-
 /* ==========================================================
    🏢 MULTI-BRANCH FUNCTIONS
    ========================================================== */
@@ -221,6 +220,10 @@ function saveCustomers(arr){
   _customerSyncTimer = setTimeout(()=> { pushCustomersToServer(); pushFullBackupToServerDebounced(); }, 900);
 }
 
+  
+
+
+
 
 
 
@@ -237,6 +240,8 @@ window.addEventListener('storage', (e) => {
     // if (typeof refreshFromLocalStorage === 'function') refreshFromLocalStorage();
   }
 });
+
+
 
 
 
@@ -271,8 +276,7 @@ async function syncBillToServer(billData) {
     }
 }
 /* ============================================================
-   bharatpos.js — FULL & CORRECTED
-   Fixed: Udhaar Logic, Syntax Errors, and Cart Syncing
+   bharatpos.js — FULL & CORRECTED (with server sync)
    ============================================================ */
 
 /* -------------------------
@@ -298,13 +302,108 @@ function getProducts(){
   try { return JSON.parse(localStorage.getItem(LS_KEYS.PRODUCTS) || '[]'); }
   catch(e){ localStorage.setItem(LS_KEYS.PRODUCTS, '[]'); return []; }
 }
-function saveProducts(arr){ localStorage.setItem(LS_KEYS.PRODUCTS, JSON.stringify(arr)); }
+/* -------------------------
+   NOTE: saveProducts now debounces and triggers server push
+   ------------------------- */
+let _productSyncTimer = null;
+function saveProducts(arr){
+  localStorage.setItem(LS_KEYS.PRODUCTS, JSON.stringify(arr));
+  // Debounced push to server to avoid flooding on rapid edits
+  try { if (_productSyncTimer) clearTimeout(_productSyncTimer); } catch(e){}
+  _productSyncTimer = setTimeout(()=> {
+      try { pushProductsToServer(); } catch(e){ console.warn('Product push failed', e); }
+  }, 900);
+}
 
 function getSales(){
   try { return JSON.parse(localStorage.getItem(LS_KEYS.SALES) || '[]'); }
   catch(e){ localStorage.setItem(LS_KEYS.SALES, '[]'); return []; }
 }
 function saveSales(arr){ localStorage.setItem(LS_KEYS.SALES, JSON.stringify(arr)); }
+
+function pushProductsToServerDebounced() {
+  if (typeof pushProductsToServer === 'function') {
+    try { pushProductsToServer(); } catch(e){ console.warn('pushProductsToServer error', e); }
+  }
+}
+
+async function pushProductsToServer(){
+  try{
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const merchantId = user.merchantId;
+    if(!merchantId) return;
+    const products = getProducts();
+    // Call server endpoint
+    const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-stock') : '/api/save-stock';
+    await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ merchantId, products })
+    });
+    console.log('📦 Products pushed to server for', merchantId);
+  }catch(err){
+    console.warn('Product push failed', err);
+  }
+}
+
+async function pushCustomersToServer(){
+  try{
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const merchantId = user.merchantId;
+    if(!merchantId) return;
+    const customers = JSON.parse(localStorage.getItem('bharatpos_customers') || '[]');
+    const url = (typeof buildUrl === 'function') ? buildUrl('/api/sync-customers') : '/api/sync-customers';
+    await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ merchantId, customers })
+    });
+    console.log('👥 Customers pushed to server for', merchantId);
+  }catch(err){
+    console.warn('Customer push failed', err);
+  }
+}
+
+/* -------------------------
+   Helper: Register or update merchant profile on server
+   (Uses existing /api/register-merchant which will restore or update)
+   ------------------------- */
+async function registerOrUpdateMerchantProfile(){
+  try{
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const payload = {
+      ownerName: user.name || localStorage.getItem('shopOwner') || '',
+      mobile: user.mobile || localStorage.getItem('shopPhone') || '',
+      shopName: localStorage.getItem('shopName') || user.shopName || '',
+      category: user.category || '',
+      state: user.state || localStorage.getItem('shopState') || '',
+      city: user.city || localStorage.getItem('shopCity') || '',
+      pincode: user.pincode || localStorage.getItem('shopPincode') || '',
+      lat: user.lat || null,
+      lng: user.lng || null
+    };
+    if(!payload.mobile) return;
+    const url = (typeof buildUrl === 'function') ? buildUrl('/api/register-merchant') : '/api/register-merchant';
+    const resp = await fetch(url, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data && data.success) {
+      // Update local user merchantId if server returned one
+      if (data.merchantId) {
+        user.merchantId = data.merchantId;
+        localStorage.setItem('bharatpos_user', JSON.stringify(user));
+      }
+      // After profile update, ensure products/customers are backed up
+      try { await pushProductsToServer(); } catch(e){ console.warn('push products after profile update failed', e); }
+      try { await pushCustomersToServer(); } catch(e){ console.warn('push customers after profile update failed', e); }
+    }
+  }catch(e){
+    console.warn('registerOrUpdateMerchantProfile failed', e);
+  }
+}
 
 /* -------------------------
    Product functions
@@ -452,7 +551,8 @@ function checkoutCart(cartItems, customer='Walk-in', paymentMode='cash', discoun
   const sales = getSales();
   sales.push(sale);
   saveSales(sales);
-
+ 
+  pushFullBackupToServerDebounced();
   return sale;
 }
 
@@ -476,6 +576,10 @@ function importAllFile(file, callback){
       if(obj.products) localStorage.setItem(LS_KEYS.PRODUCTS, JSON.stringify(obj.products));
       if(obj.sales) localStorage.setItem(LS_KEYS.SALES, JSON.stringify(obj.sales));
       callback && callback(null,'Imported');
+
+      // Immediately push imported products/customers to server (if merchant exists)
+      try { pushProductsToServer(); } catch(e){ console.warn('push after import failed', e); }
+      try { pushCustomersToServer(); } catch(e){ /* may not exist */ }
     }catch(err){ callback && callback(err); }
   };
   reader.readAsText(file);
@@ -510,6 +614,11 @@ function toggleTheme(){
   if(!localStorage.getItem(LS_KEYS.PRODUCTS)) saveProducts([]);
   if(!localStorage.getItem(LS_KEYS.SALES)) saveSales([]);
   applyTheme();
+
+  // On startup try to push any existing data (non-blocking)
+  try { setTimeout(()=> { pushProductsToServer(); pushCustomersToServer(); }, 1200); } catch(e){}
+  // inside initBharatPOS() after other initial pushes
+try { setTimeout(()=> { pushFullBackupToServer().catch(()=>{}); }, 2000); } catch(e){}
 })();
 
 /* -------------------------
@@ -813,6 +922,113 @@ async function syncBillToServer(billData) {
     }
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // --- CUSTOMERS: local storage + server sync helpers ---
+function getCustomers(){
+  try { return JSON.parse(localStorage.getItem('bharatpos_customers') || '[]'); }
+  catch(e){ localStorage.setItem('bharatpos_customers', '[]'); return []; }
+}
+
+let _customerSyncTimer = null;
+function saveCustomers(arr){
+  localStorage.setItem('bharatpos_customers', JSON.stringify(arr));
+  // Debounced push to server
+  try { if (_customerSyncTimer) clearTimeout(_customerSyncTimer); } catch(e){}
+  _customerSyncTimer = setTimeout(()=> {
+      try { pushCustomersToServer(); } catch(e){ console.warn('Customer push failed', e); }
+  }, 900);
+}
+
+async function pushCustomersToServer(){
+  try{
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const merchantId = user.merchantId;
+    if(!merchantId) return;
+    const customers = getCustomers();
+    const url = (typeof buildUrl === 'function') ? buildUrl('/api/sync-customers') : '/api/sync-customers';
+    await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ merchantId, customers })
+    });
+    console.log('👥 Customers pushed to server for', merchantId);
+  }catch(err){
+    console.warn('Customer push failed', err);
+  }
+}
+
+
+  // after saveSales(sales);
+  try {
+    // non-blocking: send single sale to server endpoint /api/save-sale
+    const saleUrl = (typeof buildUrl === 'function') ? buildUrl('/api/save-sale') : '/api/save-sale';
+    fetch(saleUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(sale)
+    }).then(()=> console.log('✅ Sale pushed to server')).catch(e=>console.warn('Sale push failed', e));
+  } catch(e) { console.warn('Sale push error', e); }
+
+  if (Array.isArray(parsed.customers) && parsed.customers.length) {
+  saveCustomers(parsed.customers);
+  // push will run via debounced saveCustomers; you can also force immediate:
+  try { pushCustomersToServer(); } catch(e){ console.warn('Push customers after import failed', e); }
+}
+
+// after building 'sale' and before sync:
+if (phone) {
+  try {
+    const customers = getCustomers();
+    const exists = customers.find(c => c.phone === phone);
+    if (!exists) {
+      const newCust = { id: uid('c'), name: customer || '', phone, lastSeen: new Date().toISOString() };
+      customers.push(newCust);
+      saveCustomers(customers); // will debounced push
+    } else {
+      // update lastSeen
+      exists.lastSeen = new Date().toISOString();
+      saveCustomers(customers);
+    }
+  } catch(e) { console.warn('Customer add failed', e); }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Note: The rest of the file (billingEverything continuation, barcode handler, completeSale, utilities)
+// remains unchanged; only the additions above were added to enable server sync and merchant updates.
+// If you paste this file, replace the existing bharatpos.js entirely with the content above (keeping the rest of original content intact).
 /* -------------------------
    Universal barcode Enter-key handler
    ------------------------- */
@@ -1005,8 +1221,6 @@ window.completeSale = function() {
         }
     }
 };
-
-
 
 
 
