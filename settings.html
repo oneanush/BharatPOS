@@ -9,100 +9,44 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <script src="bharatpos.js"></script>
+  <script src="https://oneanush.github.io/BharatPOS/bharatpos.js"></script>
 
   <style>
     /* --- THEME VARIABLES --- */
     :root {
-      --bg-body: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.7);
-      --glass: blur(16px);
-      --border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #f59e0b; /* Gold */
-      --success: #10b981; /* Emerald */
-      --danger: #ef4444; /* Red */
-      --primary: #3b82f6; /* Blue */
+      --bg-body: #0f172a; --bg-card: rgba(30, 41, 59, 0.7); --glass: blur(16px); --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc; --text-muted: #94a3b8; --accent: #f59e0b; --success: #10b981; --danger: #ef4444; --primary: #3b82f6; 
     }
 
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-    
-    body {
-      margin: 0; padding: 0;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      padding-bottom: 80px;
-    }
+    body { margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 80px; }
 
     /* --- NAVIGATION --- */
-    .navbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 15px 24px; background: rgba(15, 23, 42, 0.95); backdrop-filter: var(--glass);
-      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
-    }
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 15px 24px; background: rgba(15, 23, 42, 0.95); backdrop-filter: var(--glass); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
     .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
     .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); }
-    
     .nav-links { display: flex; gap: 20px; }
     .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
     .nav-links a:hover, .nav-links a.active { color: #fff; }
 
     /* --- LAYOUT --- */
     .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
-    
-    .page-title {
-        font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 25px; 
-        display: flex; align-items: center; gap: 12px;
-    }
-
-    .settings-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 25px;
-    }
+    .page-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
 
     /* --- CARDS --- */
-    .card {
-      background: var(--bg-card); backdrop-filter: var(--glass);
-      border: 1px solid var(--border); border-radius: 16px; padding: 24px;
-      display: flex; flex-direction: column; gap: 20px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      position: relative; overflow: hidden;
-    }
+    .card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 20px; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
     .card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-
-    .card::after {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--border-color, var(--primary)), transparent);
-        opacity: 0.7;
-    }
-
-    .card-header {
-        display: flex; align-items: center; gap: 12px;
-        font-size: 16px; font-weight: 700; color: #fff;
-        padding-bottom: 15px; border-bottom: 1px dashed var(--border);
-    }
-    .card-icon { 
-        width: 32px; height: 32px; background: rgba(255,255,255,0.05); 
-        border-radius: 8px; display: flex; align-items: center; justify-content: center;
-        color: var(--accent); font-size: 16px;
-    }
+    .card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--border-color, var(--primary)), transparent); opacity: 0.7; }
+    .card-header { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; color: #fff; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
+    .card-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; }
 
     /* --- FORM ELEMENTS --- */
     .input-group { position: relative; }
-    .form-control {
-      width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border);
-      color: #fff; padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif;
-      transition: 0.2s; font-size: 14px;
-    }
+    .form-control { width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); color: #fff; padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; transition: 0.2s; font-size: 14px; }
     .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
     .form-control[readonly] { background: rgba(0,0,0,0.2); color: var(--text-muted); cursor: not-allowed; }
-    
     select.form-control { cursor: pointer; appearance: none; }
-    
     .form-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 600; }
 
     /* --- TOGGLE SWITCH --- */
@@ -114,21 +58,14 @@
     input:checked + .slider:before { transform: translateX(20px); }
 
     /* --- BUTTONS --- */
-    .btn {
-      width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
-      font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: 0.2s; letter-spacing: 0.5px;
-    }
+    .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; letter-spacing: 0.5px; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-success { background: var(--success); color: white; }
     .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
     .btn-copy { background: rgba(255,255,255,0.1); color: var(--text-main); font-size: 12px; padding: 8px; width: auto; }
 
     /* --- UPLOAD ZONE --- */
-    .upload-zone {
-        border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
-        text-align: center; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.02);
-    }
+    .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.02); }
     .upload-input { display: none; }
     .qr-preview-box { margin-top: 15px; text-align: center; min-height: 120px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; padding: 10px; }
     .qr-img { max-width: 100%; max-height: 150px; }
@@ -268,15 +205,21 @@
             <div class="storage-bar-bg"><div class="storage-bar-fill" id="storageFill"></div></div>
             <div class="storage-text"><span id="storageBytes">0 KB</span><span>5 MB Limit</span></div>
         </div>
-        <button onclick="exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border);">Backup Data (JSON)</button>
-        <div style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
+        
+        <button onclick="forceCloudSync(this)" class="btn btn-success" style="margin-top:10px;">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Force Cloud Backup & Sync
+        </button>
+
+        <button onclick="exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border); margin-top:10px;">Download Local File (JSON)</button>
+        
+        <div style="border-top:1px dashed var(--border); padding-top:15px; margin-top:15px;">
            <label class="form-label">Restore Data</label>
-<div style="display:flex; gap:10px;">
-  <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
-    <input type="file" id="importFile" class="upload-input" accept=".json,application/json" onchange="doImport(event)">Select File
-  </label>
-  <button class="btn btn-primary" style="width:auto; align-self:center;" onclick="triggerImportFile()">Choose & Import</button>
-</div>
+            <div style="display:flex; gap:10px;">
+              <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
+                <input type="file" id="importFile" class="upload-input" accept=".json,application/json" onchange="doImport(event)">Select File
+              </label>
+              <button class="btn btn-primary" style="width:auto; align-self:center;" onclick="triggerImportFile()">Choose & Import</button>
+            </div>
         </div>
       </div>
 
@@ -290,8 +233,6 @@
     </div>
   </div>
 <script>
-/* NOTE: buildUrl() is provided by bharatpos.js (loaded above) */
-
 /* -------------------------
    Page init
    ------------------------- */
@@ -299,7 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     updateStorageMeter();
 
-    // QR upload wiring (guarded)
     const qrUpload = document.getElementById("qrUpload");
     if (qrUpload) {
         qrUpload.addEventListener("change", function() {
@@ -319,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const storedQR = localStorage.getItem("upiQR");
     if (storedQR) renderQR(storedQR);
 
-    // If a pending restore marker exists, run factory-reset + restore
     const pending = localStorage.getItem('bharatpos_pending_restore');
     if (pending) {
         const statusEl = document.getElementById('locationStatus');
@@ -329,8 +268,27 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* -------------------------
-   Settings load / save
+   🟢 NEW: Force Cloud Sync Function
    ------------------------- */
+async function forceCloudSync(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing to Cloud...`;
+    btn.disabled = true;
+    
+    try {
+        if (typeof pushFullBackupToServer === 'function') await pushFullBackupToServer();
+        if (typeof pushProductsToServer === 'function') await pushProductsToServer();
+        if (typeof pushCustomersToServer === 'function') await pushCustomersToServer();
+        
+        alert("✅ Data successfully backed up to Cloud!");
+    } catch (e) {
+        alert("❌ Cloud Sync Failed. Please ensure API_BASE in bharatpos.js is set to your correct cloud URL.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 function loadSettings() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     document.getElementById('merchantId').value = user.merchantId || "NOT SET";
@@ -351,31 +309,19 @@ function loadSettings() {
     }
 }
 
-/* -------------------------
-   Restore Now (manual)
-   ------------------------- */
 function restoreNow() {
-    // Determine merchantId to restore: prefer bharatpos_user, else merchantId input value
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mem = user.merchantId || document.getElementById('merchantId')?.value;
-    if (!mem) {
-        alert('No Merchant ID found. Please login/register first.');
-        return;
-    }
-
+    if (!mem) { alert('No Merchant ID found. Please login/register first.'); return; }
     if (!confirm(`This will clear local data and attempt to restore server backup for ${mem}. Continue?`)) return;
 
-    // Place marker and trigger same restore flow used on page load
     localStorage.setItem('bharatpos_pending_restore', mem);
     performFactoryResetAndRestore(mem);
 }
 
-
-
 async function performFactoryResetAndRestore(merchantId) {
     try {
         const preserveKey = 'bharatpos_pending_restore';
-        // 1) Soft reset: collect keys to remove but keep the pending marker
         const keys = [];
         for (let i=0; i<localStorage.length; i++) {
             const k = localStorage.key(i);
@@ -385,7 +331,6 @@ async function performFactoryResetAndRestore(merchantId) {
         }
         keys.forEach(k => localStorage.removeItem(k));
 
-        // 2) Call server to restore
         let restored = null;
         try {
             const resp = await fetch(buildUrl('/api/restore-data'), {
@@ -394,56 +339,35 @@ async function performFactoryResetAndRestore(merchantId) {
                 body: JSON.stringify({ merchantId })
             });
             restored = await resp.json();
-            // After fetching restored = await resp.json();
-if (restored && restored.backup) {
-  try {
-    const backup = restored.backup;
-    // Write top-level keys directly
-    Object.keys(backup).forEach(k => {
-      if (k === '_meta') return;
-      try {
-        const val = backup[k];
-        // If val is an object or array, stringify; primitives store as string for compatibility
-        if (typeof val === 'object') localStorage.setItem(k, JSON.stringify(val));
-        else localStorage.setItem(k, String(val));
-      } catch (e) { console.warn('Could not restore key', k, e); }
-    });
-    appliedAny = true;
-  } catch(e){ console.warn('Applying backup failed', e); }
-}
-        } 
- 
-        catch (err) {
-            console.warn('Restore call failed', err);
+            
+            if (restored && restored.backup) {
+                try {
+                    const backup = restored.backup;
+                    Object.keys(backup).forEach(k => {
+                        if (k === '_meta') return;
+                        try {
+                            const val = backup[k];
+                            if (typeof val === 'object') localStorage.setItem(k, JSON.stringify(val));
+                            else localStorage.setItem(k, String(val));
+                        } catch (e) {}
+                    });
+                } catch(e){}
+            }
+        } catch (err) {
             const statusEl = document.getElementById('locationStatus');
             if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger)">Restore failed (network)</span>`;
         }
 
-        // 3) Nimble mapping: server may return stock/customers under different keys
         const serverStock = (restored && (restored.stock || restored.products || restored.data?.stock)) || [];
         const serverCustomers = (restored && (restored.customers || restored.customersList || restored.data?.customers)) || [];
         const serverSales = (restored && (restored.sales || restored.orders || restored.data?.sales)) || [];
 
         let appliedAny = false;
 
-        if (Array.isArray(serverStock) && serverStock.length > 0) {
-            localStorage.setItem('bharatpos_products', JSON.stringify(serverStock));
-            appliedAny = true;
-        }
+        if (Array.isArray(serverStock) && serverStock.length > 0) { localStorage.setItem('bharatpos_products', JSON.stringify(serverStock)); appliedAny = true; }
+        if (Array.isArray(serverCustomers) && serverCustomers.length > 0) { localStorage.setItem('bharatpos_customers', JSON.stringify(serverCustomers)); appliedAny = true; }
+        if (Array.isArray(serverSales) && serverSales.length > 0) { localStorage.setItem('bharatpos_sales', JSON.stringify(serverSales)); appliedAny = true; }
 
-        if (Array.isArray(serverCustomers) && serverCustomers.length > 0) {
-            // canonical key used across app
-            localStorage.setItem('bharatpos_customers', JSON.stringify(serverCustomers));
-            appliedAny = true;
-        }
-
-        if (Array.isArray(serverSales) && serverSales.length > 0) {
-            // store sales if server provided them
-            localStorage.setItem('bharatpos_sales', JSON.stringify(serverSales));
-            appliedAny = true;
-        }
-
-        // If server returned merchant profile info anywhere, merge it into bharatpos_user and shopName/shopPhone
         const md = restored && (restored.merchantData || restored.data?.merchantData || restored.merchant || null);
         if (md && typeof md === 'object') {
             if (md.shopName) localStorage.setItem('shopName', md.shopName);
@@ -452,39 +376,25 @@ if (restored && restored.backup) {
             const mergedUser = { ...existingUser, merchantId: merchantId, name: md.ownerName || md.name || existingUser.name || '', lat: md.lat, lng: md.lng, shopName: md.shopName || existingUser.shopName };
             localStorage.setItem('bharatpos_user', JSON.stringify(mergedUser));
         } else {
-            // Ensure merchantId is recorded even if no merchantData returned
             const existingUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
             existingUser.merchantId = merchantId;
             localStorage.setItem('bharatpos_user', JSON.stringify(existingUser));
         }
 
-        // 4) UI message
-        if (appliedAny) {
-            document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Server data restored for ${merchantId}</span>`;
-        } else {
-            document.getElementById('locationStatus').innerHTML = `<span style="color:var(--danger)">No server backup for ${merchantId}. Factory reset completed.</span>`;
-        }
+        if (appliedAny) { document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Server data restored for ${merchantId}</span>`; } 
+        else { document.getElementById('locationStatus').innerHTML = `<span style="color:var(--danger)">No server backup for ${merchantId}. Factory reset completed.</span>`; }
 
     } catch (err) {
-        console.error('Factory reset / restore error', err);
         const statusEl = document.getElementById('locationStatus');
         if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger)">Restore error</span>`;
     } finally {
-        // 5) Remove pending marker and reload so all pages pick up new state
         try { localStorage.removeItem('bharatpos_pending_restore'); } catch(e) {}
         try { updateStorageMeter(); } catch(e) {}
         setTimeout(()=> { location.reload(); }, 800);
     }
 }
-/* ========================================================== */
 
-/* -------------------------
-   Import / Export & helpers (unchanged)
-   ------------------------- */
-function triggerImportFile() {
-  const f = document.getElementById('importFile');
-  if (f) f.click();
-}
+function triggerImportFile() { const f = document.getElementById('importFile'); if (f) f.click(); }
 
 function doImport(event) {
   try {
@@ -495,28 +405,18 @@ function doImport(event) {
     reader.onload = function(e) {
       try {
         const parsed = JSON.parse(e.target.result);
-        if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure (expected top-level object).');
+        if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure.');
 
         const action = confirm('Press OK to MERGE imported data into existing storage.\nPress Cancel to REPLACE entire local storage with imported data.') ? 'merge' : 'replace';
         if (action === 'replace') localStorage.clear();
 
         const written = [];
 
-        if (Array.isArray(parsed.products)) {
-          localStorage.setItem('bharatpos_products', JSON.stringify(parsed.products));
-          written.push('bharatpos_products');
-        } else if (parsed.bharatpos_products) {
-          localStorage.setItem('bharatpos_products', JSON.stringify(parsed.bharatpos_products));
-          written.push('bharatpos_products');
-        }
+        if (Array.isArray(parsed.products)) { localStorage.setItem('bharatpos_products', JSON.stringify(parsed.products)); written.push('bharatpos_products'); } 
+        else if (parsed.bharatpos_products) { localStorage.setItem('bharatpos_products', JSON.stringify(parsed.bharatpos_products)); written.push('bharatpos_products'); }
 
-        if (Array.isArray(parsed.sales)) {
-          localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.sales));
-          written.push('bharatpos_sales');
-        } else if (parsed.bharatpos_sales) {
-          localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.bharatpos_sales));
-          written.push('bharatpos_sales');
-        }
+        if (Array.isArray(parsed.sales)) { localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.sales)); written.push('bharatpos_sales'); } 
+        else if (parsed.bharatpos_sales) { localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.bharatpos_sales)); written.push('bharatpos_sales'); }
 
         if (parsed.settings && typeof parsed.settings === 'object') {
           const s = parsed.settings;
@@ -534,30 +434,21 @@ function doImport(event) {
             if (typeof val === 'object') localStorage.setItem(key, JSON.stringify(val));
             else localStorage.setItem(key, String(val));
             written.push(key);
-          } catch (err) {
-            console.warn('Could not write key', key, err);
-          }
+          } catch (err) {}
         }
 
-        if (written.length === 0) {
-          localStorage.setItem('import_raw_backup', JSON.stringify(parsed));
-          written.push('import_raw_backup');
-        }
+        if (written.length === 0) { localStorage.setItem('import_raw_backup', JSON.stringify(parsed)); written.push('import_raw_backup'); }
 
         localStorage.setItem('bharatpos_last_import', new Date().toISOString());
         try { if (typeof updateStorageMeter === 'function') updateStorageMeter(); } catch(e){}
 
-        alert('✅ Import complete. Keys written: ' + written.join(', ') + '. The page will reload so changes apply.');
+        alert('✅ Import complete. The page will reload so changes apply.');
         setTimeout(()=> location.reload(), 400);
-      } catch (err) {
-        alert('Failed to import data: ' + err.message);
-      }
+      } catch (err) { alert('Failed to import data: ' + err.message); }
     };
     reader.onerror = function() { alert('Failed to read file.'); };
     reader.readAsText(file, 'utf-8');
-  } catch (error) {
-    alert('Import error: ' + error.message);
-  }
+  } catch (error) { alert('Import error: ' + error.message); }
 }
 
 function gatherAllData() {
@@ -565,11 +456,7 @@ function gatherAllData() {
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         const raw = localStorage.getItem(key);
-        try {
-            result[key] = JSON.parse(raw);
-        } catch (e) {
-            result[key] = raw;
-        }
+        try { result[key] = JSON.parse(raw); } catch (e) { result[key] = raw; }
     }
     return result;
 }
@@ -585,10 +472,8 @@ function exportAll() {
         document.body.appendChild(link);
         link.click();
         link.remove();
-        alert('✅ Exported all data successfully!');
-    } catch (error) {
-        alert('Failed to export data: ' + error.message);
-    }
+        alert('✅ Exported all local data successfully!');
+    } catch (error) { alert('Failed to export data: ' + error.message); }
 }
 
 function updateStorageMeter() {
@@ -599,41 +484,30 @@ function updateStorageMeter() {
     document.getElementById('storageFill').style.width = `${pct}%`;
 }
 
-
-
 function toggleGSTFields() {
     const gstCheckbox = document.getElementById('gstToggle');
     const gstFields = document.getElementById('gstFields');
     if (!gstCheckbox || !gstFields) return;
     const isChecked = !!gstCheckbox.checked;
     gstFields.style.display = isChecked ? 'block' : 'none';
-    // Persist immediately
     localStorage.setItem('bharatpos_gst_mode', isChecked ? 'true' : 'false');
 }
-
 
 function hardReset() {
     if(confirm('⚠️ DELETE EVERYTHING?')) { localStorage.clear(); location.reload(); }
 }
 
-
-
-
-
 async function saveShopDetails() {
-    // Save standard fields
     localStorage.setItem('shopName', document.getElementById('shopName').value);
     localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
     localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
     localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
     localStorage.setItem('bharatpos_bill_size', document.getElementById('billSize').value);
 
-    // SAVE GST SETTINGS (Force String Conversion)
     const gstStatus = document.getElementById('gstToggle').checked;
     localStorage.setItem('bharatpos_gst_mode', gstStatus ? 'true' : 'false');
     localStorage.setItem('bharatpos_gstin', document.getElementById('gstin').value);
 
-    // Update local bharatpos_user
     let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     user.name = document.getElementById('ownerName').value;
     user.shopName = document.getElementById('shopName').value;
@@ -641,13 +515,10 @@ async function saveShopDetails() {
     
     localStorage.setItem('bharatpos_user', JSON.stringify(user));
 
-    // Call server to register/update merchant profile and push backups
     try {
         if (typeof registerOrUpdateMerchantProfile === 'function') {
             await registerOrUpdateMerchantProfile();
         } else {
-            // Fallback: attempt direct fetch using buildUrl
-            const merchantId = user.merchantId;
             const payload = {
               ownerName: user.name,
               mobile: user.mobile || localStorage.getItem('shopPhone') || '',
@@ -666,57 +537,28 @@ async function saveShopDetails() {
             }
             try { await pushProductsToServer(); } catch(e){}
             try { await pushCustomersToServer(); } catch(e){}
-             try { await pushFullBackupToServer(); } catch(e) { console.warn('full backup after save failed', e); }
+            try { await pushFullBackupToServer(); } catch(e){}
         }
-    } catch (err) {
-        console.warn('Profile update / backup push failed', err);
-    }
+    } catch (err) {}
     
     alert('✅ Settings Saved Successfully!');
-    // Reload to ensure all scripts pick up the new GST mode
     setTimeout(() => location.reload(), 500); 
 }
 
-/* wiring */
-document.addEventListener('DOMContentLoaded', () => {
-    // restore UI
-    const gstCheckbox = document.getElementById('gstToggle');
-    if (gstCheckbox) {
-        gstCheckbox.addEventListener('change', toggleGSTFields);
-    }
-});
-
-
-
-
-
-
-
-
-
-
-// Replaces existing updateLocation() — improved accuracy via watchPosition sampling
 function updateLocation() {
     const status = document.getElementById('locationStatus');
     if (!status) return;
 
-    // UI: show working state
-    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Acquiring location... (high accuracy)`;
+    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Acquiring location...`;
 
     if (!navigator.geolocation) {
         status.innerHTML = "GPS not supported";
         return;
     }
 
-    // Strategy:
-    // 1) Use watchPosition to gather multiple samples (prefer sample with smallest accuracy).
-    // 2) Stop watching when we have a good sample (accuracy <= desiredAccuracy) or after timeout/maxSamples.
-    // 3) If watchPosition isn't available/works poorly, fallback to getCurrentPosition (highAccuracy).
-    // 4) Persist lat/lng into bharatpos_user and update UI.
-
-    const desiredAccuracy = 50; // meters - target accuracy threshold
-    const maxSamples = 6;       // collect up to 6 samples
-    const maxTimeout = 18000;   // overall timeout 18s
+    const desiredAccuracy = 50; 
+    const maxSamples = 6;       
+    const maxTimeout = 18000;   
 
     let samples = [];
     let watcherId = null;
@@ -725,9 +567,7 @@ function updateLocation() {
     const finalize = (chosen) => {
         if (finished) return;
         finished = true;
-        if (watcherId !== null) {
-            try { navigator.geolocation.clearWatch(watcherId); } catch (e) {}
-        }
+        if (watcherId !== null) { try { navigator.geolocation.clearWatch(watcherId); } catch (e) {} }
 
         if (chosen) {
             try {
@@ -737,18 +577,13 @@ function updateLocation() {
                 user.location_accuracy = chosen.coords.accuracy || null;
                 localStorage.setItem('bharatpos_user', JSON.stringify(user));
                 status.innerHTML = `<span style="color:var(--success)">✅ Updated (${(chosen.coords.accuracy||'—')}m)</span>`;
-                // call updateStorageMeter if present to refresh UI
                 try { if (typeof updateStorageMeter === 'function') updateStorageMeter(); } catch(e){}
-            } catch (e) {
-                console.warn('Saving location failed', e);
-                status.innerHTML = `<span style="color:var(--danger)">Saved failed</span>`;
-            }
+            } catch (e) { status.innerHTML = `<span style="color:var(--danger)">Saved failed</span>`; }
         } else {
             status.innerHTML = `GPS Error`;
         }
     };
 
-    // Pick best sample (lowest accuracy value). If accuracy missing, use most recent.
     const pickBestSample = () => {
         if (!samples.length) return null;
         const withAccuracy = samples.filter(s => typeof s.coords.accuracy === 'number' && !isNaN(s.coords.accuracy));
@@ -756,85 +591,41 @@ function updateLocation() {
             withAccuracy.sort((a,b) => a.coords.accuracy - b.coords.accuracy);
             return withAccuracy[0];
         }
-        // fallback: most recent
         return samples[samples.length - 1];
     };
 
-    // Try watchPosition first for more stable readings
     try {
         watcherId = navigator.geolocation.watchPosition(
             (pos) => {
                 if (finished) return;
                 samples.push(pos);
-
-                // If accuracy is very good, finish early
                 const acc = pos.coords && pos.coords.accuracy;
-                if (typeof acc === 'number' && acc <= desiredAccuracy) {
-                    finalize(pos);
-                    return;
-                }
-
-                // If we have enough samples, pick best and finish
-                if (samples.length >= maxSamples) {
-                    const best = pickBestSample();
-                    finalize(best);
-                }
+                if (typeof acc === 'number' && acc <= desiredAccuracy) { finalize(pos); return; }
+                if (samples.length >= maxSamples) { const best = pickBestSample(); finalize(best); }
             },
             (err) => {
-                // On error while watching, fallback to single high-accuracy getCurrentPosition attempt
-                console.warn('watchPosition error', err);
-                // If error is PERMISSION_DENIED, abort
-                if (err && err.code === err.PERMISSION_DENIED) {
-                    finalize(null);
-                    return;
-                }
-                // fallback:
-                try {
-                    if (watcherId !== null) navigator.geolocation.clearWatch(watcherId);
-                } catch (e) {}
+                if (err && err.code === err.PERMISSION_DENIED) { finalize(null); return; }
+                try { if (watcherId !== null) navigator.geolocation.clearWatch(watcherId); } catch (e) {}
                 watcherId = null;
-                // Try one-shot high-accuracy getCurrentPosition
-                navigator.geolocation.getCurrentPosition(
-                    (p) => finalize(p),
-                    (e2) => { console.warn('getCurrentPosition fallback error', e2); finalize(null); },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
+                navigator.geolocation.getCurrentPosition((p) => finalize(p), (e2) => { finalize(null); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
             },
             { enableHighAccuracy: true, maximumAge: 0, timeout: maxTimeout }
         );
     } catch (e) {
-        console.warn('watchPosition not available or failed', e);
-        // Fallback to getCurrentPosition
-        navigator.geolocation.getCurrentPosition(
-            (p) => finalize(p),
-            (err) => { console.warn('getCurrentPosition failed', err); finalize(null); },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
+        navigator.geolocation.getCurrentPosition((p) => finalize(p), (err) => { finalize(null); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     }
 
-    // Safety timeout: ensure we finish after maxTimeout
     setTimeout(() => {
         if (finished) return;
         const best = pickBestSample();
         if (best) finalize(best);
         else {
-            // Try one more getCurrentPosition attempt before giving up
-            navigator.geolocation.getCurrentPosition(
-                (p) => finalize(p),
-                (e) => { console.warn('Final fallback failed', e); finalize(null); },
-                { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-            );
+            navigator.geolocation.getCurrentPosition((p) => finalize(p), (e) => { finalize(null); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
         }
     }, maxTimeout + 2000);
 }
-
-
-
-
-
 </script>
 
 </body>
 </html>
-
 
