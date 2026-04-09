@@ -426,24 +426,52 @@
           overlay.style.display = 'block';
       }
   }
-// 🟢 2. MULTI-SHOP UI & LOGIC
+// 🟢 2. MULTI-SHOP UI & LOGIC (With Safety Net)
   async function initShopSwitcher() {
       const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-      if(typeof loadOwnedShops === 'function') {
-          // 🟢 Pass the mobile explicitly to ensure the server recognizes the user
-          const shops = await loadOwnedShops(currentUser.mobile);
-          const switcher = document.getElementById('shopSwitcher');
-          
-          if(shops && shops.length > 0) {
+      const switcher = document.getElementById('shopSwitcher');
+      
+      if(!currentUser.mobile) {
+          switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
+          return;
+      }
+
+      try {
+          // Fetch the safe list from our new backend route
+          const res = await fetch(getApiUrl('/api/get-user-shops'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mobile: currentUser.mobile })
+          });
+          const data = await res.json();
+
+          let shops = data.shops || [];
+
+          // 🛟 THE SAFETY NET: If your database glitched previously and lost the main shop, 
+          // this forces your original shop back into the dropdown automatically.
+          const mainExists = shops.find(s => s.isMain === true || s.merchantId === (currentUser.masterId || currentUser.merchantId));
+          if (!mainExists && currentUser.merchantId) {
+              shops.unshift({
+                  merchantId: currentUser.masterId || currentUser.merchantId,
+                  shopName: currentUser.shopName || "Main Shop (Recovered)",
+                  isMain: true
+              });
+          }
+
+          if(shops.length > 0) {
               switcher.innerHTML = shops.map(s => 
                   `<option value="${s.merchantId}" ${s.merchantId === currentUser.merchantId ? 'selected' : ''}>
-                      ${s.shopName} ${s.isMain ? '(Main)' : ''}
+                      ${escapeHtml(s.shopName)} ${s.isMain ? '⭐ (Main)' : ''}
                   </option>`
               ).join('');
           } else {
               switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
           }
+      } catch(e) {
+          console.error("Failed to load branches", e);
+          switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
       }
+  }
   }
 
   function handleShopChange(val) {
