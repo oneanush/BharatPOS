@@ -288,10 +288,17 @@
         </div>
     </div>
 
-    <script>
-        // 🟢 FIXED: The local buildUrl function is completely removed.
-        // It will now automatically use buildUrl from bharatpos.js!
-        
+  <script type="module">
+        // 🟢 1. IMPORT FIREBASE
+        import { db } from "./bharatpos.js";
+        import { collection, doc, getDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // 🛑 THE KILL SWITCH: Prevent bharatpos.js from running merchant backups!
+        window.IS_CUSTOMER_APP = true;
+        window.pushFullBackupToServerDebounced = function() { console.log("Customer App: Backup blocked."); };
+        window.syncStockToBackend = function() { console.log("Customer App: Stock sync blocked."); };
+        window.syncCustomersToBackend = function() { console.log("Customer App: Customer sync blocked."); };
+
         lucide.createIcons();
 
         let currentState = { merchantId: '', name: '', phone: '', cart: [], bills: [], userLat: null, userLng: null };
@@ -309,7 +316,8 @@
             }
         });
 
-        function manualLogin() {
+        // Expose to global window for HTML onclick attributes
+        window.manualLogin = function() {
             const name = document.getElementById('user-name').value.trim();
             const mId = document.getElementById('merchant-id').value.trim().toUpperCase();
             const phone = document.getElementById('user-phone').value.trim();
@@ -322,16 +330,29 @@
             if(btn) { btn.innerHTML = `<i data-lucide="loader" class="spin"></i>`; lucide.createIcons(); btn.disabled = true; }
 
             try {
-                // Ensure we wait for bharatpos.js to load buildUrl
-                if(typeof buildUrl !== 'function') throw new Error("API Settings not loaded yet.");
-                
-                const response = await fetch(buildUrl('/api/customer-ledger'), { 
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ merchantId: mId, phone: phone }) 
-                });
-                const data = await response.json();
+                // 🟢 FIREBASE: Verify Shop and Pull Bills
+                const shopRef = doc(db, "shops", mId);
+                const shopSnap = await getDoc(shopRef);
 
-                if(data.success || data.message === "No records found for this number") {
+                if(shopSnap.exists()) {
+                    const shopData = shopSnap.data();
+                    
+                    // Fetch this specific customer's bills
+                    const salesRef = collection(db, "shops", mId, "sales");
+                    const salesSnap = await getDocs(salesRef);
+                    
+                    const customerBills = [];
+                    salesSnap.forEach(d => {
+                        const bill = d.data();
+                        // Match phone number
+                        if(bill.phone === phone || bill.customerPhone === phone) {
+                            customerBills.push(bill);
+                        }
+                    });
+
+                    // Sort newest first
+                    customerBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+
                     currentState.merchantId = mId; currentState.phone = phone; currentState.name = name;
                     localStorage.setItem('khata_user', JSON.stringify({ name, mId, phone }));
 
@@ -344,9 +365,9 @@
                     
                     document.getElementById('top-avatar').innerText = name.charAt(0).toUpperCase();
                     document.getElementById('top-name').innerText = name.split(' ')[0];
-                    document.getElementById('display-shop-name').innerText = data.shopName || mId;
+                    document.getElementById('display-shop-name').innerText = shopData.profile?.shopName || mId;
                     
-                    currentState.bills = data.bills || [];
+                    currentState.bills = customerBills || [];
                     setupLedger(currentState.bills);
                     loadInventory();
                     
@@ -356,12 +377,20 @@
                             currentState.userLng = pos.coords.longitude;
                         });
                     }
-                } else { alert("Dukandaar ID galat hai."); localStorage.removeItem('khata_user'); }
-            } catch (e) { alert("Connection Error. Check internet."); } 
-            finally { if(btn) { btn.innerHTML = `Log In <i data-lucide="arrow-right" size="18"></i>`; lucide.createIcons(); btn.disabled = false; } }
+                } else { 
+                    alert("Dukandaar ID galat hai."); 
+                    localStorage.removeItem('khata_user'); 
+                }
+            } catch (e) { 
+                console.error(e);
+                alert("Connection Error. Check internet."); 
+            } 
+            finally { 
+                if(btn) { btn.innerHTML = `Log In <i data-lucide="arrow-right" size="18"></i>`; lucide.createIcons(); btn.disabled = false; } 
+            }
         }
 
-        function logout() { if(confirm("Logout karna chahte hain?")) { localStorage.removeItem('khata_user'); location.reload(); } }
+        window.logout = function() { if(confirm("Logout karna chahte hain?")) { localStorage.removeItem('khata_user'); location.reload(); } }
 
         function setupLedger(bills) {
             const pending = bills.filter(b => !b.isPaid && b.paymentMode === 'Udhaar');
@@ -401,7 +430,7 @@
             lucide.createIcons();
         }
 
-        function openInvoice(id) {
+        window.openInvoice = function(id) {
             const bill = currentState.bills.find(b => b.id === id || b.invoiceNo === id);
             if(!bill) return;
             document.getElementById('inv-shop-name').innerText = document.getElementById('display-shop-name').innerText;
@@ -426,22 +455,32 @@
             setTimeout(() => document.getElementById('invoice-drawer').classList.add('active'), 10);
         }
 
-        function closeInvoice() { document.getElementById('invoice-drawer').classList.remove('active'); setTimeout(() => document.getElementById('invoice-overlay').classList.remove('active'), 300); }
+        window.closeInvoice = function() { document.getElementById('invoice-drawer').classList.remove('active'); setTimeout(() => document.getElementById('invoice-overlay').classList.remove('active'), 300); }
 
         async function loadInventory() {
             const container = document.getElementById('inventory-list');
             try {
-                const res = await fetch(buildUrl('/api/get-merchant-stock'), { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ merchantId: currentState.merchantId }) });
-                const data = await res.json();
-                if(!data.products || data.products.length === 0) { 
+                // 🟢 FIREBASE: Fetch Merchant's available stock
+                const productsRef = collection(db, "shops", currentState.merchantId, "products");
+                const snapshot = await getDocs(productsRef);
+                
+                const availableStock = [];
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    if(Number(p.stock) > 0) availableStock.push(p);
+                });
+
+                if(availableStock.length === 0) { 
                     container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted); background:white; border-radius:20px;">Dukandaar ki list abhi khali hai.</div>'; 
                     document.getElementById('order-categories').innerHTML = '';
                     return; 
                 }
-                shopInventory = data.products;
+                shopInventory = availableStock;
                 renderOrderCategories();
                 filterOrderItems();
-            } catch(e) { container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:red;">Connection error.</div>'; }
+            } catch(e) { 
+                container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:red;">Connection error.</div>'; 
+            }
         }
 
         function renderOrderCategories() {
@@ -450,14 +489,14 @@
             catContainer.innerHTML = cats.map(c => `<button class="cat-pill ${c === currentOrderCategory ? 'active' : ''}" onclick="selectOrderCategory('${c}', this)">${c}</button>`).join('');
         }
 
-        function selectOrderCategory(cat, btnNode) {
+        window.selectOrderCategory = function(cat, btnNode) {
             currentOrderCategory = cat;
             document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
             btnNode.classList.add('active');
             filterOrderItems();
         }
 
-        function filterOrderItems() {
+        window.filterOrderItems = function() {
             const query = document.getElementById('order-search-input').value.toLowerCase().trim();
             const container = document.getElementById('inventory-list');
             const filtered = shopInventory.filter(p => {
@@ -478,7 +517,7 @@
             lucide.createIcons();
         }
 
-        function addToCart(id, name, price) { 
+        window.addToCart = function(id, name, price) { 
             const existing = currentState.cart.find(i => i.id === id);
             if(existing) existing.qty += 1; else currentState.cart.push({ id, name, price, qty: 1 });
             updateCartUI(); 
@@ -486,7 +525,7 @@
             badge.style.transform = 'scale(1.4)'; setTimeout(()=> badge.style.transform = 'scale(1)', 200);
         }
 
-        function adjustQty(id, delta) {
+        window.adjustQty = function(id, delta) {
             const item = currentState.cart.find(i => i.id === id);
             if(item) { item.qty += delta; if(item.qty <= 0) currentState.cart = currentState.cart.filter(i => i.id !== id); updateCartUI(); }
         }
@@ -512,41 +551,55 @@
             }
         }
 
-        async function submitOrder() {
+        window.submitOrder = async function() {
             if(currentState.cart.length === 0) return alert("Pehle samaan select karein!");
             const btn = document.getElementById('btn-submit-order');
             btn.innerHTML = `<i data-lucide="loader" class="spin"></i> Bhej rahe hain...`; lucide.createIcons(); btn.disabled = true;
+            
             try {
-                const res = await fetch(buildUrl('/api/submit-order'), {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ merchantId: currentState.merchantId, customerName: currentState.name, phone: currentState.phone, cart: currentState.cart, total: document.getElementById('grand-total').innerText })
+                // 🟢 FIREBASE: Push Order directly to the shop's onlineOrders collection
+                const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+                const orderRef = doc(db, "shops", currentState.merchantId, "onlineOrders", orderId);
+                
+                await setDoc(orderRef, {
+                    orderId: orderId,
+                    customerName: currentState.name,
+                    phone: currentState.phone,
+                    cart: currentState.cart,
+                    total: document.getElementById('grand-total').innerText,
+                    timestamp: new Date().toISOString()
                 });
-                const data = await res.json();
-                if(data.success) { alert("✅ Order Dukan Par Bhej Diya Gaya Hai!"); currentState.cart = []; updateCartUI(); toggleCart(false); } 
-                else { alert("Failed to send order."); }
-            } catch(e) { alert("Network Error. Order fail ho gaya."); }
+
+                alert("✅ Order Dukan Par Bhej Diya Gaya Hai!"); 
+                currentState.cart = []; updateCartUI(); toggleCart(false);
+            } catch(e) { 
+                console.error(e);
+                alert("Network Error. Order fail ho gaya."); 
+            }
+            
             btn.innerHTML = `Dukan Par Bhejein <i data-lucide="arrow-right" size="18"></i>`; lucide.createIcons(); btn.disabled = false;
         }
 
-        function toggleCart(show) { 
+        window.toggleCart = function(show) { 
             const ov = document.getElementById('overlay'), dr = document.getElementById('cart-drawer');
             if(show) { ov.classList.add('active'); setTimeout(() => dr.classList.add('active'), 10); updateCartUI(); } 
             else { dr.classList.remove('active'); setTimeout(() => ov.classList.remove('active'), 300); } 
         }
 
-        function switchView(viewName, btnNode) { 
+        window.switchView = function(viewName, btnNode) { 
             document.querySelectorAll('.section-view').forEach(e => e.classList.remove('active')); 
             document.getElementById('view-' + viewName).classList.add('active'); 
             document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active')); 
             btnNode.classList.add('active'); 
             if(viewName === 'search') initGlobalMap();
         }
-// ==============================================================
+
+        // ==============================================================
         // 🌍 GLOBAL SEARCH, MAP & ROUTING LOGIC
         // ==============================================================
         let globalMap = null;
         let globalMarkers = {};
-        let routeLayers = []; // To keep track of drawn paths
+        let routeLayers = []; 
         
         const standardIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
         const highlightIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
@@ -556,24 +609,26 @@
             if(globalMap) { globalMap.invalidateSize(); return; }
             
             globalMap = L.map('map', { zoomControl: false }).setView([20.5937, 78.9629], 5);
-            
-            // 🟢 UPGRADE 1: Highly Detailed Street Map (Esri World Street Map)
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
-                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012' 
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ' 
             }).addTo(globalMap);
 
             try {
-                const res = await fetch(buildUrl('/api/global-shops'));
-                const data = await res.json();
-                if(data.success && data.shops) {
-                    data.shops.forEach(shop => {
-                        const m = L.marker([shop.lat, shop.lng], {icon: standardIcon}).addTo(globalMap).bindPopup(`<b>${shop.shopName}</b><br>${shop.merchantId}`);
+                // 🟢 FIREBASE: Fetch Global Shops for Map
+                const shopsSnap = await getDocs(collection(db, "shops"));
+                shopsSnap.forEach(docSnap => {
+                    const shop = docSnap.data();
+                    const lat = shop.profile?.lat;
+                    const lng = shop.profile?.lng;
+                    if(lat && lng) {
+                        const m = L.marker([lat, lng], {icon: standardIcon})
+                                   .addTo(globalMap)
+                                   .bindPopup(`<b>${shop.profile.shopName || shop.merchantId}</b><br>${shop.merchantId}`);
                         globalMarkers[shop.merchantId] = m;
-                    });
-                }
-            } catch(e) { console.error("Failed to load map shops"); }
+                    }
+                });
+            } catch(e) { console.error("Failed to load map shops", e); }
 
-            // Mark User Location
             if(currentState.userLat && currentState.userLng) {
                 globalMap.flyTo([currentState.userLat, currentState.userLng], 14);
                 L.marker([currentState.userLat, currentState.userLng], {icon: userIcon, zIndexOffset: 1000}).addTo(globalMap).bindPopup("<b>You are here</b>");
@@ -586,48 +641,59 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        // 🟢 UPGRADE 3: Real Street Routing Engine (OSRM)
         async function drawRoute(startLat, startLng, endLat, endLng, isNearest) {
             try {
-                // OSRM format requires Longitude,Latitude
                 const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
                 const res = await fetch(url);
                 const data = await res.json();
-                
                 if (data.routes && data.routes.length > 0) {
-                    // Convert GeoJSON coords back to Leaflet format (Lat, Lng)
                     const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                    
                     const routeLine = L.polyline(coords, {
-                        color: isNearest ? '#10b981' : '#64748b', // Bold Green for nearest, Gray for others
+                        color: isNearest ? '#10b981' : '#64748b', 
                         weight: isNearest ? 6 : 3,
                         opacity: isNearest ? 1.0 : 0.5,
-                        dashArray: isNearest ? null : '5, 8' // Dashed line for further shops
+                        dashArray: isNearest ? null : '5, 8'
                     }).addTo(globalMap);
-                    
                     routeLayers.push(routeLine);
                 }
-            } catch(e) { console.error("Routing blocked or failed", e); }
+            } catch(e) { console.error("Routing blocked", e); }
         }
 
-        async function performGlobalSearch() {
-            const q = document.getElementById('global-search-input').value.trim();
+        window.performGlobalSearch = async function() {
+            const q = document.getElementById('global-search-input').value.trim().toLowerCase();
             if(!q) return;
             
-            // Clear old routes on new search
             routeLayers.forEach(layer => globalMap.removeLayer(layer));
             routeLayers = [];
 
             try {
-                const res = await fetch(buildUrl('/api/global-product-search'), { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ query: q }) });
-                const data = await res.json();
-                let results = data.results || [];
+                // 🟢 FIREBASE: Deep Scan all shops for the product
+                const shopsSnap = await getDocs(collection(db, "shops"));
+                let results = [];
+
+                // We loop through each shop, and fetch their products subcollection
+                for (const shopDoc of shopsSnap.docs) {
+                    const shopData = shopDoc.data();
+                    const lat = shopData.profile?.lat || 20.5937;
+                    const lng = shopData.profile?.lng || 78.9629;
+                    const shopName = shopData.profile?.shopName || shopData.merchantId;
+
+                    const prodSnap = await getDocs(collection(db, "shops", shopDoc.id, "products"));
+                    prodSnap.forEach(pDoc => {
+                        const item = pDoc.data();
+                        if (item.name && item.name.toLowerCase().includes(q)) {
+                            const stockAmt = Number(item.stock || item.qty || item.quantity || 0);
+                            if (stockAmt > 0) {
+                                results.push({ merchantId: shopDoc.id, shopName, lat, lng, productName: item.name, price: item.price || 0, stock: stockAmt });
+                            }
+                        }
+                    });
+                }
                 
                 if(currentState.userLat && currentState.userLng) {
                     results.forEach(r => { r.distance = calcDistanceKm(currentState.userLat, currentState.userLng, r.lat, r.lng); });
-                    results.sort((a,b) => a.distance - b.distance); // Sort by closest
+                    results.sort((a,b) => a.distance - b.distance); 
                     
-                    // Draw actual street paths to the top 4 nearest shops (to prevent API rate limits)
                     results.slice(0, 4).forEach((r, index) => {
                         const isNearest = (index === 0);
                         drawRoute(currentState.userLat, currentState.userLng, r.lat, r.lng, isNearest);
@@ -640,13 +706,11 @@
                 if(results.length === 0) { listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No shops found with this product.</div>`; } 
                 else {
                     listEl.innerHTML = results.map(r => {
-                        // 🟢 UPGRADE 2: Smart Distance Formatting (Meters vs KM)
                         let distText = '';
                         if (r.distance !== undefined) {
                             if (r.distance < 1) distText = `${Math.round(r.distance * 1000)} meters away`;
                             else distText = `${r.distance.toFixed(1)} km away`;
                         }
-
                         return `
                         <div class="map-result-item" onclick="focusShopOnMap('${r.merchantId}', ${r.lat}, ${r.lng})">
                             <div>
@@ -662,13 +726,16 @@
                     lucide.createIcons();
                 }
                 document.getElementById('map-results-drawer').classList.add('active');
-            } catch(e) { alert("Search failed."); }
+            } catch(e) { 
+                console.error(e);
+                alert("Search failed."); 
+            }
         }
 
-        function closeMapDrawer() { document.getElementById('map-results-drawer').classList.remove('active'); }
+        window.closeMapDrawer = function() { document.getElementById('map-results-drawer').classList.remove('active'); }
         
-        function focusShopOnMap(merchantId, lat, lng) {
-            closeMapDrawer();
+        window.focusShopOnMap = function(merchantId, lat, lng) {
+            window.closeMapDrawer();
             Object.values(globalMarkers).forEach(m => m.setIcon(standardIcon));
             if(globalMarkers[merchantId]) { 
                 globalMarkers[merchantId].setIcon(highlightIcon); 
@@ -676,6 +743,6 @@
             }
             if(globalMap) { globalMap.flyTo([lat, lng], 16, { animate: true, duration: 1.5 }); }
         }
-    </script>
+</script>
 </body>
 </html>
