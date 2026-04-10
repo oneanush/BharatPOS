@@ -22,6 +22,37 @@ const analytics = getAnalytics(app);
 
 
 
+
+
+// 1. Import the Firebase SDK tools directly from Google
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+// 2. Paste YOUR specific config from the Firebase Console here
+const firebaseConfig = {
+ apiKey: "AIzaSyB6j3ywjmvNiSSXo9xZLPRVesYZZlJqzGE",
+  authDomain: "bharatpos-244a5.firebaseapp.com",
+  projectId: "bharatpos-244a5",
+  storageBucket: "bharatpos-244a5.firebasestorage.app",
+  messagingSenderId: "135502478185",
+  appId: "1:135502478185:web:b22081b57bb34627b59bf8",
+  measurementId: "G-49K3N22EHC"
+};
+
+// 3. Start the Engines
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+
+
+
+
+
+
+
+
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
 const API_BASE = 'https://server-xy7s.onrender.com'; 
