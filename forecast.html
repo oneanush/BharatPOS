@@ -5,16 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>DemandMitra AI • BharatPOS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
- <script src="chart.js"></script>
-<script src="bharatpos.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     /* --- THEME --- */
-    :root { --primary: #4f46e5; --bg: #f3f4f6; --success: #10b981; --danger: #ef4444; }
+    :root { --primary: #4f46e5; --bg: #f8fafc; --success: #10b981; --danger: #ef4444; }
     body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; padding-bottom: 60px; }
 
     .header {
       background: linear-gradient(135deg, #1e1b4b, #312e81); color: white;
       padding: 20px; border-radius: 0 0 24px 24px; margin-bottom: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
 
     .container { max-width: 800px; margin: 0 auto; padding: 0 15px; }
@@ -24,32 +26,40 @@
       display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; 
       padding-bottom: 10px; scrollbar-width: none; 
     }
+    .controls::-webkit-scrollbar { display: none; }
+    
     .chip {
-      background: white; border: 1px solid #e5e7eb; padding: 10px 20px;
+      background: white; border: 1px solid #e2e8f0; padding: 10px 20px;
       border-radius: 30px; font-size: 13px; font-weight: 600; cursor: pointer; 
       white-space: nowrap; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      color: #475569;
     }
-    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .chip:hover { border-color: var(--primary); color: var(--primary); }
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
 
     /* CARDS */
-    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #f1f5f9; }
     
     /* LOADING OVERLAY */
     #loadingOverlay {
       display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255,255,255,0.9); align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.95); align-items: center; justify-content: center;
       border-radius: 16px; font-weight: 600; color: var(--primary); z-index: 10;
-      flex-direction: column; gap: 10px;
+      flex-direction: column; gap: 10px; backdrop-filter: blur(4px);
     }
 
     /* INSIGHT BOXES */
     .insight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-    .stat-box { background: #f8fafc; padding: 15px; border-radius: 10px; border-left: 4px solid #ccc; }
+    .stat-box { background: #f8fafc; padding: 15px; border-radius: 10px; border-left: 4px solid #cbd5e1; }
     
     .btn-restock {
-      width: 100%; padding: 12px; background: var(--primary); color: white;
-      border: none; border-radius: 10px; font-weight: 600; margin-top: 10px; cursor: pointer;
+      width: 100%; padding: 16px; background: var(--success); color: white;
+      border: none; border-radius: 12px; font-weight: 800; font-size: 15px; margin-top: 15px; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: transform 0.2s;
+      display: flex; justify-content: center; align-items: center; gap: 8px;
     }
+    .btn-restock:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+    .btn-restock:active { transform: scale(0.98); }
 
     /* TIME STAMP BADGE */
     .time-badge { font-size: 11px; opacity: 0.8; margin-top: 5px; display: block; }
@@ -60,12 +70,14 @@
   <div class="header">
     <div style="display:flex; justify-content:space-between; align-items:start;">
         <div>
-            <h1 style="margin:0; font-size:22px;">DemandMitra AI</h1>
+            <h1 style="margin:0; font-size:22px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-brain" style="color: #a5b4fc;"></i> DemandMitra AI
+            </h1>
             <p style="margin:5px 0 0; opacity:0.8; font-size:13px;">Real-Time Inventory Forecasting</p>
         </div>
         <div style="text-align:right;">
             <span id="lastUpdated" class="time-badge">No data yet</span>
-            <span onclick="clearAICache()" style="font-size:10px; text-decoration:underline; cursor:pointer; color:#a5b4fc;">Reset Data</span>
+            <span onclick="window.clearAICache()" style="font-size:10px; text-decoration:underline; cursor:pointer; color:#a5b4fc;"><i class="fa-solid fa-rotate-right"></i> Reset AI</span>
         </div>
     </div>
   </div>
@@ -73,100 +85,142 @@
   <div class="container">
 
     <div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
-      <button onclick="generateBulkForecasts()" style="
+      <button onclick="window.generateBulkForecasts()" style="
         background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: white; border: none; padding: 10px 20px;
+        color: white; border: none; padding: 12px 24px;
         border-radius: 30px; font-weight: 700; cursor: pointer;
         box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-        display: flex; align-items: center; gap: 8px;">
-        ⚡ Analyze All Products (1 Click)
+        display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+        <i class="fa-solid fa-bolt"></i> Analyze All Products
       </button>
     </div>
 
     <div class="controls" id="productChips">
-      <div style="padding:10px; color:#666;">Loading Products...</div>
+      <div style="padding:10px; color:#64748b; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Syncing products from cloud...</div>
     </div>
 
-    <div class="card" style="position:relative; min-height: 300px;">
+    <div class="card" style="position:relative; min-height: 350px;">
       <div id="loadingOverlay">
-          <div>✨ AI is Analyzing Sales Patterns...</div>
-          <div style="font-size:12px; color:#666;">Please wait, this ensures accuracy.</div>
+          <i class="fa-solid fa-microchip fa-2x fa-beat-fade" style="color: var(--primary);"></i>
+          <div style="margin-top: 10px;" id="loadingText">✨ AI is Analyzing Sales Patterns...</div>
+          <div style="font-size:12px; color:#64748b;">Cross-referencing global data...</div>
       </div>
       
-      <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
-        <b id="chartTitle" style="font-size:16px;">Select a Product</b>
-        <span id="trendBadge" style="font-size:11px; padding:4px 10px; border-radius:12px; background:#eee; font-weight:600;">--</span>
+      <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
+        <b id="chartTitle" style="font-size:18px; color: #1e293b;">Select a Product</b>
+        <span id="trendBadge" style="font-size:11px; padding:6px 12px; border-radius:20px; background:#f1f5f9; color: #475569; font-weight:700;">--</span>
       </div>
       
-      <canvas id="demandChart" height="220"></canvas>
+      <div style="position: relative; height: 250px; width: 100%;">
+          <canvas id="demandChart"></canvas>
+      </div>
 
       <div class="insight-row">
-        <div class="stat-box" id="boxStock">
-          <div style="font-size:11px; color:#64748b;">CURRENT STOCK</div>
-          <div style="font-size:20px; font-weight:800;" id="valStock">--</div>
+        <div class="stat-box" id="boxStock" style="border-left-color: #3b82f6;">
+          <div style="font-size:11px; color:#64748b; font-weight: 700;">CURRENT STOCK</div>
+          <div style="font-size:24px; font-weight:800; color: #1e293b;" id="valStock">--</div>
         </div>
-        <div class="stat-box" id="boxPred">
-          <div style="font-size:11px; color:#64748b;">PREDICTED (7 DAYS)</div>
-          <div style="font-size:20px; font-weight:800;" id="valPred">--</div>
+        <div class="stat-box" id="boxPred" style="border-left-color: #10b981;">
+          <div style="font-size:11px; color:#64748b; font-weight: 700;">PREDICTED (7 DAYS)</div>
+          <div style="font-size:24px; font-weight:800; color: #1e293b;" id="valPred">--</div>
         </div>
       </div>
 
-      <div style="margin-top:15px; padding:15px; background:#fffbeb; border-radius:10px; border:1px solid #fcd34d; display:none;" id="aiMsgBox">
-        <b>💡 AI Recommendation:</b> <span id="aiReason">--</span>
+      <div style="margin-top:20px; padding:15px; background:#fffbeb; border-radius:12px; border:1px solid #fcd34d; display:none;" id="aiMsgBox">
+        <div style="display: flex; gap: 10px;">
+            <i class="fa-solid fa-lightbulb" style="color: #d97706; font-size: 18px; margin-top: 2px;"></i>
+            <div style="flex: 1;">
+                <b style="color: #b45309;">AI Recommendation:</b> 
+                <span id="aiReason" style="color: #78350f; font-size: 14px; line-height: 1.5; display: block; margin-top: 4px;">--</span>
+                <div id="aiQuantityBadge" style="margin-top: 10px; display: inline-block; background: #fee2e2; color: #b91c1c; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 13px; border: 1px solid #f87171;">
+                    Target Restock: -- Units
+                </div>
+            </div>
+        </div>
       </div>
 
-      <button id="restockBtn" class="btn-restock" style="display:none;" onclick="alert('Added to Purchase Order!')">
-        GENERATE PURCHASE ORDER
+      <button id="restockBtn" class="btn-restock" style="display:none;">
+        <i class="fa-solid fa-box-open"></i> RESTOCK NOW
       </button>
 
     </div>
 
   </div>
 
-<script>
-  const safeGet = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
+<script type="module">
+  // 🟢 1. IMPORT FIREBASE SDK
+  import { db } from "./bharatpos.js";
+  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   let myChart = null;
   let currentProduct = null;
   
-  // 1. PERMANENT CACHE: Load from LocalStorage on startup
+  // Cloud synced data caches
+  let cloudProducts = [];
+  let cloudSales = [];
+
+  // PERMANENT CACHE: Load from LocalStorage on startup
   let forecastCache = JSON.parse(localStorage.getItem('bharatpos_ai_cache') || '{}'); 
 
   document.addEventListener("DOMContentLoaded", () => {
-    loadProducts();
+    loadCloudData();
     updateLastTime();
-    
-    // 🟢 AUTO-LOAD: If we have cached data, show the first product immediately
-    const cachedKeys = Object.keys(forecastCache);
-    if(cachedKeys.length > 0) {
-        const firstProdName = cachedKeys[0];
-        const allProducts = safeGet('bharatpos_products');
-        const pObj = allProducts.find(p => p.name === firstProdName);
-        // Load it instantly without API call
-        if(pObj) analyzeProduct(firstProdName, pObj.stock || 0);
-    }
   });
 
-function loadProducts() {
-  const stockData = safeGet('bharatpos_products'); 
-  
-  if(stockData.length === 0) {
-    document.getElementById('productChips').innerHTML = `<div style="padding:10px;">No products found. Add items in Products Page first.</div>`;
-    return;
+  // 🟢 2. FETCH REAL-TIME DATA FROM FIREBASE
+  async function loadCloudData() {
+      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+      if(!user.merchantId) {
+          document.getElementById('productChips').innerHTML = `<div style="padding:10px; color:#ef4444;">Please login to sync data.</div>`;
+          return;
+      }
+
+      try {
+          // Fetch Products
+          const prodSnap = await getDocs(collection(db, "shops", user.merchantId, "products"));
+          cloudProducts = prodSnap.docs.map(d => d.data());
+
+          // Fetch Sales for historical analysis
+          const salesSnap = await getDocs(collection(db, "shops", user.merchantId, "sales"));
+          cloudSales = salesSnap.docs.map(d => d.data());
+
+          renderProductChips();
+
+          // AUTO-LOAD first cached item if available
+          const cachedKeys = Object.keys(forecastCache);
+          if(cachedKeys.length > 0) {
+              const firstProdName = cachedKeys[0];
+              const pObj = cloudProducts.find(p => p.name === firstProdName);
+              if(pObj) window.analyzeProduct(firstProdName, pObj.stock || 0);
+          }
+
+      } catch (e) {
+          console.error("Firebase Sync Error", e);
+          document.getElementById('productChips').innerHTML = `<div style="padding:10px; color:#ef4444;">Failed to sync cloud data. Using offline cache if available.</div>`;
+      }
   }
 
-  const container = document.getElementById('productChips');
-  container.innerHTML = stockData.map(p => 
-    `<div class="chip" onclick="analyzeProduct('${p.name}', ${p.stock || 0})">${p.name}</div>`
-  ).join('');
+  function renderProductChips() {
+    if(cloudProducts.length === 0) {
+      document.getElementById('productChips').innerHTML = `<div style="padding:10px; color: #64748b;">No products found in cloud database. Add items in Products Page first.</div>`;
+      return;
+    }
 
-  if(Object.keys(forecastCache).length === 0) {
-      document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
+    const container = document.getElementById('productChips');
+    // Filter to unique product names to avoid clutter if there are multiple variants
+    const uniqueNames = [...new Set(cloudProducts.map(p => p.name))];
+    
+    container.innerHTML = uniqueNames.map(name => {
+        // Calculate total stock across all variants of this product
+        const totalStock = cloudProducts.filter(p => p.name === name).reduce((sum, p) => sum + Number(p.stock || 0), 0);
+        return `<div class="chip" onclick="window.analyzeProduct('${name.replace(/'/g, "\\'")}', ${totalStock})">${name}</div>`;
+    }).join('');
+
+    if(Object.keys(forecastCache).length === 0) {
+        document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
+    }
   }
-  document.getElementById('loadingOverlay').style.display = 'none';
-}
 
-  // --- SAVE DATA TO PERMANENT STORAGE ---
   function saveToMemory() {
       localStorage.setItem('bharatpos_ai_cache', JSON.stringify(forecastCache));
       const now = new Date().toLocaleString('en-IN');
@@ -179,34 +233,34 @@ function loadProducts() {
       if(time) document.getElementById('lastUpdated').innerText = "Updated: " + time;
   }
 
-  function clearAICache() {
-      if(!confirm("Clear saved AI data?")) return;
+  window.clearAICache = function() {
+      if(!confirm("Clear all AI predictions?")) return;
       localStorage.removeItem('bharatpos_ai_cache');
       localStorage.removeItem('bharatpos_ai_time');
       location.reload();
   }
 
   // --- BULK ACTION ---
-  async function generateBulkForecasts() {
-    const allProducts = safeGet('bharatpos_products');
-    if(allProducts.length === 0) return alert("No products to analyze!");
+  window.generateBulkForecasts = async function() {
+    const uniqueNames = [...new Set(cloudProducts.map(p => p.name))];
+    if(uniqueNames.length === 0) return alert("No products synced from cloud to analyze!");
 
     document.getElementById('loadingOverlay').style.display = 'flex';
-    document.getElementById('loadingOverlay').innerHTML = `
-        <div>⚡ AI is processing ${allProducts.length} products...</div>
-        <div style="font-size:12px; color:#666;">This might take a few seconds.</div>
-    `;
+    document.getElementById('loadingText').innerText = `⚡ AI is processing ${uniqueNames.length} products...`;
 
-    const bulkPayload = allProducts.map(p => {
+    const bulkPayload = uniqueNames.map(name => {
+      const totalStock = cloudProducts.filter(p => p.name === name).reduce((sum, p) => sum + Number(p.stock || 0), 0);
       return {
-        productName: p.name,
-        currentStock: p.stock || 0,
-        history: calculateSalesHistory(p.name)
+        productName: name,
+        currentStock: totalStock,
+        history: calculateSalesHistory(name)
       };
     });
 
     try {
-      const res = await fetch(buildUrl('/api/predict-demand-bulk'), {
+      // Calls your Render AI Microservice
+      const url = window.buildUrl ? window.buildUrl('/api/predict-demand-bulk') : 'https://server-xy7s.onrender.com/api/predict-demand-bulk';
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ products: bulkPayload })
@@ -219,33 +273,30 @@ function loadProducts() {
             forecastCache[prediction.productName] = prediction;
         });
         
-        // 🟢 SAVE PERMANENTLY
         saveToMemory();
-
         alert("✅ Analysis Complete & Saved!");
         
         if(currentProduct) {
-             const currentP = allProducts.find(p => p.name === currentProduct);
-             analyzeProduct(currentProduct, currentP ? currentP.stock : 0);
-        } else if(allProducts.length > 0) {
-             // Auto open first product if nothing selected
-             analyzeProduct(allProducts[0].name, allProducts[0].stock || 0);
+             const totalStock = cloudProducts.filter(p => p.name === currentProduct).reduce((sum, p) => sum + Number(p.stock || 0), 0);
+             window.analyzeProduct(currentProduct, totalStock);
+        } else if(uniqueNames.length > 0) {
+             const totalStock = cloudProducts.filter(p => p.name === uniqueNames[0]).reduce((sum, p) => sum + Number(p.stock || 0), 0);
+             window.analyzeProduct(uniqueNames[0], totalStock);
         }
 
       } else {
-        alert("Server Error: " + (data.message || "Unknown error"));
+        alert("AI Server Error: " + (data.message || "Unknown error"));
       }
-
     } catch (e) {
       console.error(e);
-      alert("Error connecting to AI Server.");
+      alert("Error connecting to AI Microservice.");
     } finally {
       document.getElementById('loadingOverlay').style.display = 'none';
     }
   }
 
   // --- INDIVIDUAL VIEW ---
-  async function analyzeProduct(name, currentStock) {
+  window.analyzeProduct = async function(name, currentStock) {
     currentProduct = name;
     
     document.querySelectorAll('.chip').forEach(c => {
@@ -267,24 +318,27 @@ function loadProducts() {
     }
 
     // 2. FETCH NEW IF NOT IN CACHE
-    document.getElementById('loadingOverlay').innerHTML = `<div>✨ Analyzing ${name}...</div>`;
+    document.getElementById('loadingText').innerText = `✨ Analyzing ${name}...`;
     document.getElementById('loadingOverlay').style.display = 'flex';
     
     try {
-      const res = await fetch(buildUrl('/api/predict-demand-bulk'), {
+      const url = window.buildUrl ? window.buildUrl('/api/predict-demand-bulk') : 'https://server-xy7s.onrender.com/api/predict-demand-bulk';
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productName: name, history, currentStock })
+        // Emulate bulk payload format for backend compatibility
+        body: JSON.stringify({ products: [{ productName: name, history: history, currentStock: currentStock }] })
       });
 
       const data = await res.json();
       
-      if(data.success && data.prediction) {
-        forecastCache[name] = data.prediction;
-        saveToMemory(); // 🟢 SAVE PERMANENTLY
+      if(data.success && data.predictions && data.predictions.length > 0) {
+        const pred = data.predictions[0];
+        forecastCache[name] = pred;
+        saveToMemory(); 
         
-        renderChart(history, data.prediction.predicted_sales);
-        updateInsights(data.prediction, currentStock);
+        renderChart(history, pred.predicted_sales);
+        updateInsights(pred, currentStock);
       }
 
     } catch (e) {
@@ -294,25 +348,28 @@ function loadProducts() {
     }
   }
 
-  // --- SALES HISTORY CALCULATION ---
+  // --- SALES HISTORY CALCULATION (From Cloud Sales) ---
   function calculateSalesHistory(productName) {
-    const sales = safeGet('bharatpos_sales');
     const dailyCounts = Array(14).fill(0); 
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    sales.forEach(bill => {
+    cloudSales.forEach(bill => {
+      if(!bill.items) return;
       const billDate = new Date(bill.date);
       billDate.setHours(0,0,0,0);
       const diffTime = Math.abs(today - billDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
       if(diffDays < 14) {
-        const item = bill.items.find(i => i.name === productName);
-        if(item) {
-          const index = 13 - diffDays; 
-          if(index >= 0) dailyCounts[index] += (Number(item.qty) || 1);
-        }
+        // Find if this product was sold in this bill
+        const items = bill.items.filter(i => i.name === productName || i.printName === productName || (i.name && i.name.includes(productName)));
+        items.forEach(item => {
+            const index = 13 - diffDays; 
+            if(index >= 0 && index < 14) {
+                dailyCounts[index] += (Number(item.qty) || 1);
+            }
+        });
       }
     });
     return dailyCounts;
@@ -323,13 +380,15 @@ function loadProducts() {
     const ctx = document.getElementById('demandChart').getContext('2d');
     if(myChart) myChart.destroy();
 
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
     const labels = [];
-    for(let i=13; i>=0; i--) labels.push(`-${i}d`); // Simplified labels
+    for(let i=13; i>=0; i--) labels.push(`-${i}d`); 
     for(let i=1; i<=7; i++) labels.push(`+${i}d`);
 
     const pastDataset = [...pastData, ...Array(7).fill(null)];
     const futureDataset = [...Array(14).fill(null), ...futureData];
-    futureDataset[13] = pastData[13]; // Connect lines
+    futureDataset[13] = pastData[13]; // Connect lines at "today"
 
     myChart = new Chart(ctx, {
       type: 'line',
@@ -337,11 +396,11 @@ function loadProducts() {
         labels: labels,
         datasets: [
           {
-            label: 'Sales',
+            label: 'Actual Sales',
             data: pastDataset,
             borderColor: '#4f46e5',
             backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            fill: true, tension: 0.3, pointRadius: 2
+            fill: true, tension: 0.4, pointRadius: 3, borderWidth: 3
           },
           {
             label: 'AI Forecast',
@@ -349,14 +408,22 @@ function loadProducts() {
             borderColor: '#10b981',
             borderDash: [5, 5],
             pointBackgroundColor: '#10b981',
-            tension: 0.3, pointRadius: 3
+            backgroundColor: 'transparent',
+            tension: 0.4, pointRadius: 4, borderWidth: 3
           }
         ]
       },
       options: { 
           responsive: true,
-          plugins: { legend: { display: true, position: 'bottom' } },
-          scales: { y: { beginAtZero: true } }
+          maintainAspectRatio: false,
+          plugins: { 
+              legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+              tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8 }
+          },
+          scales: { 
+              y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+              x: { grid: { display: false }, border: { display: false } }
+          }
       }
     });
   }
@@ -364,24 +431,40 @@ function loadProducts() {
   function updateInsights(pred, stock) {
     const totalPredicted = pred.predicted_sales.reduce((a,b)=>a+b, 0);
     document.getElementById('valPred').innerText = Math.round(totalPredicted);
-    document.getElementById('trendBadge').innerText = pred.trend_analysis;
+    
+    const badge = document.getElementById('trendBadge');
+    badge.innerText = pred.trend_analysis;
+    if(pred.trend_analysis.toLowerCase().includes('up')) { badge.style.color = '#10b981'; badge.style.background = '#dcfce7'; }
+    else if(pred.trend_analysis.toLowerCase().includes('down')) { badge.style.color = '#ef4444'; badge.style.background = '#fee2e2'; }
+    else { badge.style.color = '#f59e0b'; badge.style.background = '#fef3c7'; }
+
     document.getElementById('aiReason').innerText = pred.reason;
     document.getElementById('aiMsgBox').style.display = 'block';
 
-    if(pred.restock_recommendation === "Yes") {
-      const btn = document.getElementById('restockBtn');
-      btn.style.display = 'block';
-      const needed = Math.max(0, Math.round(totalPredicted - stock));
-      btn.innerText = `GENERATE ORDER (+${needed} units)`;
+    const btn = document.getElementById('restockBtn');
+    
+    if(pred.restock_recommendation === "Yes" || (totalPredicted > stock)) {
+      btn.style.display = 'flex';
+      const needed = Math.max(1, Math.round(totalPredicted - stock)); // Suggest at least 1 if recommended
       
-      btn.onclick = () => window.location.href = `products.html?restock=${encodeURIComponent(currentProduct)}`;
+      document.getElementById('aiQuantityBadge').innerText = `Target Restock: ${needed} Units Minimum`;
+      document.getElementById('aiQuantityBadge').style.display = 'inline-block';
       
-      document.getElementById('aiMsgBox').style.backgroundColor = "#fee2e2";
-      document.getElementById('aiMsgBox').style.borderColor = "#ef4444";
+      btn.innerHTML = `<i class="fa-solid fa-box-open"></i> AUTO-FILL INVENTORY (+${needed})`;
+      
+      // 🟢 NEW FIX: Pass the exact needed stock amount via localStorage so products.html can pick it up
+      btn.onclick = () => {
+          localStorage.setItem("temp_add_stock", needed);
+          window.location.href = `products.html?restock=${encodeURIComponent(currentProduct)}`;
+      };
+      
+      document.getElementById('aiMsgBox').style.backgroundColor = "#fef2f2";
+      document.getElementById('aiMsgBox').style.borderColor = "#fca5a5";
     } else {
-      document.getElementById('restockBtn').style.display = 'none';
-      document.getElementById('aiMsgBox').style.backgroundColor = "#dcfce7";
-      document.getElementById('aiMsgBox').style.borderColor = "#10b981";
+      btn.style.display = 'none';
+      document.getElementById('aiQuantityBadge').style.display = 'none';
+      document.getElementById('aiMsgBox').style.backgroundColor = "#f0fdf4";
+      document.getElementById('aiMsgBox').style.borderColor = "#86efac";
     }
   }
 </script>
