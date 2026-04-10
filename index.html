@@ -4,24 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BharatPOS • The Retail OS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Deep Space Theme v2 */
-            --bg-dark: #02060c; 
+            /* Ultra-Modern Deep Space Theme */
+            --bg-dark: #02040a; 
             --primary: #FFD700; /* Gold */
-            --primary-glow: rgba(255, 215, 0, 0.3);
+            --primary-glow: rgba(255, 215, 0, 0.4);
             --accent-blue: #3b82f6;
             --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
             --text-white: #f8fafc;
             --text-gray: #94a3b8;
-            --glass: rgba(255, 255, 255, 0.03);
+            --glass: rgba(255, 255, 255, 0.02);
             --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         html { scroll-behavior: smooth; }
 
         body {
@@ -31,27 +33,28 @@
             overflow-x: hidden;
             line-height: 1.6;
             background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px; /* Tech Grid */
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-attachment: fixed;
         }
 
         /* --- AMBIENT GLOWS --- */
-        .glow-spot {
-            position: fixed; width: 600px; height: 600px; border-radius: 50%;
-            filter: blur(100px); z-index: -1; pointer-events: none; opacity: 0.6;
-            animation: pulseGlow 10s infinite alternate;
+        .ambient-light {
+            position: fixed; width: 80vw; height: 80vh; border-radius: 50%;
+            filter: blur(120px); z-index: -1; pointer-events: none; opacity: 0.4;
+            animation: drift 20s infinite alternate ease-in-out;
         }
-        .glow-1 { top: -200px; left: -200px; background: rgba(59, 130, 246, 0.2); }
-        .glow-2 { bottom: -200px; right: -200px; background: rgba(255, 215, 0, 0.15); animation-delay: 2s; }
+        .light-1 { top: -20vh; left: -20vw; background: radial-gradient(circle, var(--accent-purple), transparent 70%); }
+        .light-2 { bottom: -20vh; right: -20vw; background: radial-gradient(circle, var(--accent-blue), transparent 70%); animation-delay: -10s; }
         
-        @keyframes pulseGlow { 0% { opacity: 0.4; transform: scale(1); } 100% { opacity: 0.7; transform: scale(1.2); } }
+        @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 10vh) scale(1.2); } }
 
         /* --- STICKY NAV --- */
         nav {
-            display: flex; justify-content: flex-start; align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             padding: 15px 5%; position: fixed; width: 100%; top: 0; z-index: 1000;
-            background: rgba(2, 6, 12, 0.8); backdrop-filter: blur(12px);
+            background: rgba(2, 4, 10, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border);
             transition: all 0.3s ease;
         }
@@ -60,272 +63,412 @@
         .logo-img {
             height: 45px; width: 45px; object-fit: cover; border-radius: 50%;
             border: 2px solid var(--primary);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .logo-text {
-            font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: #fff;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            font-size: 26px; font-weight: 900; letter-spacing: -0.5px; color: #fff;
+            background: linear-gradient(to right, #fff, #FFD700);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .logo-container:hover .logo-img { transform: rotate(180deg) scale(1.1); }
+        .logo-container:hover .logo-img { transform: rotate(180deg) scale(1.1); box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
+
+        /* --- LANGUAGE TOGGLE --- */
+        .lang-toggle-btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff; padding: 8px 16px; border-radius: 50px; font-weight: 700; font-size: 14px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .lang-toggle-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--primary); color: var(--primary); }
+        .lang-toggle-btn span { font-size: 16px; }
 
         /* --- HERO SECTION --- */
         .hero {
             min-height: 100vh; display: flex; align-items: center; justify-content: space-between;
-            padding: 120px 5% 100px 5%; gap: 50px; position: relative;
+            padding: 140px 5% 100px 5%; gap: 50px; position: relative; z-index: 2;
         }
 
-        .hero-text { flex: 1; max-width: 650px; z-index: 2; opacity: 0; animation: fadeUp 1s forwards 0.2s; }
+        .hero-text { flex: 1.2; max-width: 700px; opacity: 0; animation: fadeUp 1s forwards 0.2s; }
 
         .ai-pill {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600;
-            margin-bottom: 25px; color: #a5b4fc; backdrop-filter: blur(5px);
+            display: inline-flex; align-items: center; gap: 10px;
+            background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 8px 20px; border-radius: 50px; font-size: 13px; font-weight: 700;
+            margin-bottom: 30px; color: #c4b5fd; backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+            animation: floatPill 4s infinite ease-in-out;
         }
-        .ai-pill::before { content:""; width:8px; height:8px; background:#a5b4fc; border-radius:50%; box-shadow:0 0 10px #a5b4fc; }
+        .ai-pill::before { content:""; width:8px; height:8px; background:#a855f7; border-radius:50%; box-shadow:0 0 15px #a855f7; animation: blink 2s infinite; }
 
         h1 {
-            font-size: 72px; line-height: 1.05; margin-bottom: 25px; font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            font-size: 85px; line-height: 1.05; margin-bottom: 25px; font-weight: 900; letter-spacing: -2px;
+        }
+        .text-gradient-main {
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .highlight-gold { color: var(--primary); -webkit-text-fill-color: var(--primary); }
-
-        .hero-desc { font-size: 20px; color: var(--text-gray); margin-bottom: 40px; font-weight: 400; max-width: 90%; line-height: 1.6; }
-
-        .cta-btn {
-            background: var(--primary); color: #000; padding: 18px 40px;
-            border-radius: 50px; font-size: 18px; font-weight: 800; border: none;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 0 30px var(--primary-glow);
-            position: relative; overflow: hidden;
+        .highlight-gold { 
+            background: linear-gradient(to right, #FFD700, #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: inline-block; position: relative;
         }
-        .cta-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 0 50px var(--primary-glow); background: #fff; }
+
+        .hero-desc { font-size: 20px; color: var(--text-gray); margin-bottom: 45px; font-weight: 400; max-width: 90%; line-height: 1.7; }
+
+        /* Super CTA Button */
+        .cta-wrapper { position: relative; display: inline-block; text-align: center; }
+        .cta-wrapper::before {
+            content: ''; position: absolute; inset: -5px; border-radius: 50px;
+            background: linear-gradient(90deg, #FFD700, #f59e0b, #FFD700); background-size: 200% 200%;
+            animation: gradientMove 3s infinite linear; filter: blur(15px); opacity: 0.7; transition: opacity 0.3s;
+        }
+        .cta-wrapper:hover::before { opacity: 1; }
+        .cta-btn {
+            position: relative; background: #02060c; color: var(--primary); padding: 18px 45px;
+            border-radius: 50px; font-size: 18px; font-weight: 800; border: 2px solid var(--primary);
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            text-transform: uppercase; letter-spacing: 1px; z-index: 2; overflow: hidden;
+            display: inline-block; width: 100%;
+        }
+        .cta-btn::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,215,0,0.3), transparent);
+            transform: skewX(-25deg); transition: 0.5s;
+        }
+        .cta-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 30px var(--primary-glow); }
+        .cta-btn:hover::after { left: 150%; }
+
+        /* 100% FREE BADGE */
+        .free-badge {
+            margin-top: 15px; font-size: 13px; font-weight: 600; color: #10b981;
+            background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(16, 185, 129, 0.4);
+            padding: 8px 15px; border-radius: 8px; display: inline-block;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
+        }
 
         .hero-visual {
             flex: 1; display: flex; justify-content: center; position: relative;
-            animation: float 6s ease-in-out infinite; opacity: 0; animation: fadeUp 1s forwards 0.5s, float 6s ease-in-out infinite 1s;
+            perspective: 1000px;
         }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
+        
+        /* 3D Tilt Image Card */
+        .feature-img-wrapper {
+            position: relative; width: 100%; max-width: 600px; border-radius: 24px;
+            transform-style: preserve-3d; transition: transform 0.1s ease-out;
+            animation: fadeUp 1s forwards 0.5s; opacity: 0; cursor: crosshair;
+        }
+        .feature-img-wrapper::after {
+            content: ''; position: absolute; inset: -2px; border-radius: 26px; z-index: -1;
+            background: linear-gradient(45deg, var(--accent-blue), transparent, var(--accent-purple));
+            filter: blur(15px); opacity: 0.5;
+        }
         .feature-img {
-            width: 100%; max-width: 600px; height: auto; border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--glass-border);
+            width: 100%; height: auto; border-radius: 24px; display: block;
+            border: 1px solid var(--glass-highlight);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+            transform: translateZ(20px);
         }
 
         /* --- SCROLL INDICATOR --- */
         .scroll-wrapper {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            opacity: 0; animation: fadeIn 1s forwards 1.5s; cursor: pointer;
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            opacity: 0; animation: fadeIn 1s forwards 1.5s; cursor: pointer; z-index: 10;
         }
-        .scroll-text { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-gray); font-weight: 600; }
-        .mouse {
-            width: 26px; height: 42px; border: 2px solid rgba(255,255,255,0.4);
-            border-radius: 20px; position: relative;
-        }
-        .wheel {
-            width: 4px; height: 8px; background: #fff; border-radius: 2px;
-            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-            animation: scrollWheel 2s infinite;
-        }
-        .arrows { display: flex; flex-direction: column; align-items: center; margin-top: 5px; gap: 3px; }
-        .arrow { width: 8px; height: 8px; border-right: 2px solid rgba(255,255,255,0.4); border-bottom: 2px solid rgba(255,255,255,0.4); transform: rotate(45deg); animation: arrowFade 2s infinite; }
-        .arrow:nth-child(2) { animation-delay: 0.2s; }
+        .scroll-text { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: var(--text-gray); font-weight: 700; }
+        .mouse { width: 24px; height: 40px; border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; position: relative; display: flex; justify-content: center; }
+        .wheel { width: 4px; height: 8px; background: var(--primary); border-radius: 2px; margin-top: 6px; animation: scrollWheel 2s infinite cubic-bezier(0.15, 0.41, 0.69, 0.94); box-shadow: 0 0 10px var(--primary); }
         
-        @keyframes scrollWheel { 0% { top: 8px; opacity: 1; } 100% { top: 20px; opacity: 0; } }
-        @keyframes arrowFade { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes fadeIn { to { opacity: 1; } }
-
         /* --- FEATURE SECTIONS --- */
         .section {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 100px 8%; gap: 80px; opacity: 0; transform: translateY(50px);
-            transition: all 0.8s ease-out;
+            padding: 120px 8%; gap: 80px; opacity: 0; transform: translateY(80px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); position: relative; z-index: 2;
         }
         .section.visible { opacity: 1; transform: translateY(0); }
-
         .section.reverse { flex-direction: row-reverse; }
 
         .section-text { flex: 1; }
-        .section-text h2 { font-size: 48px; margin-bottom: 20px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; }
-        .section-text p { font-size: 18px; color: var(--text-gray); margin-bottom: 30px; font-weight: 300; }
+        .section-tag { font-weight: 800; letter-spacing: 2px; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; }
+        .section-text h2 { font-size: 52px; margin-bottom: 25px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; }
+        .section-text p { font-size: 19px; color: var(--text-gray); margin-bottom: 35px; font-weight: 300; line-height: 1.7; }
 
-        .section-visual { flex: 1; position: relative; }
+        .section-visual { flex: 1; perspective: 1000px; }
         
+        /* Animated Gradient Border Card */
+        .img-card {
+            position: relative; border-radius: 24px; background: var(--bg-dark);
+            padding: 2px; overflow: hidden; transform-style: preserve-3d; transition: transform 0.1s ease-out; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .img-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(transparent, var(--border-color, rgba(255,255,255,0.1)), transparent 30%);
+            animation: rotate 4s linear infinite; z-index: 0;
+        }
+        .img-card-inner { position: relative; background: var(--bg-dark); border-radius: 22px; overflow: hidden; z-index: 1; }
+        .img-card img { width: 100%; display: block; border-radius: 22px; opacity: 0.9; transition: opacity 0.3s, transform 0.3s; }
+        .img-card:hover img { opacity: 1; transform: scale(1.03); }
+
         /* Module Buttons */
         .module-btn {
-            display: inline-flex; align-items: center; gap: 10px;
-            padding: 14px 30px; border-radius: 12px; font-weight: 700; text-decoration: none;
-            transition: 0.3s; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;
-            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            display: inline-flex; align-items: center; gap: 12px;
+            padding: 16px 32px; border-radius: 12px; font-weight: 800; text-decoration: none;
+            transition: 0.3s; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden;
         }
+        .module-btn::before { content:''; position:absolute; inset:0; background:var(--btn-color); opacity:0; transition:0.3s; z-index:-1; }
+        .module-btn:hover { border-color: var(--btn-color); box-shadow: 0 10px 30px var(--btn-glow); transform: translateY(-3px); }
+        .module-btn:hover::before { opacity: 0.1; }
         
-        .btn-finance { color: var(--accent-blue); border: 1px solid var(--accent-blue); }
-        .btn-finance:hover { background: var(--accent-blue); color: white; box-shadow: 0 0 30px rgba(59, 130, 246, 0.3); }
-        
-        .btn-crm { color: var(--accent-purple); border: 1px solid var(--accent-purple); }
-        .btn-crm:hover { background: var(--accent-purple); color: white; box-shadow: 0 0 30px rgba(124, 58, 237, 0.3); }
-        
-        .btn-khata { color: var(--primary); border: 1px solid var(--primary); }
-        .btn-khata:hover { background: var(--primary); color: black; box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); }
-
-        .img-card {
-            border-radius: 24px; overflow: hidden; border: 1px solid var(--glass-border);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4); transition: transform 0.3s;
-        }
-        .img-card:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.2); }
+        .btn-finance { color: var(--accent-blue); --btn-color: var(--accent-blue); --btn-glow: rgba(59,130,246,0.3); }
+        .btn-crm { color: var(--accent-purple); --btn-color: var(--accent-purple); --btn-glow: rgba(139,92,246,0.3); }
+        .btn-khata { color: var(--primary); --btn-color: var(--primary); --btn-glow: rgba(255,215,0,0.3); }
 
         /* --- FOOTER --- */
         footer {
-            text-align: center; padding: 80px 20px; border-top: 1px solid var(--glass-border);
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); margin-top: 50px;
+            text-align: center; padding: 80px 20px 40px; border-top: 1px solid var(--glass-border);
+            background: linear-gradient(to top, rgba(2,4,10,1), transparent); margin-top: 100px;
+            position: relative; z-index: 2;
         }
         footer p { color: var(--text-gray); font-size: 16px; margin-bottom: 10px; }
-        footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        footer a { color: var(--primary); text-decoration: none; font-weight: 600; transition: 0.3s; }
+        footer a:hover { text-shadow: 0 0 10px var(--primary-glow); }
 
-        /* --- MOBILE --- */
-        @media (max-width: 900px) {
-            h1 { font-size: 48px; }
-            .hero { flex-direction: column; padding-top: 140px; text-align: center; gap: 40px; }
-            .hero-text { margin: 0 auto; }
-            .section { flex-direction: column !important; padding: 60px 5%; text-align: center; gap: 40px; }
-            .glow-spot { opacity: 0.3; }
+        /* --- KEYFRAMES --- */
+        @keyframes scrollWheel { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(12px); opacity: 0; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes floatPill { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes rotate { 100% { transform: rotate(1turn); } }
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 1024px) {
+            h1 { font-size: 65px; }
+            .section { padding: 100px 5%; gap: 50px; }
+            .section-text h2 { font-size: 42px; }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 50px; letter-spacing: -1px; }
+            .hero { flex-direction: column; padding-top: 130px; text-align: center; gap: 60px; min-height: auto; padding-bottom: 60px;}
+            .hero-text { margin: 0 auto; display: flex; flex-direction: column; align-items: center;}
+            .hero-desc { font-size: 18px; max-width: 100%; }
+            .feature-img-wrapper { transform: none !important; }
+            
+            .section, .section.reverse { flex-direction: column; padding: 70px 5%; text-align: center; gap: 40px; }
+            .section-text h2 { font-size: 38px; }
+            .img-card { transform: none !important; }
+            
+            .ambient-light { opacity: 0.2; }
             .scroll-wrapper { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 42px; }
+            .hero-desc { font-size: 16px; }
+            .cta-btn { padding: 15px 30px; font-size: 16px; }
+            .section-text h2 { font-size: 32px; }
+            .section-text p { font-size: 16px; }
+            .module-btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
 <body>
 
-    <div class="glow-spot glow-1"></div>
-    <div class="glow-spot glow-2"></div>
+    <div class="ambient-light light-1"></div>
+    <div class="ambient-light light-2"></div>
 
     <nav>
         <a href="index.html" class="logo-container">
             <img src="logo.png" alt="BharatPOS Logo" class="logo-img">
             <span class="logo-text">BharatPOS</span>
         </a>
+        <button class="lang-toggle-btn" onclick="toggleLanguage()">
+            <span>A/अ</span> <span id="currentLangText">EN</span>
+        </button>
     </nav>
 
     <header class="hero">
         <div class="hero-text">
-            <div class="ai-pill">✨ New: AI Brain V2.0 Active</div>
-            <h1>India’s Retail <br><span class="highlight-gold">Superpower.</span></h1>
-            <p class="hero-desc">
+            <div class="ai-pill lang-text" data-en="✨ New: AI Brain V2.0 Active" data-hi="✨ Naya: AI Brain V2.0 Chalu Hai">✨ New: AI Brain V2.0 Active</div>
+            
+            <h1 class="text-gradient-main lang-text" 
+                data-en="India’s Retail <br><span class='highlight-gold'>Superpower.</span>" 
+                data-hi="India ki Retail <br><span class='highlight-gold'>Mahashakti.</span>">
+                India’s Retail <br><span class="highlight-gold">Superpower.</span>
+            </h1>
+            
+            <p class="hero-desc lang-text" 
+               data-en="Run your entire shop on Autopilot. The only system that tracks stock, bills customers instantly, and grows your profits automatically."
+               data-hi="Apni dukan Autopilot par chalayein. Ek akela system jo stock track kare, instantly bill banaye, aur munafa badhaye.">
                 Run your entire shop on Autopilot. The only system that tracks stock, bills customers instantly, and grows your profits automatically.
             </p>
-            <button class="cta-btn" onclick="gologin()">Start Now ➜</button>
+            
+            <div class="cta-wrapper">
+                <button class="cta-btn lang-text" onclick="gologin()" data-en="Launch System ➜" data-hi="Dukan Shuru Karein ➜">Launch System ➜</button>
+                <br>
+                <div class="free-badge lang-text" 
+                     data-en="✅ 100% Free Forever. No ₹499/month subscription traps." 
+                     data-hi="✅ Bilkul Free. Koi ₹499/month ka chakkar nahi.">
+                     ✅ 100% Free Forever. No ₹499/month subscription traps.
+                </div>
+            </div>
         </div>
         
         <div class="hero-visual">
-            <img src="in.png" alt="BharatPOS Dashboard" class="feature-img">
+            <div class="feature-img-wrapper tilt-element">
+                <img src="in.png" alt="BharatPOS Dashboard" class="feature-img">
+            </div>
         </div>
 
         <div class="scroll-wrapper" onclick="document.getElementById('feature-1').scrollIntoView()">
             <div class="mouse"><div class="wheel"></div></div>
-            <div class="arrows"><div class="arrow"></div><div class="arrow"></div></div>
-            <span class="scroll-text">Scroll to Explore</span>
+            <span class="scroll-text lang-text" data-en="Explore" data-hi="Neeche Dekhein">Explore</span>
         </div>
     </header>
 
     <section class="section reverse" id="feature-1">
         <div class="section-text">
-            <h2>Zero Lag.<br>Zero Confusion.</h2>
-            <p>
-                Forget bulky manuals. Our "Obsidian" dark interface is designed for speed. Eye-friendly for long shifts and fast enough to clear queues in seconds.
+            <div class="section-tag lang-text" style="color: #cbd5e1;" data-en="Hyper-Optimized POS" data-hi="Tez Billing System">Hyper-Optimized POS</div>
+            <h2 class="text-gradient-main lang-text" data-en="Zero Lag.<br>Zero Confusion." data-hi="Bina Ruke Chale.<br>Koi Confusion Nahi.">Zero Lag.<br>Zero Confusion.</h2>
+            <p class="lang-text" 
+               data-en="Forget bulky manuals. Our Obsidian dark interface is designed for speed. Eye-friendly for long shifts and fast enough to clear queues in seconds."
+               data-hi="Purane tarike chhodein. Hamara dark interface behad tez aur asaan hai, lambi line turant clear karne ke liye.">
+                Forget bulky manuals. Our Obsidian dark interface is designed for speed. Eye-friendly for long shifts and fast enough to clear queues in seconds.
             </p>
         </div>
         <div class="section-visual">
-            <div class="img-card">
-                <img src="2in.png" alt="Billing Interface" style="width:100%; display:block;">
+            <div class="img-card tilt-element" style="--border-color: #cbd5e1;">
+                <div class="img-card-inner"><img src="2in.png" alt="Billing Interface"></div>
             </div>
         </div>
     </section>
 
     <section class="section">
         <div class="section-text">
-            <h2 style="color:#60a5fa;">The Camera is <br>Your Scanner.</h2>
-            <p>
+            <div class="section-tag lang-text" style="color: var(--accent-cyan);" data-en="Smart Vision Tech" data-hi="Smart AI Camera">Smart Vision Tech</div>
+            <h2 style="color:var(--accent-cyan);" class="lang-text" data-en="The Camera is <br>Your Scanner." data-hi="Aapka Camera hi <br>Scanner Hai.">The Camera is <br>Your Scanner.</h2>
+            <p class="lang-text" 
+               data-en="No expensive hardware needed. Just point your device, and our AI vision recognizes products, reads barcodes, and updates inventory instantly."
+               data-hi="Koi mehengi machine nahi chahiye. Bas phone ka camera dikhayein aur AI sab samajh kar stock update kar dega.">
                 No expensive hardware needed. Just point your device, and our AI vision recognizes products, reads barcodes, and updates inventory instantly.
             </p>
         </div>
         <div class="section-visual">
-            <div class="img-card">
-                <img src="3in.png" alt="AI Scan" style="width:100%; display:block;">
+            <div class="img-card tilt-element" style="--border-color: var(--accent-cyan);">
+                <div class="img-card-inner"><img src="3in.png" alt="AI Scan"></div>
             </div>
         </div>
     </section>
 
     <section class="section reverse">
         <div class="section-text">
-            <h2 style="color:#34d399;">Know What Sells.<br>Before You Buy.</h2>
-            <p>
+            <div class="section-tag lang-text" style="color: var(--accent-emerald);" data-en="Predictive Analytics" data-hi="Smart Analytics">Predictive Analytics</div>
+            <h2 style="color:var(--accent-emerald);" class="lang-text" data-en="Know What Sells.<br>Before You Buy." data-hi="Pehle Se Janiye<br>Kya Bikega.">Know What Sells.<br>Before You Buy.</h2>
+            <p class="lang-text" 
+               data-en="Stop guessing. Our AI Consultant analyzes your sales trends to tell you exactly what to restock, what to cut, and how to maximize your margin."
+               data-hi="Tukka lagana band karein. AI batayega kya stock lana hai, kisme nuksan hai, aur profit kaise badhana hai.">
                 Stop guessing. Our AI Consultant analyzes your sales trends to tell you exactly what to restock, what to cut, and how to maximize your margin.
             </p>
         </div>
         <div class="section-visual">
-            <div class="img-card">
-                <img src="4in.png" alt="Analytics" style="width:100%; display:block;">
+            <div class="img-card tilt-element" style="--border-color: var(--accent-emerald);">
+                <div class="img-card-inner"><img src="4in.png" alt="Analytics"></div>
             </div>
         </div>
     </section>
 
     <section class="section">
         <div class="section-text">
-            <div style="color:#3b82f6; font-weight:800; letter-spacing:1px; margin-bottom:10px; font-size:12px;">FINANCIAL HEADQUARTERS</div>
-            <h2>Your Digital CFO.</h2>
-            <p>Track every rupee. Manage rent, salaries, and stock costs in one place. Get AI forecasts on your business runway and visual spending breakdowns.</p>
-            <a href="my_dukkan.html" class="module-btn btn-finance">Open Finance HQ ↗</a>
+            <div class="section-tag lang-text" style="color: var(--accent-blue);" data-en="FINANCIAL HEADQUARTERS" data-hi="HISAAB KITAAB">FINANCIAL HEADQUARTERS</div>
+            <h2 style="color:var(--accent-blue);" class="lang-text" data-en="Your Digital CFO." data-hi="Aapka Digital Munshi.">Your Digital CFO.</h2>
+            <p class="lang-text" 
+               data-en="Track every rupee. Manage rent, salaries, and stock costs in one place. Get AI forecasts on your business runway and visual spending breakdowns."
+               data-hi="Ek-ek rupaye ka hisab. Rent, salary, aur stock ka kharcha ek jagah dekhein aur asani se manage karein.">
+               Track every rupee. Manage rent, salaries, and stock costs in one place. Get AI forecasts on your business runway and visual spending breakdowns.
+            </p>
+            <a href="my_dukkan.html" class="module-btn btn-finance lang-text" data-en="Open Finance HQ ↗" data-hi="Finance Khata Kholein ↗">Open Finance HQ ↗</a>
         </div>
         <div class="section-visual">
-            <div class="img-card" style="border-color:#3b82f6;">
-                <img src="https://placehold.co/600x350/1e293b/3b82f6?text=My+Dukkan+Finance+Dashboard" alt="My Dukkan" style="width:100%; display:block;">
+            <div class="img-card tilt-element" style="--border-color: var(--accent-blue);">
+                <div class="img-card-inner"><img src="https://placehold.co/600x350/0f172a/3b82f6?text=My+Dukkan+Finance+Dashboard" alt="My Dukkan"></div>
             </div>
         </div>
     </section>
 
     <section class="section reverse">
         <div class="section-text">
-            <div style="color:#a855f7; font-weight:800; letter-spacing:1px; margin-bottom:10px; font-size:12px;">LOYALTY ENGINE</div>
-            <h2>Turn Visitors <br>Into Fans.</h2>
-            <p>Automatic customer ranking. Identify your VIPs, assign Gold/Platinum badges, and send personalized "Miss You" offers to bring them back.</p>
-            <a href="customers.html" class="module-btn btn-crm">Access CRM ↗</a>
+            <div class="section-tag lang-text" style="color: var(--accent-purple);" data-en="LOYALTY ENGINE" data-hi="GRAHAK MANAGEMENT">LOYALTY ENGINE</div>
+            <h2 style="color:var(--accent-purple);" class="lang-text" data-en="Turn Visitors <br>Into Fans." data-hi="Grahak Ko <br>Fan Banayein.">Turn Visitors <br>Into Fans.</h2>
+            <p class="lang-text" 
+               data-en="Automatic customer ranking. Identify your VIPs, assign Gold/Platinum badges, and send personalized 'Miss You' offers to bring them back."
+               data-hi="VIP grahak pehchanein, unhe Gold/Platinum badge dein, aur unhe wapas bulane ke liye special offers bhejein.">
+               Automatic customer ranking. Identify your VIPs, assign Gold/Platinum badges, and send personalized "Miss You" offers to bring them back.
+            </p>
+            <a href="customers.html" class="module-btn btn-crm lang-text" data-en="Access CRM ↗" data-hi="CRM Dekhein ↗">Access CRM ↗</a>
         </div>
         <div class="section-visual">
-            <div class="img-card" style="border-color:#a855f7;">
-                <img src="https://placehold.co/600x350/2e1065/a855f7?text=Bharat+CRM+Loyalty+System" alt="Bharat CRM" style="width:100%; display:block;">
+            <div class="img-card tilt-element" style="--border-color: var(--accent-purple);">
+                <div class="img-card-inner"><img src="https://placehold.co/600x350/1e1b4b/a855f7?text=Bharat+CRM+Loyalty+System" alt="Bharat CRM"></div>
             </div>
         </div>
     </section>
 
     <section class="section">
         <div class="section-text">
-            <div style="color:#FFD700; font-weight:800; letter-spacing:1px; margin-bottom:10px; font-size:12px;">CUSTOMER PORTAL</div>
-            <h2>Transparent Udhaar.</h2>
-            <p>Build trust with a digital ledger. Customers can check their own dues online, view their credit score, and win rewards for timely payments.</p>
-            <a href="my_khata.html" class="module-btn btn-khata">View Portal ↗</a>
+            <div class="section-tag lang-text" style="color: var(--primary);" data-en="CUSTOMER PORTAL" data-hi="GRAHAK APP">CUSTOMER PORTAL</div>
+            <h2 style="color:var(--primary);" class="lang-text" data-en="Transparent Udhaar." data-hi="Saaf-Suthra Udhaar.">Transparent Udhaar.</h2>
+            <p class="lang-text" 
+               data-en="Build trust with a digital ledger. Customers can check their own dues online, view their credit score, and win rewards for timely payments."
+               data-hi="Grahak apna udhaar khud phone par check kar sakte hain, aur time par paise dene par inam pa sakte hain.">
+               Build trust with a digital ledger. Customers can check their own dues online, view their credit score, and win rewards for timely payments.
+            </p>
+            <a href="my_khata.html" class="module-btn btn-khata lang-text" data-en="View Portal ↗" data-hi="Portal Dekhein ↗">View Portal ↗</a>
         </div>
         <div class="section-visual">
-            <div class="img-card" style="border-color:#FFD700;">
-                <img src="https://placehold.co/600x350/3f2c05/FFD700?text=My+Khata+Customer+Rewards" alt="My Khata" style="width:100%; display:block;">
+            <div class="img-card tilt-element" style="--border-color: var(--primary);">
+                <div class="img-card-inner"><img src="https://placehold.co/600x350/422006/FFD700?text=My+Khata+Customer+Rewards" alt="My Khata"></div>
             </div>
         </div>
     </section>
 
     <footer>
         <p>📞 9911901910 • <a href="https://oneanush.github.io/BharatPOS/">BharatPOS Official</a></p>
-        <p style="margin-top: 15px; opacity: 0.5; font-size:12px;">ENGINEERED BY UTKARSH SHARMA</p>
+        <p style="margin-top: 15px; opacity: 0.3; font-size:11px; letter-spacing: 2px;">ENGINEERED BY UTKARSH SHARMA</p>
     </footer>
 
     <script>
+        // --- Language Toggle Logic ---
+        let currentLang = localStorage.getItem('bharatpos_lang') || 'en';
+
+        function applyLanguage(lang) {
+            document.querySelectorAll('.lang-text').forEach(el => {
+                const translation = el.getAttribute(`data-${lang}`);
+                if (translation) el.innerHTML = translation;
+            });
+            document.getElementById('currentLangText').innerText = lang === 'en' ? 'EN' : 'HI';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'hi' : 'en';
+            localStorage.setItem('bharatpos_lang', currentLang);
+            applyLanguage(currentLang);
+        }
+
+        // Apply on initial load
+        applyLanguage(currentLang);
+
+
+        // --- Navigation function ---
         function gologin() {
             window.location.href = "login.html";
         }
 
-        // Scroll Animation Logic
+        // --- Intersection Observer for Animations ---
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -337,6 +480,32 @@
         document.querySelectorAll('.section').forEach(section => {
             observer.observe(section);
         });
+
+        // --- 3D Tilt Effect Logic ---
+        const tiltElements = document.querySelectorAll('.tilt-element');
+        
+        if (window.innerWidth > 768) {
+            tiltElements.forEach(el => {
+                el.addEventListener('mousemove', handleTilt);
+                el.addEventListener('mouseleave', resetTilt);
+            });
+        }
+
+        function handleTilt(e) {
+            const el = e.currentTarget;
+            const rect = el.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            const multiplier = 15; 
+            const rotateX = (multiplier * (0.5 - y)).toFixed(2);
+            const rotateY = (multiplier * (x - 0.5)).toFixed(2);
+            el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+        }
+
+        function resetTilt(e) {
+            const el = e.currentTarget;
+            el.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        }
     </script>
 
 </body>
