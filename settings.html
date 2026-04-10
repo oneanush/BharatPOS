@@ -9,7 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <script src="bharatpos.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     /* --- THEME VARIABLES --- */
@@ -138,6 +139,17 @@
     .storage-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 1s; }
     .storage-text { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: 5px; }
 
+    /* --- MAP MODAL --- */
+    #mapModal {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(5px); z-index: 2000; align-items: center; justify-content: center;
+    }
+    .map-box {
+        background: #0f172a; width: 90%; max-width: 600px; border-radius: 16px;
+        border: 1px solid var(--accent); padding: 20px;
+    }
+    #mapContainer { height: 400px; width: 100%; border-radius: 12px; margin-bottom: 15px; }
+
     @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -166,19 +178,17 @@
         <div class="input-group">
             <label class="form-label">Merchant ID (Dukan ID)</label>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="merchantId" class="form-control" readonly value="LOADING..." style="font-family:'JetBrains Mono'; font-weight:700;">
-                <button onclick="copyMerchantID()" class="btn btn-copy"><i class="fa-solid fa-copy"></i></button>
-                <button onclick="restoreNow()" title="Restore Now" class="btn btn-primary" style="width:auto; font-size:12px; padding:8px 12px;">
-                  <i class="fa-solid fa-cloud-arrow-down"></i> Restore Now
-                </button>
+                <input type="text" id="merchantId" class="form-control" readonly value="LOADING..." style="font-family:'JetBrains Mono'; font-weight:700; color: var(--accent);">
+                <button onclick="window.copyMerchantID()" class="btn btn-copy"><i class="fa-solid fa-copy"></i></button>
             </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">Share this ID with your customers for the My Khata App.</div>
         </div>
-        <div class="input-group">
+        <div class="input-group" style="margin-top: 10px;">
             <label class="form-label">Shop Location (GPS)</label>
             <div style="display:flex; gap:10px; align-items:center;">
-                <div style="flex:1; font-size:12px; color:var(--text-muted);" id="locationStatus">Checking...</div>
-                <button onclick="updateLocation()" class="btn btn-primary" style="width:auto; font-size:12px; padding:8px 16px;">
-                    <i class="fa-solid fa-location-crosshairs"></i> Set Location
+                <div style="flex:1; font-size:12px; color:var(--text-muted);" id="locationStatus">No Location Set</div>
+                <button onclick="window.openLocationMap()" class="btn btn-primary" style="width:auto; font-size:12px; padding:8px 16px;">
+                    <i class="fa-solid fa-map-pin"></i> Drop Pin
                 </button>
             </div>
         </div>
@@ -190,24 +200,21 @@
             Store Profile (Dukan Info)
         </div>
         <div class="input-group">
-            <label class="form-label">Owner Name (Maalik Ka Naam)</label>
-            <input type="text" id="ownerName" class="form-control" placeholder="e.g. Rahul Kumar">
+            <label class="form-label">Owner Name</label>
+            <input type="text" id="ownerName" class="form-control" readonly>
         </div>
         <div class="input-group">
-            <label class="form-label">Shop Name (Dukan Ka Naam)</label>
-            <input type="text" id="shopName" class="form-control" placeholder="e.g. My Super Store">
+            <label class="form-label">Shop Name</label>
+            <input type="text" id="shopName" class="form-control" readonly>
         </div>
         <div class="input-group">
             <label class="form-label">Contact Number (Mobile)</label>
-            <input type="text" id="shopPhone" class="form-control" placeholder="e.g. 9876543210">
+            <input type="text" id="shopPhone" class="form-control" readonly>
         </div>
         <div class="input-group">
-            <label class="form-label">Shop Address (Pata)</label>
-            <input type="text" id="shopAddress" class="form-control" placeholder="e.g. Main Market, Delhi">
+            <label class="form-label">Shop Category</label>
+            <input type="text" id="shopCategory" class="form-control" readonly>
         </div>
-        <button onclick="saveShopDetails()" class="btn btn-success">
-            <i class="fa-solid fa-floppy-disk"></i> Save Profile
-        </button>
       </div>
 
       <div class="card" style="--border-color: #a855f7;">
@@ -223,7 +230,7 @@
                     <div style="font-size:11px; color:var(--text-muted);">Products page pe Tax option aayega</div>
                 </div>
                 <label class="switch">
-                    <input type="checkbox" id="gstToggle" onchange="toggleGSTFields()">
+                    <input type="checkbox" id="gstToggle" onchange="window.toggleGSTFields()">
                     <span class="slider round"></span>
                 </label>
             </div>
@@ -246,6 +253,10 @@
                 <option value="a4">A4 (Bada Bill)</option>
             </select>
         </div>
+        
+        <button onclick="window.saveSettings()" class="btn btn-success" style="margin-top: 15px;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Settings
+        </button>
 
         <div class="card-header" style="margin-top:20px; border-bottom:none; padding-bottom:0;">
             <div class="card-icon"><i class="fa-solid fa-qrcode"></i></div> UPI Setup
@@ -268,38 +279,57 @@
             <div class="storage-bar-bg"><div class="storage-bar-fill" id="storageFill"></div></div>
             <div class="storage-text"><span id="storageBytes">0 KB</span><span>5 MB Limit</span></div>
         </div>
-        <button onclick="exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border);">Backup Data (JSON)</button>
+        <button onclick="window.exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border);"><i class="fa-solid fa-download"></i> Backup Data (JSON)</button>
         <div style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
            <label class="form-label">Restore Data</label>
-<div style="display:flex; gap:10px;">
-  <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
-    <input type="file" id="importFile" class="upload-input" accept=".json,application/json" onchange="doImport(event)">Select File
-  </label>
-  <button class="btn btn-primary" style="width:auto; align-self:center;" onclick="triggerImportFile()">Choose & Import</button>
-</div>
+            <div style="display:flex; gap:10px;">
+              <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
+                <input type="file" id="importFile" class="upload-input" accept=".json,application/json" onchange="window.doImport(event)">Select File
+              </label>
+              <button class="btn btn-primary" style="width:auto; align-self:center;" onclick="document.getElementById('importFile').click()">Choose & Import</button>
+            </div>
         </div>
       </div>
 
       <div class="card" style="--border-color: var(--danger);">
         <div class="card-header" style="color:var(--danger); border-color: rgba(239,68,68,0.3);">
-            <div class="card-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div> Danger Zone
+            <div class="card-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div> Account Control
         </div>
-        <button onclick="hardReset()" class="btn btn-danger">Factory Reset System</button>
+        
+        <button onclick="window.logout()" class="btn" style="background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted);">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+        </button>
+        
+        <button onclick="window.deleteAccount()" class="btn btn-danger" style="margin-top: 10px;">
+            <i class="fa-solid fa-trash-can"></i> Delete Account
+        </button>
       </div>
 
     </div>
   </div>
-<script>
-/* NOTE: buildUrl() is provided by bharatpos.js (loaded above) */
 
-/* -------------------------
-   Page init
-   ------------------------- */
+  <div id="mapModal">
+      <div class="map-box">
+          <h3 style="margin-top:0; color:#fff;">📍 Set Shop Location</h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Drag the map or click to drop the pin exactly on your shop.</p>
+          <div id="mapContainer"></div>
+          <div style="display:flex; gap:10px; margin-top: 15px;">
+              <button class="btn btn-success" style="flex:2;" onclick="window.confirmLocation()"><i class="fa-solid fa-check"></i> Save Location</button>
+              <button class="btn" style="flex:1; background:rgba(255,255,255,0.1); color:white;" onclick="document.getElementById('mapModal').style.display='none'">Cancel</button>
+          </div>
+      </div>
+  </div>
+
+<script type="module">
+// 🟢 1. IMPORT FIREBASE SDK
+import { db, auth } from "./bharatpos.js";
+import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
-    updateStorageMeter();
+    window.updateStorageMeter();
 
-    // QR upload wiring (guarded)
     const qrUpload = document.getElementById("qrUpload");
     if (qrUpload) {
         qrUpload.addEventListener("change", function() {
@@ -310,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onload = function() {
                     localStorage.setItem("upiQR", reader.result); 
                     renderQR(reader.result);
-                    updateStorageMeter();
+                    window.updateStorageMeter();
                 };
             }
         });
@@ -318,522 +348,270 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const storedQR = localStorage.getItem("upiQR");
     if (storedQR) renderQR(storedQR);
-
-    // If a pending restore marker exists, run factory-reset + restore
-    const pending = localStorage.getItem('bharatpos_pending_restore');
-    if (pending) {
-        const statusEl = document.getElementById('locationStatus');
-        if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Restoring account ${pending} ...</span>`;
-        performFactoryResetAndRestore(pending);
-    }
 });
 
-/* -------------------------
-   Settings load / save
-   ------------------------- */
+function renderQR(dataUrl) {
+    document.getElementById('qrContainer').innerHTML = `<img src="${dataUrl}" class="qr-img">`;
+}
+
 function loadSettings() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    
+    // Auto-Populate Identity from Login Info
     document.getElementById('merchantId').value = user.merchantId || "NOT SET";
-    document.getElementById('ownerName').value = user.name || "";
-    document.getElementById('shopName').value = localStorage.getItem('shopName') || "";
-    document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || "";
-    document.getElementById('shopAddress').value = localStorage.getItem('shopAddress') || "";
+    document.getElementById('ownerName').value = user.ownerName || user.name || "N/A";
+    document.getElementById('shopName').value = user.shopName || "N/A";
+    document.getElementById('shopPhone').value = user.mobile || user.phone || "N/A";
+    document.getElementById('shopCategory').value = user.category || "General Retail";
+    
+    // Load Settings
     document.getElementById('billFooter').value = localStorage.getItem('bharatpos_bill_footer') || "";
     document.getElementById('billSize').value = localStorage.getItem('bharatpos_bill_size') || "thermal";
 
     const isGstOn = localStorage.getItem('bharatpos_gst_mode') === 'true';
     document.getElementById('gstToggle').checked = isGstOn;
     document.getElementById('gstin').value = localStorage.getItem('bharatpos_gstin') || "";
-    toggleGSTFields();
+    window.toggleGSTFields();
 
     if (user.lat && user.lng) {
-        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Calibrated</span>`;
+        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Pin Dropped (${user.lat.toFixed(4)}, ${user.lng.toFixed(4)})</span>`;
     }
 }
 
-/* -------------------------
-   Restore Now (manual)
-   ------------------------- */
-function restoreNow() {
-    // Determine merchantId to restore: prefer bharatpos_user, else merchantId input value
+window.copyMerchantID = function() {
+    const val = document.getElementById('merchantId').value;
+    navigator.clipboard.writeText(val);
+    alert("Merchant ID Copied!");
+}
+
+window.toggleGSTFields = function() {
+    const gstCheckbox = document.getElementById('gstToggle');
+    const gstFields = document.getElementById('gstFields');
+    if (!gstCheckbox || !gstFields) return;
+    const isChecked = !!gstCheckbox.checked;
+    gstFields.style.display = isChecked ? 'block' : 'none';
+    localStorage.setItem('bharatpos_gst_mode', isChecked ? 'true' : 'false');
+}
+
+// 🟢 FIREBASE: SAVE SETTINGS
+window.saveSettings = async function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const mem = user.merchantId || document.getElementById('merchantId')?.value;
-    if (!mem) {
-        alert('No Merchant ID found. Please login/register first.');
-        return;
-    }
+    
+    // Save to LocalStorage
+    localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
+    localStorage.setItem('bharatpos_bill_size', document.getElementById('billSize').value);
 
-    if (!confirm(`This will clear local data and attempt to restore server backup for ${mem}. Continue?`)) return;
+    const gstStatus = document.getElementById('gstToggle').checked;
+    localStorage.setItem('bharatpos_gst_mode', gstStatus ? 'true' : 'false');
+    localStorage.setItem('bharatpos_gstin', document.getElementById('gstin').value);
 
-    // Place marker and trigger same restore flow used on page load
-    localStorage.setItem('bharatpos_pending_restore', mem);
-    performFactoryResetAndRestore(mem);
-}
-
-
-
-async function performFactoryResetAndRestore(merchantId) {
-    try {
-        const preserveKey = 'bharatpos_pending_restore';
-        // 1) Soft reset: collect keys to remove but keep the pending marker
-        const keys = [];
-        for (let i=0; i<localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (!k) continue;
-            if (k === preserveKey) continue;
-            keys.push(k);
-        }
-        keys.forEach(k => localStorage.removeItem(k));
-
-        // 2) Call server to restore
-        let restored = null;
+    // Save to Firestore
+    if(user.merchantId) {
         try {
-            const resp = await fetch(buildUrl('/api/restore-data'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ merchantId })
+            const shopRef = doc(db, "shops", user.merchantId);
+            await updateDoc(shopRef, {
+                "settings.billFooter": document.getElementById('billFooter').value,
+                "settings.billSize": document.getElementById('billSize').value,
+                "settings.gstMode": gstStatus,
+                "settings.gstin": document.getElementById('gstin').value
             });
-            restored = await resp.json();
-            // After fetching restored = await resp.json();
-if (restored && restored.backup) {
-  try {
-    const backup = restored.backup;
-    // Write top-level keys directly
-    Object.keys(backup).forEach(k => {
-      if (k === '_meta') return;
-      try {
-        const val = backup[k];
-        // If val is an object or array, stringify; primitives store as string for compatibility
-        if (typeof val === 'object') localStorage.setItem(k, JSON.stringify(val));
-        else localStorage.setItem(k, String(val));
-      } catch (e) { console.warn('Could not restore key', k, e); }
-    });
-    appliedAny = true;
-  } catch(e){ console.warn('Applying backup failed', e); }
-}
-        } 
- 
-        catch (err) {
-            console.warn('Restore call failed', err);
-            const statusEl = document.getElementById('locationStatus');
-            if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger)">Restore failed (network)</span>`;
+            alert('✅ Settings Saved Successfully!');
+        } catch (e) {
+            console.error(e);
+            alert("Error saving to cloud. Settings saved locally.");
         }
-
-        // 3) Nimble mapping: server may return stock/customers under different keys
-        const serverStock = (restored && (restored.stock || restored.products || restored.data?.stock)) || [];
-        const serverCustomers = (restored && (restored.customers || restored.customersList || restored.data?.customers)) || [];
-        const serverSales = (restored && (restored.sales || restored.orders || restored.data?.sales)) || [];
-
-        let appliedAny = false;
-
-        if (Array.isArray(serverStock) && serverStock.length > 0) {
-            localStorage.setItem('bharatpos_products', JSON.stringify(serverStock));
-            appliedAny = true;
-        }
-
-        if (Array.isArray(serverCustomers) && serverCustomers.length > 0) {
-            // canonical key used across app
-            localStorage.setItem('bharatpos_customers', JSON.stringify(serverCustomers));
-            appliedAny = true;
-        }
-
-        if (Array.isArray(serverSales) && serverSales.length > 0) {
-            // store sales if server provided them
-            localStorage.setItem('bharatpos_sales', JSON.stringify(serverSales));
-            appliedAny = true;
-        }
-
-        // If server returned merchant profile info anywhere, merge it into bharatpos_user and shopName/shopPhone
-        const md = restored && (restored.merchantData || restored.data?.merchantData || restored.merchant || null);
-        if (md && typeof md === 'object') {
-            if (md.shopName) localStorage.setItem('shopName', md.shopName);
-            if (md.mobile) localStorage.setItem('shopPhone', md.mobile);
-            const existingUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-            const mergedUser = { ...existingUser, merchantId: merchantId, name: md.ownerName || md.name || existingUser.name || '', lat: md.lat, lng: md.lng, shopName: md.shopName || existingUser.shopName };
-            localStorage.setItem('bharatpos_user', JSON.stringify(mergedUser));
-        } else {
-            // Ensure merchantId is recorded even if no merchantData returned
-            const existingUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-            existingUser.merchantId = merchantId;
-            localStorage.setItem('bharatpos_user', JSON.stringify(existingUser));
-        }
-
-        // 4) UI message
-        if (appliedAny) {
-            document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Server data restored for ${merchantId}</span>`;
-        } else {
-            document.getElementById('locationStatus').innerHTML = `<span style="color:var(--danger)">No server backup for ${merchantId}. Factory reset completed.</span>`;
-        }
-
-    } catch (err) {
-        console.error('Factory reset / restore error', err);
-        const statusEl = document.getElementById('locationStatus');
-        if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger)">Restore error</span>`;
-    } finally {
-        // 5) Remove pending marker and reload so all pages pick up new state
-        try { localStorage.removeItem('bharatpos_pending_restore'); } catch(e) {}
-        try { updateStorageMeter(); } catch(e) {}
-        setTimeout(()=> { location.reload(); }, 800);
     }
 }
-/* ========================================================== */
 
-/* -------------------------
-   Import / Export & helpers (unchanged)
-   ------------------------- */
-function triggerImportFile() {
-  const f = document.getElementById('importFile');
-  if (f) f.click();
+// 🟢 LEAFLET MAP LOGIC (Pin Drop)
+let map = null;
+let marker = null;
+let currentSelectedLat = null;
+let currentSelectedLng = null;
+
+window.openLocationMap = function() {
+    document.getElementById('mapModal').style.display = 'flex';
+    
+    // Slight delay to ensure the modal is visible before rendering Leaflet
+    setTimeout(() => {
+        if (!map) {
+            // Default center of India
+            let startLat = 20.5937;
+            let startLng = 78.9629;
+            let zoomLvl = 5;
+
+            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            if (user.lat && user.lng) {
+                startLat = user.lat;
+                startLng = user.lng;
+                zoomLvl = 16;
+            }
+
+            map = L.map('mapContainer').setView([startLat, startLng], zoomLvl);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
+                attribution: 'Tiles &copy; Esri' 
+            }).addTo(map);
+
+            const redIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+
+            marker = L.marker([startLat, startLng], {icon: redIcon, draggable: true}).addTo(map);
+
+            // Update variables on drag
+            marker.on('dragend', function (e) {
+                currentSelectedLat = marker.getLatLng().lat;
+                currentSelectedLng = marker.getLatLng().lng;
+            });
+
+            // Update variables and marker on map click
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                currentSelectedLat = e.latlng.lat;
+                currentSelectedLng = e.latlng.lng;
+            });
+            
+            // Auto-locate if no prior location exists
+            if(!user.lat && navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    map.flyTo([lat, lng], 16);
+                    marker.setLatLng([lat, lng]);
+                    currentSelectedLat = lat;
+                    currentSelectedLng = lng;
+                });
+            }
+        } else {
+            map.invalidateSize();
+        }
+    }, 100);
 }
 
-function doImport(event) {
+// 🟢 FIREBASE: SAVE LOCATION DIRECTLY TO HEATMAP & PROFILE
+window.confirmLocation = async function() {
+    if (!currentSelectedLat || !currentSelectedLng) {
+        currentSelectedLat = marker.getLatLng().lat;
+        currentSelectedLng = marker.getLatLng().lng;
+    }
+
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    user.lat = currentSelectedLat;
+    user.lng = currentSelectedLng;
+    localStorage.setItem('bharatpos_user', JSON.stringify(user));
+
+    document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Pin Dropped (${user.lat.toFixed(4)}, ${user.lng.toFixed(4)})</span>`;
+    document.getElementById('mapModal').style.display = 'none';
+
+    if (user.merchantId) {
+        try {
+            const shopRef = doc(db, "shops", user.merchantId);
+            // Instantly sync the profile and the heatmap data
+            await updateDoc(shopRef, {
+                "profile.lat": user.lat,
+                "profile.lng": user.lng,
+                "heatmapData.location.lat": user.lat,
+                "heatmapData.location.lng": user.lng
+            });
+            alert("📍 Location saved to global map!");
+        } catch(e) {
+            console.error("Firebase location save failed", e);
+        }
+    }
+}
+
+// 🟢 FIREBASE: LOGOUT
+window.logout = async function() {
+    if(confirm("Are you sure you want to log out? Your data is safely backed up in the cloud.")) {
+        localStorage.clear();
+        await signOut(auth);
+        window.location.href = 'login.html';
+    }
+}
+
+// 🟢 FIREBASE: DELETE ACCOUNT (Strict Warning)
+window.deleteAccount = async function() {
+    if(confirm("🛑 WARNING: This will permanently delete your entire shop profile, stock, and bills. Continue?")) {
+        let userInput = prompt("FINAL WARNING: This cannot be undone. Type 'DELETE' to confirm.");
+        
+        if(userInput === "DELETE") {
+            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            if(user.merchantId) {
+                try {
+                    await deleteDoc(doc(db, "shops", user.merchantId));
+                } catch(e) {
+                    console.error("Failed to delete from Firestore", e);
+                }
+            }
+            localStorage.clear();
+            await signOut(auth);
+            alert("Account has been permanently deleted.");
+            window.location.href = 'login.html';
+        } else {
+            alert("Deletion cancelled.");
+        }
+    }
+}
+
+// --- LOCAL STORAGE BACKUP / RESTORE ---
+window.gatherAllData = function() {
+    const result = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const raw = localStorage.getItem(key);
+        try { result[key] = JSON.parse(raw); } catch (e) { result[key] = raw; }
+    }
+    return result;
+}
+
+window.exportAll = function() {
+    try {
+        const allData = window.gatherAllData();
+        const jsonData = JSON.stringify(allData, null, 2);
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'bharatpos_backup.json';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    } catch (error) { alert('Failed to export data: ' + error.message); }
+}
+
+window.doImport = function(event) {
   try {
     const file = event && event.target && event.target.files && event.target.files[0];
-    if (!file) { alert('No file selected.'); return; }
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
         const parsed = JSON.parse(e.target.result);
-        if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure (expected top-level object).');
+        if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure.');
 
-        const action = confirm('Press OK to MERGE imported data into existing storage.\nPress Cancel to REPLACE entire local storage with imported data.') ? 'merge' : 'replace';
-        if (action === 'replace') localStorage.clear();
-
-        const written = [];
-
-        if (Array.isArray(parsed.products)) {
-          localStorage.setItem('bharatpos_products', JSON.stringify(parsed.products));
-          written.push('bharatpos_products');
-        } else if (parsed.bharatpos_products) {
-          localStorage.setItem('bharatpos_products', JSON.stringify(parsed.bharatpos_products));
-          written.push('bharatpos_products');
+        if (confirm('Press OK to REPLACE your entire local storage with this backup file.')) {
+            localStorage.clear();
+            
+            for (const key in parsed) {
+                const val = parsed[key];
+                if (typeof val === 'object') localStorage.setItem(key, JSON.stringify(val));
+                else localStorage.setItem(key, String(val));
+            }
+            alert('✅ Import complete. The app will now reload.');
+            setTimeout(()=> location.reload(), 400);
         }
-
-        if (Array.isArray(parsed.sales)) {
-          localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.sales));
-          written.push('bharatpos_sales');
-        } else if (parsed.bharatpos_sales) {
-          localStorage.setItem('bharatpos_sales', JSON.stringify(parsed.bharatpos_sales));
-          written.push('bharatpos_sales');
-        }
-
-        if (parsed.settings && typeof parsed.settings === 'object') {
-          const s = parsed.settings;
-          if (s.storeName) { localStorage.setItem('shopName', String(s.storeName)); written.push('shopName'); }
-          if (s.theme) { localStorage.setItem('theme', String(s.theme)); written.push('theme'); }
-          localStorage.setItem('bharatpos_settings', JSON.stringify(s));
-          written.push('bharatpos_settings');
-        }
-
-        for (const key in parsed) {
-          if (!Object.prototype.hasOwnProperty.call(parsed, key)) continue;
-          if (['products','sales','settings','bharatpos_products','bharatpos_sales','bharatpos_settings'].includes(key)) continue;
-          const val = parsed[key];
-          try {
-            if (typeof val === 'object') localStorage.setItem(key, JSON.stringify(val));
-            else localStorage.setItem(key, String(val));
-            written.push(key);
-          } catch (err) {
-            console.warn('Could not write key', key, err);
-          }
-        }
-
-        if (written.length === 0) {
-          localStorage.setItem('import_raw_backup', JSON.stringify(parsed));
-          written.push('import_raw_backup');
-        }
-
-        localStorage.setItem('bharatpos_last_import', new Date().toISOString());
-        try { if (typeof updateStorageMeter === 'function') updateStorageMeter(); } catch(e){}
-
-        alert('✅ Import complete. Keys written: ' + written.join(', ') + '. The page will reload so changes apply.');
-        setTimeout(()=> location.reload(), 400);
-      } catch (err) {
-        alert('Failed to import data: ' + err.message);
-      }
+      } catch (err) { alert('Failed to import data: ' + err.message); }
     };
-    reader.onerror = function() { alert('Failed to read file.'); };
     reader.readAsText(file, 'utf-8');
-  } catch (error) {
-    alert('Import error: ' + error.message);
-  }
+  } catch (error) { alert('Import error: ' + error.message); }
 }
 
-function gatherAllData() {
-    const result = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        const raw = localStorage.getItem(key);
-        try {
-            result[key] = JSON.parse(raw);
-        } catch (e) {
-            result[key] = raw;
-        }
-    }
-    return result;
-}
-
-function exportAll() {
-    try {
-        const allData = gatherAllData();
-        const jsonData = JSON.stringify(allData, null, 2);
-        const blob = new Blob([jsonData], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'backup.json';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        alert('✅ Exported all data successfully!');
-    } catch (error) {
-        alert('Failed to export data: ' + error.message);
-    }
-}
-
-function updateStorageMeter() {
+window.updateStorageMeter = function() {
     let total = 0; for(let x in localStorage) if(localStorage.hasOwnProperty(x)) total += ((localStorage[x].length + x.length) * 2);
     const pct = Math.min((total / 1024 / 5120) * 100, 100).toFixed(1);
     document.getElementById('storageBytes').innerText = `${(total/1024).toFixed(0)} KB`;
     document.getElementById('storagePercent').innerText = `${pct}%`;
     document.getElementById('storageFill').style.width = `${pct}%`;
 }
-
-
-
-function toggleGSTFields() {
-    const gstCheckbox = document.getElementById('gstToggle');
-    const gstFields = document.getElementById('gstFields');
-    if (!gstCheckbox || !gstFields) return;
-    const isChecked = !!gstCheckbox.checked;
-    gstFields.style.display = isChecked ? 'block' : 'none';
-    // Persist immediately
-    localStorage.setItem('bharatpos_gst_mode', isChecked ? 'true' : 'false');
-}
-
-
-function hardReset() {
-    if(confirm('⚠️ DELETE EVERYTHING?')) { localStorage.clear(); location.reload(); }
-}
-
-
-
-
-
-async function saveShopDetails() {
-    // Save standard fields
-    localStorage.setItem('shopName', document.getElementById('shopName').value);
-    localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
-    localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
-    localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
-    localStorage.setItem('bharatpos_bill_size', document.getElementById('billSize').value);
-
-    // SAVE GST SETTINGS (Force String Conversion)
-    const gstStatus = document.getElementById('gstToggle').checked;
-    localStorage.setItem('bharatpos_gst_mode', gstStatus ? 'true' : 'false');
-    localStorage.setItem('bharatpos_gstin', document.getElementById('gstin').value);
-
-    // Update local bharatpos_user
-    let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    user.name = document.getElementById('ownerName').value;
-    user.shopName = document.getElementById('shopName').value;
-    if(!user.merchantId) user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
-    
-    localStorage.setItem('bharatpos_user', JSON.stringify(user));
-
-    // Call server to register/update merchant profile and push backups
-    try {
-        if (typeof registerOrUpdateMerchantProfile === 'function') {
-            await registerOrUpdateMerchantProfile();
-        } else {
-            // Fallback: attempt direct fetch using buildUrl
-            const merchantId = user.merchantId;
-            const payload = {
-              ownerName: user.name,
-              mobile: user.mobile || localStorage.getItem('shopPhone') || '',
-              shopName: user.shopName || localStorage.getItem('shopName') || '',
-              category: user.category || '',
-              state: user.state || '',
-              city: user.city || '',
-              pincode: user.pincode || ''
-            };
-            if (payload.mobile) {
-              await fetch(buildUrl('/api/register-merchant'), {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify(payload)
-              });
-            }
-            try { await pushProductsToServer(); } catch(e){}
-            try { await pushCustomersToServer(); } catch(e){}
-             try { await pushFullBackupToServer(); } catch(e) { console.warn('full backup after save failed', e); }
-        }
-    } catch (err) {
-        console.warn('Profile update / backup push failed', err);
-    }
-    
-    alert('✅ Settings Saved Successfully!');
-    // Reload to ensure all scripts pick up the new GST mode
-    setTimeout(() => location.reload(), 500); 
-}
-
-/* wiring */
-document.addEventListener('DOMContentLoaded', () => {
-    // restore UI
-    const gstCheckbox = document.getElementById('gstToggle');
-    if (gstCheckbox) {
-        gstCheckbox.addEventListener('change', toggleGSTFields);
-    }
-});
-
-
-
-
-
-
-
-
-
-
-// Replaces existing updateLocation() — improved accuracy via watchPosition sampling
-function updateLocation() {
-    const status = document.getElementById('locationStatus');
-    if (!status) return;
-
-    // UI: show working state
-    status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Acquiring location... (high accuracy)`;
-
-    if (!navigator.geolocation) {
-        status.innerHTML = "GPS not supported";
-        return;
-    }
-
-    // Strategy:
-    // 1) Use watchPosition to gather multiple samples (prefer sample with smallest accuracy).
-    // 2) Stop watching when we have a good sample (accuracy <= desiredAccuracy) or after timeout/maxSamples.
-    // 3) If watchPosition isn't available/works poorly, fallback to getCurrentPosition (highAccuracy).
-    // 4) Persist lat/lng into bharatpos_user and update UI.
-
-    const desiredAccuracy = 50; // meters - target accuracy threshold
-    const maxSamples = 6;       // collect up to 6 samples
-    const maxTimeout = 18000;   // overall timeout 18s
-
-    let samples = [];
-    let watcherId = null;
-    let finished = false;
-
-    const finalize = (chosen) => {
-        if (finished) return;
-        finished = true;
-        if (watcherId !== null) {
-            try { navigator.geolocation.clearWatch(watcherId); } catch (e) {}
-        }
-
-        if (chosen) {
-            try {
-                let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-                user.lat = chosen.coords.latitude;
-                user.lng = chosen.coords.longitude;
-                user.location_accuracy = chosen.coords.accuracy || null;
-                localStorage.setItem('bharatpos_user', JSON.stringify(user));
-                status.innerHTML = `<span style="color:var(--success)">✅ Updated (${(chosen.coords.accuracy||'—')}m)</span>`;
-                // call updateStorageMeter if present to refresh UI
-                try { if (typeof updateStorageMeter === 'function') updateStorageMeter(); } catch(e){}
-            } catch (e) {
-                console.warn('Saving location failed', e);
-                status.innerHTML = `<span style="color:var(--danger)">Saved failed</span>`;
-            }
-        } else {
-            status.innerHTML = `GPS Error`;
-        }
-    };
-
-    // Pick best sample (lowest accuracy value). If accuracy missing, use most recent.
-    const pickBestSample = () => {
-        if (!samples.length) return null;
-        const withAccuracy = samples.filter(s => typeof s.coords.accuracy === 'number' && !isNaN(s.coords.accuracy));
-        if (withAccuracy.length) {
-            withAccuracy.sort((a,b) => a.coords.accuracy - b.coords.accuracy);
-            return withAccuracy[0];
-        }
-        // fallback: most recent
-        return samples[samples.length - 1];
-    };
-
-    // Try watchPosition first for more stable readings
-    try {
-        watcherId = navigator.geolocation.watchPosition(
-            (pos) => {
-                if (finished) return;
-                samples.push(pos);
-
-                // If accuracy is very good, finish early
-                const acc = pos.coords && pos.coords.accuracy;
-                if (typeof acc === 'number' && acc <= desiredAccuracy) {
-                    finalize(pos);
-                    return;
-                }
-
-                // If we have enough samples, pick best and finish
-                if (samples.length >= maxSamples) {
-                    const best = pickBestSample();
-                    finalize(best);
-                }
-            },
-            (err) => {
-                // On error while watching, fallback to single high-accuracy getCurrentPosition attempt
-                console.warn('watchPosition error', err);
-                // If error is PERMISSION_DENIED, abort
-                if (err && err.code === err.PERMISSION_DENIED) {
-                    finalize(null);
-                    return;
-                }
-                // fallback:
-                try {
-                    if (watcherId !== null) navigator.geolocation.clearWatch(watcherId);
-                } catch (e) {}
-                watcherId = null;
-                // Try one-shot high-accuracy getCurrentPosition
-                navigator.geolocation.getCurrentPosition(
-                    (p) => finalize(p),
-                    (e2) => { console.warn('getCurrentPosition fallback error', e2); finalize(null); },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-            },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: maxTimeout }
-        );
-    } catch (e) {
-        console.warn('watchPosition not available or failed', e);
-        // Fallback to getCurrentPosition
-        navigator.geolocation.getCurrentPosition(
-            (p) => finalize(p),
-            (err) => { console.warn('getCurrentPosition failed', err); finalize(null); },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
-    }
-
-    // Safety timeout: ensure we finish after maxTimeout
-    setTimeout(() => {
-        if (finished) return;
-        const best = pickBestSample();
-        if (best) finalize(best);
-        else {
-            // Try one more getCurrentPosition attempt before giving up
-            navigator.geolocation.getCurrentPosition(
-                (p) => finalize(p),
-                (e) => { console.warn('Final fallback failed', e); finalize(null); },
-                { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-            );
-        }
-    }, maxTimeout + 2000);
-}
-
-
-
-
-
 </script>
-
 </body>
 </html>
 
