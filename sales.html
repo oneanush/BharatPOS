@@ -176,37 +176,67 @@
     <div class="invoice-paper" id="invoicePaper">
         </div>
 </div>
+<script type="module">
+// 🟢 1. IMPORT FIREBASE SDK
+import { db } from "./bharatpos.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-<script>
 // --- STATE ---
 let allSales = [];
 const isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
 const shopGstin = localStorage.getItem('bharatpos_gstin') || "";
 
-// --- INIT ---
+// --- INIT & FIREBASE SYNC ---
 document.addEventListener("DOMContentLoaded", () => {
-    loadSales();
+    loadSalesFromCloud();
     const today = new Date();
     document.getElementById('endDate').valueAsDate = today;
     document.getElementById('startDate').valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
 });
 
-function loadSales() {
-    allSales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]').reverse();
+async function loadSalesFromCloud() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const container = document.getElementById('salesList');
+    
+    // Show quick local cache first for instant UI response
+    allSales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+    allSales.sort((a, b) => new Date(b.date) - new Date(a.date));
     renderSales();
+
+    if (!user.merchantId) return;
+
+    try {
+        if(container) container.innerHTML = `<div style="text-align:center; padding:10px; color:var(--accent); font-size:12px;"><i class="fa-solid fa-cloud-arrow-down fa-beat"></i> Syncing latest bills...</div>` + container.innerHTML;
+
+        // 🟢 FIREBASE: Fetch absolute latest bills from cloud
+        const salesRef = collection(db, "shops", user.merchantId, "sales");
+        const snapshot = await getDocs(salesRef);
+        
+        const fetchedSales = [];
+        snapshot.forEach(doc => fetchedSales.push(doc.data()));
+        
+        // Sort newest first
+        fetchedSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        allSales = fetchedSales;
+        localStorage.setItem('bharatpos_sales', JSON.stringify(allSales));
+        renderSales();
+    } catch (e) {
+        console.warn("Firebase fetch failed, relying on local cache.", e);
+        renderSales();
+    }
 }
 
-// 🟢 TAX CALCULATOR HELPER
+// 🟢 TAX CALCULATOR HELPER (With Safety Fallbacks)
 function calculateTaxDetails(sale) {
     let taxable = 0, totalTax = 0;
+    const amount = parseFloat(sale.amount || sale.total || 0) || 0;
     
-    // If tax is already calculated in sale object (from billing page)
-    if(sale.tax > 0) {
+    if(sale.tax && parseFloat(sale.tax) > 0) {
         totalTax = parseFloat(sale.tax);
-        taxable = parseFloat(sale.amount) - totalTax;
+        taxable = amount - totalTax;
     } else {
-        // Fallback for non-GST bills or old data
-        taxable = parseFloat(sale.amount || sale.total || 0);
+        taxable = amount;
         totalTax = 0;
     }
     
@@ -215,12 +245,13 @@ function calculateTaxDetails(sale) {
         totalTax: totalTax,
         cgst: totalTax / 2,
         sgst: totalTax / 2,
-        total: parseFloat(sale.amount || sale.total || 0)
+        total: amount
     };
 }
 
-function renderSales(filterText = "") {
+window.renderSales = function(filterText = "") {
     const container = document.getElementById('salesList');
+    if(!container) return;
     const term = filterText.toLowerCase();
     
     const filtered = allSales.filter(s => {
@@ -240,19 +271,16 @@ function renderSales(filterText = "") {
         const dateStr = new Date(s.date).toLocaleDateString('en-IN');
         const custName = s.customerName || 'Walk-in';
 
-        // 🟢 RESPONSIVE LAYOUT SWITCH
         if(window.innerWidth > 768) {
-            // DESKTOP ROW
             return `
             <div class="sale-row">
                 <div style="color:var(--text-muted)">${dateStr}</div>
                 <div style="font-family:'JetBrains Mono'; font-weight:700;">#${invId}</div>
                 <div>${custName}</div>
                 <div style="text-align:right; font-weight:700; color:var(--success);">₹${total}</div>
-                <div style="text-align:center;"><button onclick="viewFormalInvoice('${invId}')" class="btn-view">View Bill</button></div>
+                <div style="text-align:center;"><button onclick="window.viewFormalInvoice('${invId}')" class="btn-view">View Bill</button></div>
             </div>`;
         } else {
-            // MOBILE CARD
             return `
             <div class="sale-row">
                 <div class="row-top">
@@ -264,7 +292,7 @@ function renderSales(filterText = "") {
                     <span class="m-amt">₹${total}</span>
                 </div>
                 <div style="margin-top:10px;">
-                    <button onclick="viewFormalInvoice('${invId}')" class="btn-view">View Invoice</button>
+                    <button onclick="window.viewFormalInvoice('${invId}')" class="btn-view">View Invoice</button>
                 </div>
             </div>`;
         }
@@ -272,9 +300,10 @@ function renderSales(filterText = "") {
 }
 
 // --- REPORTING ---
-function openReportModal() { document.getElementById('reportModal').style.display = 'flex'; }
+window.openReportModal = function() { document.getElementById('reportModal').style.display = 'flex'; }
+window.closeReportModal = function() { document.getElementById('reportModal').style.display = 'none'; }
 
-function setDateFilter(type, btn) {
+window.setDateFilter = function(type, btn) {
     document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     const end = new Date();
@@ -286,27 +315,33 @@ function setDateFilter(type, btn) {
 }
 
 function getFilteredData() {
-    const s = new Date(document.getElementById('startDate').value);
-    const e = new Date(document.getElementById('endDate').value);
+    const startInput = document.getElementById('startDate').value;
+    const endInput = document.getElementById('endDate').value;
+    if(!startInput || !endInput) return allSales;
+    
+    const s = new Date(startInput);
+    const e = new Date(endInput);
     e.setHours(23, 59, 59);
-    return allSales.filter(sale => { const d = new Date(sale.date); return d >= s && d <= e; });
+    
+    return allSales.filter(sale => { 
+        const d = new Date(sale.date); 
+        return d >= s && d <= e; 
+    });
 }
 
-// 🟢 EXCEL EXPORT (Detailed Tax Columns)
-function exportExcel() {
+// 🟢 UPGRADED EXCEL EXPORT (Professional Formatting)
+window.exportExcel = function() {
     const data = getFilteredData();
-    if(!data.length) return alert("No sales in range.");
+    if(!data.length) return alert("No sales in selected range.");
     
     let rows = [];
     data.forEach(s => {
         const taxDetails = calculateTaxDetails(s);
-        
-        // Push main row (Simplified for ledger, detailed item logic can be added if needed)
         rows.push({
             "Date": new Date(s.date).toLocaleDateString(),
             "Invoice No": s.id || s.invoiceNo,
-            "Customer": s.customerName,
-            "GSTIN": shopGstin,
+            "Customer": s.customerName || 'Walk-in',
+            "Payment Mode": s.paymentMode || 'Cash',
             "Taxable Value": taxDetails.taxable.toFixed(2),
             "CGST Amount": taxDetails.cgst.toFixed(2),
             "SGST Amount": taxDetails.sgst.toFixed(2),
@@ -316,28 +351,48 @@ function exportExcel() {
     });
     
     const ws = XLSX.utils.json_to_sheet(rows);
+    
+    // Auto-adjust column widths for professional look
+    ws['!cols'] = [
+        {wch: 12}, {wch: 15}, {wch: 20}, {wch: 15}, 
+        {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12}, {wch: 15}
+    ];
+    
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "GST Sales Report");
+    XLSX.utils.book_append_sheet(wb, ws, "GST_Sales_Ledger");
     XLSX.writeFile(wb, `BharatPOS_Ledger_${Date.now()}.xlsx`);
 }
 
-// 🟢 PDF LEDGER EXPORT (Fixed jsPDF Logic)
-function exportPDF() {
+// 🟢 UPGRADED PDF LEDGER EXPORT (Right-aligned Accounting Standards)
+window.exportPDF = function() {
     const data = getFilteredData();
-    if(!data.length) return alert("No data.");
+    if(!data.length) return alert("No sales in selected range.");
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for more columns
+    const doc = new jsPDF('l', 'mm', 'a4'); 
     
-    doc.setFontSize(14); doc.text("Sales Tax Ledger", 14, 15);
-    doc.setFontSize(10); doc.text(`Shop: ${localStorage.getItem('shopName')} | GSTIN: ${shopGstin}`, 14, 22);
+    const shopName = localStorage.getItem('shopName') || "BharatPOS Merchant";
+    
+    doc.setFontSize(16); 
+    doc.setTextColor(41, 128, 185);
+    doc.text("SALES TAX LEDGER", 14, 15);
+    
+    doc.setFontSize(10); 
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Business Name: ${shopName}`, 14, 22);
+    if(shopGstin) doc.text(`GSTIN: ${shopGstin}`, 14, 27);
+    
+    let grandTotal = 0;
+    let grandTax = 0;
     
     const tableData = data.map(s => {
         const t = calculateTaxDetails(s);
+        grandTotal += t.total;
+        grandTax += t.totalTax;
         return [
             new Date(s.date).toLocaleDateString(),
             s.id || s.invoiceNo,
-            s.customerName,
+            s.customerName || 'Walk-in',
             t.taxable.toFixed(2),
             t.cgst.toFixed(2),
             t.sgst.toFixed(2),
@@ -346,19 +401,32 @@ function exportPDF() {
     });
 
     doc.autoTable({
-        head: [['Date', 'Inv#', 'Customer', 'Taxable', 'CGST', 'SGST', 'Total']],
+        head: [['Date', 'Invoice#', 'Customer', 'Taxable (Rs)', 'CGST (Rs)', 'SGST (Rs)', 'Total (Rs)']],
         body: tableData,
-        startY: 30,
+        startY: 35,
         theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185] }
+        headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255] },
+        columnStyles: {
+            3: { halign: 'right' },
+            4: { halign: 'right' },
+            5: { halign: 'right' },
+            6: { halign: 'right', fontStyle: 'bold' }
+        }
     });
     
-    doc.save("Sales_Ledger.pdf");
+    // Summary Section at the bottom
+    let finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total Revenue: Rs ${grandTotal.toFixed(2)}`, 14, finalY);
+    doc.text(`Total Tax Collected: Rs ${grandTax.toFixed(2)}`, 14, finalY + 7);
+    
+    doc.save(`Sales_Ledger_${Date.now()}.pdf`);
 }
 
-function sendToCA() {
+window.sendToCA = function() {
     const data = getFilteredData();
-    if(!data.length) return alert("No data.");
+    if(!data.length) return alert("No data in range.");
     
     let totalSale = 0, totalTax = 0;
     data.forEach(s => {
@@ -368,33 +436,34 @@ function sendToCA() {
     });
     
     let msg = `*GST Report for CA*%0A`;
-    msg += `Shop: ${localStorage.getItem('shopName')}%0A`;
-    msg += `GSTIN: ${shopGstin}%0A`;
+    msg += `Shop: ${localStorage.getItem('shopName') || 'Store'}%0A`;
+    msg += `GSTIN: ${shopGstin || 'N/A'}%0A`;
     msg += `Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}%0A`;
     msg += `Total Sales: ₹${totalSale.toFixed(2)}%0A`;
     msg += `Total GST Collected: ₹${totalTax.toFixed(2)}%0A%0A`;
-    msg += `(Please attach the downloaded Excel file)`;
+    msg += `(Please find the attached Excel/PDF file for detailed invoice breakdown)`;
     
     window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
 // 🟢 FORMAL INVOICE VIEW
-function viewFormalInvoice(invId) {
+window.viewFormalInvoice = function(invId) {
     const sale = allSales.find(s => (s.id == invId) || (s.invoiceNo == invId));
     if(!sale) return;
 
-    const shop = localStorage.getItem('shopName') || "Bharat POS Store";
+    const shop = localStorage.getItem('shopName') || "BharatPOS Store";
     const address = localStorage.getItem('shopAddress') || "";
     const t = calculateTaxDetails(sale);
     const isGST = t.totalTax > 0;
 
     let rows = (sale.items || []).map((it, idx) => {
-        let baseRate = it.basePrice || it.price;
+        let baseRate = parseFloat(it.basePrice || it.price || 0);
         // Calculation fallback if basePrice missing in item
         if(isGST && !it.basePrice && it.gstRate) {
-             baseRate = it.price / (1 + (it.gstRate/100));
+             baseRate = parseFloat(it.price) / (1 + (parseFloat(it.gstRate)/100));
         }
-        let taxableRow = baseRate * it.qty;
+        let taxableRow = baseRate * parseFloat(it.qty || 1);
+        let finalRowPrice = parseFloat(it.price || 0) * parseFloat(it.qty || 1);
         
         return `
         <tr>
@@ -403,7 +472,7 @@ function viewFormalInvoice(invId) {
             <td style="text-align:center">${it.qty}</td>
             <td class="inv-right">${baseRate.toFixed(2)}</td>
             ${isGST ? `<td class="inv-right">${taxableRow.toFixed(2)}</td>` : ''}
-            <td class="inv-right">${(it.qty * it.price).toFixed(2)}</td>
+            <td class="inv-right">${finalRowPrice.toFixed(2)}</td>
         </tr>`;
     }).join('');
 
@@ -427,10 +496,11 @@ function viewFormalInvoice(invId) {
             <div style="text-align:right">
                 <div>Inv: <strong>${invId}</strong></div>
                 <div>Date: ${new Date(sale.date).toLocaleDateString()}</div>
+                <div style="font-size:11px; margin-top:5px; color:var(--text-muted);">${sale.paymentMode || 'Cash'}</div>
             </div>
         </div>
-        <div style="border:1px solid #ccc; padding:8px; margin-bottom:15px;">
-            <strong>Bill To:</strong> ${sale.customerName} (${sale.phone||'N/A'})
+        <div style="border:1px solid #ccc; padding:8px; margin-bottom:15px; background:rgba(255,255,255,0.02);">
+            <strong>Bill To:</strong> ${sale.customerName || 'Walk-in Customer'} ${sale.phone ? `(${sale.phone})` : ''}
         </div>
         <table class="inv-grid">
             <thead>
@@ -449,6 +519,7 @@ function viewFormalInvoice(invId) {
         <div class="inv-total-box">
             <div class="inv-summary">
                 <div class="inv-row"><span>SubTotal:</span><span>₹${t.total.toFixed(2)}</span></div>
+                ${parseFloat(sale.discount || 0) > 0 ? `<div class="inv-row" style="color:var(--danger);"><span>Discount:</span><span>-₹${parseFloat(sale.discount).toFixed(2)}</span></div>` : ''}
                 ${taxHtml}
                 <div class="inv-row" style="font-weight:bold; font-size:16px;">
                     <span>Grand Total:</span><span>₹${t.total.toFixed(2)}</span>
@@ -456,9 +527,9 @@ function viewFormalInvoice(invId) {
             </div>
         </div>
         
-        <div class="no-print" style="text-align:center; margin-top:20px;">
-            <button onclick="window.print()" class="btn btn-report" style="display:inline-block;">Print</button>
-            <button onclick="document.getElementById('invoiceModal').style.display='none'" class="btn" style="background:#ccc; display:inline-block;">Close</button>
+        <div class="no-print" style="text-align:center; margin-top:20px; display: flex; gap: 10px; justify-content: center;">
+            <button onclick="window.print()" class="btn btn-report">🖨 Print</button>
+            <button onclick="document.getElementById('invoiceModal').style.display='none'" class="btn" style="background:var(--text-muted);">Close</button>
         </div>
     `;
     
@@ -466,7 +537,10 @@ function viewFormalInvoice(invId) {
     document.getElementById('invoiceModal').style.display = 'flex';
 }
 
-window.addEventListener('resize', () => renderSales(document.getElementById('searchBar').value));
+window.addEventListener('resize', () => {
+    const searchBar = document.getElementById('searchBar');
+    window.renderSales(searchBar ? searchBar.value : "");
+});
 </script>
 </body>
 </html>
