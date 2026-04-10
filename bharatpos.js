@@ -1,7 +1,7 @@
 
 // --- CONFIGURATION START ---
 // Change this single line whenever your Cloudflare URL changes
-const API_BASE = 'https://server-xy7s.onrender.com'; 
+const API_BASE = 'ttps://server-xy7s.onrender.com'; 
 // ---------------------------
 
 // This function is now available globally
