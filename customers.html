@@ -2,204 +2,385 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>Bharat CRM — Customer Loyalty</title>
   
-  <<script src="bharatpos.js"></script>
-
-<script type="module" src="bharatpos.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
   <style>
-    /* ... (Keeping existing styles) ... */
-    body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; color: #1f2937; }
-    .header { background: linear-gradient(135deg, #4c1d95, #6d28d9); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    .header h1 { margin: 0; font-size: 22px; }
-    .nav-btn { background: rgba(255,255,255,0.2); color: white; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-size: 13px; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 25px; }
+    :root {
+        --primary: #6d28d9; --primary-light: #8b5cf6; --primary-dark: #4c1d95;
+        --gold: #fbbf24; --silver: #94a3b8; --bronze: #b45309;
+        --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+        --bg: #f8fafc; --surface: #ffffff;
+        --text-main: #0f172a; --text-muted: #64748b;
+    }
     
-    .podium-box { display: flex; justify-content: center; align-items: flex-end; gap: 15px; margin-bottom: 40px; margin-top: 10px; }
-    .podium-card { background: white; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 140px; position: relative; border: 2px solid transparent; }
-    .rank-1 { height: 180px; border-color: #fbbf24; z-index: 10; order: 2; }
-    .rank-2 { height: 150px; border-color: #94a3b8; order: 1; }
-    .rank-3 { height: 140px; border-color: #b45309; order: 3; }
-    .crown { font-size: 30px; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); }
-    .p-name { font-weight: bold; margin-top: 10px; display: block; color: #374151; }
-    .p-amt { font-size: 18px; font-weight: 800; color: #4c1d95; }
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: var(--text-main); padding-bottom: 60px; }
+    
+    /* --- HEADER --- */
+    .header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 24px 24px; box-shadow: 0 10px 25px rgba(109, 40, 217, 0.2); position: sticky; top: 0; z-index: 100; }
+    .header h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 8px; font-weight: 800; }
+    .header-actions { display: flex; gap: 10px; }
+    .nav-btn { background: rgba(255,255,255,0.15); color: white; text-decoration: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 6px; cursor: pointer;}
+    .nav-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
+    
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+    
+    /* --- PODIUM --- */
+    .podium-box { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin-bottom: 40px; margin-top: 10px; min-height: 200px;}
+    .podium-card { background: white; border-radius: 16px 16px 8px 8px; padding: 15px 10px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 130px; position: relative; border-top: 4px solid transparent; transition: transform 0.3s; }
+    .podium-card:hover { transform: translateY(-5px); }
+    .rank-1 { height: 180px; border-color: var(--gold); z-index: 10; order: 2; box-shadow: 0 15px 35px rgba(251, 191, 36, 0.2); }
+    .rank-2 { height: 150px; border-color: var(--silver); order: 1; }
+    .rank-3 { height: 130px; border-color: var(--bronze); order: 3; }
+    .crown { font-size: 32px; position: absolute; top: -24px; left: 50%; transform: translateX(-50%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+    .p-name { font-weight: 700; margin-top: 15px; display: block; color: var(--text-main); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .p-amt { font-size: 18px; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace; margin-top: 4px; display: block;}
 
-    .settings-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 20px; border: 1px solid #e5e7eb; }
-    .imp-inp { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; width: 60%; }
-    .save-btn { background: #059669; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    /* --- SETTINGS & CONTROLS --- */
+    .settings-box { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 24px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 12px; }
+    .settings-box h3 { margin: 0; color: var(--text-main); font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    .input-wrapper { display: flex; gap: 10px; width: 100%; }
+    .imp-inp { flex: 1; padding: 14px; border: 2px solid #f1f5f9; border-radius: 10px; font-size: 14px; transition: 0.2s; background: #f8fafc; color: var(--text-main); font-family: 'Inter', sans-serif;}
+    .imp-inp:focus { border-color: var(--primary-light); background: white; }
+    .save-btn { background: var(--success); color: white; border: none; padding: 14px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);}
+    .save-btn:hover { background: #059669; transform: translateY(-2px); }
 
-    .action-bar { display: flex; justify-content: space-between; margin-bottom: 20px; }
-    .search-inp { padding: 12px 20px; border: none; border-radius: 30px; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); outline: none; }
-    .magic-btn { background: linear-gradient(90deg, #ec4899, #8b5cf6); color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 15px; flex-wrap: wrap; }
+    .search-wrapper { position: relative; flex: 1; min-width: 250px; }
+    .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .search-inp { padding: 14px 14px 14px 42px; border: 2px solid transparent; border-radius: 30px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); outline: none; transition: 0.2s; font-size: 14px; font-family: 'Inter', sans-serif; }
+    .search-inp:focus { border-color: var(--primary-light); }
+    .magic-btn { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; border: none; padding: 14px 24px; border-radius: 30px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); transition: 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .magic-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-    .cust-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .cust-card:hover { border-color: #8b5cf6; }
-    .c-info h3 { margin: 0; font-size: 16px; color: #111827; }
-    .tags { display: flex; gap: 5px; margin-top: 5px; }
-    .tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
-    .c-total { font-size: 18px; font-weight: 800; color: #4c1d95; }
+    /* --- GRID --- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .cust-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 2px solid transparent; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+    .cust-card:hover { border-color: var(--primary-light); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(109, 40, 217, 0.1); }
+    .c-info h3 { margin: 0 0 6px 0; font-size: 16px; color: var(--text-main); font-weight: 700; }
+    .c-info .phone { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px;}
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .c-total { font-size: 20px; font-weight: 800; color: var(--primary-dark); font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .c-visits { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: block; }
 
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-    .modal-box { background: white; width: 90%; max-width: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
-    .m-header { background: #4c1d95; padding: 20px; color: white; text-align: center; }
-    .m-avatar { width: 60px; height: 60px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #4c1d95; font-weight: bold; }
-    .m-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+    /* --- MODAL (360 PROFILE) --- */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s; }
+    .modal-active { display: flex; opacity: 1; }
+    .modal-box { background: white; width: 90%; max-width: 480px; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.3s; display: flex; flex-direction: column; max-height: 85vh; }
+    .modal-active .modal-box { transform: scale(1); }
     
-    .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-    .progress-fill { height: 100%; background: #fbbf24; width: 0%; transition: width 1s; }
+    .m-header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); padding: 30px 20px 20px; color: white; text-align: center; position: relative; }
+    .m-close-top { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .m-close-top:hover { background: rgba(255,255,255,0.4); }
+    .m-avatar { width: 70px; height: 70px; background: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--primary); font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .m-body { padding: 24px; overflow-y: auto; background: var(--bg); flex: 1; }
     
-    .fav-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .fav-item { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .progress-box { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 20px; }
+    .progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 8px; margin-bottom: 8px; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), #f59e0b); width: 0%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 4px; }
     
-    .timeline { border-top: 1px solid #eee; padding-top: 10px; margin-top: 15px; }
-    .t-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #f3f4f6; font-size: 13px; }
+    .section-title { font-size: 13px; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
     
-    .close-btn { width: 100%; padding: 15px; background: #f3f4f6; border: none; font-weight: bold; cursor: pointer; color: #374151; }
+    .fav-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .fav-item { background: white; border: 1px solid #e2e8f0; color: var(--text-main); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+    .fav-badge { background: #dcfce7; color: #166534; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+    
+    .timeline { background: white; border-radius: 16px; padding: 5px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .t-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px dashed #e2e8f0; }
+    .t-item:last-child { border-bottom: none; }
+    
+    .toast-container { position: fixed; top: 90px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: white; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); min-width: 300px; animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; color: var(--text-main); }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* MOBILE RESPONSIVE */
+    @media(max-width: 600px) {
+        .header { padding: 16px 20px; }
+        .input-wrapper { flex-direction: column; }
+        .action-bar { flex-direction: column; align-items: stretch; }
+        .magic-btn { justify-content: center; }
+        .podium-box { align-items: center; gap: 8px; min-height: 160px; margin-bottom: 20px; }
+        .podium-card { width: 30%; padding: 10px 5px; }
+        .crown { font-size: 24px; top: -16px; }
+        .p-name { font-size: 12px; margin-top: 10px; }
+        .p-amt { font-size: 14px; }
+        .rank-1 { height: 140px; } .rank-2 { height: 110px; } .rank-3 { height: 90px; }
+    }
   </style>
 </head>
 <body>
 
+<div class="toast-container" id="toastArea"></div>
+
 <div class="header">
-    <h1>💎 Bharat CRM</h1>
-    <a href="dashboard.html" class="nav-btn">⬅ Dashboard</a>
+    <h1><i class="fa-solid fa-gem"></i> Bharat CRM</h1>
+    <div class="header-actions">
+        <button class="nav-btn" onclick="window.syncCloudData()" id="syncBtn">
+            <i class="fa-solid fa-rotate"></i> Sync
+        </button>
+        <a href="dashboard.html" class="nav-btn"><i class="fa-solid fa-house"></i> Home</a>
+    </div>
 </div>
 
 <div class="container">
     <div id="podiumArea" class="podium-box"></div>
 
     <div class="settings-box">
-        <h3 style="margin:0 0 10px 0; color:#374151;">📢 Manage Customer Offer Text</h3>
-        <div style="display:flex; gap:10px;">
+        <h3><i class="fa-solid fa-bullhorn" style="color:var(--warning)"></i> Manage Customer Offer Text</h3>
+        <div class="input-wrapper">
             <input type="text" id="offerInput" class="imp-inp" placeholder="E.g. Top 3 Champions get a Special Gift!">
-            <button class="save-btn" onclick="saveOffer()">Save Offer</button>
+            <button class="save-btn" onclick="window.saveOffer()">Save Offer</button>
         </div>
     </div>
 
     <div class="action-bar">
-        <input type="text" class="search-inp" placeholder="🔍 Search Customer..." oninput="renderCustomers(this.value)">
-        <button class="magic-btn" onclick="runAiMarketing()"><span>✨ AI Magic Marketing</span></button>
+        <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" class="search-inp" placeholder="Search by name or phone..." oninput="window.renderCustomers(this.value)">
+        </div>
+        <button class="magic-btn" onclick="window.runAiMarketing()" id="aiBtn">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Magic Marketing
+        </button>
     </div>
 
     <div id="customerGrid" class="grid">
-        <div style="text-align:center;width:100%;padding:40px;">Loading Data...</div>
+        <div style="text-align:center; width:100%; padding:40px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Loading Intelligence...</div>
     </div>
 </div>
 
-<div id="profileModal" class="modal-overlay" onclick="closeModal(event)">
+<div id="profileModal" class="modal-overlay" onclick="window.closeModal(event)">
     <div class="modal-box">
         <div class="m-header">
+            <button class="m-close-top" onclick="window.closeModal(true)"><i class="fa-solid fa-xmark"></i></button>
             <div class="m-avatar" id="mAvatar">A</div>
-            <h2 style="margin:0;" id="mName">Name</h2>
-            <div style="font-size:12px; opacity:0.8;" id="mTier">Tier</div>
+            <h2 style="margin:0; font-weight:800; font-size:24px;" id="mName">Name</h2>
+            <div style="font-size:13px; font-weight:600; background:rgba(255,255,255,0.2); display:inline-block; padding:4px 12px; border-radius:20px; margin-top:8px;" id="mTier">Tier</div>
         </div>
         <div class="m-body">
             
-            <div style="margin-bottom:20px;">
-                <div style="display:flex; justify-content:space-between; font-size:11px; color:#6b7280;">
-                    <span>Spent: <b id="mSpend">₹0</b></span>
-                    <span id="mNextGoal">Goal: ₹2000</span>
+            <div class="progress-box">
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); font-weight:600;">
+                    <span>Total Spent: <b id="mSpend" style="color:var(--text-main); font-family:'JetBrains Mono'; font-size:14px;">₹0</b></span>
+                    <span id="mNextGoal" style="color:var(--primary);">Goal: ₹2000</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" id="mProgress"></div></div>
-                <div style="font-size:10px; color:#6b7280; margin-top:4px;" id="mMsg">Unlock Gold Status at ₹2000</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:500;" id="mMsg">Unlock Gold Status at ₹2000</div>
             </div>
 
-            <div>
-                <strong style="font-size:12px;text-transform:uppercase;">🏆 Top Frequent Buys</strong>
-                <div class="fav-grid" id="mFavorites"></div>
-            </div>
+            <div class="section-title"><i class="fa-solid fa-cart-shopping"></i> Top Frequent Buys</div>
+            <div class="fav-grid" id="mFavorites"></div>
 
-            <h4 style="margin:20px 0 10px 0; color:#374151;">🛒 Purchase History</h4>
+            <div class="section-title" style="margin-top: 10px;"><i class="fa-solid fa-clock-rotate-left"></i> Purchase History</div>
             <div class="timeline" id="mHistory"></div>
+            
         </div>
-        <button class="close-btn" onclick="closeModal()">Close</button>
     </div>
 </div>
 
-<script>
+<script type="module">
+    // 🟢 1. IMPORT FIREBASE SDK
+    import { db } from "./bharatpos.js";
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // --- UX UTILS ---
     const formatMoney = (n) => '₹' + Number(n).toLocaleString('en-IN');
     const safeParse = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } };
 
+    window.showToast = function(msg, type='info') {
+        const container = document.getElementById('toastArea');
+        const el = document.createElement('div');
+        el.className = 'toast';
+        const icon = type === 'success' ? '<i class="fa-solid fa-check-circle" style="color:var(--success)"></i>' : '<i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary)"></i>';
+        el.innerHTML = `${icon} <span>${msg}</span>`;
+        container.appendChild(el);
+        setTimeout(() => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(100%)';
+            setTimeout(() => el.remove(), 300);
+        }, 4000);
+    }
+
+    // --- STATE ---
     let customersList = [];
+    let rawSales = [];
 
     document.addEventListener("DOMContentLoaded", () => {
-        analyzeData();
         loadOfferSetting();
+        // Instantly load local cache
+        rawSales = safeParse('bharatpos_sales');
+        analyzeData(rawSales);
+        
+        // Silently sync cloud data to ensure accuracy
+        setTimeout(() => { window.syncCloudData(true); }, 500);
     });
 
-    function loadOfferSetting() {
-        document.getElementById('offerInput').value = localStorage.getItem('bharatpos_offer_text') || "📢 This Month's Offer: Top 3 get 20% OFF!";
+    window.loadOfferSetting = function() {
+        document.getElementById('offerInput').value = localStorage.getItem('bharatpos_offer_text') || "📢 Top 3 Champions get a Special Gift!";
     }
-    function saveOffer() {
+    
+    window.saveOffer = function() {
         const text = document.getElementById('offerInput').value.trim();
         if(!text) { alert("Enter text"); return; }
         localStorage.setItem('bharatpos_offer_text', text);
-        alert("Offer Updated!");
+        window.showToast("Offer text updated successfully!", "success");
     }
 
-    function analyzeData() {
-        const sales = safeParse('bharatpos_sales');
+    // 🟢 FIREBASE SYNC LOGIC
+    window.syncCloudData = async function(isSilent = false) {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const btn = document.getElementById('syncBtn');
+        
+        if(!user.merchantId) {
+            if(!isSilent) window.showToast("Merchant ID missing. Showing offline data.", "info");
+            return;
+        }
+
+        if(btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing`;
+
+        try {
+            const salesRef = collection(db, "shops", user.merchantId, "sales");
+            const snap = await getDocs(salesRef);
+            
+            const fetchedSales = snap.docs.map(d => d.data());
+            
+            if(fetchedSales.length > 0) {
+                rawSales = fetchedSales;
+                localStorage.setItem('bharatpos_sales', JSON.stringify(rawSales));
+                analyzeData(rawSales);
+                if(!isSilent) window.showToast("CRM Cloud Sync Complete!", "success");
+            }
+        } catch(e) {
+            console.error("Firebase sync failed", e);
+            if(!isSilent) window.showToast("Cloud sync failed. Using local data.", "info");
+        } finally {
+            if(btn) btn.innerHTML = `<i class="fa-solid fa-rotate"></i> Sync`;
+        }
+    }
+
+    // --- CRM INTELLIGENCE ENGINE ---
+    function analyzeData(salesArray) {
         const custMap = {};
 
-        sales.forEach(s => {
-            // 🟢 ID CORRECTION: Use 'customerName' instead of 'customer'
-            const key = (s.customerName || "Walk-in").trim();
-            if(key.toLowerCase() === 'walk-in') return;
-
-            if(!custMap[key]) custMap[key] = { name: key, totalSpent: 0, visits: 0, lastVisit: s.date, history: [] };
+        salesArray.forEach(s => {
+            let name = (s.customerName || s.customer || "Walk-in").trim();
+            let phone = (s.phone || "").trim();
             
-            // 🟢 ID CORRECTION: Use 'amount' instead of 'total'
+            if(name.toLowerCase() === 'walk-in' && !phone) return; // Skip pure anonymous walk-ins
+
+            // 🟢 INTELLIGENCE: Group by Phone if available, else Name
+            let key = phone ? phone : name.toLowerCase(); 
+
+            if(!custMap[key]) custMap[key] = { 
+                name: name, 
+                phone: phone, 
+                totalSpent: 0, 
+                visits: 0, 
+                lastVisit: s.date, 
+                history: [] 
+            };
+            
+            // If we grouped by phone but original name was missing, update it
+            if(name !== "Walk-in" && custMap[key].name === "Walk-in") {
+                custMap[key].name = name;
+            }
+
             custMap[key].totalSpent += Number(s.amount || s.total || 0);
             custMap[key].visits += 1;
             custMap[key].history.push(s);
             
-            if(new Date(s.date) > new Date(custMap[key].lastVisit)) custMap[key].lastVisit = s.date;
+            if(new Date(s.date) > new Date(custMap[key].lastVisit)) {
+                custMap[key].lastVisit = s.date;
+            }
         });
 
         customersList = Object.values(custMap).map(c => {
             const days = Math.floor((new Date() - new Date(c.lastVisit)) / 86400000);
             let tier = 'Bronze', status = 'Active';
-            if(c.totalSpent > 5000) tier = 'Platinum 💎'; else if(c.totalSpent > 2000) tier = 'Gold 🏆'; else if(c.totalSpent > 500) tier = 'Silver 🥈';
-            if(days > 60) status = 'Lost ⚠️'; else if(days > 30) status = 'At Risk 🟠'; else if(c.visits === 1) status = 'New 🌱';
-            return { ...c, tier, status, days };
+            let tierColor = '#94a3b8'; // default bronze/gray
+            
+            if(c.totalSpent >= 5000) { tier = 'Platinum 💎'; tierColor = '#0ea5e9'; }
+            else if(c.totalSpent >= 2000) { tier = 'Gold 🏆'; tierColor = '#f59e0b'; }
+            else if(c.totalSpent >= 500) { tier = 'Silver 🥈'; tierColor = '#64748b'; }
+            
+            if(days > 60) status = 'Lost ⚠️'; 
+            else if(days > 30) status = 'At Risk 🟠'; 
+            else if(c.visits === 1) status = 'New 🌱';
+            else status = 'Active 🟢';
+
+            return { ...c, tier, tierColor, status, days };
         });
 
         customersList.sort((a,b) => b.totalSpent - a.totalSpent);
+        
         renderPodium();
-        renderCustomers();
+        window.renderCustomers();
     }
 
-    function renderCustomers(query = '') {
+    window.renderCustomers = function(query = '') {
         const grid = document.getElementById('customerGrid');
+        
         const displayList = customersList.map((c, index) => ({...c, originalIndex: index}))
-                                         .filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
+            .filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query));
 
-        if(displayList.length === 0) { grid.innerHTML = '<div style="text-align:center;width:100%;color:#999;">No customers found.</div>'; return; }
+        if(displayList.length === 0) { 
+            grid.innerHTML = '<div style="text-align:center;width:100%;color:var(--text-muted);padding:40px;">No customers found matching search.</div>'; 
+            return; 
+        }
 
-        grid.innerHTML = displayList.map(c => `
-            <div class="cust-card" onclick="openProfile(${c.originalIndex})"> 
+        grid.innerHTML = displayList.map(c => {
+            let statusColor = c.status.includes('Lost') ? '#fef2f2' : (c.status.includes('Risk') ? '#fffbeb' : '#f0fdf4');
+            let statusTextColor = c.status.includes('Lost') ? '#ef4444' : (c.status.includes('Risk') ? '#d97706' : '#166534');
+
+            return `
+            <div class="cust-card" onclick="window.openProfile(${c.originalIndex})"> 
                 <div class="c-info">
                     <h3>${c.name}</h3>
-                    <div class="tags"><span class="tag" style="background:#eee">${c.tier}</span><span class="tag" style="background:#fef2f2;color:#ef4444">${c.status}</span></div>
+                    ${c.phone ? `<div class="phone"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${c.phone}</div>` : ''}
+                    <div class="tags">
+                        <span class="tag" style="background:rgba(0,0,0,0.05); color:${c.tierColor}">${c.tier}</span>
+                        <span class="tag" style="background:${statusColor}; color:${statusTextColor}">${c.status}</span>
+                    </div>
                 </div>
-                <div class="c-total">${formatMoney(c.totalSpent)}</div>
+                <div style="text-align: right;">
+                    <div class="c-total">${formatMoney(c.totalSpent)}</div>
+                    <div class="c-visits">${c.visits} Visit${c.visits>1?'s':''}</div>
+                </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     function renderPodium() {
         const podium = document.getElementById('podiumArea');
-        if(customersList.length < 3) { podium.style.display = 'none'; return; }
-        const top = [customersList[1], customersList[0], customersList[2]];
-        const styles = ['rank-2', 'rank-1', 'rank-3'];
-        const emojis = ['🥈', '👑', '🥉'];
-        podium.innerHTML = top.map((c,i) => `<div class="podium-card ${styles[i]}"><div class="crown">${emojis[i]}</div><span class="p-name">${c.name}</span><span class="p-amt">${formatMoney(c.totalSpent)}</span></div>`).join('');
+        if(customersList.length === 0) { podium.style.display = 'none'; return; }
+        
+        podium.style.display = 'flex';
+
+        // Safe array extraction to prevent crashes if < 3 customers exist
+        let top = [];
+        if(customersList.length >= 3) { top = [customersList[1], customersList[0], customersList[2]]; }
+        else if (customersList.length === 2) { top = [customersList[1], customersList[0]]; }
+        else { top = [customersList[0]]; }
+
+        const styles = customersList.length >= 3 ? ['rank-2', 'rank-1', 'rank-3'] : (customersList.length === 2 ? ['rank-2', 'rank-1'] : ['rank-1']);
+        const emojis = customersList.length >= 3 ? ['🥈', '👑', '🥉'] : (customersList.length === 2 ? ['🥈', '👑'] : ['👑']);
+
+        podium.innerHTML = top.map((c,i) => `
+            <div class="podium-card ${styles[i]}" onclick="window.openProfile(${c.name === customersList[0].name ? 0 : (c.name === customersList[1]?.name ? 1 : 2)})" style="cursor:pointer;">
+                <div class="crown">${emojis[i]}</div>
+                <span class="p-name">${c.name}</span>
+                <span class="p-amt">${formatMoney(c.totalSpent)}</span>
+            </div>
+        `).join('');
     }
 
     // --- 360 PROFILE LOGIC ---
-    function openProfile(index) {
+    window.openProfile = function(index) {
         const c = customersList[index];
         if(!c) return;
 
@@ -208,42 +389,93 @@
         document.getElementById('mTier').innerText = c.tier;
         document.getElementById('mSpend').innerText = formatMoney(c.totalSpent);
 
-        // Progress
+        // Progress Calculation
         let nextGoal = 500;
-        if(c.totalSpent >= 500) nextGoal=2000;
-        if(c.totalSpent >= 2000) nextGoal=5000;
+        if(c.totalSpent >= 500) nextGoal = 2000;
+        if(c.totalSpent >= 2000) nextGoal = 5000;
+        if(c.totalSpent >= 5000) nextGoal = c.totalSpent + 5000; // Keep pushing
+
         const pct = Math.min((c.totalSpent / nextGoal)*100, 100);
         document.getElementById('mProgress').style.width = pct + "%";
         document.getElementById('mNextGoal').innerText = "Goal: " + formatMoney(nextGoal);
+        
+        let msg = "Unlock Silver Status at ₹500";
+        if(c.totalSpent >= 500) msg = "Unlock Gold Status at ₹2000";
+        if(c.totalSpent >= 2000) msg = "Unlock Platinum Status at ₹5000";
+        if(c.totalSpent >= 5000) msg = "Ultimate VIP Member 💎";
+        document.getElementById('mMsg').innerText = msg;
 
-        // Frequent Items
+        // Frequent Items Calculation
         const productCounts = {};
         c.history.forEach(sale => {
             (sale.items || []).forEach(item => {
-                productCounts[item.name] = (productCounts[item.name] || 0) + (Number(item.qty)||1);
+                const pName = item.printName || item.name;
+                if(pName) productCounts[pName] = (productCounts[pName] || 0) + (Number(item.qty)||1);
             });
         });
+        
         const sortedProds = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
         const favDiv = document.getElementById('mFavorites');
-        favDiv.innerHTML = sortedProds.length ? sortedProds.map(([n, q]) => `<div class="fav-item">${n} <span style="background:#15803d;color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;">${q}</span></div>`).join('') : '<span style="color:#999;font-size:12px">No data</span>';
+        
+        if(sortedProds.length > 0) {
+            favDiv.innerHTML = sortedProds.map(([n, q]) => `
+                <div class="fav-item">
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">${n}</span> 
+                    <div class="fav-badge">${q}</div>
+                </div>
+            `).join('');
+        } else {
+            favDiv.innerHTML = '<span style="color:var(--text-muted);font-size:12px">No specific item data found.</span>';
+        }
 
-        // History
+        // Purchase History Rendering
         const histEl = document.getElementById('mHistory');
-        // 🟢 ID CORRECTION: Use 'id' and 'amount'
-        histEl.innerHTML = c.history.reverse().map(h => `
+        
+        // Clone and sort history newest first
+        const sortedHistory = [...c.history].sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        histEl.innerHTML = sortedHistory.map(h => {
+            const isUdhaar = h.paymentMode === 'Udhaar' && !h.isPaid;
+            return `
             <div class="t-item">
                 <div>
-                    <div>Sale #${h.id || h.invoiceNo}</div>
-                    <div style="color:#9ca3af;font-size:11px;">${new Date(h.date).toLocaleDateString()}</div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:14px;">Bill #${h.id || h.invoiceNo}</div>
+                    <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">${new Date(h.date).toLocaleString('en-IN', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
                 </div>
-                <div style="font-weight:bold;">${formatMoney(h.amount || h.total)}</div>
-            </div>`).join('');
+                <div style="text-align:right;">
+                    <div style="font-weight:800; font-family:'JetBrains Mono'; color: ${isUdhaar ? 'var(--danger)' : 'var(--text-main)'};">${formatMoney(h.amount || h.total)}</div>
+                    ${isUdhaar ? '<div style="font-size:10px; color:var(--danger); font-weight:700; margin-top:2px;">UNPAID</div>' : ''}
+                </div>
+            </div>`
+        }).join('');
 
-        document.getElementById('profileModal').style.display = 'flex';
+        const modal = document.getElementById('profileModal');
+        modal.classList.add('modal-active');
     }
 
-    function closeModal(e) { if(!e || e.target.id === 'profileModal' || !e.target) document.getElementById('profileModal').style.display = 'none'; }
-    function runAiMarketing() { alert("🤖 AI Agent Running... Sent dummy coupons to 'At Risk' customers."); }
+    window.closeModal = function(forceClose = false, e = null) { 
+        if(forceClose || !e || e.target.id === 'profileModal' || !e.target) {
+            document.getElementById('profileModal').classList.remove('modal-active');
+        }
+    }
+
+    // --- AI MARKETING SIMULATION ---
+    window.runAiMarketing = function() { 
+        const btn = document.getElementById('aiBtn');
+        const origText = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Audience...`;
+        btn.style.opacity = '0.8';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            const riskCount = customersList.filter(c => c.status.includes('Risk')).length;
+            window.showToast(`AI deployed successfully! Sent "We Miss You" SMS to ${riskCount} At-Risk customers.`, "success");
+            
+            btn.innerHTML = origText;
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        }, 1500);
+    }
 </script>
 </body>
 </html>
