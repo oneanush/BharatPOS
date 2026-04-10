@@ -279,8 +279,11 @@
   </div>
   <button onclick="closeBarcodeScanner()" style="margin-top:20px; padding:10px 20px; background:white; border:none; border-radius:20px; font-weight:bold; color:black;">Band Karo</button>
 </div>
+<script type="module">
+// 🟢 1. IMPORT FIREBASE SDK & YOUR DATABASE
+import { db } from "./bharatpos.js";
+import { collection, doc, setDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-<script>
 // --- GLOBAL STATE ---
 window.cart = [];
 let isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
@@ -294,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupMobileCartDrag();
     
     fetchOnlineOrders();
-    setInterval(fetchOnlineOrders, 10000);
+    setInterval(fetchOnlineOrders, 10000); // Checks Firebase every 10s
 });
 
 function setupAutocomplete() {
@@ -345,29 +348,30 @@ function setupAutocomplete() {
     });
 }
 
-function selectCustomer(n, p) { 
+// Ensure global access for onclick handlers inside dynamically generated HTML
+window.selectCustomer = function(n, p) { 
     document.getElementById('custName').value = n; 
     document.getElementById('custPhone').value = p; 
     document.getElementById('customerSuggestions').style.display = 'none'; 
 }
 
+// 🟢 FIREBASE: Fetch Online Orders directly from Cloud
 async function fetchOnlineOrders() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return;
     try {
-        const url = window.buildUrl ? buildUrl('/api/get-pending-orders') : '/api/get-pending-orders';
-        const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ merchantId: user.merchantId }) });
-        const data = await res.json();
-        if (data.success) {
-            liveOrdersArray = data.orders || [];
-            const badge = document.getElementById('onlineOrderBadge');
-            const btn = document.getElementById('onlineOrderBtn');
-            if (liveOrdersArray.length > 0) {
-                badge.innerText = liveOrdersArray.length; badge.style.display = 'inline-block'; btn.style.color = '#fff';
-            } else { badge.style.display = 'none'; btn.style.color = 'var(--text-muted)'; }
-            renderOnlineOrdersModal();
-        }
-    } catch(e) {}
+        const ordersRef = collection(db, "shops", user.merchantId, "onlineOrders");
+        const snapshot = await getDocs(ordersRef);
+        
+        liveOrdersArray = snapshot.docs.map(doc => doc.data());
+        
+        const badge = document.getElementById('onlineOrderBadge');
+        const btn = document.getElementById('onlineOrderBtn');
+        if (liveOrdersArray.length > 0) {
+            badge.innerText = liveOrdersArray.length; badge.style.display = 'inline-block'; btn.style.color = '#fff';
+        } else { badge.style.display = 'none'; btn.style.color = 'var(--text-muted)'; }
+        renderOnlineOrdersModal();
+    } catch(e) { console.error("Firebase Sync Error:", e); }
 }
 
 function renderOnlineOrdersModal() {
@@ -390,9 +394,12 @@ function renderOnlineOrdersModal() {
     }).join('');
 }
 
-async function loadOrderIntoCart(orderId) {
+// 🟢 FIREBASE: Delete Online Order once loaded into Cart
+window.loadOrderIntoCart = async function(orderId) {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const order = liveOrdersArray.find(o => o.orderId === orderId);
     if(!order) return;
+    
     window.cart = [];
     document.getElementById('custName').value = order.customerName || "";
     document.getElementById('custPhone').value = order.phone || "";
@@ -402,9 +409,11 @@ async function loadOrderIntoCart(orderId) {
     document.getElementById('onlineOrdersModal').style.display = 'none';
     if(window.innerWidth <= 900) toggleCart();
     
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const url = window.buildUrl ? buildUrl('/api/clear-order') : '/api/clear-order';
-    await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ merchantId: user.merchantId, orderId: orderId }) });
+    try {
+        const orderRef = doc(db, "shops", user.merchantId, "onlineOrders", orderId);
+        await deleteDoc(orderRef);
+    } catch(e) { console.error("Firebase Delete Error:", e); }
+    
     fetchOnlineOrders();
 }
 
@@ -417,7 +426,7 @@ function renderBillCategories() {
     if(container) container.innerHTML = cats.map((k, i) => `<button class="cat-btn ${i===0?'active':''}" onclick="filterCat(this, '${k==='Sab'?'All':k}')">${k}</button>`).join('');
 }
 
-function filterCat(btn, cat) {
+window.filterCat = function(btn, cat) {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderBillGrid(cat);
@@ -472,7 +481,8 @@ function renderBillGrid(cat='All'){
     displayProducts(filtered);
 }
 
-function handleSearch(q){
+// Added to window for global access from HTML inputs
+window.handleSearch = function(q){
     const ps = getProducts();
     const f = ps.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || (p.barcode && p.barcode.includes(q)));
     displayProducts(f);
@@ -502,7 +512,7 @@ function openVariantSelector(productName, validVariants) {
     document.getElementById('variantModal').style.display = 'flex';
 }
 
-function selectVariantAndClose(id) {
+window.selectVariantAndClose = function(id) {
     document.getElementById('variantModal').style.display = 'none';
     const p = getProducts().find(x => x.id === id);
     if (p.isLoose) openLooseWeightModal(p);
@@ -517,7 +527,7 @@ function openLooseWeightModal(product) {
     document.getElementById('looseModal').style.display = 'flex';
 }
 
-function addLooseItem(weightStr) {
+window.addLooseItem = function(weightStr) {
     const weight = parseFloat(weightStr);
     if (weight > 0 && currentLooseProduct) {
         window.addToBill(currentLooseProduct.id, weight);
@@ -525,9 +535,9 @@ function addLooseItem(weightStr) {
     }
 }
 
-function addCustomLooseItem() {
+window.addCustomLooseItem = function() {
     const w = document.getElementById('customWeight').value;
-    if(w) addLooseItem(w);
+    if(w) window.addLooseItem(w);
 }
 
 function extractBaseWeightKg(qtyStr) {
@@ -596,7 +606,7 @@ window.addToBill = function(productId, qtyToAdd = 1) {
     renderCart();
 }
 
-function updateQty(index, change) {
+window.updateQty = function(index, change) {
     if (window.cart[index]) {
         window.cart[index].qty += change;
         if (window.cart[index].qty <= 0) window.cart.splice(index, 1);
@@ -661,15 +671,17 @@ function renderCart() {
     }
 }
 
-function completeSale() {
+// 🟢 FIREBASE: The core synchronization engine for completing sales
+window.completeSale = function() {
     if(window.cart.length === 0) return alert("Cart khali hai!");
 
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const custName = document.getElementById('custName').value || "Walk-in";
     const custPhone = document.getElementById('custPhone').value || "";
     const disc = parseFloat(document.getElementById('discount').value) || 0;
     const payMode = document.querySelector('input[name="payMode"]:checked').value; 
 
-    // 🟢 NEW FIX: Automatically save new customers and sync to backend!
+    // 1. Sync Customer to Firebase
     if (custPhone && custPhone.length >= 10 && custName !== "Walk-in") {
         let customers = JSON.parse(localStorage.getItem('bharatpos_customers') || '[]');
         const existingIndex = customers.findIndex(c => c.phone === custPhone);
@@ -685,17 +697,10 @@ function completeSale() {
         
         if (customersChanged) {
             localStorage.setItem('bharatpos_customers', JSON.stringify(customers));
-            
-            if (typeof pushCustomersToServer === 'function') {
-                pushCustomersToServer();
-            } else {
-                const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-                if (user.merchantId && typeof buildUrl === 'function') {
-                    fetch(buildUrl('/api/sync-customers'), {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ merchantId: user.merchantId, customers: customers })
-                    }).catch(e => console.log('Sync failed', e));
-                }
+            if (user.merchantId) {
+                const custRef = doc(db, "shops", user.merchantId, "customers", custPhone);
+                setDoc(custRef, { name: custName, phone: custPhone, addedAt: new Date().toISOString() }, { merge: true })
+                    .catch(e => console.error('Firebase Cust Sync failed', e));
             }
         }
     }
@@ -711,16 +716,23 @@ function completeSale() {
     const billId = "INV-" + Math.floor(1000 + Math.random() * 9000);
     const dateStr = new Date().toLocaleString('en-IN');
 
+    // 2. Deduct and Sync Product Stock to Firebase
     let allProducts = getProducts();
     window.cart.forEach(cartItem => {
         let pIndex = allProducts.findIndex(p => p.id === cartItem.id);
         if(pIndex > -1) {
             const deductionValue = cartItem.qty / (cartItem.packWeightKg || 1);
             allProducts[pIndex].stock = Math.max(0, allProducts[pIndex].stock - deductionValue);
+            
+            if(user.merchantId) {
+                const prodRef = doc(db, "shops", user.merchantId, "products", cartItem.id);
+                updateDoc(prodRef, { stock: allProducts[pIndex].stock }).catch(e => {});
+            }
         }
     });
     localStorage.setItem('bharatpos_products', JSON.stringify(allProducts));
 
+    // 3. Save and Sync Bill to Firebase
     const billData = {
         id: billId, date: new Date().toISOString(), customerName: custName, phone: custPhone,
         items: window.cart, totalItems, amount: finalTotal, subTotal, tax: totalTax,
@@ -731,7 +743,10 @@ function completeSale() {
     localSales.push(billData);
     localStorage.setItem('bharatpos_sales', JSON.stringify(localSales));
     
-    if (typeof syncBillToServer === 'function') syncBillToServer(billData);
+    if (user.merchantId) {
+        const billRef = doc(db, "shops", user.merchantId, "sales", billId);
+        setDoc(billRef, billData).catch(e => console.error('Firebase Bill Sync failed', e));
+    }
     
     generateInvoiceHTML(billData, dateStr);
     
@@ -819,7 +834,7 @@ function generateInvoiceHTML(bill, dateStr) {
     document.getElementById('invoiceModal').style.display = "flex";
 }
 
-function toggleCart() { document.getElementById('cartPanel').classList.toggle('open'); }
+window.toggleCart = function() { document.getElementById('cartPanel').classList.toggle('open'); }
 function playBeep() { const a=new(window.AudioContext||window.webkitAudioContext);const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=800;g.gain.value=0.1;o.start();setTimeout(()=>o.stop(),100); }
 
 function setupMobileCartDrag() {
@@ -835,7 +850,7 @@ function setupMobileCartDrag() {
 }
 
 let isScanning = false;
-function openBarcodeScanner() {
+window.openBarcodeScanner = function() {
     document.getElementById('scannerModal').style.display = 'flex';
     if(isScanning) return;
     isScanning = true;
@@ -855,7 +870,8 @@ function openBarcodeScanner() {
         }
     });
 }
-function closeBarcodeScanner() { 
+
+window.closeBarcodeScanner = function() { 
     document.getElementById('scannerModal').style.display = 'none'; 
     if(isScanning) { Quagga.stop(); isScanning = false; }
 }
