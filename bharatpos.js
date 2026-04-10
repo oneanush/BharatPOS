@@ -264,22 +264,37 @@ window.loadOwnedShops = async function(mobileNum) {
         const q = query(shopsRef, where("profile.mobile", "==", searchMobile));
         const snap = await getDocs(q);
         
-        const shops = snap.docs.map(d => ({
+        let shops = snap.docs.map(d => ({
             merchantId: d.data().merchantId || d.id,
             shopName: d.data().profile?.shopName || d.id,
             category: d.data().profile?.category || "Retail",
             isMain: !d.data().profile?.isBranch
         }));
 
+        // 🛟 THE IRONCLAD SAFETY NET
+        // If Firebase missed the main shop due to old data structures, force it back in!
+        const mainId = user.masterId || user.merchantId;
+        const mainExists = shops.find(s => s.merchantId === mainId || s.isMain === true);
+        
+        if (!mainExists && mainId) {
+            shops.unshift({
+                merchantId: mainId,
+                shopName: localStorage.getItem('shopName') || user.shopName || "Main Shop",
+                category: user.category || "Retail",
+                isMain: true
+            });
+        }
+
         if (shops.length > 0) {
             localStorage.setItem(`bharatpos_shops_${searchMobile}`, JSON.stringify(shops));
             return shops;
         }
-    } catch (e) { console.warn("Failed to fetch shops from Firestore. Using cache."); }
+    } catch (e) { 
+        console.warn("Failed to fetch shops from Firestore. Using cache."); 
+    }
     
     return JSON.parse(localStorage.getItem(`bharatpos_shops_${searchMobile}`) || '[]');
 }
-
 window.switchActiveShop = async function(targetMerchantId) {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(user.merchantId === targetMerchantId) return; 
