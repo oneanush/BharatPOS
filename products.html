@@ -341,7 +341,11 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+// 🟢 1. IMPORT FIREBASE SDK
+import { db } from "./bharatpos.js";
+import { doc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 // --- 1. CORE & GST LOGIC ---
 const isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
 let currentEditingName = null; 
@@ -362,8 +366,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(restockName) loadProductForEditByName(restockName);
 });
 
-// Navigation Toggle
-function toggleMenu() {
+// Expose functions to window so HTML onclicks can find them in module mode
+window.toggleMenu = function() {
     const menu = document.getElementById('sideMenu');
     const overlay = document.getElementById('menuOverlay');
     if(menu.classList.contains('open')) {
@@ -387,13 +391,13 @@ function setupGstUI() {
     }
 }
 
-function toggleGstQuick() {
+window.toggleGstQuick = function() {
     const newState = !isGstMode;
     localStorage.setItem('bharatpos_gst_mode', newState ? 'true' : 'false');
     location.reload(); 
 }
 
-function togglePriceLabel() {
+window.togglePriceLabel = function() {
     if(!isGstMode) return;
     const type = document.getElementById('priceType').value;
     const labels = document.querySelectorAll('#priceLabel, .var-price + .floating-label');
@@ -413,7 +417,6 @@ function getProducts() {
     catch(e) { return []; }
 }
 
-// 🟢 Dynamically load unique categories to the Datalist
 function populateCategoryDatalist() {
     const products = getProducts();
     const cats = new Set();
@@ -448,7 +451,7 @@ function renderProducts(){
   const products = getProducts();
   const list = document.getElementById('productsList');
   
-  populateCategoryDatalist(); // 🟢 Re-populate categories on every render
+  populateCategoryDatalist(); 
 
   if(products.length === 0) { 
     list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 Stock khali hai.</div>'; 
@@ -489,7 +492,7 @@ function renderProducts(){
   list.innerHTML = html;
 }
 
-function openDetailModal(encodedName) {
+window.openDetailModal = function(encodedName) {
     const name = decodeURIComponent(encodedName);
     const products = getProducts().filter(p => p.name.toLowerCase() === name.toLowerCase());
     if(products.length === 0) return;
@@ -525,10 +528,10 @@ function openDetailModal(encodedName) {
     document.getElementById('detailModal').style.display = 'flex';
 }
 
-function closeDetailModal() { document.getElementById('detailModal').style.display = 'none'; }
-function editFromModal() { closeDetailModal(); if(currentEditingName) loadProductForEditByName(currentEditingName); }
+window.closeDetailModal = function() { document.getElementById('detailModal').style.display = 'none'; }
+window.editFromModal = function() { window.closeDetailModal(); if(currentEditingName) loadProductForEditByName(currentEditingName); }
 
-function addVariantRow() {
+window.addVariantRow = function() {
     const template = document.getElementById('variantTemplate');
     const clone = template.content.cloneNode(true);
     document.getElementById('variantsContainer').appendChild(clone);
@@ -540,10 +543,13 @@ function resetVariants() {
     document.getElementById('isLooseItem').checked = false;
 }
 
-// 🟢 SMART ADDITIVE ENGINE
-async function handleAddProduct(event){
+// 🟢 FIREBASE: ATOMIC ADDITIVE ENGINE (No more massive payloads)
+window.handleAddProduct = async function(event){
   if(event) event.preventDefault();
   try {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if (!user.merchantId) return alert("Merchant ID missing!");
+
     const name = document.getElementById('productName').value.trim();
     const cat = document.getElementById('productCategory').value.trim();
     const bar = document.getElementById('productBarcode').value.trim();
@@ -556,53 +562,70 @@ async function handleAddProduct(event){
     let products = getProducts();
     let oldVariants = [];
 
-    // If Editing, we extract the old versions so we can update them without overwriting their stock blindly
     if (currentEditingName) {
         oldVariants = products.filter(p => p.name.toLowerCase() === currentEditingName.toLowerCase());
         products = products.filter(p => p.name.toLowerCase() !== currentEditingName.toLowerCase());
     }
 
     const rows = document.querySelectorAll('.variant-row');
-    rows.forEach((row, index) => {
+    const newSavedVariants = [];
+
+    for (let index = 0; index < rows.length; index++) {
+        const row = rows[index];
         const qty = row.querySelector('.var-type').value.trim();
         const stockInput = row.querySelector('.var-stock');
-        
-        // This is the NEW stock being added (can be positive or negative)
         const inputStock = stockInput.value ? parseFloat(stockInput.value) : 0;
         const price = row.querySelector('.var-price').value;
 
-        if(!price) return; 
+        if(!price) continue; 
 
-        const productData = {
-            id: Date.now().toString() + index, 
-            name, price, quantity: qty, category: cat, barcode: bar,
-            hsn: isGstMode ? hsn : "", gstRate: isGstMode ? gstRate : "",
-            priceType: isGstMode ? priceType : "inclusive", isLoose: isLoose
-        };
-
+        // 🐛 BUG FIX: Preserve the old Document ID if we are editing an existing variant!
+        let existingId = Date.now().toString() + index;
         let existingStock = 0;
 
         if (currentEditingName) {
-            // Check if this variant existed before the edit
             const oldMatch = oldVariants.find(o => (o.quantity||'').toLowerCase() === qty.toLowerCase());
-            if (oldMatch) existingStock = parseFloat(oldMatch.stock || 0);
+            if (oldMatch) {
+                existingId = oldMatch.id;
+                existingStock = parseFloat(oldMatch.stock || 0);
+            }
         } else {
-            // Check if we are just scanning a duplicate item to add stock
             const existIndex = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase() && (p.quantity||'').toLowerCase() === qty.toLowerCase());
             if (existIndex > -1) {
+                existingId = products[existIndex].id;
                 existingStock = parseFloat(products[existIndex].stock || 0);
-                products.splice(existIndex, 1); // remove from array so we can push the updated one below
+                products.splice(existIndex, 1); 
             }
         }
 
-        // Add the input to the existing stock!
-        productData.stock = existingStock + inputStock;
+        const productData = {
+            id: existingId, 
+            name, price, quantity: qty, category: cat, barcode: bar,
+            hsn: isGstMode ? hsn : "", gstRate: isGstMode ? gstRate : "",
+            priceType: isGstMode ? priceType : "inclusive", isLoose: isLoose,
+            stock: existingStock + inputStock
+        };
+
         products.push(productData);
-    });
+        newSavedVariants.push(productData.id);
+
+        // 🟢 FIREBASE: Atomically update JUST this one item document
+        const prodRef = doc(db, "shops", user.merchantId, "products", productData.id);
+        await setDoc(prodRef, productData);
+    }
+
+    // Cleanup: If user deleted a variant row while editing, remove it from Firebase
+    if (currentEditingName) {
+        for (const old of oldVariants) {
+            if (!newSavedVariants.includes(old.id)) {
+                const deadRef = doc(db, "shops", user.merchantId, "products", old.id);
+                await deleteDoc(deadRef);
+            }
+        }
+    }
 
     showToast("✅ Saved Successfully!");
     localStorage.setItem('bharatpos_products', JSON.stringify(products));
-    await syncStockToBackend(products);
     renderProducts();
     document.getElementById('productForm').reset();
     resetVariants();
@@ -634,15 +657,14 @@ function loadProductForEditByName(name) {
     const firstRow = rows[0];
     firstRow.querySelector('.var-type').value = products[0].quantity || "";
     firstRow.querySelector('.var-price').value = products[0].price;
-    // 🟢 Keep Add Stock Input Blank so we don't accidentally double the stock
     firstRow.querySelector('.var-stock').value = ""; 
 
     for(let i=1; i<products.length; i++) {
-        addVariantRow();
+        window.addVariantRow();
         const newRow = document.getElementById('variantsContainer').lastElementChild;
         newRow.querySelector('.var-type').value = products[i].quantity || "";
         newRow.querySelector('.var-price').value = products[i].price;
-        newRow.querySelector('.var-stock').value = ""; // Blank for additive logic
+        newRow.querySelector('.var-stock').value = ""; 
     }
     
     window.scrollTo({top: 0, behavior: 'smooth'});
@@ -650,28 +672,36 @@ function loadProductForEditByName(name) {
     showToast(`Editing: ${base.name}`);
 }
 
-function deleteProductConfirm(encodedName){
+// 🟢 FIREBASE: ATOMIC DELETE
+window.deleteProductConfirm = async function(encodedName){
   const name = decodeURIComponent(encodedName);
   if(!confirm(`Delete all variants of ${name}?`)) return;
-  let products = getProducts().filter(p => p.name.toLowerCase() !== name.toLowerCase());
-  localStorage.setItem('bharatpos_products', JSON.stringify(products));
-  syncStockToBackend(products);
+  
+  const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+  const allProducts = getProducts();
+  
+  const toDelete = allProducts.filter(p => p.name.toLowerCase() === name.toLowerCase());
+  const productsToKeep = allProducts.filter(p => p.name.toLowerCase() !== name.toLowerCase());
+  
+  localStorage.setItem('bharatpos_products', JSON.stringify(productsToKeep));
+  
+  // Delete each variant individually from Firestore
+  if (user.merchantId) {
+      for (const p of toDelete) {
+          try {
+              const deadRef = doc(db, "shops", user.merchantId, "products", p.id);
+              await deleteDoc(deadRef);
+          } catch(e) { console.error("Firebase delete failed for", p.id); }
+      }
+  }
+  
   renderProducts();
 }
 
-async function syncStockToBackend(allProducts) {
-    try {
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if (!user.merchantId) return;
-        const url = (typeof buildUrl === 'function') ? buildUrl('/api/save-stock') : '/api/save-stock';
-        await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ merchantId: user.merchantId, products: allProducts }) });
-    } catch (error) { console.error("Sync Failed:", error); }
-}
-
-// --- 3. SCANNER LOGIC ---
+// --- 3. SCANNER LOGIC (Retains Render Microservice for AI Engine) ---
 let cameraStream = null; let aiScanInterval = null; let aiScanLocked = false;          
-function uiStartScan() { document.getElementById('cameraContainer').style.display = 'block'; startLiveScan(); }
-function uiStopScan() { document.getElementById('cameraContainer').style.display = 'none'; stopLiveScan(); }
+window.uiStartScan = function() { document.getElementById('cameraContainer').style.display = 'block'; startLiveScan(); }
+window.uiStopScan = function() { document.getElementById('cameraContainer').style.display = 'none'; stopLiveScan(); }
 async function startLiveScan() {
   if (cameraStream) return;
   const video = document.getElementById("cameraPreview");
@@ -695,11 +725,11 @@ async function captureAndSendToAI(){
   const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1]; 
   aiScanLocked = true; if(overlay) overlay.style.display = 'flex'; 
   try{
-    const url = (typeof buildUrl === 'function') ? buildUrl('/ai-product-scan') : '/ai-product-scan';
+    const url = window.buildUrl ? window.buildUrl('/ai-product-scan') : 'https://server-xy7s.onrender.com/ai-product-scan';
     const res = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: base64 }) });
     const data = await res.json();
     if(data && data.success && data.product){
-      fillProductFromAI(data.product); showToast("✨ AI: " + data.product.name, false); uiStopScan(); 
+      fillProductFromAI(data.product); showToast("✨ AI: " + data.product.name, false); window.uiStopScan(); 
     } 
   } catch(e){} finally { aiScanLocked = false; if(overlay) overlay.style.display = 'none'; }
 }
@@ -709,36 +739,38 @@ function fillProductFromAI(product){
   if(firstRow) { firstRow.querySelector('.var-type').value = product.quantity || "1 pc"; firstRow.querySelector('.var-price').value = product.price || ""; }
   document.getElementById("productCategory").value = product.category || "General";
 }
-function resetAIScan(){ document.getElementById("productForm").reset(); resetVariants(); aiScanLocked=false; if(!cameraStream) uiStartScan(); currentEditingName = null;}
+window.resetAIScan = function(){ document.getElementById("productForm").reset(); resetVariants(); aiScanLocked=false; if(!cameraStream) window.uiStartScan(); currentEditingName = null;}
 function showToast(msg, isError = false) {
   const x = document.getElementById("toast"); x.innerText = msg; x.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
   x.className = "show"; setTimeout(() => x.className = "", 3000);
 }
 
-// 🟢 GLOBAL CATALOG MASTER DATABASE LOGIC 
+// 🟢 FIREBASE: GLOBAL CATALOG MASTER DATABASE LOGIC 
 let masterCatalog = [];
 
-async function openGlobalCatalog() {
+window.openGlobalCatalog = async function() {
     document.getElementById('globalCatalogModal').style.display = 'flex';
     const list = document.getElementById('globalCatalogList');
     list.innerHTML = '<div style="text-align:center; color:#64748b; margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching Master Catalog...</div>';
     
     try {
-        const url = (typeof buildUrl === 'function') ? buildUrl('/api/get-master-db') : '/api/get-master-db';
-        const res = await fetch(url);
-        const data = await res.json();
-        if(data.success && data.database) {
-            masterCatalog = data.database;
-            filterGlobalCatalog(); // Render all initially with categories
+        // Query Firestore Master Catalog Database natively
+        const catalogRef = collection(db, "masterCatalog");
+        const snapshot = await getDocs(catalogRef);
+        
+        masterCatalog = snapshot.docs.map(doc => doc.data());
+
+        if(masterCatalog.length > 0) {
+            window.filterGlobalCatalog(); // Render all initially
         } else {
-            list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Database empty or offline.</div>';
+            list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Database empty or offline. Please run migration script.</div>';
         }
     } catch(e) {
-        list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Connection Error. Check server.</div>';
+        list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Firebase Connection Error. Check rules.</div>';
     }
 }
 
-function filterGlobalCatalog() {
+window.filterGlobalCatalog = function() {
     const q = document.getElementById('globalCatalogSearch').value.toLowerCase();
     const list = document.getElementById('globalCatalogList');
     
@@ -764,7 +796,7 @@ function filterGlobalCatalog() {
         html += `<div style="font-family: 'JetBrains Mono', monospace; color: #a855f7; font-size: 12px; font-weight: 800; border-bottom: 1px dashed rgba(168,85,247,0.4); padding-bottom: 5px; margin: 15px 0 10px; text-transform: uppercase;">📁 ${cat}</div>`;
         
         html += prods.map(p => `
-            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#a855f7'; this.style.background='rgba(168,85,247,0.1)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.background='rgba(255,255,255,0.05)'" onclick='importProductFromCatalog(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#a855f7'; this.style.background='rgba(168,85,247,0.1)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.background='rgba(255,255,255,0.05)'" onclick='window.importProductFromCatalog(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
                 <div>
                     <div style="font-weight:700; color:#fff; font-size:14px;">${p.name} ${p.isLoose ? '⚖️' : ''}</div>
                     <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${p.quantity || '-'} • GST: ${p.gstRate || 0}%</div>
@@ -780,7 +812,7 @@ function filterGlobalCatalog() {
     list.innerHTML = html;
 }
 
-function importProductFromCatalog(product) {
+window.importProductFromCatalog = function(product) {
     document.getElementById('globalCatalogModal').style.display = 'none';
 
     document.getElementById('productName').value = product.name || '';
