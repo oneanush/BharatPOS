@@ -115,9 +115,14 @@
     </div>
   </div>
 
-<script>
+<script type="module">
+// 🟢 1. IMPORT FIREBASE SDK
+import { db } from "./bharatpos.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 // --- UTILS ---
 function formatCurrency(n){ return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+
 function animateValue(obj, start, end, duration, isCurrency=false) {
   if(!obj) return;
   let startTimestamp = null;
@@ -131,7 +136,7 @@ function animateValue(obj, start, end, duration, isCurrency=false) {
   window.requestAnimationFrame(step);
 }
 
-// --- DATA PROCESSING (Dual ID Support) ---
+// --- DATA PROCESSING ---
 function groupSalesByDate(){
   const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
   const grouped = {};
@@ -154,7 +159,8 @@ function groupSalesByDate(){
   return grouped;
 }
 
-function toggleDetails(dateId) {
+// Expose to window for inline HTML onclicks
+window.toggleDetails = function(dateId) {
   const detailRow = document.getElementById('details-' + dateId);
   const isHidden = getComputedStyle(detailRow).display === 'none';
   document.querySelectorAll('.details-row').forEach(row => { row.classList.remove('active'); row.style.display = 'none'; });
@@ -229,11 +235,11 @@ function renderReports(){
 
   tableBody.innerHTML = historyHtml;
   
-  // TRIGGER AI SNAPSHOT (With Stability Fixes)
-  if(typeof handleAISnapshot === 'function') handleAISnapshot(data, totalRev);
+  // TRIGGER AI SNAPSHOT & FIREBASE SYNC
+  handleAISnapshot(data, totalRev);
 }
 
-// --- AI SYNC LOGIC ---
+// --- AI & FIREBASE SYNC LOGIC ---
 function hashStringDjb2(str) {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) { hash = ((hash << 5) + hash) + str.charCodeAt(i); hash = hash & 0xFFFFFFFF; }
@@ -263,10 +269,12 @@ function updateSyncStatus(status) {
 
 async function handleAISnapshot(data, totalRev) {
   try {
-    const snapshot = getReportsSnapshot(data, totalRev);
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if (!user.merchantId) return;
+
+    const snapshot = getReportsSnapshot(data, totalRev, user);
     
-    // 🟢 FIX 1: Generate a hash based ONLY on data content, ignoring the timestamp
-    // This prevents infinite loops where "new Date()" makes every snapshot look new.
+    // Hash based ONLY on data content to prevent infinite syncing loops
     const contentToHash = JSON.stringify({ 
         revenue: snapshot.grand_total_revenue, 
         history: snapshot.sales_history 
@@ -275,21 +283,28 @@ async function handleAISnapshot(data, totalRev) {
     
     const lastHash = localStorage.getItem('bharatpos_last_sent_reports_snapshot_hash');
 
-    // Only send if DATA has changed
+    // Only sync if the data actually changed! (Saves Firebase Write limits)
     if (lastHash !== snapshotHash) {
-       console.log("🚀 Uploading snapshot (Data Changed)...");
+       console.log("🚀 Syncing snapshot to Firebase & AI...");
        updateSyncStatus('syncing');
 
-       // Build URLs safely
-       const consultUrl = (typeof buildUrl === 'function') ? buildUrl('/ai-business-consult') : '/ai-business-consult';
-       const heatmapUrl = (typeof buildUrl === 'function') ? buildUrl('/api/sync-heatmap-source') : '/api/sync-heatmap-source';
+       // 1. 🟢 FIREBASE OPTIMIZATION: Write aggregated summary directly to the Shop Document
+       const firebasePromise = updateDoc(doc(db, "shops", user.merchantId), {
+           heatmapData: snapshot
+       }).catch(e => console.error("Firebase Heatmap Sync failed:", e));
 
-       const p1 = fetch(consultUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ snapshot: snapshot, user_prompt: "System Update" }) });
-       const p2 = fetch(heatmapUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(snapshot) });
+       // 2. AI MICROSERVICE: Ping Chanakya on Render for Insights
+       const consultUrl = window.buildUrl ? window.buildUrl('/ai-business-consult') : 'https://server-xy7s.onrender.com/ai-business-consult';
+       const renderPromise = fetch(consultUrl, { 
+           method: 'POST', 
+           headers: { 'Content-Type': 'application/json' }, 
+           body: JSON.stringify({ snapshot: snapshot, user_prompt: "System Update" }) 
+       });
 
-       const [res1, res2] = await Promise.all([p1, p2]);
+       // Wait for both to finish
+       const [fbRes, renderRes] = await Promise.allSettled([firebasePromise, renderPromise]);
 
-       if (res1.ok && res2.ok) {
+       if (renderRes.status === 'fulfilled' && renderRes.value.ok) {
            localStorage.setItem('bharatpos_last_sent_reports_snapshot_hash', snapshotHash);
            updateSyncStatus('success');
        } else {
@@ -301,19 +316,7 @@ async function handleAISnapshot(data, totalRev) {
   } catch(e) { console.error("Snapshot Error", e); updateSyncStatus('error'); }
 }
 
-function getReportsSnapshot(groupedData, grandTotalRevenue) {
-  let user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  
-  // 🟢 FIX 2: Ensure Merchant ID exists. If missing, auto-generate it.
-  // This prevents the Heatmap from rejecting data due to "UNKNOWN" ID.
-  if (!user.merchantId) {
-      user.merchantId = "SHOP-" + Math.floor(1000 + Math.random() * 9000);
-      localStorage.setItem('bharatpos_user', JSON.stringify(user));
-      console.log("⚠️ Merchant ID was missing. Auto-generated:", user.merchantId);
-  }
-
-  const merchantId = user.merchantId;
-  const location = { lat: user.lat, lng: user.lng };
+function getReportsSnapshot(groupedData, grandTotalRevenue, user) {
   const dates = Object.keys(groupedData).sort();
   
   const dateEntries = dates.map(date => {
@@ -328,10 +331,9 @@ function getReportsSnapshot(groupedData, grandTotalRevenue) {
   });
 
   return { 
-      merchantId, 
-      location, 
+      location: { lat: user.lat || null, lng: user.lng || null }, 
       type: "aggregated_sales_report", 
-      generated_at: new Date().toISOString(), // Still include for backend, but ignored in hash check
+      generated_at: new Date().toISOString(), 
       grand_total_revenue: Number(grandTotalRevenue || 0), 
       sales_history: dateEntries 
   };
