@@ -430,37 +430,36 @@ import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where } fro
       }
   }
 
-  // 🟢 FIREBASE: MULTI-SHOP UI & LOGIC
-  window.initShopSwitcher = async function() {
-      const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-      const switcher = document.getElementById('shopSwitcher');
-      
-      if(!currentUser.mobile) {
-          switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
-          return;
-      }
+ window.initShopSwitcher = async function() {
+    const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const switcher = document.getElementById('shopSwitcher');
+    
+    // If no mobile is attached to the account yet, just show the current shop
+    if(!currentUser.mobile && !currentUser.phone) {
+        switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
+        return;
+    }
 
-      try {
-          // Query Firestore for all shops owned by this mobile number
-          const shopsRef = collection(db, "shops");
-          const q = query(shopsRef, where("profile.mobile", "==", currentUser.mobile));
-          const snapshot = await getDocs(q);
+    try {
+        // Fetch the shops using our new Ironclad function from bharatpos.js
+        let shops = await window.loadOwnedShops(currentUser.mobile || currentUser.phone);
 
-          let shops = snapshot.docs.map(d => ({
-              merchantId: d.data().merchantId,
-              shopName: d.data().profile?.shopName || d.data().merchantId,
-              isMain: !d.data().profile?.isBranch
-          }));
+        if(shops.length > 0) {
+            // Rebuild the dropdown HTML
+            switcher.innerHTML = shops.map(s => 
+                `<option value="${s.merchantId}" ${s.merchantId === currentUser.merchantId ? 'selected' : ''}>
+                    ${window.escapeHTML ? window.escapeHTML(s.shopName) : s.shopName} ${s.isMain ? '⭐ (Main)' : ''}
+                </option>`
+            ).join('');
+        } else {
+            // Ultimate fallback
+            switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
+        }
+    } catch(e) {
+        console.error("Shop Switcher Error", e);
+        switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
+    }
 
-          // 🛟 THE SAFETY NET
-          const mainExists = shops.find(s => s.isMain === true || s.merchantId === (currentUser.masterId || currentUser.merchantId));
-          if (!mainExists && currentUser.merchantId) {
-              shops.unshift({
-                  merchantId: currentUser.masterId || currentUser.merchantId,
-                  shopName: currentUser.shopName || "Main Shop (Recovered)",
-                  isMain: true
-              });
-          }
 
           if(shops.length > 0) {
               switcher.innerHTML = shops.map(s => 
