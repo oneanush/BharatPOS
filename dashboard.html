@@ -429,8 +429,7 @@ import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where } fro
           overlay.style.display = 'block';
       }
   }
-
- window.initShopSwitcher = async function() {
+window.initShopSwitcher = async function() {
     const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const switcher = document.getElementById('shopSwitcher');
     
@@ -459,32 +458,16 @@ import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where } fro
         console.error("Shop Switcher Error", e);
         switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
     }
+}; // <-- This brace properly closes the initShopSwitcher function
 
-
-          if(shops.length > 0) {
-              switcher.innerHTML = shops.map(s => 
-                  `<option value="${s.merchantId}" ${s.merchantId === currentUser.merchantId ? 'selected' : ''}>
-                      ${escapeHtml(s.shopName)} ${s.isMain ? '⭐ (Main)' : ''}
-                  </option>`
-              ).join('');
-          } else {
-              switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
-          }
-      } catch(e) {
-          console.error("Failed to load branches from Firebase", e);
-          switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
-      }
-  }
-  
-  window.handleShopChange = function(val) {
-      if(confirm("Switching shops will reload the dashboard. Continue?")) {
-          if(typeof switchActiveShop === 'function') switchActiveShop(val); 
-      } else {
-          const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-          document.getElementById('shopSwitcher').value = currentUser.merchantId;
-      }
-  }
-  }
+window.handleShopChange = function(val) {
+    if(confirm("Switching shops will reload the dashboard. Continue?")) {
+        if(typeof switchActiveShop === 'function') switchActiveShop(val); 
+    } else {
+        const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        document.getElementById('shopSwitcher').value = currentUser.merchantId;
+    }
+};
   // 🟢 FIREBASE: ADD NEW BRANCH
   window.submitNewBranch = async function(event) {
       const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
