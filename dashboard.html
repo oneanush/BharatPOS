@@ -8,8 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <script src="bharatpos.js"></script> 
+  <script src="bharatpos.js"></script>
+
+<script type="module" src="bharatpos.js"></script>
   
   <style>
     /* --- THEME VARIABLES --- */
@@ -368,10 +369,12 @@
         <button onclick="submitNewBranch(event)" style="width:100%; padding:14px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; transition:0.2s;">Create Branch</button>
     </div>
 </div>
+<script type="module">
+// 🟢 1. IMPORT FIREBASE SDK & YOUR DATABASE
+import { db } from "./bharatpos.js";
+import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-<script>
   // --- 1. UTILS & HELPERS ---
-  
   function formatCurrency(n){ 
     return '₹' + Number(n || 0).toLocaleString('en-IN'); 
   }
@@ -415,7 +418,7 @@
     document.getElementById('greetingDisplay').textContent = txt + ", Seth Ji";
   }
 
-  function toggleMenu() {
+  window.toggleMenu = function() {
       const menu = document.getElementById('sideMenu');
       const overlay = document.getElementById('menuOverlay');
       if(menu.classList.contains('open')) {
@@ -426,8 +429,9 @@
           overlay.style.display = 'block';
       }
   }
-// 🟢 2. MULTI-SHOP UI & LOGIC (With Safety Net)
-  async function initShopSwitcher() {
+
+  // 🟢 FIREBASE: MULTI-SHOP UI & LOGIC
+  window.initShopSwitcher = async function() {
       const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
       const switcher = document.getElementById('shopSwitcher');
       
@@ -437,18 +441,18 @@
       }
 
       try {
-          // Fetch the safe list from our new backend route
-          const res = await fetch(getApiUrl('/api/get-user-shops'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ mobile: currentUser.mobile })
-          });
-          const data = await res.json();
+          // Query Firestore for all shops owned by this mobile number
+          const shopsRef = collection(db, "shops");
+          const q = query(shopsRef, where("profile.mobile", "==", currentUser.mobile));
+          const snapshot = await getDocs(q);
 
-          let shops = data.shops || [];
+          let shops = snapshot.docs.map(d => ({
+              merchantId: d.data().merchantId,
+              shopName: d.data().profile?.shopName || d.data().merchantId,
+              isMain: !d.data().profile?.isBranch
+          }));
 
-          // 🛟 THE SAFETY NET: If your database glitched previously and lost the main shop, 
-          // this forces your original shop back into the dropdown automatically.
+          // 🛟 THE SAFETY NET
           const mainExists = shops.find(s => s.isMain === true || s.merchantId === (currentUser.masterId || currentUser.merchantId));
           if (!mainExists && currentUser.merchantId) {
               shops.unshift({
@@ -468,13 +472,12 @@
               switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
           }
       } catch(e) {
-          console.error("Failed to load branches", e);
+          console.error("Failed to load branches from Firebase", e);
           switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
       }
   }
-  
 
-  function handleShopChange(val) {
+  window.handleShopChange = function(val) {
       if(confirm("Switching shops will reload the dashboard. Continue?")) {
           if(typeof switchActiveShop === 'function') switchActiveShop(val); 
       } else {
@@ -482,20 +485,19 @@
           document.getElementById('shopSwitcher').value = currentUser.merchantId;
       }
   }
-async function submitNewBranch(event) {
+
+  // 🟢 FIREBASE: ADD NEW BRANCH
+  window.submitNewBranch = async function(event) {
       const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
       const shopName = document.getElementById('newBranchName').value.trim();
       const category = document.getElementById('newBranchCat').value;
       
       if(!shopName) return alert("Enter Branch Name");
       
-      // 🟢 SMART RECOVERY: If mobile is missing due to old data, ask for it without forcing re-login!
       let mobileNum = user.mobile || user.phone;
       if(!mobileNum) {
           mobileNum = prompt("Branch link karne ke liye apna 10-digit Mobile Number confirm karein:");
           if(!mobileNum || mobileNum.trim().length !== 10) return alert("Sahi mobile number jaruri hai.");
-          
-          // Permanently save the recovered number so it never asks again
           user.mobile = mobileNum.trim();
           localStorage.setItem('bharatpos_user', JSON.stringify(user));
       }
@@ -506,30 +508,23 @@ async function submitNewBranch(event) {
           const btn = event.target;
           btn.innerText = "Creating...";
           
-          const res = await fetch(getApiUrl('/api/add-branch'), {
-              method: 'POST', 
-              headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ 
-                  mobile: mobileNum, 
-                  masterId: user.merchantId, 
-                  shopName, 
-                  category 
-              })
-          });
-          const data = await res.json();
+          // Generate Branch ID and save directly to Firestore
+          const branchId = `${user.merchantId}-B${Math.floor(1000 + Math.random() * 9000)}`;
+          const shopRef = doc(db, "shops", branchId);
           
-          if(data.success) {
-              alert(`Branch '${shopName}' created successfully! You are still on your current shop. Select the new branch from the dropdown menu to switch to it.`);
-              document.getElementById('addBranchModal').style.display='none';
-              document.getElementById('newBranchName').value = '';
-              btn.innerText = "Create Branch";
-              initShopSwitcher(); // Refresh dropdown to show new branch immediately
-          } else {
-              alert("Failed to create branch on server.");
-              btn.innerText = "Create Branch";
-          }
+          await setDoc(shopRef, {
+              merchantId: branchId,
+              profile: { mobile: mobileNum, shopName, category, isBranch: true, parentId: user.merchantId }
+          });
+          
+          alert(`Branch '${shopName}' created successfully! Select the new branch from the dropdown menu to switch to it.`);
+          document.getElementById('addBranchModal').style.display='none';
+          document.getElementById('newBranchName').value = '';
+          btn.innerText = "Create Branch";
+          window.initShopSwitcher(); // Refresh dropdown
       } catch(e) { 
-          alert("Network error. Since you moved to a cloud URL, please double-check your API_BASE in bharatpos.js!");
+          alert("Firebase Error: Could not create branch.");
+          console.error(e);
           event.target.innerText = "Create Branch";
       }
   }
@@ -543,7 +538,7 @@ async function submitNewBranch(event) {
     } catch(e) {}
   }
 
-  function renderDashboard(){
+  window.renderDashboard = function(){
     const sales = safeParse('bharatpos_sales');
     const products = safeParse('bharatpos_products');
     
@@ -651,16 +646,16 @@ async function submitNewBranch(event) {
   }
 
   // --- 4. UDHAAR VIEW LOGIC (Merged) ---
-  function openUdhaarSection() {
+  window.openUdhaarSection = function() {
       document.getElementById('mainDashboard').style.display = 'none';
       document.getElementById('udhaarView').style.display = 'block';
       renderUdhaarGroups();
   }
 
-  function closeUdhaarSection() {
+  window.closeUdhaarSection = function() {
       document.getElementById('udhaarView').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
-      renderDashboard(); // Refresh main stats in case of settlements
+      window.renderDashboard(); 
   }
 
   function renderUdhaarGroups() {
@@ -703,7 +698,7 @@ async function submitNewBranch(event) {
       `).join('');
   }
 
-  function openCustomerModal(phone) {
+  window.openCustomerModal = function(phone) {
       const allSales = safeParse('bharatpos_sales');
       const invoices = allSales.filter(s => 
           (s.phone === phone || (phone === "Unknown" && !s.phone)) && 
@@ -737,7 +732,7 @@ async function submitNewBranch(event) {
       document.getElementById('customerModal').style.display = 'flex';
   }
 
-  function openReceipt(dataStr) {
+  window.openReceipt = function(dataStr) {
       const inv = JSON.parse(decodeURIComponent(dataStr));
       const amt = inv.amount || inv.total || 0;
       const invId = inv.id || inv.invoiceNo;
@@ -754,44 +749,58 @@ async function submitNewBranch(event) {
       `).join('');
 
       const payBtn = document.getElementById('btnSettle');
-      payBtn.onclick = () => settleDebt(invId);
+      payBtn.onclick = () => window.settleDebt(invId);
 
       document.getElementById('receiptModal').style.display = 'flex';
   }
 
-  function settleDebt(id) {
+  // 🟢 FIREBASE: Update Udhaar specific bill directly in Firestore
+  window.settleDebt = async function(id) {
       if(!confirm("Mark this invoice as PAID?")) return;
 
+      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
       const allSales = safeParse('bharatpos_sales');
       const index = allSales.findIndex(s => (s.id == id || s.invoiceNo == id));
 
       if(index > -1) {
+          // 1. Update Locally for instant UI refresh
           allSales[index].isPaid = true;
           allSales[index].paymentMode = "Cash (Settled)"; 
           allSales[index].settledDate = new Date().toISOString();
-
           localStorage.setItem('bharatpos_sales', JSON.stringify(allSales));
 
           alert("✅ Payment Recorded!");
           document.getElementById('receiptModal').style.display='none';
           document.getElementById('customerModal').style.display='none';
-          renderUdhaarGroups(); // Refresh list
+          renderUdhaarGroups(); 
           
-          if(typeof pushFullBackupToServerDebounced === 'function') pushFullBackupToServerDebounced();
+          // 2. Update specific document in Firestore Sub-collection silently
+          if(user.merchantId) {
+              try {
+                  const saleRef = doc(db, "shops", user.merchantId, "sales", id);
+                  await updateDoc(saleRef, { 
+                      isPaid: true, 
+                      paymentMode: "Cash (Settled)", 
+                      settledDate: new Date().toISOString() 
+                  });
+              } catch(e) {
+                  console.error("Firebase Udhaar Update Failed:", e);
+              }
+          }
       } else {
           alert("Error: Invoice not found.");
       }
   }
 
-  function resetSales(){
+  window.resetSales = function(){
     if (confirm('⚠ Sawdhan: Kya aap pura purana hisab delete karna chahte hain?')){ 
         try { localStorage.setItem('bharatpos_sales','[]'); } catch(e) {} 
-        renderDashboard(); 
+        window.renderDashboard(); 
     }
   }
 
-  // --- 5. AI SYNC LOGIC ---
-  async function sendDashboardSnapshot(metrics) {
+  // --- 5. AI SYNC LOGIC (Still using Render Microservice) ---
+  window.sendDashboardSnapshot = async function(metrics) {
       const statusEl = document.getElementById('aiSyncStatus');
       const textEl = document.getElementById('aiSyncText');
       
@@ -804,9 +813,9 @@ async function submitNewBranch(event) {
           low_stock_count: metrics.lowStock.length,
           low_stock_items: metrics.lowStock.slice(0, 10).map(p => p.name), 
           top_selling: Object.entries(metrics.productCounts)
-                             .sort((a,b)=>b[1]-a[1])
-                             .slice(0,5)
-                             .map(x=> ({name: x[0], qty: x[1]}))
+                              .sort((a,b)=>b[1]-a[1])
+                              .slice(0,5)
+                              .map(x=> ({name: x[0], qty: x[1]}))
       };
 
       if(statusEl) statusEl.className = 'ai-sync-pill syncing';
@@ -840,66 +849,61 @@ async function submitNewBranch(event) {
   document.addEventListener("DOMContentLoaded", () => {
       setGreeting();
       loadUser();
-      initShopSwitcher(); // Call the newly injected logic
-      setTimeout(renderDashboard, 100);
+      window.initShopSwitcher(); 
+      setTimeout(window.renderDashboard, 100);
   });
 
   document.addEventListener("visibilitychange", () => { 
-      if (!document.hidden) renderDashboard(); 
+      if (!document.hidden) window.renderDashboard(); 
   });
 
-  // --- 7. RECEIVER LOGIC ---
-
-  // Poll for messages every 10 seconds
+  // --- 7. FIREBASE: RECEIVER LOGIC (Ticker & Broadcasts) ---
   setInterval(checkIncomingMessages, 10000);
 
   async function checkIncomingMessages() {
       try {
-          // 1. Check for Live Ticker
-          const tRes = await fetch(getApiUrl('/api/get-ticker'));
-          const tData = await tRes.json();
+          // Fetch settings/alerts from Global Firestore database
+          const alertRef = doc(db, "system", "alerts");
+          const alertSnap = await getDoc(alertRef);
           
-          if(tData.success && tData.text) {
-              const bar = document.getElementById('dashboardTicker');
-              const txt = document.getElementById('dashTickerText');
+          if (alertSnap.exists()) {
+              const data = alertSnap.data();
               
-              // Only update if changed
-              if(txt.innerText !== tData.text) {
-                  txt.innerText = tData.text;
-                  // Duplicate text for smooth scrolling loop
-                  txt.innerHTML = `<span>${tData.text}</span> &nbsp;&nbsp;&bull;&nbsp;&nbsp; <span>${tData.text}</span>`;
-                  bar.style.display = 'flex';
+              // 1. Live Ticker Updates
+              if(data.tickerText) {
+                  const bar = document.getElementById('dashboardTicker');
+                  const txt = document.getElementById('dashTickerText');
+                  
+                  if(txt.innerText !== data.tickerText) {
+                      txt.innerText = data.tickerText;
+                      txt.innerHTML = `<span>${data.tickerText}</span> &nbsp;&nbsp;&bull;&nbsp;&nbsp; <span>${data.tickerText}</span>`;
+                      if(bar) bar.style.display = 'flex';
+                  }
               }
-          }
 
-          // 2. Check for Global Broadcasts
-          const bRes = await fetch(getApiUrl('/api/get-broadcast'));
-          const bData = await bRes.json();
-          
-          if(bData.success && bData.data) {
-              const lastSeen = localStorage.getItem('last_broadcast_id');
-              const msg = bData.data;
-              
-              // If this is a new message (based on timestamp/ID)
-              if(msg.time > (lastSeen || 0)) {
-                  document.getElementById('bcTitle').innerText = msg.title;
-                  document.getElementById('bcBody').innerText = msg.body;
-                  document.getElementById('broadcastModal').style.display = 'flex';
+              // 2. Global Broadcasts
+              if(data.broadcast && data.broadcast.time) {
+                  const lastSeen = localStorage.getItem('last_broadcast_id');
+                  const msg = data.broadcast;
                   
-                  // Play Alert Sound
-                  const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                  audio.play().catch(e => console.log("Audio blocked"));
-                  
-                  // Mark as seen
-                  localStorage.setItem('last_broadcast_id', msg.time);
+                  if(msg.time > (lastSeen || 0)) {
+                      document.getElementById('bcTitle').innerText = msg.title;
+                      document.getElementById('bcBody').innerText = msg.body;
+                      document.getElementById('broadcastModal').style.display = 'flex';
+                      
+                      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                      audio.play().catch(e => console.log("Audio blocked"));
+                      
+                      localStorage.setItem('last_broadcast_id', msg.time);
+                  }
               }
           }
       } catch(e) { 
-          console.log("Sync Silent Fail"); 
+          // Silent Fail for offline gracefully 
       }
   }
 
-  function closeBroadcast() {
+  window.closeBroadcast = function() {
       document.getElementById('broadcastModal').style.display = 'none';
   }
 </script>
