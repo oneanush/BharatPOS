@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -591,6 +592,7 @@ window.doImport = function(event) {
         if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure.');
 
         if (confirm('Press OK to REPLACE your entire local storage with this backup file.')) {
+            const currentUser = localStorage.getItem('bharatpos_user');
             localStorage.clear();
             
             for (const key in parsed) {
@@ -598,6 +600,7 @@ window.doImport = function(event) {
                 if (typeof val === 'object') localStorage.setItem(key, JSON.stringify(val));
                 else localStorage.setItem(key, String(val));
             }
+            if (currentUser) localStorage.setItem('bharatpos_user', currentUser);
             alert('✅ Import complete. The app will now reload.');
             setTimeout(()=> location.reload(), 400);
         }
