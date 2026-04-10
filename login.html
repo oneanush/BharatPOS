@@ -259,11 +259,10 @@
       <button class="primary" style="margin-top:15px; background: transparent; border: 1px solid var(--border); color: white;" onclick="document.getElementById('shopSelectModal').style.display='none'">Cancel</button>
     </div>
   </div>
-
 <script type="module">
-// 🟢 1. IMPORT FIREBASE SDK (Auth imports removed for bypass)
+// 🟢 1. IMPORT FIREBASE SDK (OTP Bypassed)
 import { db } from "./bharatpos.js";
-import { collection, doc, setDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 /* --- UI TAB SWITCHING --- */
 const btnModeRegistered = document.getElementById('btnModeRegistered');
@@ -287,7 +286,8 @@ function setMode(mode) {
 btnModeRegistered.addEventListener('click', ()=> setMode('registered'));
 btnModeNew.addEventListener('click', ()=> setMode('new'));
 
-/* --- 🟢 LOGIN EXISTING MERCHANT (OTP BYPASSED) --- */
+
+/* --- 🟢 LOGIN EXISTING MERCHANT (FOOLPROOF & BYPASSED) --- */
 document.getElementById('regSendOtpBtn').addEventListener('click', async function() {
   const btn = this; const status = document.getElementById('regStatus');
   const mobile = (document.getElementById('reg_mobile').value || '').trim();
@@ -295,65 +295,17 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
   if (!mobile || mobile.length !== 10) { status.innerText = 'Enter valid 10-digit mobile'; return; }
   
   btn.classList.add('loading'); 
-  status.innerText = 'Bypassing OTP... Finding your shop...';
-  
-  try {
-      // Look up shops in Firestore immediately
-      const shopsRef = collection(db, "shops");
-      const q = query(shopsRef, where("profile.mobile", "==", mobile));
-      const querySnapshot = await getDocs(q);
-
-      const shops = [];
-      querySnapshot.forEach((doc) => { shops.push(doc.data()); });
-
-      if (shops.length > 0) {
-          if (shops.length === 1) {
-              triggerRestoreSequence(shops[0], () => {}, mobile);
-          } else {
-              const listHtml = shops.map(shop => `
-                  <button type="button" style="width: 100%; text-align: left; padding: 15px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="window.triggerRestoreSequenceObj('${encodeURIComponent(JSON.stringify(shop))}', '${mobile}')">
-                      <div>
-                          <strong style="font-size:16px; color: var(--accent);">${shop.profile.shopName} ${!shop.profile.isBranch ? '<span style="font-size:10px; color:#000; background:var(--accent); padding:2px 6px; border-radius:4px; margin-left:5px;">Main</span>' : ''}</strong>
-                          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">ID: ${shop.merchantId}</div>
-                      </div>
-                      <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
-                  </button>
-              `).join('');
-              
-              document.getElementById('shopSelectList').innerHTML = listHtml;
-              document.getElementById('shopSelectModal').style.display = 'flex';
-          }
-      } else {
-          status.innerText = 'No account found. Please register as a New Merchant.';
-      }
-  } catch(e) { 
-      console.error(e);
-      status.innerText = 'Database lookup failed.';
-  } finally {
-      btn.classList.remove('loading');
-  }
-});
-/* --- 🟢 LOGIN EXISTING MERCHANT (X-RAY DEBUG MODE) --- */
-document.getElementById('regSendOtpBtn').addEventListener('click', async function() {
-  const btn = this; const status = document.getElementById('regStatus');
-  const mobile = (document.getElementById('reg_mobile').value || '').trim();
-  
-  if (!mobile || mobile.length !== 10) { status.innerText = 'Enter valid 10-digit mobile'; return; }
-  
-  btn.classList.add('loading'); 
-  status.innerText = 'Searching database... Check your browser console (F12)!';
-  
+  status.innerText = 'Searching database...';
   console.log("🔍 TARGET MOBILE:", mobile);
 
   try {
       const shopsRef = collection(db, "shops");
       const querySnapshot = await getDocs(shopsRef);
-
+      
       console.log("📦 TOTAL SHOPS IN FIREBASE:", querySnapshot.size);
 
-      // If size is 0, the database is either empty or blocking us!
       if (querySnapshot.size === 0) {
-          status.innerText = 'Firebase returned 0 shops. It is either empty or blocked by rules.';
+          status.innerText = 'Firebase is empty. Click "New Merchant" to register.';
           btn.classList.remove('loading');
           return;
       }
@@ -363,12 +315,9 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
 
       querySnapshot.forEach((doc) => { 
           const data = doc.data();
-          console.log(`📄 Inspecting Document ID [${doc.id}]:`, data);
-          
           const dbMobile = String(data.mobile || data.profile?.mobile || data.profile?.phone || "").replace("+91", "").trim();
           
           if (dbMobile === inputMobile) {
-              console.log("✅ MATCH FOUND!");
               if(!data.merchantId) data.merchantId = doc.id;
               if(!data.profile) data.profile = { shopName: "My Shop", mobile: dbMobile };
               shops.push(data); 
@@ -379,7 +328,6 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
           if (shops.length === 1) {
               window.triggerRestoreSequenceObj(encodeURIComponent(JSON.stringify(shops[0])), mobile);
           } else {
-              // Multi-branch selection logic
               const listHtml = shops.map(shop => `
                   <button type="button" style="width: 100%; text-align: left; padding: 15px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;" onclick="window.triggerRestoreSequenceObj('${encodeURIComponent(JSON.stringify(shop))}', '${mobile}')">
                       <div>
@@ -394,15 +342,60 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
               document.getElementById('shopSelectModal').style.display = 'flex';
           }
       } else {
-          status.innerText = 'Looked at all shops, but no phone number matched.';
+          status.innerText = 'Looked at all shops, but no phone number matched. Register new.';
       }
   } catch(e) { 
       console.error("🚨 FIREBASE ERROR:", e);
-      status.innerText = 'Firebase Error! Check console (F12). Usually a Rules issue.';
+      status.innerText = 'Firebase Error! Check console (F12).';
   } finally {
       btn.classList.remove('loading');
   }
 });
+
+
+/* --- 🟢 REGISTER NEW MERCHANT (OTP BYPASSED) --- */
+document.getElementById('newSendOtpBtn').addEventListener('click', async function() {
+  const btn = this; 
+  const formData = {
+    ownerName: (document.getElementById('ownerName').value || '').trim(),
+    mobile: (document.getElementById('mobile').value || '').trim(),
+    shopName: (document.getElementById('shopName').value || '').trim(),
+    category: (document.getElementById('shopCategory').value || '').trim()
+  };
+  
+  if (!formData.shopName || !formData.mobile || formData.mobile.length !== 10) { 
+      alert('Please fill out all required fields correctly (10 digit mobile).'); 
+      return; 
+  }
+
+  btn.classList.add('loading');
+
+  try {
+      const codePrefix = (formData.category || 'SHP').substring(0, 3).toUpperCase();
+      const codeSuffix = (formData.mobile || '0000000000').substring(6, 10);
+      const merchantId = `${codePrefix}-${codeSuffix}`;
+      
+      const shopRef = doc(db, "shops", merchantId);
+      await setDoc(shopRef, {
+          merchantId: merchantId,
+          profile: { ...formData, joinedDate: new Date().toISOString() }
+      });
+
+      const userObj = { ...formData, merchantId: merchantId };
+      localStorage.setItem('bharatpos_user', JSON.stringify(userObj));
+      
+      document.getElementById('modalShopName').innerText = formData.shopName;
+      document.getElementById('generatedCode').innerText = merchantId;
+      document.getElementById('idModal').style.display = 'flex';
+  } catch(e) { 
+      alert('Registration Failed. Check console.');
+      console.error(e);
+  } finally {
+      btn.classList.remove('loading');
+  }
+});
+
+
 /* --- 🟢 LIGHTWEIGHT RESTORE SEQUENCE --- */
 window.triggerRestoreSequenceObj = function(shopString, mobile) {
     const shop = JSON.parse(decodeURIComponent(shopString));
@@ -413,7 +406,7 @@ window.triggerRestoreSequenceObj = function(shopString, mobile) {
 async function triggerRestoreSequence(shopDoc, cleanupCallback, mobile) {
     if(cleanupCallback) cleanupCallback();
     
-    // Wipe old session completely to prevent bleed
+    // Wipe old session completely
     localStorage.removeItem('bharatpos_products');
     localStorage.removeItem('bharatpos_sales');
     localStorage.removeItem('bharatpos_customers');
