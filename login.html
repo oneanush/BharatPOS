@@ -261,20 +261,9 @@
   </div>
 
 <script type="module">
-// 🟢 1. IMPORT FIREBASE SDK
-import { auth, db } from "./bharatpos.js";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// 🟢 1. IMPORT FIREBASE SDK (Auth imports removed for bypass)
+import { db } from "./bharatpos.js";
 import { collection, doc, setDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-let confirmationResult = null; // Will hold the Firebase OTP verification object
-
-// Initialize Invisible reCAPTCHA for Phone Auth
-window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    'size': 'invisible',
-    'callback': (response) => {
-        // reCAPTCHA solved, allow signInWithPhoneNumber.
-    }
-});
 
 /* --- UI TAB SWITCHING --- */
 const btnModeRegistered = document.getElementById('btnModeRegistered');
@@ -298,7 +287,7 @@ function setMode(mode) {
 btnModeRegistered.addEventListener('click', ()=> setMode('registered'));
 btnModeNew.addEventListener('click', ()=> setMode('new'));
 
-/* --- 🟢 FIREBASE: LOGIN EXISTING MERCHANT --- */
+/* --- 🟢 LOGIN EXISTING MERCHANT (OTP BYPASSED) --- */
 document.getElementById('regSendOtpBtn').addEventListener('click', async function() {
   const btn = this; const status = document.getElementById('regStatus');
   const mobile = (document.getElementById('reg_mobile').value || '').trim();
@@ -306,24 +295,46 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
   if (!mobile || mobile.length !== 10) { status.innerText = 'Enter valid 10-digit mobile'; return; }
   
   btn.classList.add('loading'); 
-  status.innerText = 'Requesting secure OTP...';
+  status.innerText = 'Bypassing OTP... Finding your shop...';
   
   try {
-      const phoneNumber = "+91" + mobile;
-      confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier);
-      showOtpModalForRegisteredLookup(mobile, status, btn);
-  } catch (error) {
-      console.error("SMS Error:", error);
-      status.innerText = 'Network error or too many requests. Try again later.';
+      // Look up shops in Firestore immediately
+      const shopsRef = collection(db, "shops");
+      const q = query(shopsRef, where("profile.mobile", "==", mobile));
+      const querySnapshot = await getDocs(q);
+
+      const shops = [];
+      querySnapshot.forEach((doc) => { shops.push(doc.data()); });
+
+      if (shops.length > 0) {
+          if (shops.length === 1) {
+              triggerRestoreSequence(shops[0], () => {}, mobile);
+          } else {
+              const listHtml = shops.map(shop => `
+                  <button type="button" style="width: 100%; text-align: left; padding: 15px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="window.triggerRestoreSequenceObj('${encodeURIComponent(JSON.stringify(shop))}', '${mobile}')">
+                      <div>
+                          <strong style="font-size:16px; color: var(--accent);">${shop.profile.shopName} ${!shop.profile.isBranch ? '<span style="font-size:10px; color:#000; background:var(--accent); padding:2px 6px; border-radius:4px; margin-left:5px;">Main</span>' : ''}</strong>
+                          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">ID: ${shop.merchantId}</div>
+                      </div>
+                      <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+                  </button>
+              `).join('');
+              
+              document.getElementById('shopSelectList').innerHTML = listHtml;
+              document.getElementById('shopSelectModal').style.display = 'flex';
+          }
+      } else {
+          status.innerText = 'No account found. Please register as a New Merchant.';
+      }
+  } catch(e) { 
+      console.error(e);
+      status.innerText = 'Database lookup failed.';
+  } finally {
       btn.classList.remove('loading');
-      // Reset recaptcha on error
-      window.recaptchaVerifier.render().then(function(widgetId) {
-        grecaptcha.reset(widgetId);
-      });
   }
 });
 
-/* --- 🟢 FIREBASE: REGISTER NEW MERCHANT --- */
+/* --- 🟢 REGISTER NEW MERCHANT (OTP BYPASSED) --- */
 document.getElementById('newSendOtpBtn').addEventListener('click', async function() {
   const btn = this; 
   const formData = {
@@ -341,144 +352,36 @@ document.getElementById('newSendOtpBtn').addEventListener('click', async functio
   btn.classList.add('loading');
 
   try {
-      const phoneNumber = "+91" + formData.mobile;
-      confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier);
-      showOtpModalForRegistration(formData, btn);
-  } catch (error) {
-      console.error("SMS Error:", error);
-      alert('Could not send OTP. Please check your internet or try again later.');
-      btn.classList.remove('loading');
-      window.recaptchaVerifier.render().then(function(widgetId) {
-        grecaptcha.reset(widgetId);
+      // Generate unique merchant ID
+      const codePrefix = (formData.category || 'SHP').substring(0, 3).toUpperCase();
+      const codeSuffix = (formData.mobile || '0000000000').substring(6, 10);
+      const merchantId = `${codePrefix}-${codeSuffix}`;
+      
+      // Save directly to Firestore
+      const shopRef = doc(db, "shops", merchantId);
+      await setDoc(shopRef, {
+          merchantId: merchantId,
+          profile: { ...formData, joinedDate: new Date().toISOString() }
       });
+
+      // Save Identity locally
+      const userObj = { ...formData, merchantId: merchantId };
+      localStorage.setItem('bharatpos_user', JSON.stringify(userObj));
+      
+      // Show Success Screen
+      document.getElementById('modalShopName').innerText = formData.shopName;
+      document.getElementById('generatedCode').innerText = merchantId;
+      document.getElementById('idModal').style.display = 'flex';
+
+  } catch(e) { 
+      alert('Registration Failed.');
+      console.error(e);
+  } finally {
+      btn.classList.remove('loading');
   }
 });
 
-/* --- 🟢 FIREBASE: OTP VERIFICATION (LOGIN FLOW) --- */
-function showOtpModalForRegisteredLookup(mobile, statusEl, triggerBtn) {
-  const modal = document.getElementById('otpModal');
-  const otpInput = document.getElementById('otpInput');
-  const verifyBtn = document.getElementById('verifyOtpBtn');
-  const cancelBtn = document.getElementById('otpCancel');
-
-  document.getElementById('otpMsg').innerText = `Code sent to +91 ${mobile}`;
-  otpInput.value = '';
-  modal.style.display = 'flex';
-  triggerBtn.classList.remove('loading');
-
-  const cleanup = () => { verifyBtn.onclick = null; cancelBtn.onclick = null; modal.style.display = 'none'; };
-
-  verifyBtn.onclick = async () => {
-    const otp = (otpInput.value || '').trim();
-    if (otp.length !== 6) return alert('Enter the 6-digit OTP');
-    
-    verifyBtn.classList.add('loading');
-    
-    try {
-        // Confirm with Firebase
-        await confirmationResult.confirm(otp);
-        verifyBtn.classList.remove('loading');
-        statusEl.innerText = 'Identity verified. Finding your shop...';
-        
-        // Lookup shops in Firestore
-        const shopsRef = collection(db, "shops");
-        const q = query(shopsRef, where("profile.mobile", "==", mobile));
-        const querySnapshot = await getDocs(q);
-
-        const shops = [];
-        querySnapshot.forEach((doc) => { shops.push(doc.data()); });
-
-        if (shops.length > 0) {
-            if (shops.length === 1) {
-                triggerRestoreSequence(shops[0], cleanup, mobile);
-            } else {
-                cleanup();
-                const listHtml = shops.map(shop => `
-                    <button type="button" style="width: 100%; text-align: left; padding: 15px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="window.triggerRestoreSequenceObj('${encodeURIComponent(JSON.stringify(shop))}', '${mobile}')">
-                        <div>
-                            <strong style="font-size:16px; color: var(--accent);">${shop.profile.shopName} ${!shop.profile.isBranch ? '<span style="font-size:10px; color:#000; background:var(--accent); padding:2px 6px; border-radius:4px; margin-left:5px;">Main</span>' : ''}</strong>
-                            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">ID: ${shop.merchantId}</div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
-                    </button>
-                `).join('');
-                
-                document.getElementById('shopSelectList').innerHTML = listHtml;
-                document.getElementById('shopSelectModal').style.display = 'flex';
-            }
-        } else {
-            statusEl.innerText = 'No account found. Please register as a New Merchant.';
-            cleanup();
-        }
-    } catch(e) { 
-        verifyBtn.classList.remove('loading');
-        alert('Invalid OTP or Verification Failed.');
-    }
-  };
-
-  cancelBtn.onclick = () => { modal.style.display = 'none'; statusEl.innerText = ''; };
-}
-
-
-/* --- 🟢 FIREBASE: OTP VERIFICATION (REGISTER FLOW) --- */
-function showOtpModalForRegistration(formData, triggerBtn) {
-  const modal = document.getElementById('otpModal');
-  const otpInput = document.getElementById('otpInput');
-  const verifyBtn = document.getElementById('verifyOtpBtn');
-  const cancelBtn = document.getElementById('otpCancel');
-
-  document.getElementById('otpMsg').innerText = `Code sent to +91 ${formData.mobile}`;
-  otpInput.value = '';
-  modal.style.display = 'flex';
-  triggerBtn.classList.remove('loading');
-
-  const cleanup = () => { verifyBtn.onclick = null; cancelBtn.onclick = null; modal.style.display = 'none'; };
-
-  verifyBtn.onclick = async () => {
-    const otp = (otpInput.value || '').trim();
-    if (otp.length !== 6) return alert('Enter the 6-digit OTP');
-    
-    verifyBtn.classList.add('loading');
-    
-    try {
-        // Confirm with Firebase
-        await confirmationResult.confirm(otp);
-        verifyBtn.classList.remove('loading');
-        
-        // 1. Generate unique merchant ID
-        const codePrefix = (formData.category || 'SHP').substring(0, 3).toUpperCase();
-        const codeSuffix = (formData.mobile || '0000000000').substring(6, 10);
-        const merchantId = `${codePrefix}-${codeSuffix}`;
-        
-        // 2. Save directly to Firestore
-        const shopRef = doc(db, "shops", merchantId);
-        await setDoc(shopRef, {
-            merchantId: merchantId,
-            profile: { ...formData, joinedDate: new Date().toISOString() }
-        });
-
-        // 3. Save Identity locally
-        const userObj = { ...formData, merchantId: merchantId };
-        localStorage.setItem('bharatpos_user', JSON.stringify(userObj));
-        
-        // 4. Show Success Screen
-        document.getElementById('modalShopName').innerText = formData.shopName;
-        document.getElementById('generatedCode').innerText = merchantId;
-        document.getElementById('idModal').style.display = 'flex';
-        cleanup();
-
-    } catch(e) { 
-        verifyBtn.classList.remove('loading');
-        alert('Invalid OTP or Registration Failed.');
-        console.error(e);
-    }
-  };
-
-  cancelBtn.onclick = () => { modal.style.display = 'none'; };
-}
-
-
-/* --- 🟢 FIREBASE: LIGHTWEIGHT RESTORE SEQUENCE --- */
+/* --- 🟢 LIGHTWEIGHT RESTORE SEQUENCE --- */
 window.triggerRestoreSequenceObj = function(shopString, mobile) {
     const shop = JSON.parse(decodeURIComponent(shopString));
     document.getElementById('shopSelectModal').style.display = 'none';
@@ -498,10 +401,6 @@ async function triggerRestoreSequence(shopDoc, cleanupCallback, mobile) {
     const user = { ...shopDoc.profile, merchantId: shopDoc.merchantId, mobile: mobile };
     localStorage.setItem('bharatpos_user', JSON.stringify(user));
 
-    // Notice: We don't fetch heavy sales histories here anymore!
-    // The Dashboard and Billing pages will pull data dynamically from Firestore.
-    // For offline capability, we fetch just the Products and Customers to cache them.
-    
     try {
         const prodRef = collection(db, "shops", shopDoc.merchantId, "products");
         const prodSnap = await getDocs(prodRef);
