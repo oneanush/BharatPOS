@@ -475,7 +475,7 @@ import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where } fro
           switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
       }
   }
-  }
+  
   window.handleShopChange = function(val) {
       if(confirm("Switching shops will reload the dashboard. Continue?")) {
           if(typeof switchActiveShop === 'function') switchActiveShop(val); 
@@ -484,7 +484,7 @@ import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where } fro
           document.getElementById('shopSwitcher').value = currentUser.merchantId;
       }
   }
-
+  }
   // 🟢 FIREBASE: ADD NEW BRANCH
   window.submitNewBranch = async function(event) {
       const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
