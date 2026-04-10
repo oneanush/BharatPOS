@@ -333,8 +333,7 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
       btn.classList.remove('loading');
   }
 });
-
-/* --- 🟢 LOGIN EXISTING MERCHANT (OTP BYPASSED & FOOLPROOF LOOKUP) --- */
+/* --- 🟢 LOGIN EXISTING MERCHANT (X-RAY DEBUG MODE) --- */
 document.getElementById('regSendOtpBtn').addEventListener('click', async function() {
   const btn = this; const status = document.getElementById('regStatus');
   const mobile = (document.getElementById('reg_mobile').value || '').trim();
@@ -342,24 +341,34 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
   if (!mobile || mobile.length !== 10) { status.innerText = 'Enter valid 10-digit mobile'; return; }
   
   btn.classList.add('loading'); 
-  status.innerText = 'Bypassing OTP... Searching entire database...';
+  status.innerText = 'Searching database... Check your browser console (F12)!';
   
+  console.log("🔍 TARGET MOBILE:", mobile);
+
   try {
-      // Fetching all shops to catch ANY variation in how the mobile number was saved
       const shopsRef = collection(db, "shops");
       const querySnapshot = await getDocs(shopsRef);
+
+      console.log("📦 TOTAL SHOPS IN FIREBASE:", querySnapshot.size);
+
+      // If size is 0, the database is either empty or blocking us!
+      if (querySnapshot.size === 0) {
+          status.innerText = 'Firebase returned 0 shops. It is either empty or blocked by rules.';
+          btn.classList.remove('loading');
+          return;
+      }
 
       const shops = [];
       const inputMobile = String(mobile).replace("+91", "").trim();
 
       querySnapshot.forEach((doc) => { 
           const data = doc.data();
+          console.log(`📄 Inspecting Document ID [${doc.id}]:`, data);
           
-          // Check all possible places the mobile number might be hiding
           const dbMobile = String(data.mobile || data.profile?.mobile || data.profile?.phone || "").replace("+91", "").trim();
           
           if (dbMobile === inputMobile) {
-              // Safety net: ensure merchantId is attached to the object
+              console.log("✅ MATCH FOUND!");
               if(!data.merchantId) data.merchantId = doc.id;
               if(!data.profile) data.profile = { shopName: "My Shop", mobile: dbMobile };
               shops.push(data); 
@@ -370,10 +379,11 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
           if (shops.length === 1) {
               window.triggerRestoreSequenceObj(encodeURIComponent(JSON.stringify(shops[0])), mobile);
           } else {
+              // Multi-branch selection logic
               const listHtml = shops.map(shop => `
                   <button type="button" style="width: 100%; text-align: left; padding: 15px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;" onclick="window.triggerRestoreSequenceObj('${encodeURIComponent(JSON.stringify(shop))}', '${mobile}')">
                       <div>
-                          <strong style="font-size:16px; color: var(--accent);">${shop.profile?.shopName || shop.merchantId} ${!shop.profile?.isBranch ? '<span style="font-size:10px; color:#000; background:var(--accent); padding:2px 6px; border-radius:4px; margin-left:5px;">Main</span>' : ''}</strong>
+                          <strong style="font-size:16px; color: var(--accent);">${shop.profile?.shopName || shop.merchantId}</strong>
                           <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">ID: ${shop.merchantId}</div>
                       </div>
                       <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
@@ -384,11 +394,11 @@ document.getElementById('regSendOtpBtn').addEventListener('click', async functio
               document.getElementById('shopSelectModal').style.display = 'flex';
           }
       } else {
-          status.innerText = 'No account found. (Did you create it in MongoDB before we switched to Firebase?)';
+          status.innerText = 'Looked at all shops, but no phone number matched.';
       }
   } catch(e) { 
-      console.error(e);
-      status.innerText = 'Database lookup failed. Check Firebase Rules.';
+      console.error("🚨 FIREBASE ERROR:", e);
+      status.innerText = 'Firebase Error! Check console (F12). Usually a Rules issue.';
   } finally {
       btn.classList.remove('loading');
   }
