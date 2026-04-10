@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Command Center • BharatPOS</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://oneanush.github.io/BharatPOS/bharatpos.js"></script>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -98,7 +96,7 @@
     .report-table th { text-align: left; padding: 15px; color: #94a3b8; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .report-table td { padding: 15px; color: #f8fafc; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
-    /* Custom Scrollbar for Terminal */
+    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -110,27 +108,36 @@
 </head>
 <body>
 
-<button class="menu-toggle" onclick="toggleSidebar()">
+<script>
+    // 🛑 PASSWORD GATEKEEPER
+    const adminPass = prompt("Enter Admin Password:");
+    if (adminPass !== "9911") {
+        alert("Access Denied.");
+        window.location.href = "index.html";
+    }
+</script>
+
+<button class="menu-toggle" onclick="window.toggleSidebar()">
     <i class="fa-solid fa-bars"></i>
 </button>
 
-<div class="overlay" onclick="toggleSidebar()"></div>
+<div class="overlay" onclick="window.toggleSidebar()"></div>
 
 <div class="app-sidebar" id="appSidebar">
     <div class="sidebar-header">
         <span>Admin Panel</span>
-        <i class="fa-solid fa-xmark" style="cursor:pointer; color:#94a3b8; transition:0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'" onclick="toggleSidebar()"></i>
+        <i class="fa-solid fa-xmark" style="cursor:pointer; color:#94a3b8; transition:0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'" onclick="window.toggleSidebar()"></i>
     </div>
-    <div class="nav-item active" onclick="switchView('map', this)">
+    <div class="nav-item active" onclick="window.switchView('map', this)">
         <i class="fa-solid fa-map-location-dot"></i> Intel Map
     </div>
-    <div class="nav-item" onclick="switchView('control', this)">
+    <div class="nav-item" onclick="window.switchView('control', this)">
         <i class="fa-solid fa-tower-broadcast"></i> Control Room
     </div>
-    <div class="nav-item" onclick="switchView('terminal', this)">
+    <div class="nav-item" onclick="window.switchView('terminal', this)">
         <i class="fa-solid fa-terminal"></i> Live Terminal
     </div>
-    <div class="nav-item" onclick="switchView('system', this); runSystemDiagnostics();">
+    <div class="nav-item" onclick="window.switchView('system', this); window.runSystemDiagnostics();">
         <i class="fa-solid fa-server"></i> System Status
     </div>
     <div style="margin-top:auto; padding:20px; border-top:1px solid #334155;">
@@ -149,7 +156,7 @@
                 
                 <div style="position:relative;">
                     <i class="fa-solid fa-search" style="position:absolute; left:12px; top:13px; color:#64748b; font-size:12px;"></i>
-                    <input type="text" id="mapSearch" style="width:100%; background:#0f172a; border:1px solid #334155; padding:10px 10px 10px 32px; border-radius:8px; color:white; margin-bottom:15px; outline:none;" placeholder="Search Shop ID or Region..." oninput="handleMapSearch(this.value)">
+                    <input type="text" id="mapSearch" style="width:100%; background:#0f172a; border:1px solid #334155; padding:10px 10px 10px 32px; border-radius:8px; color:white; margin-bottom:15px; outline:none;" placeholder="Search Shop ID or Region..." oninput="window.handleMapSearch(this.value)">
                 </div>
 
                 <div class="stat-card">
@@ -160,10 +167,10 @@
                 <div style="margin-top:15px;">
                     <div class="stat-label" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
                         <span>🔥 Booming Categories</span>
-                        <span style="font-size:9px; cursor:pointer; color:var(--accent); text-decoration:none; background:rgba(16,185,129,0.1); padding:4px 8px; border-radius:4px; transition:0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.3)'" onmouseout="this.style.background='rgba(16,185,129,0.1)'" onclick="resetMapFilter()">CLEAR FILTER</span>
+                        <span style="font-size:9px; cursor:pointer; color:var(--accent); text-decoration:none; background:rgba(16,185,129,0.1); padding:4px 8px; border-radius:4px; transition:0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.3)'" onmouseout="this.style.background='rgba(16,185,129,0.1)'" onclick="window.resetMapFilter()">CLEAR FILTER</span>
                     </div>
                     <div id="trendList" class="trend-list">
-                        <div style="text-align:center; color:#64748b; font-size:12px; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching AI Analysis...</div>
+                        <div style="text-align:center; color:#64748b; font-size:12px; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching Database...</div>
                     </div>
                 </div>
             </div>
@@ -175,7 +182,7 @@
                     <div style="width:8px; height:8px; background:var(--danger); border-radius:50%; animation:blink 1s infinite;"></div> LIVE OPS
                 </div>
                 <div class="ticker-content" id="liveTicker">
-                    Connecting to BharatPOS Network...
+                    Connecting to Firebase Network...
                 </div>
             </div>
         </div>
@@ -185,7 +192,7 @@
         <div class="control-container">
             <div class="control-header">
                 <h1 style="font-size:24px; font-weight:800; margin:0; color:white;">📢 Broadcast & Control</h1>
-                <p style="color:#94a3b8; margin:5px 0 0 0;">Manage user notifications and system alerts.</p>
+                <p style="color:#94a3b8; margin:5px 0 0 0;">Manage user notifications and system alerts via Firestore.</p>
             </div>
 
             <div class="control-grid" style="margin-top:25px;">
@@ -193,35 +200,35 @@
                     <h2 style="color:var(--gold)"><i class="fa-solid fa-paper-plane"></i> Message Shop Owner</h2>
                     <div class="form-group">
                         <label class="form-label">Target Merchant ID</label>
-                        <input type="text" class="form-input" id="targetId" placeholder="e.g. SHOP-8291">
+                        <input type="text" class="form-input" id="targetId" placeholder="e.g. GRO-1234">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Private Message</label>
                         <textarea class="form-textarea" id="targetMsg" placeholder="e.g. Please update your GSTIN settings."></textarea>
                     </div>
-                    <button class="btn-send" style="background:var(--gold); color:black;" onclick="sendTargetMessage()">SEND PRIVATE MSG</button>
+                    <button class="btn-send" style="background:var(--gold); color:black;" onclick="window.sendTargetMessage()">SEND PRIVATE MSG</button>
                 </div>
 
                 <div class="panel">
                     <h2 style="color:var(--danger)"><i class="fa-solid fa-bullhorn"></i> Global Broadcast</h2>
                     <div class="form-group">
                         <label class="form-label">Alert Title</label>
-                        <input type="text" class="form-input" id="globalTitle" placeholder="e.g. Server Maintenance">
+                        <input type="text" class="form-input" id="globalTitle" placeholder="e.g. App Update">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Alert Body</label>
-                        <textarea class="form-textarea" id="globalMsg" placeholder="e.g. System will be down for 10 mins."></textarea>
+                        <textarea class="form-textarea" id="globalMsg" placeholder="e.g. Please refresh your apps for new features."></textarea>
                     </div>
-                    <button class="btn-send btn-danger" onclick="sendGlobalBroadcast()">BROADCAST TO ALL</button>
+                    <button class="btn-send btn-danger" onclick="window.sendGlobalBroadcast()">BROADCAST TO ALL</button>
                 </div>
 
                 <div class="panel">
                     <h2 style="color:var(--indigo)"><i class="fa-solid fa-rss"></i> Update Live Ticker</h2>
                     <div class="form-group">
                         <label class="form-label">New Ticker Text</label>
-                        <input type="text" class="form-input" id="tickerInput" placeholder="e.g. Diwali Sale: 0% Transaction Fees today!">
+                        <input type="text" class="form-input" id="tickerInput" placeholder="e.g. Notice: ONDC integration is live!">
                     </div>
-                    <button class="btn-send" style="background:var(--indigo); color:white;" onclick="updateTicker()">UPDATE SCROLL</button>
+                    <button class="btn-send" style="background:var(--indigo); color:white;" onclick="window.updateTicker()">UPDATE SCROLL</button>
                 </div>
             </div>
         </div>
@@ -229,22 +236,20 @@
 
     <div id="view-terminal" class="view-section" style="padding: 40px; background: #0f172a;">
         <div style="max-width: 1000px; margin: 0 auto; width: 100%;">
-            
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                 <div>
-                    <h1 style="font-size:24px; font-weight:800; margin:0; color:white;"><i class="fa-solid fa-terminal" style="color: var(--accent); margin-right: 10px;"></i> Server Telemetry</h1>
-                    <p style="color:#94a3b8; margin:5px 0 0 0;">Real-time output directly from the Render.com cloud engine.</p>
+                    <h1 style="font-size:24px; font-weight:800; margin:0; color:white;"><i class="fa-solid fa-terminal" style="color: var(--accent); margin-right: 10px;"></i> Firestore Telemetry</h1>
+                    <p style="color:#94a3b8; margin:5px 0 0 0;">Simulated Cloud Database Event Stream.</p>
                 </div>
-                
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <div style="position:relative;">
                         <i class="fa-solid fa-filter" style="position:absolute; left:12px; top:11px; color:#64748b; font-size:12px;"></i>
-                        <input type="text" id="logSearch" placeholder="Filter logs (e.g. 'Error', 'SHP-')..." style="background: #1e293b; border: 1px solid #334155; color: white; padding: 8px 10px 8px 32px; border-radius: 6px; outline: none; font-size: 13px; width: 220px;" onkeyup="renderLogs()">
+                        <input type="text" id="logSearch" placeholder="Filter logs..." style="background: #1e293b; border: 1px solid #334155; color: white; padding: 8px 10px 8px 32px; border-radius: 6px; outline: none; font-size: 13px; width: 220px;" onkeyup="window.renderLogs()">
                     </div>
-                    <button class="btn-send" style="width: auto; margin: 0; padding: 8px 15px; background: #334155; color: white;" onclick="toggleAutoScroll()" id="btnAutoScroll" title="Lock the screen from scrolling">
+                    <button class="btn-send" style="width: auto; margin: 0; padding: 8px 15px; background: #334155; color: white;" onclick="window.toggleAutoScroll()" id="btnAutoScroll">
                         <i class="fa-solid fa-lock-open"></i> Auto-Scroll
                     </button>
-                    <button class="btn-send" style="width: auto; margin: 0; padding: 8px 15px; background: var(--indigo); color: white;" onclick="downloadLogs()" title="Download current logs to a text file">
+                    <button class="btn-send" style="width: auto; margin: 0; padding: 8px 15px; background: var(--indigo); color: white;" onclick="window.downloadLogs()">
                         <i class="fa-solid fa-download"></i> Export
                     </button>
                 </div>
@@ -252,33 +257,32 @@
 
             <div style="background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 10px;">
-                    <span style="color: #fff; font-size: 12px; opacity: 0.7;">root@bharatpos-server:~# tail -f /var/log/syslog</span>
+                    <span style="color: #fff; font-size: 12px; opacity: 0.7;">root@firestore:~# tail -f /cloud/events</span>
                     <span id="log-status" style="color: #00ff00; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-circle fa-beat-fade"></i> Live</span>
                 </div>
                 <div id="log-box" style="height: 500px; overflow-y: auto; font-size: 13px; line-height: 1.6; padding-right: 10px;">
-                    Loading server telemetry...
+                    Loading telemetry...
                 </div>
             </div>
-
         </div>
     </div>
 
     <div id="view-system" class="view-section" style="padding: 40px; align-items:center; justify-content:center; padding-bottom: 80px;">
         <i class="fa-solid fa-server" style="font-size:60px; color:var(--accent); margin-bottom:20px;"></i>
         <h2 style="color:white; margin:0; font-size:28px;">System Operational</h2>
-        <p style="color:#94a3b8; margin-top:5px; font-size:14px;">All Core Services Online</p>
+        <p style="color:#94a3b8; margin-top:5px; font-size:14px;">Cloud Firestore Connected</p>
         
         <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 100%; max-width: 600px; margin-top: 40px;">
             <div class="panel" style="text-align:center; padding: 20px;">
-                <h3 style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin:0 0 10px 0;"><i class="fa-solid fa-wifi" style="margin-right:5px;"></i> Server Ping</h3>
+                <h3 style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin:0 0 10px 0;"><i class="fa-solid fa-wifi" style="margin-right:5px;"></i> Database Ping</h3>
                 <div id="sysPing" style="font-size:32px; font-weight:800; color:var(--accent); font-family:'JetBrains Mono', monospace;">-- ms</div>
             </div>
             <div class="panel" style="text-align:center; padding: 20px;">
-                <h3 style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin:0 0 10px 0;"><i class="fa-solid fa-network-wired" style="margin-right:5px;"></i> Active Data Nodes</h3>
+                <h3 style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin:0 0 10px 0;"><i class="fa-solid fa-network-wired" style="margin-right:5px;"></i> Active Shop Nodes</h3>
                 <div id="sysNodes" style="font-size:32px; font-weight:800; color:var(--indigo); font-family:'JetBrains Mono', monospace;">--</div>
             </div>
             <div class="panel" style="text-align:center; padding: 20px;">
-                <h3 style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin:0 0 10px 0;"><i class="fa-solid fa-microchip" style="margin-right:5px;"></i> Local Memory Used</h3>
+                <h3 style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin:0 0 10px 0;"><i class="fa-solid fa-microchip" style="margin-right:5px;"></i> Admin Memory</h3>
                 <div id="sysMem" style="font-size:32px; font-weight:800; color:var(--gold); font-family:'JetBrains Mono', monospace;">-- MB</div>
             </div>
             <div class="panel" style="text-align:center; padding: 20px;">
@@ -287,7 +291,7 @@
             </div>
         </div>
 
-        <button class="btn-send" style="max-width:250px; margin-top:40px; background:var(--accent); color:black; font-size:14px; padding:15px;" onclick="runSystemDiagnostics()">
+        <button class="btn-send" style="max-width:250px; margin-top:40px; background:var(--accent); color:black; font-size:14px; padding:15px;" onclick="window.runSystemDiagnostics()">
             <i class="fa-solid fa-rotate" id="diagSpinner"></i> RE-RUN DIAGNOSTICS
         </button>
     </div>
@@ -301,14 +305,24 @@
                 <div class="modal-title" id="modalShopTitle">Shop Name</div>
                 <div style="font-size:12px; color:#94a3b8;" id="modalShopId">ID: --</div>
             </div>
-            <button class="modal-close" onclick="closeReportModal()">&times;</button>
+            <button class="modal-close" onclick="window.closeReportModal()">&times;</button>
         </div>
         <div class="modal-body" id="reportModalBody"></div>
     </div>
 </div>
 
-<script>
-    // 🟢 1. MAP CONFIG
+<script type="module">
+    // 🟢 1. IMPORT FIREBASE SDK
+    import { db } from "./bharatpos.js";
+    import { collection, getDocs, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 🛑 THE KILL SWITCH: Prevent bharatpos.js from running merchant backups!
+    window.IS_ADMIN_APP = true;
+    window.pushFullBackupToServerDebounced = function() { console.log("Admin App: Backup blocked."); };
+    window.syncStockToBackend = function() { console.log("Admin App: Stock sync blocked."); };
+    window.syncCustomersToBackend = function() { console.log("Admin App: Customer sync blocked."); };
+
+    // 🟢 2. MAP CONFIG
     const voyagerMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: 'BharatPOS Map' });
     const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' });
     
@@ -318,35 +332,48 @@
     let globalHeatmapData = [];
     let layerGroup = L.layerGroup().addTo(map);
 
-    // 2. LOAD REAL DATA
+    // 🟢 3. FIREBASE: LOAD ADMIN DATA (Intel Map)
     async function loadAdminData() {
         try {
-            const res = await fetch(buildUrl('/api/heatmap-data'));
-            const response = await res.json();
-            
-            if(response.success) {
-                globalHeatmapData = response.data || [];
-                document.getElementById('totalRevenue').innerText = "₹" + Number(response.globalTotal || 0).toLocaleString('en-IN');
-                
-                const searchQ = document.getElementById('mapSearch').value;
-                if (!searchQ) {
-                    renderSidebarTrends(globalHeatmapData);
-                    renderMicroDots(globalHeatmapData);
-                } else {
-                    handleMapSearch(searchQ);
-                }
+            const shopsSnap = await getDocs(collection(db, "shops"));
+            globalHeatmapData = [];
+            let totalRev = 0;
 
-                startLiveTicker(response.recentTransactions);
+            shopsSnap.forEach(docSnap => {
+                const shop = docSnap.data();
+                if(shop.heatmapData) {
+                    globalHeatmapData.push({
+                        merchantId: shop.merchantId,
+                        lat: shop.heatmapData.location?.lat || shop.profile?.lat,
+                        lng: shop.heatmapData.location?.lng || shop.profile?.lng,
+                        salesVolume: shop.heatmapData.sales_history?.length || 1,
+                        regionName: shop.profile?.shopName || shop.merchantId,
+                        category: shop.profile?.category || "General",
+                        topProduct: "Intel Data Active",
+                        markerColor: "#10b981",
+                        fullData: shop.heatmapData
+                    });
+                    totalRev += Number(shop.heatmapData.grand_total_revenue || 0);
+                }
+            });
+
+            document.getElementById('totalRevenue').innerText = "₹" + totalRev.toLocaleString('en-IN');
+            
+            const searchQ = document.getElementById('mapSearch').value;
+            if (!searchQ) {
+                renderSidebarTrends(globalHeatmapData);
+                renderMicroDots(globalHeatmapData);
             } else {
-                document.getElementById('liveTicker').innerText = "Waiting for live traffic...";
+                window.handleMapSearch(searchQ);
             }
+
+            document.getElementById('liveTicker').innerText = "Cloud Sync Success: " + globalHeatmapData.length + " Nodes Online";
         } catch(e) {
             console.error("Map Error", e);
             document.getElementById('liveTicker').innerText = "System Offline. Reconnecting...";
         }
     }
 
-    // 3. RENDER DOTS
     function renderMicroDots(data) {
         layerGroup.clearLayers();
         data.forEach(point => {
@@ -359,15 +386,14 @@
             }).addTo(layerGroup);
 
             const tooltip = `<div class="tooltip-header" style="background:${color}; color:#fff">${point.regionName}</div>
-                             <div class="tooltip-body"><div style="font-size:10px; color:#94a3b8;">TOP ITEM</div><div style="font-weight:bold;">${point.topProduct}</div></div>`;
+                             <div class="tooltip-body"><div style="font-size:10px; color:#94a3b8;">STORE STATUS</div><div style="font-weight:bold;">Active Node</div></div>`;
             circle.bindTooltip(tooltip, { direction: "top", offset: [0, -5], className: "custom-tooltip" });
             
-            circle.on('click', () => { openMerchantReport(point.merchantId); });
+            circle.on('click', () => { window.openMerchantReport(point.merchantId, point); });
         });
     }
 
-    // 🟢 4. FIXED SEARCH BAR & FLY-TO ANIMATION
-    function handleMapSearch(query) {
+    window.handleMapSearch = function(query) {
         if(!query || query.trim() === '') {
             renderMicroDots(globalHeatmapData);
             return;
@@ -382,37 +408,31 @@
         
         renderMicroDots(filtered);
         
-        // Added safety check so the console doesn't crash if array is empty
         if(filtered.length === 1) {
             map.flyTo([filtered[0].lat, filtered[0].lng], 12, { animate: true, duration: 1.5 });
-            setTimeout(() => { 
-                const layers = layerGroup.getLayers();
-                if(layers.length > 0) layers[0].openTooltip(); 
-            }, 1600);
         } else if (filtered.length > 1) {
             map.flyToBounds(L.latLngBounds(filtered.map(d => [d.lat, d.lng])), { padding: [50, 50], maxZoom: 10, animate: true, duration: 1.5 });
         }
     }
 
-    // 5. TREND ANALYSIS (Sidebar)
     function renderSidebarTrends(data) {
         const trendList = document.getElementById('trendList');
         const groups = {};
         data.forEach(p => {
             const c = (p.category||'General').trim();
-            if(!groups[c]) groups[c] = {count:0, color:p.markerColor, prod:[]};
-            groups[c].count++; groups[c].prod.push(p.topProduct);
+            if(!groups[c]) groups[c] = {count:0, color:p.markerColor};
+            groups[c].count++;
         });
         const sorted = Object.entries(groups).sort((a,b)=>b[1].count-a[1].count).slice(0,5);
         trendList.innerHTML = sorted.map(([k,v],i) => `
-            <div class="trend-item" onclick="filterMap('${k}',this)" style="border-left-color:${v.color}">
+            <div class="trend-item" onclick="window.filterMap('${k}',this)" style="border-left-color:${v.color}">
                 <div class="trend-rank">#${i+1}</div>
-                <div class="trend-info"><div class="trend-cat">${k}</div><div class="trend-prod">Top: ${v.prod[0]}</div></div>
+                <div class="trend-info"><div class="trend-cat">${k}</div></div>
                 <div class="trend-count">${v.count}</div>
             </div>`).join('');
     }
 
-    function filterMap(cat, el) {
+    window.filterMap = function(cat, el) {
         document.getElementById('mapSearch').value = ''; 
         document.querySelectorAll('.trend-item').forEach(e=>e.classList.remove('active'));
         if(el) el.classList.add('active');
@@ -421,30 +441,31 @@
         if(filtered.length) map.flyToBounds(L.latLngBounds(filtered.map(d=>[d.lat,d.lng])), {padding:[50,50], maxZoom:8, duration:1.5});
     }
 
-    function resetMapFilter() {
+    window.resetMapFilter = function() {
         document.getElementById('mapSearch').value = '';
         document.querySelectorAll('.trend-item').forEach(e=>e.classList.remove('active'));
         renderMicroDots(globalHeatmapData);
         map.flyTo([22.5937, 78.9629], 5, { duration: 1.5 });
     }
 
-    // 6. REPORT MODAL
-    async function openMerchantReport(id) {
+    // 🟢 4. REPORT MODAL
+    window.openMerchantReport = function(id, pointData) {
         const modal = document.getElementById('reportModal');
         const body = document.getElementById('reportModalBody');
         document.getElementById('modalShopId').innerText = "ID: " + id;
+        document.getElementById('modalShopTitle').innerText = pointData.regionName || "Unknown Shop Node";
         modal.style.display = 'flex';
-        body.innerHTML = '<div style="text-align:center;padding:50px;"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--accent); margin-bottom:15px;"></i><br>Loading Intel...</div>';
-        try {
-            const res = await fetch(buildUrl(`/api/merchant-report/${id}`));
-            const d = await res.json();
-            if(d.success) renderFullReportUI(d.data); else body.innerHTML='<div style="text-align:center;padding:50px;color:#94a3b8;">No data received from node.</div>';
-        } catch(e){ body.innerHTML='<div style="text-align:center;padding:50px;color:#ef4444;">Network Error.</div>'; }
+        
+        if (pointData && pointData.fullData) {
+            renderFullReportUI(pointData.fullData);
+        } else {
+            body.innerHTML='<div style="text-align:center;padding:50px;color:#ef4444;">No deep intel found.</div>';
+        }
     }
     
     function renderFullReportUI(data) {
-        const sales = data.salesHistory || [];
-        let r=0, b=0, i=0; sales.forEach(s=>{r+=s.revenue;b+=(s.bills||0);i+=(s.total_items||0)});
+        const sales = data.sales_history || [];
+        let r=0, b=0, i=0; sales.forEach(s=>{r+=(s.revenue||0);b+=(s.bills||0);i+=(s.total_items||0)});
         const html = `
         <div class="kpi-grid">
             <div class="kpi-box"><div class="kpi-lbl">Revenue</div><div class="kpi-val" style="color:#10b981">₹${r.toLocaleString()}</div></div>
@@ -454,53 +475,50 @@
         <div class="report-table-card" style="background:#1e293b; border-radius:12px; overflow:hidden; border:1px solid #334155;">
             <table class="report-table">
                 <thead><tr style="background:rgba(0,0,0,0.2);"><th>Date Sequence</th><th style="text-align:right;">Recorded Revenue</th></tr></thead><tbody>
-                ${sales.map(s=>`<tr><td><i class="fa-solid fa-calendar-day" style="color:#64748b; margin-right:8px;"></i> ${s.date}</td><td style="color:#10b981; text-align:right; font-family:'JetBrains Mono'; font-weight:700;">₹${s.revenue.toLocaleString()}</td></tr>`).join('')}
+                ${sales.map(s=>`<tr><td><i class="fa-solid fa-calendar-day" style="color:#64748b; margin-right:8px;"></i> ${s.date}</td><td style="color:#10b981; text-align:right; font-family:'JetBrains Mono'; font-weight:700;">₹${(s.revenue||0).toLocaleString()}</td></tr>`).join('')}
             </tbody></table>
         </div>`;
         document.getElementById('reportModalBody').innerHTML = html;
-        document.getElementById('modalShopTitle').innerText = data.shopName || "Unknown Shop Node";
     }
     
-    function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; }
+    window.closeReportModal = function() { document.getElementById('reportModal').style.display = 'none'; }
 
-    // --- 7. ADMIN ACTIONS ---
-    async function sendTargetMessage() {
+    // 🟢 5. FIREBASE: ADMIN ACTIONS
+    window.sendTargetMessage = async function() {
         const targetId = document.getElementById('targetId').value;
         const msg = document.getElementById('targetMsg').value;
         if(!targetId || !msg) return alert("Fill all fields.");
         try {
-            await fetch(buildUrl('/api/send-shop-notification'), { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ merchantId: targetId, message: msg, type: 'private' }) });
+            // Write direct to the target shop's subcollection
+            const notifRef = doc(db, "shops", targetId, "notifications", Date.now().toString());
+            await setDoc(notifRef, { message: msg, type: 'private', timestamp: new Date().toISOString() });
             alert("✅ Private Message Transmitted!");
+            mockTerminalLog(`Private MSG dispatched to ${targetId}`, "success");
         } catch(e) { alert("Failed to transmit."); }
     }
 
-    async function sendGlobalBroadcast() {
+    window.sendGlobalBroadcast = async function() {
         if(!confirm("⚠️ Warning: This will ping every connected terminal. Proceed?")) return;
         const title = document.getElementById('globalTitle').value;
         const body = document.getElementById('globalMsg').value;
         try {
-            await fetch(buildUrl('/api/broadcast-message'), { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ title, body, type: 'global_alert' }) });
+            await setDoc(doc(db, "system", "alerts"), { broadcast: { title, body, time: Date.now() } }, { merge: true });
             alert("✅ Global Alert Broadcasted!");
+            mockTerminalLog(`Global Broadcast: ${title}`, "success");
         } catch(e) { alert("Transmission Failed."); }
     }
 
-    async function updateTicker() {
+    window.updateTicker = async function() {
         const text = document.getElementById('tickerInput').value;
         try {
-            await fetch(buildUrl('/api/update-ticker'), { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ text }) });
+            await setDoc(doc(db, "system", "alerts"), { tickerText: text }, { merge: true });
             alert("✅ Ticker Successfully Injected");
+            mockTerminalLog(`Ticker Updated: ${text.substring(0, 15)}...`, "success");
         } catch(e) { alert("Injection Failed."); }
     }
 
-    function startLiveTicker(transactions) {
-        const container = document.getElementById('liveTicker');
-        if(!transactions || transactions.length === 0) return;
-        let html = transactions.map(t => `<span style="margin-right:30px;">[${t.time}] <b>${t.shop}</b>: ${t.action}</span>`).join('');
-        container.innerHTML = html + html; 
-    }
-
-    // 🟢 8. REAL-TIME SYSTEM DIAGNOSTICS
-    async function runSystemDiagnostics() {
+    // 🟢 6. REAL-TIME SYSTEM DIAGNOSTICS
+    window.runSystemDiagnostics = async function() {
         const spinner = document.getElementById('diagSpinner');
         const pingEl = document.getElementById('sysPing');
         const nodesEl = document.getElementById('sysNodes');
@@ -513,9 +531,9 @@
         
         const startTimestamp = Date.now();
         try {
-            await fetch(buildUrl('/api/get-ticker'));
-            const endTimestamp = Date.now();
-            const latency = endTimestamp - startTimestamp;
+            // Test ping by pulling the tiny alerts document
+            await getDoc(doc(db, "system", "alerts"));
+            const latency = Date.now() - startTimestamp;
             
             pingEl.innerText = latency + " ms";
             pingEl.style.color = latency < 100 ? "var(--accent)" : (latency < 300 ? "var(--gold)" : "var(--danger)");
@@ -531,7 +549,7 @@
             }
             
             syncEl.innerText = new Date().toLocaleTimeString('en-US', { hour12: false });
-            
+            mockTerminalLog("Diagnostics run complete. Latency: " + latency + "ms", "success");
         } catch(e) {
             pingEl.innerText = "ERR";
             pingEl.style.color = "var(--danger)";
@@ -542,35 +560,33 @@
         }
     }
 
-    // 🟢 9. NEW: LIVE TERMINAL LOGIC
+    // 🟢 7. MOCK TERMINAL LOGS (Since we are serverless)
     let autoScroll = true;
     let allLogsCache = [];
 
-    async function fetchLiveLogs() {
-        try {
-            const response = await fetch(buildUrl('/api/admin/logs'));
-            const data = await response.json();
-
-            if (data.success && data.logs) {
-                allLogsCache = data.logs;
-                renderLogs();
-                document.getElementById('log-status').innerHTML = '<i class="fa-solid fa-circle fa-beat-fade"></i> Live';
-                document.getElementById('log-status').style.color = '#00ff00';
-            }
-        } catch (error) {
-            document.getElementById('log-status').innerHTML = 'Offline 🔴';
-            document.getElementById('log-status').style.color = '#ff4444';
-        }
+    function mockTerminalLog(msg, type) {
+        allLogsCache.push({ time: new Date().toLocaleTimeString(), type: type, msg: msg });
+        if(allLogsCache.length > 100) allLogsCache.shift();
+        window.renderLogs();
     }
 
-    function renderLogs() {
+    function generateRandomTelemetry() {
+        const events = [
+            "Firestore Read: /shops/query",
+            "Auth Token Verified",
+            "CDN Edge Cache Hit",
+            "Data Sync: Delta Packet Received",
+            "Cloud Function Warmed Up"
+        ];
+        const randomEvent = events[Math.floor(Math.random() * events.length)];
+        mockTerminalLog(randomEvent, "success");
+    }
+
+    window.renderLogs = function() {
         const logBox = document.getElementById('log-box');
         const searchQuery = document.getElementById('logSearch').value.toLowerCase();
         
-        if (allLogsCache.length === 0) {
-            logBox.innerHTML = '<span style="color: #888;">Waiting for server activity...</span>';
-            return;
-        }
+        if (allLogsCache.length === 0) return;
 
         const filteredLogs = allLogsCache.filter(log => log.msg.toLowerCase().includes(searchQuery));
         
@@ -587,13 +603,10 @@
         });
         
         logBox.innerHTML = html || '<span style="color: #888;">No logs match your search filter.</span>';
-
-        if (autoScroll) {
-            logBox.scrollTop = logBox.scrollHeight;
-        }
+        if (autoScroll) logBox.scrollTop = logBox.scrollHeight;
     }
 
-    function toggleAutoScroll() {
+    window.toggleAutoScroll = function() {
         autoScroll = !autoScroll;
         const btn = document.getElementById('btnAutoScroll');
         if (autoScroll) {
@@ -605,9 +618,9 @@
         }
     }
 
-    function downloadLogs() {
+    window.downloadLogs = function() {
         if (allLogsCache.length === 0) return alert("No logs to download yet.");
-        let text = "BharatPOS Server Telemetry\n==========================\n\n";
+        let text = "BharatPOS Firestore Telemetry\n==========================\n\n";
         allLogsCache.forEach(l => { text += `[${l.time}] [${l.type.toUpperCase()}] ${l.msg}\n`; });
         
         const blob = new Blob([text], { type: 'text/plain' });
@@ -622,23 +635,22 @@
     }
 
     // Navigation Logic
-    function toggleSidebar() { document.getElementById('appSidebar').classList.toggle('active'); document.querySelector('.overlay').classList.toggle('active'); }
-    function switchView(viewName, btn) {
+    window.toggleSidebar = function() { document.getElementById('appSidebar').classList.toggle('active'); document.querySelector('.overlay').classList.toggle('active'); }
+    window.switchView = function(viewName, btn) {
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); btn.classList.add('active');
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
         const target = document.getElementById('view-' + viewName);
         if(target) { target.classList.add('active'); if(viewName === 'map') setTimeout(() => map.invalidateSize(), 100); }
-        toggleSidebar();
+        window.toggleSidebar();
     }
 
     // Boot Up Sequence
     loadAdminData();
-    runSystemDiagnostics();
-    fetchLiveLogs();
+    window.runSystemDiagnostics();
     
     // Background Loops
     setInterval(loadAdminData, 30000); 
-    setInterval(fetchLiveLogs, 3000); // Poll terminal every 3 seconds
+    setInterval(generateRandomTelemetry, 4500); // Simulate incoming serverless traffic
 </script>
 </body>
 </html>
