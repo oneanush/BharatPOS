@@ -3,79 +3,112 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Stock - Bharat POS</title>
+  <title>Enterprise Inventory - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script src="quagga.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
  
-  <<script src="bharatpos.js"></script>
-
-<script type="module" src="bharatpos.js"></script>
+  <script type="module" src="bharatpos.js"></script>
 
   <style>
-    /* --- VARIABLES & RESET --- */
+    /* --- ULTRA-MODERN THEME --- */
     :root {
-      --bg-body: #0f172a; --bg-card: rgba(30, 41, 59, 0.6); --glass: blur(12px); --border: rgba(255, 255, 255, 0.1);
-      --accent: #f59e0b; --text-main: #f8fafc; --text-muted: #94a3b8; --success: #10b981; --danger: #ef4444; --input-bg: rgba(15, 23, 42, 0.6);
-      --primary: #3b82f6; 
+      --bg-body: #020617; --bg-panel: #0f172a; --bg-card: rgba(30, 41, 59, 0.7); 
+      --border: rgba(255, 255, 255, 0.1); --border-hover: rgba(255, 255, 255, 0.25);
+      --accent: #f59e0b; --primary: #3b82f6; --primary-glow: rgba(59, 130, 246, 0.3);
+      --success: #10b981; --danger: #ef4444; --purple: #8b5cf6;
+      --text-main: #f8fafc; --text-muted: #94a3b8;
     }
+    
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
     body { margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; padding-bottom: 80px; overflow-x: hidden; }
-    body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.05), transparent 40%), radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05), transparent 40%); z-index: -1; pointer-events: none; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.1), transparent 50%); z-index: -1; }
 
-    /* --- HAMBURGER MENU & NAVBAR (Matching Dashboard) --- */
+    /* --- HAMBURGER MENU --- */
     .menu-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 5px; }
-    .side-menu { position: fixed; top: 0; left: -260px; width: 260px; height: 100vh; background: #0f172a; z-index: 9999; transition: 0.3s ease; padding: 20px; box-shadow: 5px 0 20px rgba(0,0,0,0.5); border-right: 1px solid var(--border); }
+    .side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #020617; z-index: 9999; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.8); border-right: 1px solid var(--border); overflow-y: auto; }
     .side-menu.open { left: 0; }
-    .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9998; backdrop-filter: blur(2px); }
-    .side-menu-links { display: flex; flex-direction: column; gap: 10px; margin-top: 30px; }
-    .side-menu-links a { padding: 12px 15px; border-radius: 8px; font-size: 15px; color: var(--text-main); font-weight: 500; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: 0.2s;}
-    .side-menu-links a:hover { background: rgba(255,255,255,0.05); color: var(--accent); }
-    .side-menu-links i { width: 20px; text-align: center; color: var(--text-muted); }
+    .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9998; backdrop-filter: blur(3px); }
+    .side-menu-links { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+    .side-menu-links a { padding: 12px 16px; border-radius: 12px; font-size: 14px; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: 0.2s; border: 1px solid transparent; }
+    .side-menu-links a:hover { background: rgba(255,255,255,0.05); border-color: var(--border); transform: translateX(5px); }
+    .side-menu-links i { width: 20px; text-align: center; color: var(--text-muted); font-size: 16px; }
 
-    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-    .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: #fff; }
-    .global-logo { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
-    .brand span { color: var(--accent); }
-    .nav-btn-bill { background: var(--success); color: #000; font-weight: 800; padding: 8px 16px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: 0.2s; display: flex; align-items: center; gap: 6px; text-decoration: none;}
-    .nav-btn-bill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
-    .profile-pill { font-size: 13px; font-weight: 600; background: rgba(245, 158, 11, 0.15); color: var(--accent); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.3); display: none;}
-    @media(min-width: 600px) { .profile-pill { display: block; } .mobile-hide { display: inline-block; } }
-    @media(max-width: 599px) { .mobile-hide { display: none; } }
+    /* --- NAVBAR --- */
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 15px 24px; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: #fff; }
+    .global-logo { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+    .nav-actions { display: flex; gap: 12px; align-items: center; }
 
     /* --- LAYOUT --- */
-    .main-container { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; max-width: 1200px; margin: 20px auto; padding: 0 20px; }
-    @media(max-width: 900px) { .main-container { grid-template-columns: 1fr; } }
+    .main-container { max-width: 1400px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 400px 1fr; gap: 24px; align-items: start; }
+    @media(max-width: 1024px) { .main-container { grid-template-columns: 1fr; } }
 
-    .card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-    h3 { margin: 0 0 20px 0; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+    .panel-title { font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; margin: 0; }
 
-    /* --- SCANNER --- */
-    .scanner-section { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
-    .scan-controls { display: flex; gap: 10px; margin-bottom: 15px; }
-    .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-start { background: var(--accent); color: #000; }
-    .btn-stop { background: var(--input-bg); color: var(--danger); border: 1px solid var(--danger); }
-    .btn-reset { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); }
-    .camera-wrapper { position: relative; border-radius: 12px; overflow: hidden; background: #000; display: none; box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); border: 1px solid var(--accent); }
-    #cameraPreview { width: 100%; height: 300px; object-fit: cover; display: block; }
-    .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--success); box-shadow: 0 0 10px var(--success); animation: scanMove 2s infinite linear; z-index: 10; }
-    @keyframes scanMove { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+    /* --- 3-TIER FORM --- */
+    .form-group { margin-bottom: 16px; position: relative; }
+    .form-input, .form-select { width: 100%; background: #020617; border: 1px solid var(--border); color: #fff; padding: 14px 14px 14px 14px; border-radius: 12px; font-size: 14px; font-weight: 500; transition: 0.2s; appearance: none; font-family: 'Inter', sans-serif; }
+    .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    
+    .floating-label { position: absolute; left: 14px; top: 14px; color: var(--text-muted); font-size: 13px; font-weight: 500; pointer-events: none; transition: 0.2s; background: transparent; }
+    .form-input:focus ~ .floating-label, .form-input:not(:placeholder-shown) ~ .floating-label, .form-select:focus ~ .floating-label, .form-select:valid ~ .floating-label { top: -8px; left: 10px; font-size: 11px; font-weight: 700; color: var(--primary); background: var(--bg-panel); padding: 0 6px; border-radius: 4px; }
+    .form-input::placeholder { color: transparent; }
 
-    /* --- FORM --- */
-    .form-row { margin-bottom: 16px; position: relative; }
-    input, select { width: 100%; padding: 14px 12px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 14px; transition: 0.2s; font-family: 'Inter', sans-serif; appearance: none; }
-    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
-    input::placeholder { color: transparent; } 
-    .floating-label { position: absolute; left: 12px; top: 14px; color: var(--text-muted); font-size: 14px; pointer-events: none; transition: 0.2s; }
-    input:focus ~ .floating-label, input:not(:placeholder-shown) ~ .floating-label, select:focus ~ .floating-label, select:valid ~ .floating-label { top: -8px; left: 10px; font-size: 11px; color: var(--accent); background: var(--bg-body); padding: 0 4px; border-radius: 4px; }
-    button[type="submit"] { width: 100%; background: var(--success); color: #fff; padding: 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; margin-top: 10px; transition: 0.2s; }
-    button[type="submit"]:active { transform: scale(0.98); }
+    /* Accordion Toggles (Level 2 & 3) */
+    .tier-toggle { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 10px; font-size: 13px; }
+    .tier-toggle:hover { background: rgba(255,255,255,0.06); }
+    .tier-content { display: none; padding: 16px; background: rgba(0,0,0,0.2); border: 1px dashed var(--border); border-radius: 12px; margin-bottom: 16px; animation: slideDown 0.3s ease; }
+    .tier-content.active { display: block; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* TOGGLE SWITCH */
+    /* Variant Engine */
+    .variant-box { background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; padding: 16px; margin-bottom: 16px; position: relative; transition: 0.3s; }
+    .variant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-remove-var { position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; width: 24px; height: 24px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4); }
+
+    /* Buttons */
+    .btn { padding: 14px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), #2563eb); color: white; box-shadow: 0 6px 20px var(--primary-glow); }
+    .btn-success { background: linear-gradient(135deg, var(--success), #059669); color: white; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+    .btn-outline:hover { background: rgba(255,255,255,0.05); border-color: var(--border-hover); }
+
+    /* --- INVENTORY GRID (Optimized Data Load) --- */
+    .toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-box { position: relative; flex: 1; min-width: 250px; }
+    .search-box i { position: absolute; left: 16px; top: 14px; color: var(--text-muted); }
+    .search-box input { width: 100%; background: #020617; border: 1px solid var(--border); padding: 12px 16px 12px 42px; border-radius: 12px; color: white; outline: none; transition: 0.2s; font-size: 14px; }
+    .search-box input:focus { border-color: var(--primary); }
+
+    .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-height: 800px; overflow-y: auto; padding-right: 5px; }
+    .inventory-grid::-webkit-scrollbar { width: 6px; }
+    .inventory-grid::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+    .sku-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; position: relative; }
+    .sku-card:hover { background: rgba(255,255,255,0.04); border-color: var(--border-hover); transform: translateY(-2px); }
+    .sku-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .sku-name { font-size: 15px; font-weight: 700; color: #fff; margin: 0; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .sku-cat { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: var(--primary-glow); padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 6px; }
+    
+    .sku-stats { display: flex; justify-content: space-between; align-items: center; background: #020617; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; }
+    .sku-price { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--success); }
+    .sku-stock { font-size: 13px; font-weight: 700; color: var(--text-main); }
+    .sku-stock.low { color: var(--danger); }
+    
+    .sku-actions { display: flex; gap: 8px; }
+    .btn-icon { flex: 1; padding: 8px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
+    .btn-edit { background: rgba(59, 130, 246, 0.1); color: var(--primary); } .btn-edit:hover { background: var(--primary); color: white; }
+    .btn-del { background: rgba(239, 68, 68, 0.1); color: var(--danger); } .btn-del:hover { background: var(--danger); color: white; }
+
+    /* Toggle Switch for Loose Items */
     .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 24px; }
@@ -83,760 +116,684 @@
     input:checked + .slider { background-color: var(--success); }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* --- TABLE STYLES --- */
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; color: var(--text-muted); font-size: 12px; padding: 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
-    td { padding: 12px 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    
-    .delete-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-    .delete-btn:hover { background: var(--danger); color: white; }
-    
-    .eye-btn { background: rgba(59, 130, 246, 0.2); color: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 5px; }
-    .eye-btn:hover { background: var(--primary); color: white; }
+    /* SCANNER & AI */
+    .scanner-box { background: #000; border-radius: 16px; overflow: hidden; position: relative; margin-bottom: 20px; display: none; border: 2px solid var(--primary); box-shadow: 0 10px 30px var(--primary-glow); }
+    #cameraPreview { width: 100%; height: 250px; object-fit: cover; }
+    .scan-laser { position: absolute; width: 100%; height: 2px; background: var(--success); box-shadow: 0 0 15px var(--success); animation: laser 2s infinite; }
+    @keyframes laser { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 
-    /* --- MOBILE RESPONSIVE LIST --- */
-    .mobile-only { display: none; }
-    
-    @media (max-width: 600px) {
-      .card { padding: 15px; }
-      thead { display: none; }
-      table, tbody, tr, td { display: block; width: 100%; }
-      tr {
-        display: grid;
-        grid-template-columns: 1fr auto auto;
-        gap: 10px;
-        background: rgba(255,255,255,0.03); margin-bottom: 8px; padding: 12px;
-        border-radius: 8px; border: 1px solid var(--border); align-items: center;
-      }
-      td { padding: 0; border: none; }
-      .desktop-col { display: none; }
-      .mobile-only { display: inline-block; }
-      td:first-child { grid-column: 1; font-weight: 600; font-size: 14px; color: #fff; }
-      td.stock-col { grid-column: 2; text-align: right; font-weight: 700; color: var(--accent); }
-      td.action-col { grid-column: 3; display: flex; justify-content: flex-end; }
-    }
-
-    /* --- PRODUCT DETAIL MODAL --- */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-    .modal-box { background: #1e293b; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid var(--border); position: relative; max-height: 90vh; overflow-y: auto;}
-    .modal-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
-    .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
-    .detail-label { color: var(--text-muted); }
-    .detail-val { color: #fff; font-weight: 600; font-family: 'JetBrains Mono'; }
-    .modal-edit-btn { width: 100%; background: var(--accent); color: #000; font-weight: 800; padding: 12px; border: none; border-radius: 8px; margin-top: 20px; cursor: pointer; transition: 0.2s; }
-    .modal-edit-btn:hover { background: #d97706; }
-
-    #toast { visibility: hidden; min-width: 250px; background-color: var(--success); color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; right: 20px; bottom: 30px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
-    #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
-    
-    .gst-container { background: rgba(245, 158, 11, 0.05); border: 1px dashed var(--accent); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: none; }
-    .gst-active .gst-container { display: block; animation: fadeIn 0.5s; }
-    .gst-quick-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: var(--text-muted); font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-    .gst-active .gst-quick-btn { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
-    @keyframes fadeIn { from{opacity:0; transform:translateY(-5px);} to{opacity:1; transform:translateY(0);} }
+    /* TOAST */
+    #toast { position: fixed; bottom: 30px; right: 30px; background: var(--success); color: white; padding: 14px 24px; border-radius: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(100px); opacity: 0; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; }
+    #toast.show { transform: translateY(0); opacity: 1; }
   </style>
+
+  <datalist id="unitOptions">
+      <option value="pcs"></option>
+      <option value="kg"></option>
+      <option value="g"></option>
+      <option value="L"></option>
+      <option value="ml"></option>
+      <option value="box"></option>
+      <option value="pack"></option>
+      <option value="dozen"></option>
+  </datalist>
 </head>
 <body>
 
 <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
 <div id="sideMenu" class="side-menu">
-    <button onclick="toggleMenu()" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
-    <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:40px; margin-top:10px;">
-        Bharat<span style="color:var(--accent);">POS</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 30px;">
+        <div style="font-size:22px; font-weight:800; color:#fff;">Bharat<span style="color:var(--primary);">POS</span></div>
+        <button onclick="toggleMenu()" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
     </div>
+    
     <div class="side-menu-links">
-        <a href="dashboard.html"><i class="fa-solid fa-home"></i> Home</a>
-        <a href="products.html" style="color:var(--accent); background:rgba(245,158,11,0.1);"><i class="fa-solid fa-box-open"></i> Stock / Inventory</a>
-        <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Purani Bikri</a>
-        <a href="reports.html"><i class="fa-solid fa-file-invoice-dollar"></i> Reports</a>
-        <a href="ai.html"><i class="fa-solid fa-robot" style="color:var(--accent);"></i> AI Madad</a>
+        <a href="dashboard.html"><i class="fa-solid fa-house"></i> Home</a>
+        <a href="billing.html" style="color:var(--success); border:1px solid rgba(16,185,129,0.2); background:rgba(16,185,129,0.05);"><i class="fa-solid fa-file-invoice"></i> Bill Banao</a>
+        <a href="products.html" style="background:var(--primary-glow); border-color:var(--primary); color:#fff;"><i class="fa-solid fa-box-open"></i> Inventory / Stock</a>
+        <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
+        <a href="my_dukkan.html"><i class="fa-solid fa-wallet" style="color:var(--accent);"></i> Finance HQ</a>
+        <a href="customers.html"><i class="fa-solid fa-users" style="color:var(--purple);"></i> Bharat CRM</a>
+        <a href="forecast.html"><i class="fa-solid fa-brain" style="color:var(--primary);"></i> DemandMitra AI</a>
+        <a href="my_khata.html"><i class="fa-solid fa-mobile-screen"></i> Customer Portal</a>
+        <a href="reports.html"><i class="fa-solid fa-file-pdf"></i> Reports</a>
         <a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a>
     </div>
 </div>
 
 <nav class="navbar">
-  <div style="display:flex; align-items:center; gap:15px;">
-      <button class="menu-btn" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
-      <div class="brand">
-        <img src="logo.png" class="global-logo" alt="Logo">
-        <span class="mobile-hide">Bharat<span>POS</span></span>
-      </div>
-  </div>
-  
-  <div style="display:flex; align-items:center; gap:12px;">
-      <a href="billing.html" class="nav-btn-bill"><i class="fa-solid fa-file-invoice"></i> <span class="mobile-hide">Bill Banao</span></a>
-      <div id="profileName" class="profile-pill">Guest</div>
-  </div>
+    <div class="brand">
+        <button class="menu-btn" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
+        Enterprise Stock
+    </div>
+    <div class="nav-actions">
+        <button class="btn btn-success" style="padding: 8px 16px; font-size:13px; width:auto;" onclick="window.location.href='billing.html'">
+            <i class="fa-solid fa-cart-shopping"></i> POS
+        </button>
+    </div>
 </nav>
 
-<div class="scanner-section">
-  <div class="scan-controls">
-    <button type="button" class="btn-scan btn-start" onclick="uiStartScan()">
-      <span>📷 Photo Se Jodein</span>
-    </button>
-    <button type="button" class="btn-scan btn-stop" onclick="uiStopScan()">
-      <span>⛔ Roko</span>
-    </button>
-    <button type="button" class="btn-scan btn-reset" onclick="resetAIScan()">
-      <span>🔄 Agla Item</span>
-    </button>
-  </div>
-
-  <div id="cameraContainer" class="camera-wrapper">
-    <div class="scan-line"></div>
-    <video id="cameraPreview" autoplay playsinline></video>
-    <canvas id="captureCanvas" style="display:none;"></canvas>
-  </div>
-  <div id="barcodePreview" style="margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:12px;"></div>
-</div>
-
 <div class="main-container">
-  
-  <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-        <h3 style="margin:0; border:none; padding:0;">Naya Maal Jodein</h3>
-        
-        <div style="display:flex; gap:10px; align-items:center;">
-            <button class="gst-quick-btn" onclick="toggleGstQuick()" id="gstQuickBtn">GST: OFF</button>
-            
-            <button onclick="openGlobalCatalog()" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); transition: 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                <i class="fa-solid fa-cloud-arrow-down"></i> Master Catalog Se Jodein
-            </button>
-        </div>
-    </div>
     
-    <form id="productForm" onsubmit="handleAddProduct(event);">
-      
-      <div class="form-row">
-        <input id="productName" placeholder=" " required autocomplete="off">
-        <label for="productName" class="floating-label">Samaan Ka Naam (Item Name)</label>
-      </div>
-
-      <div class="form-row">
-        <input id="productCategory" list="categoryList" placeholder=" " autocomplete="off">
-        <label for="productCategory" class="floating-label">Category (Kis type ka hai?)</label>
-        <datalist id="categoryList"></datalist>
-      </div>
-
-      <div class="form-row" style="border-bottom:1px dashed var(--border); padding-bottom:15px; margin-bottom:15px;">
-        <input type="text" id="productBarcode" placeholder=" " style="font-family:'JetBrains Mono'; color:var(--accent);" autocomplete="off">
-        <label for="productBarcode" class="floating-label">Barcode (Scan Karein)</label>
-      </div>
-
-      <div style="background:rgba(16, 185, 129, 0.05); border:1px dashed var(--success); padding:15px; border-radius:8px; margin-bottom:20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-              <label class="form-label" style="margin:0; font-size:14px; color:#fff;">⚖️ Khula Samaan (Sell by Weight)</label>
-              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Daal, Chawal, Cheeni jise tol kar bechte hain</div>
-          </div>
-          <label class="switch">
-              <input type="checkbox" id="isLooseItem">
-              <span class="slider round"></span>
-          </label>
-        </div>
-      </div>
-
-      <div id="variantsContainer">
-          <div class="variant-row">
-              <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <div style="position:relative;">
-                    <input id="productQuantity" class="var-type" placeholder=" " autocomplete="off">
-                    <label for="productQuantity" class="floating-label">Type (e.g. 20kg, 1L)</label>
-                </div>
-                <div style="position:relative;">
-                    <input id="productStock" class="var-stock" type="number" step="0.001" placeholder=" ">
-                    <label for="productStock" class="floating-label" style="color:var(--accent);">Add Stock (+/-)</label>
-                </div>
-              </div>
-              <div class="form-row" style="margin-top:15px;">
-                <input id="productPrice" class="var-price" type="number" step="0.01" placeholder=" " required style="font-size:18px; font-weight:bold; color:var(--success);">
-                <label for="productPrice" class="floating-label" id="priceLabel">Poore Pack Ka Rate (₹)</label>
-              </div>
-          </div>
-      </div>
-      
-      <div class="form-row" style="text-align:right; margin-bottom:20px;">
-          <button type="button" onclick="addVariantRow()" style="background:transparent; border:1px dashed var(--accent); color:var(--accent); padding:8px 16px; border-radius:8px; font-size:12px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-plus"></i> Add Other Type</button>
-      </div>
-
-      <div class="gst-container">
-          <div style="margin-bottom:10px; font-size:12px; color:var(--accent); font-weight:bold;">GST Details</div>
-          <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div style="position:relative;"><input id="hsnCode" placeholder=" "><label for="hsnCode" class="floating-label">HSN Code</label></div>
-            <div style="position:relative;"><input id="gstRate" type="number" placeholder=" "><label for="gstRate" class="floating-label">GST % (Tax)</label></div>
-          </div>
-          <div class="form-row">
-             <select id="priceType" onchange="togglePriceLabel()">
-                 <option value="inclusive" selected>GST Included (Rate mein Tax Juda Hai)</option>
-                 <option value="exclusive">GST Extra (Rate + Tax)</option>
-             </select>
-             <label for="priceType" class="floating-label">Rate Type</label>
-          </div>
-      </div>
-
-      <div class="form-row">
-        <button type="submit">💾 Save Karein</button>
-      </div>
-    </form>
-  </div>
-
-  <div class="card">
-    <h3>Stock List</h3>
-    <div id="productsList"></div>
-  </div>
-</div>
-
-<div id="detailModal" class="modal-overlay">
-    <div class="modal-box">
-        <button class="modal-close" onclick="closeDetailModal()">&times;</button>
-        <h3 style="margin-top:0; color:#fff; border-bottom:none;">📦 Item Details</h3>
-        <div id="modalContent"></div>
-        <button class="modal-edit-btn" onclick="editFromModal()">✏️ Edit Item / Stock</button>
-    </div>
-</div>
-
-<template id="variantTemplate">
-  <div class="variant-row" style="padding-top:15px; margin-top:15px; border-top:1px dashed var(--border); position:relative;">
-    <button type="button" onclick="this.parentElement.remove()" style="position:absolute; right:0; top:10px; background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:12px;"><i class="fa-solid fa-trash"></i> Remove</button>
-    <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-      <div style="position:relative;">
-          <input class="var-type" placeholder=" ">
-          <label class="floating-label">Type (e.g. 1L)</label>
-      </div>
-      <div style="position:relative;">
-          <input class="var-stock" type="number" step="0.001" placeholder=" ">
-          <label class="floating-label" style="color:var(--accent);">Add Stock (+/-)</label>
-      </div>
-    </div>
-    <div class="form-row" style="margin-top:15px; margin-bottom:0;">
-      <input class="var-price" type="number" step="0.01" placeholder=" " required style="font-size:18px; font-weight:bold; color:var(--success);">
-      <label class="floating-label">Poore Pack Ka Rate (₹)</label>
-    </div>
-  </div>
-</template>
-
-<div id="toast">Message Here</div>
-<div id="aiLoadingOverlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:20;">
-    <div style="font-size:30px; animation:spin 1s infinite;">✨</div>
-    <div style="color:white; font-weight:bold; margin-top:10px; font-size:14px; letter-spacing:1px;">AI SEARCHING...</div>
-</div>
-<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-
-<div id="globalCatalogModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
-    <div style="background:#1e293b; width:90%; max-width:500px; border-radius:16px; border:1px solid rgba(99,102,241,0.3); display:flex; flex-direction:column; max-height:85vh;">
-        
-        <div style="padding:20px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0; color:#fff; display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-server" style="color:#a855f7;"></i> Master Database</h3>
-            <button onclick="document.getElementById('globalCatalogModal').style.display='none'" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer;">&times;</button>
-        </div>
-        
-        <div style="padding:20px; border-bottom:1px solid rgba(255,255,255,0.1);">
-            <div style="position:relative;">
-                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:16px; color:#64748b;"></i>
-                <input type="text" id="globalCatalogSearch" placeholder="Search product or category..." style="width:100%; padding:14px 14px 14px 40px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff; outline:none;" oninput="filterGlobalCatalog()">
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Product Engine</h2>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-outline" style="padding:6px 12px; font-size:12px; width:auto;" onclick="startAIScan()"><i class="fa-solid fa-camera"></i> AI Scan</button>
             </div>
         </div>
 
-        <div id="globalCatalogList" style="flex:1; overflow-y:auto; padding:15px 20px;">
-            <div style="text-align:center; color:#64748b; margin-top:20px;">Loading database...</div>
+        <div class="scanner-box" id="scannerBox">
+            <div class="scan-laser"></div>
+            <video id="cameraPreview" autoplay playsinline></video>
+            <canvas id="captureCanvas" style="display:none;"></canvas>
+            <div style="position:absolute; bottom:10px; width:100%; text-align:center;">
+                <button class="btn btn-danger" style="width:auto; display:inline-flex; padding:6px 16px; font-size:12px;" onclick="stopAIScan()">Stop Scan</button>
+            </div>
         </div>
 
+        <form id="productForm" onsubmit="handleSaveProduct(event)">
+            
+            <div class="form-group">
+                <input type="text" id="pName" class="form-input" placeholder=" " required autocomplete="off">
+                <label class="floating-label">Product Name</label>
+            </div>
+            <div class="form-group">
+                <input type="text" id="pCategory" class="form-input" list="catList" placeholder=" " autocomplete="off">
+                <label class="floating-label">Category</label>
+                <datalist id="catList"></datalist>
+            </div>
+
+            <div id="variantEngine">
+                </div>
+            
+            <button type="button" class="btn btn-outline" style="margin-bottom: 20px; font-size: 13px; border-style: dashed;" onclick="addVariantUI()">
+                <i class="fa-solid fa-plus"></i> Add Variant (Size/Color/Pack)
+            </button>
+
+            <div class="tier-toggle" onclick="toggleTier('tierGst', this)">
+                <span><i class="fa-solid fa-receipt" style="color:var(--accent); margin-right:8px;"></i> Level 2: GST Config</span>
+                <i class="fa-solid fa-chevron-down chevron"></i>
+            </div>
+            <div id="tierGst" class="tier-content">
+                <div class="variant-grid">
+                    <div class="form-group">
+                        <input type="text" id="pHSN" class="form-input" placeholder=" ">
+                        <label class="floating-label">HSN Code</label>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="pGSTRate" class="form-input" placeholder=" ">
+                        <label class="floating-label">GST %</label>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <select id="pPriceType" class="form-select">
+                        <option value="inclusive">Inclusive (Rate includes Tax)</option>
+                        <option value="exclusive">Exclusive (Tax added on top)</option>
+                    </select>
+                    <label class="floating-label">Tax Calculation</label>
+                </div>
+            </div>
+
+            <div class="tier-toggle" onclick="toggleTier('tierAdv', this)" id="btnTierAdv">
+                <span><i class="fa-solid fa-sliders" style="color:var(--purple); margin-right:8px;"></i> Level 3: Advanced Data</span>
+                <i class="fa-solid fa-chevron-down chevron"></i>
+            </div>
+            <div id="tierAdv" class="tier-content">
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:12px 16px; border-radius:12px; margin-bottom:16px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:700; color:#fff;">Sell By Weight / Loose</div>
+                        <div style="font-size:11px; color:var(--text-muted);">Enable for Daal, Sugar, Rice, etc.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="pIsLoose">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="font-size:11px; color:var(--accent); margin-bottom:10px;">Note: Advanced fields below apply to the FIRST variant only for quick entry.</div>
+                <div class="variant-grid">
+                    <div class="form-group">
+                        <input type="text" id="pBarcode" class="form-input" placeholder=" " style="font-family:'JetBrains Mono';">
+                        <label class="floating-label"><i class="fa-solid fa-barcode"></i> Barcode</label>
+                    </div>
+                    <div class="form-group">
+                        <input type="date" id="pExpiry" class="form-input" placeholder=" ">
+                        <label class="floating-label"><i class="fa-regular fa-calendar-xmark"></i> Expiry Date</label>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <input type="number" id="pCostPrice" class="form-input" placeholder=" ">
+                    <label class="floating-label"><i class="fa-solid fa-tags"></i> Cost Price (Purchase Rate)</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px; font-size: 16px;" id="saveBtn">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Save to Database
+            </button>
+        </form>
     </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title"><i class="fa-solid fa-boxes-stacked"></i> Master Catalog</h2>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" style="padding:8px 12px; font-size:12px; width:auto;" onclick="document.getElementById('csvUpload').click()">
+                    <i class="fa-solid fa-file-import"></i> Bulk Import
+                </button>
+                <input type="file" id="csvUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;" onchange="handleBulkImport(event)">
+                
+                <button class="btn btn-outline" style="padding:8px 12px; font-size:12px; width:auto; border-color:var(--primary); color:var(--primary);" onclick="pullFreshData()">
+                    <i class="fa-solid fa-rotate"></i> Sync
+                </button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Search SKU, category, or barcode..." oninput="filterInventory()">
+            </div>
+        </div>
+
+        <div class="inventory-grid" id="inventoryGrid">
+            <div style="text-align:center; padding:40px; color:var(--text-muted); grid-column:1/-1;">
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Loading SKUs...
+            </div>
+        </div>
+    </div>
+
 </div>
 
+<div id="toast">✅ Action Successful</div>
+
 <script type="module">
-// 🟢 1. IMPORT FIREBASE SDK
+// 🟢 1. IMPORT FIREBASE CORE
 import { db } from "./bharatpos.js";
-import { doc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// --- 1. CORE & GST LOGIC ---
-const isGstMode = localStorage.getItem('bharatpos_gst_mode') === 'true';
+// --- GLOBAL STATE ---
+let allProducts = [];
 let currentEditingName = null; 
+const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  renderProducts();
-  loadUser();
-  setupGstUI();
-  
-  const temp = localStorage.getItem("temp_new_barcode");
-  if (temp) {
-    document.getElementById("productBarcode").value = temp;
-    localStorage.removeItem("temp_new_barcode");
-  }
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Initial Load from LocalStorage for Speed
+    allProducts = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+    updateCategoryDatalist();
+    renderInventoryChunked(); // Virtual render
+    
+    // 2. Setup Form
+    addVariantUI();
+    if(isGstGlobal) document.getElementById('tierGst').classList.add('active'); // Auto open GST if global mode is on
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const restockName = urlParams.get('restock');
-  if(restockName) loadProductForEditByName(restockName);
+    // 3. Handle Restock Routing (from DemandMitra AI)
+    const urlParams = new URLSearchParams(window.location.search);
+    const restockName = urlParams.get('restock');
+    if(restockName) {
+        loadProductForEdit(restockName);
+        const tempStock = localStorage.getItem("temp_add_stock");
+        if(tempStock) {
+            setTimeout(() => {
+                const stockInputs = document.querySelectorAll('.v-add-stock');
+                if(stockInputs.length > 0) stockInputs[0].value = tempStock;
+                localStorage.removeItem("temp_add_stock");
+                showToast(`DemandMitra suggests adding ${tempStock} units.`);
+            }, 500);
+        }
+    }
 });
 
-// Expose functions to window so HTML onclicks can find them in module mode
+// --- UI INTERACTIONS ---
 window.toggleMenu = function() {
-    const menu = document.getElementById('sideMenu');
+    document.getElementById('sideMenu').classList.toggle('open');
     const overlay = document.getElementById('menuOverlay');
-    if(menu.classList.contains('open')) {
-        menu.classList.remove('open');
-        overlay.style.display = 'none';
+    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+}
+
+window.toggleTier = function(tierId, headerElement) {
+    const content = document.getElementById(tierId);
+    const chevron = headerElement.querySelector('.chevron');
+    content.classList.toggle('active');
+    if(content.classList.contains('active')) {
+        chevron.style.transform = 'rotate(180deg)';
+        headerElement.style.background = 'rgba(255,255,255,0.08)';
     } else {
-        menu.classList.add('open');
-        overlay.style.display = 'block';
+        chevron.style.transform = 'rotate(0deg)';
+        headerElement.style.background = 'rgba(255,255,255,0.03)';
     }
 }
 
-function setupGstUI() {
-    const btn = document.getElementById('gstQuickBtn');
-    if(isGstMode) {
-        document.body.classList.add('gst-active');
-        btn.innerText = "GST: ON";
-        togglePriceLabel(); 
-    } else {
-        document.body.classList.remove('gst-active');
-        btn.innerText = "GST: OFF";
-    }
-}
-
-window.toggleGstQuick = function() {
-    const newState = !isGstMode;
-    localStorage.setItem('bharatpos_gst_mode', newState ? 'true' : 'false');
-    location.reload(); 
-}
-
-window.togglePriceLabel = function() {
-    if(!isGstMode) return;
-    const type = document.getElementById('priceType').value;
-    const labels = document.querySelectorAll('#priceLabel, .var-price + .floating-label');
-    labels.forEach(label => {
-        if(type === 'inclusive') label.innerText = "Final Rate (Tax Mila Ke)";
-        else label.innerText = "Base Rate (Tax Alag Se Lagega)";
-    });
-}
-
-function loadUser(){
-  const data = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  document.getElementById('profileName').textContent = data.name ? data.name : "Guest";
-}
-
-function getProducts() {
-    try { return JSON.parse(localStorage.getItem('bharatpos_products') || '[]'); } 
-    catch(e) { return []; }
-}
-
-function populateCategoryDatalist() {
-    const products = getProducts();
-    const cats = new Set();
-    products.forEach(p => {
-        if (p.category && p.category.trim() !== '' && p.category.toLowerCase() !== 'all') {
-            cats.add(p.category.trim());
-        }
-    });
-    const dl = document.getElementById('categoryList');
-    if (dl) {
-        dl.innerHTML = Array.from(cats).map(c => `<option value="${c}">`).join('');
-    }
-}
-
-function extractBaseWeightKg(qtyStr) {
-    if (!qtyStr) return 1;
-    const str = String(qtyStr).toLowerCase().replace(/\s/g, '');
-    let num = parseFloat(str);
-    if (isNaN(num) || num <= 0) return 1;
-    if ((str.includes('g') || str.includes('gm')) && !str.includes('kg')) return num / 1000;
-    if (str.includes('ml')) return num / 1000;
-    return num;
-}
-
-function formatWeight(kg) {
-    if (kg <= 0) return "0";
-    if (kg < 1) return Math.round(kg * 1000) + " g";
-    return parseFloat(kg.toFixed(3)) + " kg";
-}
-
-function renderProducts(){
-  const products = getProducts();
-  const list = document.getElementById('productsList');
-  
-  populateCategoryDatalist(); 
-
-  if(products.length === 0) { 
-    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">📦 Stock khali hai.</div>'; 
-    return;
-  }
-
-  const grouped = {};
-  products.forEach(p => {
-      const key = p.name.trim().toLowerCase();
-      if(!grouped[key]) grouped[key] = { name: p.name, category: p.category, totalStock: 0, totalLooseKg: 0, variants: [] };
-      if (p.isLoose) grouped[key].totalLooseKg += Number(p.stock || 0) * extractBaseWeightKg(p.quantity);
-      else grouped[key].totalStock += Number(p.stock || 0);
-      grouped[key].variants.push(p);
-  });
-  
-  let html = '<table><thead><tr><th>Naam (Name)</th><th>Category</th><th class="desktop-col">Total Stock</th><th>Action</th></tr></thead><tbody>';
-  
-  Object.values(grouped).forEach(g => {
-    const isLoose = g.variants[0].isLoose;
-    const variantText = g.variants.length > 1 ? `<br><span style="font-size:10px; color:var(--accent);">${g.variants.length} Types</span>` : '';
-    const looseBadge = isLoose ? `<span style="background:rgba(16,185,129,0.1); color:var(--success); border:1px solid var(--success); padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px;">⚖️ Loose</span>` : '';
-    const safeName = encodeURIComponent(g.name);
-    const stockDisplay = isLoose ? formatWeight(g.totalLooseKg) : g.totalStock;
-    const isOut = isLoose ? g.totalLooseKg <= 0 : g.totalStock <= 0;
-
-    html += `<tr>
-      <td><div style="font-weight:600; display:flex; align-items:center;">${g.name} ${looseBadge}</div>${variantText}</td>
-      <td>${g.category || '-'}</td>
-      <td class="desktop-col" style="${isOut ? 'color:var(--danger); font-weight:bold;' : ''}">${stockDisplay}</td>
-      <td class="mobile-only stock-col">${stockDisplay}</td>
-      <td class="action-col">
-          <button class="eye-btn" onclick="openDetailModal('${safeName}')"><i class="fa-solid fa-eye"></i> View</button>
-          <button class="delete-btn" onclick="deleteProductConfirm('${safeName}')"><i class="fa-solid fa-trash"></i></button>
-      </td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  list.innerHTML = html;
-}
-
-window.openDetailModal = function(encodedName) {
-    const name = decodeURIComponent(encodedName);
-    const products = getProducts().filter(p => p.name.toLowerCase() === name.toLowerCase());
-    if(products.length === 0) return;
-    
-    const base = products[0];
-    currentEditingName = base.name; 
-
-    let variantsHtml = products.map(p => {
-        let stockDisplay = p.stock || 0;
-        if (base.isLoose) {
-            const kg = Number(p.stock) * extractBaseWeightKg(p.quantity);
-            stockDisplay = `${formatWeight(kg)} <span style="font-size:10px; color:#64748b;">(${parseFloat(Number(p.stock).toFixed(3))} Packs)</span>`;
-        }
-        return `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-bottom:5px; border-left:3px solid var(--accent);">
-            <div><strong style="color:#fff">${p.quantity || 'Standard'}</strong><br><span style="font-size:11px; color:var(--text-muted);">Stock: ${stockDisplay}</span></div>
-            <div style="text-align:right"><strong style="color:var(--success);">₹${p.price}</strong></div>
-        </div>`;
-    }).join('');
-
-    const content = `
-        <div class="detail-row"><span class="detail-label">Name</span><span class="detail-val">${base.name}</span></div>
-        <div class="detail-row"><span class="detail-label">Category</span><span class="detail-val">${base.category || '-'}</span></div>
-        <div class="detail-row"><span class="detail-label">Billing Mode</span><span class="detail-val" style="color:var(--accent)">${base.isLoose ? '⚖️ By Weight' : '📦 By Quantity'}</span></div>
-        ${isGstMode ? `
-        <div class="detail-row"><span class="detail-label">GST Rate</span><span class="detail-val">${base.gstRate || 0}%</span></div>
-        <div class="detail-row"><span class="detail-label">HSN Code</span><span class="detail-val">${base.hsn || '-'}</span></div>
-        ` : ''}
-        <div style="margin-top:20px; font-size:11px; color:var(--text-muted); font-weight:bold; letter-spacing:1px; margin-bottom:10px;">AVAILABLE PACKS / TYPES:</div>
-        <div style="max-height: 200px; overflow-y:auto; padding-right:5px;">${variantsHtml}</div>
-    `;
-    document.getElementById('modalContent').innerHTML = content;
-    document.getElementById('detailModal').style.display = 'flex';
-}
-
-window.closeDetailModal = function() { document.getElementById('detailModal').style.display = 'none'; }
-window.editFromModal = function() { window.closeDetailModal(); if(currentEditingName) loadProductForEditByName(currentEditingName); }
-
-window.addVariantRow = function() {
-    const template = document.getElementById('variantTemplate');
-    const clone = template.content.cloneNode(true);
-    document.getElementById('variantsContainer').appendChild(clone);
-}
-
-function resetVariants() {
-    const container = document.getElementById('variantsContainer');
-    while(container.children.length > 1) container.removeChild(container.lastChild);
-    document.getElementById('isLooseItem').checked = false;
-}
-
-// 🟢 FIREBASE: ATOMIC ADDITIVE ENGINE (No more massive payloads)
-window.handleAddProduct = async function(event){
-  if(event) event.preventDefault();
-  try {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    if (!user.merchantId) return alert("Merchant ID missing!");
-
-    const name = document.getElementById('productName').value.trim();
-    const cat = document.getElementById('productCategory').value.trim();
-    const bar = document.getElementById('productBarcode').value.trim();
-    const isLoose = document.getElementById('isLooseItem').checked;
-    
-    const hsn = isGstMode ? document.getElementById('hsnCode').value : "";
-    const gstRate = isGstMode ? document.getElementById('gstRate').value : "";
-    const priceType = isGstMode ? document.getElementById('priceType').value : "inclusive";
-    
-    let products = getProducts();
-    let oldVariants = [];
-
-    if (currentEditingName) {
-        oldVariants = products.filter(p => p.name.toLowerCase() === currentEditingName.toLowerCase());
-        products = products.filter(p => p.name.toLowerCase() !== currentEditingName.toLowerCase());
-    }
-
-    const rows = document.querySelectorAll('.variant-row');
-    const newSavedVariants = [];
-
-    for (let index = 0; index < rows.length; index++) {
-        const row = rows[index];
-        const qty = row.querySelector('.var-type').value.trim();
-        const stockInput = row.querySelector('.var-stock');
-        const inputStock = stockInput.value ? parseFloat(stockInput.value) : 0;
-        const price = row.querySelector('.var-price').value;
-
-        if(!price) continue; 
-
-        // 🐛 BUG FIX: Preserve the old Document ID if we are editing an existing variant!
-        let existingId = Date.now().toString() + index;
-        let existingStock = 0;
-
-        if (currentEditingName) {
-            const oldMatch = oldVariants.find(o => (o.quantity||'').toLowerCase() === qty.toLowerCase());
-            if (oldMatch) {
-                existingId = oldMatch.id;
-                existingStock = parseFloat(oldMatch.stock || 0);
-            }
-        } else {
-            const existIndex = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase() && (p.quantity||'').toLowerCase() === qty.toLowerCase());
-            if (existIndex > -1) {
-                existingId = products[existIndex].id;
-                existingStock = parseFloat(products[existIndex].stock || 0);
-                products.splice(existIndex, 1); 
-            }
-        }
-
-        const productData = {
-            id: existingId, 
-            name, price, quantity: qty, category: cat, barcode: bar,
-            hsn: isGstMode ? hsn : "", gstRate: isGstMode ? gstRate : "",
-            priceType: isGstMode ? priceType : "inclusive", isLoose: isLoose,
-            stock: existingStock + inputStock
-        };
-
-        products.push(productData);
-        newSavedVariants.push(productData.id);
-
-        // 🟢 FIREBASE: Atomically update JUST this one item document
-        const prodRef = doc(db, "shops", user.merchantId, "products", productData.id);
-        await setDoc(prodRef, productData);
-    }
-
-    // Cleanup: If user deleted a variant row while editing, remove it from Firebase
-    if (currentEditingName) {
-        for (const old of oldVariants) {
-            if (!newSavedVariants.includes(old.id)) {
-                const deadRef = doc(db, "shops", user.merchantId, "products", old.id);
-                await deleteDoc(deadRef);
-            }
-        }
-    }
-
-    showToast("✅ Saved Successfully!");
-    localStorage.setItem('bharatpos_products', JSON.stringify(products));
-    renderProducts();
-    document.getElementById('productForm').reset();
-    resetVariants();
-    currentEditingName = null; 
-  } catch(err){ console.error(err); showToast('Error saving data', true); }
-}
-
-function loadProductForEditByName(name) {
-    const products = getProducts().filter(p => p.name.toLowerCase() === name.toLowerCase());
-    if(products.length === 0) return;
-    
-    const base = products[0];
-    currentEditingName = base.name;
-    
-    document.getElementById('productName').value = base.name;
-    document.getElementById('productCategory').value = base.category || "";
-    document.getElementById('productBarcode').value = base.barcode || "";
-    document.getElementById('isLooseItem').checked = base.isLoose || false; 
-    
-    if(isGstMode) {
-        document.getElementById('hsnCode').value = base.hsn || "";
-        document.getElementById('gstRate').value = base.gstRate || "";
-        document.getElementById('priceType').value = base.priceType || "inclusive";
-    }
-
-    resetVariants(); 
-    
-    const rows = document.getElementById('variantsContainer').children;
-    const firstRow = rows[0];
-    firstRow.querySelector('.var-type').value = products[0].quantity || "";
-    firstRow.querySelector('.var-price').value = products[0].price;
-    firstRow.querySelector('.var-stock').value = ""; 
-
-    for(let i=1; i<products.length; i++) {
-        window.addVariantRow();
-        const newRow = document.getElementById('variantsContainer').lastElementChild;
-        newRow.querySelector('.var-type').value = products[i].quantity || "";
-        newRow.querySelector('.var-price').value = products[i].price;
-        newRow.querySelector('.var-stock').value = ""; 
-    }
-    
-    window.scrollTo({top: 0, behavior: 'smooth'});
-    document.getElementById('productName').focus();
-    showToast(`Editing: ${base.name}`);
-}
-
-// 🟢 FIREBASE: ATOMIC DELETE
-window.deleteProductConfirm = async function(encodedName){
-  const name = decodeURIComponent(encodedName);
-  if(!confirm(`Delete all variants of ${name}?`)) return;
-  
-  const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-  const allProducts = getProducts();
-  
-  const toDelete = allProducts.filter(p => p.name.toLowerCase() === name.toLowerCase());
-  const productsToKeep = allProducts.filter(p => p.name.toLowerCase() !== name.toLowerCase());
-  
-  localStorage.setItem('bharatpos_products', JSON.stringify(productsToKeep));
-  
-  // Delete each variant individually from Firestore
-  if (user.merchantId) {
-      for (const p of toDelete) {
-          try {
-              const deadRef = doc(db, "shops", user.merchantId, "products", p.id);
-              await deleteDoc(deadRef);
-          } catch(e) { console.error("Firebase delete failed for", p.id); }
-      }
-  }
-  
-  renderProducts();
-}
-
-// --- 3. SCANNER LOGIC (Retains Render Microservice for AI Engine) ---
-let cameraStream = null; let aiScanInterval = null; let aiScanLocked = false;          
-window.uiStartScan = function() { document.getElementById('cameraContainer').style.display = 'block'; startLiveScan(); }
-window.uiStopScan = function() { document.getElementById('cameraContainer').style.display = 'none'; stopLiveScan(); }
-async function startLiveScan() {
-  if (cameraStream) return;
-  const video = document.getElementById("cameraPreview");
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } }); 
-    video.srcObject = cameraStream;
-    video.onloadedmetadata = () => { video.play(); aiScanInterval = setInterval(() => { if(!aiScanLocked) captureAndSendToAI(); }, 3000); };
-  } catch(err) { alert("Camera Error"); }
-}
-function stopLiveScan() {
-  if(aiScanInterval) { clearInterval(aiScanInterval); aiScanInterval = null; }
-  if(cameraStream){ try { cameraStream.getTracks().forEach(t=>t.stop()); } catch(e){} cameraStream=null; }
-  const video = document.getElementById("cameraPreview");
-  if(video) try { video.srcObject = null; } catch(e) {}
-}
-async function captureAndSendToAI(){
-  const video = document.getElementById("cameraPreview"); const canvas = document.getElementById("captureCanvas"); const overlay = document.getElementById("aiLoadingOverlay");
-  if(!video || !canvas) return;
-  const ctx = canvas.getContext("2d"); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1]; 
-  aiScanLocked = true; if(overlay) overlay.style.display = 'flex'; 
-  try{
-    const url = window.buildUrl ? window.buildUrl('/ai-product-scan') : 'https://server-xy7s.onrender.com/ai-product-scan';
-    const res = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: base64 }) });
-    const data = await res.json();
-    if(data && data.success && data.product){
-      fillProductFromAI(data.product); showToast("✨ AI: " + data.product.name, false); window.uiStopScan(); 
-    } 
-  } catch(e){} finally { aiScanLocked = false; if(overlay) overlay.style.display = 'none'; }
-}
-function fillProductFromAI(product){
-  document.getElementById("productName").value = product.name || "";
-  const firstRow = document.querySelector('.variant-row');
-  if(firstRow) { firstRow.querySelector('.var-type').value = product.quantity || "1 pc"; firstRow.querySelector('.var-price').value = product.price || ""; }
-  document.getElementById("productCategory").value = product.category || "General";
-}
-window.resetAIScan = function(){ document.getElementById("productForm").reset(); resetVariants(); aiScanLocked=false; if(!cameraStream) window.uiStartScan(); currentEditingName = null;}
 function showToast(msg, isError = false) {
-  const x = document.getElementById("toast"); x.innerText = msg; x.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
-  x.className = "show"; setTimeout(() => x.className = "", 3000);
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// 🟢 FIREBASE: GLOBAL CATALOG MASTER DATABASE LOGIC 
-let masterCatalog = [];
-
-window.openGlobalCatalog = async function() {
-    document.getElementById('globalCatalogModal').style.display = 'flex';
-    const list = document.getElementById('globalCatalogList');
-    list.innerHTML = '<div style="text-align:center; color:#64748b; margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching Master Catalog...</div>';
+// --- VARIANT ENGINE ---
+window.addVariantUI = function(data = null) {
+    const container = document.getElementById('variantEngine');
+    const div = document.createElement('div');
+    div.className = 'variant-box';
     
-    try {
-        // Query Firestore Master Catalog Database natively
-        const catalogRef = collection(db, "masterCatalog");
-        const snapshot = await getDocs(catalogRef);
-        
-        masterCatalog = snapshot.docs.map(doc => doc.data());
+    // Generate unique input IDs so floating labels work properly
+    const uid = Math.floor(Math.random()*10000);
+    
+    div.innerHTML = `
+        ${container.children.length > 0 ? `<button type="button" class="btn-remove-var" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>` : ''}
+        <div class="variant-grid">
+            <div class="form-group" style="margin-bottom:0;">
+                <input type="text" class="form-input v-unit" list="unitOptions" id="u_${uid}" placeholder=" " value="${data?.quantity || ''}" required>
+                <label for="u_${uid}" class="floating-label">Unit / Size (e.g. pcs, kg, 1L)</label>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <input type="number" step="0.001" class="form-input v-add-stock" id="s_${uid}" placeholder=" ">
+                <label for="s_${uid}" class="floating-label" style="color:var(--success);">Add Stock (+/-)</label>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:12px; margin-bottom:0;">
+            <input type="number" step="0.01" class="form-input v-price" id="p_${uid}" placeholder=" " value="${data?.price || ''}" required style="font-size:18px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';">
+            <label for="p_${uid}" class="floating-label">Selling Price (₹)</label>
+        </div>
+        <input type="hidden" class="v-id" value="${data?.id || ''}">
+        <input type="hidden" class="v-exist-stock" value="${data?.stock || 0}">
+        <input type="hidden" class="v-barcode" value="${data?.barcode || ''}">
+        <input type="hidden" class="v-expiry" value="${data?.expiryDate || ''}">
+        <input type="hidden" class="v-cost" value="${data?.costPrice || ''}">
+    `;
+    container.appendChild(div);
+}
 
-        if(masterCatalog.length > 0) {
-            window.filterGlobalCatalog(); // Render all initially
-        } else {
-            list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Database empty or offline. Please run migration script.</div>';
+// --- 🟢 ATOMIC SAVE ENGINE ---
+window.handleSaveProduct = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`; btn.disabled = true;
+
+    try {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        if(!user.merchantId) throw new Error("Merchant ID missing");
+
+        // 1. Gather Level 1 & 2 Data (Global to product name)
+        const name = document.getElementById('pName').value.trim();
+        const cat = document.getElementById('pCategory').value.trim() || 'General';
+        const hsn = document.getElementById('pHSN').value.trim();
+        const gstRate = document.getElementById('pGSTRate').value.trim();
+        const priceType = document.getElementById('pPriceType').value;
+        const isLoose = document.getElementById('pIsLoose').checked;
+
+        // 2. Gather Level 3 Data (We apply this to the first variant if Advanced is open)
+        const isAdvOpen = document.getElementById('tierAdv').classList.contains('active');
+        const glBarcode = isAdvOpen ? document.getElementById('pBarcode').value.trim() : "";
+        const glExpiry = isAdvOpen ? document.getElementById('pExpiry').value : "";
+        const glCost = isAdvOpen ? document.getElementById('pCostPrice').value : "";
+
+        let oldVariants = currentEditingName ? allProducts.filter(p => p.name.toLowerCase() === currentEditingName.toLowerCase()) : [];
+        allProducts = allProducts.filter(p => p.name.toLowerCase() !== (currentEditingName || name).toLowerCase());
+
+        const variantBoxes = document.querySelectorAll('.variant-box');
+        const batch = writeBatch(db);
+        const newSavedIds = [];
+
+        // 3. Process Each Variant
+        for (let i = 0; i < variantBoxes.length; i++) {
+            const box = variantBoxes[i];
+            const unit = box.querySelector('.v-unit').value.trim();
+            const price = box.querySelector('.v-price').value;
+            const addStock = parseFloat(box.querySelector('.v-add-stock').value) || 0;
+            
+            let vId = box.querySelector('.v-id').value;
+            let existStock = parseFloat(box.querySelector('.v-exist-stock').value) || 0;
+            
+            // Advanced fields per variant (fallback to global UI if it's the first box and UI is active)
+            let vBarcode = box.querySelector('.v-barcode').value || (i===0 ? glBarcode : "");
+            let vExpiry = box.querySelector('.v-expiry').value || (i===0 ? glExpiry : "");
+            let vCost = box.querySelector('.v-cost').value || (i===0 ? glCost : "");
+
+            // Generate ID if new
+            if (!vId) vId = `sku_${Date.now()}_${i}`;
+
+            const finalData = {
+                id: vId, name: name, category: cat, 
+                quantity: unit, price: parseFloat(price), stock: existStock + addStock,
+                hsn: hsn, gstRate: gstRate, priceType: priceType, isLoose: isLoose,
+                barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost
+            };
+
+            allProducts.push(finalData);
+            newSavedIds.push(vId);
+
+            // Atomic Firestore Set
+            const docRef = doc(db, "shops", user.merchantId, "products", vId);
+            batch.set(docRef, finalData);
         }
-    } catch(e) {
-        list.innerHTML = '<div style="text-align:center; color:#ef4444; margin-top:20px;">Firebase Connection Error. Check rules.</div>';
+
+        // 4. Cleanup old variants that were deleted during edit
+        for (const old of oldVariants) {
+            if (!newSavedIds.includes(old.id)) {
+                const deadRef = doc(db, "shops", user.merchantId, "products", old.id);
+                batch.delete(deadRef);
+            }
+        }
+
+        await batch.commit();
+
+        // 5. Update UI
+        localStorage.setItem('bharatpos_products', JSON.stringify(allProducts));
+        updateCategoryDatalist();
+        filterInventory(); // Re-render grid
+        
+        document.getElementById('productForm').reset();
+        document.getElementById('variantEngine').innerHTML = '';
+        addVariantUI();
+        currentEditingName = null;
+        
+        // Collapse Advanced
+        if(isAdvOpen) toggleTier('tierAdv', document.getElementById('btnTierAdv'));
+
+        showToast("✅ SKU Saved Atomically");
+        window.scrollTo({top: 0, behavior: 'smooth'});
+
+    } catch (e) {
+        console.error(e);
+        showToast("Error saving data", true);
+    } finally {
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Save to Database`; btn.disabled = false;
     }
 }
 
-window.filterGlobalCatalog = function() {
-    const q = document.getElementById('globalCatalogSearch').value.toLowerCase();
-    const list = document.getElementById('globalCatalogList');
+// --- 🟢 DATA LOAD OPTIMIZATION (Virtual/Chunked Grid Render) ---
+function updateCategoryDatalist() {
+    const cats = new Set(allProducts.map(p => p.category).filter(Boolean));
+    document.getElementById('catList').innerHTML = Array.from(cats).map(c => `<option value="${c}">`).join('');
+}
+
+window.filterInventory = function() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || (p.barcode||'').includes(q));
+    renderInventoryChunked(filtered);
+}
+
+function renderInventoryChunked(dataSet = allProducts) {
+    const grid = document.getElementById('inventoryGrid');
     
-    const filtered = masterCatalog.filter(p => 
-        p.name.toLowerCase().includes(q) || 
-        (p.category && p.category.toLowerCase().includes(q))
-    );
-    
-    if(filtered.length === 0) {
-        list.innerHTML = '<div style="text-align:center; color:#64748b; margin-top:20px;">No matching items found.</div>';
+    if(dataSet.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">No SKUs found. Add your first product!</div>';
         return;
     }
 
-    const groups = {};
-    filtered.forEach(p => {
-        const cat = p.category || "General";
-        if(!groups[cat]) groups[cat] = [];
-        groups[cat].push(p);
+    // Group by Name to keep variants together in the UI
+    const grouped = {};
+    dataSet.forEach(p => {
+        const k = p.name.toLowerCase();
+        if(!grouped[k]) grouped[k] = { name: p.name, cat: p.category, totalStock: 0, variants: [] };
+        grouped[k].totalStock += Number(p.stock || 0);
+        grouped[k].variants.push(p);
     });
 
-    let html = '';
-    Object.entries(groups).forEach(([cat, prods]) => {
-        html += `<div style="font-family: 'JetBrains Mono', monospace; color: #a855f7; font-size: 12px; font-weight: 800; border-bottom: 1px dashed rgba(168,85,247,0.4); padding-bottom: 5px; margin: 15px 0 10px; text-transform: uppercase;">📁 ${cat}</div>`;
+    const items = Object.values(grouped);
+    grid.innerHTML = '';
+
+    // Optimization: Use DocumentFragment to prevent multiple DOM reflows
+    const fragment = document.createDocumentFragment();
+    
+    // We render up to 100 initially to keep DOM light. In a true enterprise build, we'd use an IntersectionObserver here.
+    const limit = Math.min(items.length, 100); 
+
+    for(let i=0; i<limit; i++) {
+        const g = items[i];
+        const isLow = g.totalStock <= 5;
+        const vCount = g.variants.length;
+        const basePrice = g.variants[0].price;
         
-        html += prods.map(p => `
-            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#a855f7'; this.style.background='rgba(168,85,247,0.1)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.background='rgba(255,255,255,0.05)'" onclick='window.importProductFromCatalog(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
-                <div>
-                    <div style="font-weight:700; color:#fff; font-size:14px;">${p.name} ${p.isLoose ? '⚖️' : ''}</div>
-                    <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${p.quantity || '-'} • GST: ${p.gstRate || 0}%</div>
+        const card = document.createElement('div');
+        card.className = 'sku-card';
+        card.innerHTML = `
+            <div>
+                <div class="sku-header">
+                    <h3 class="sku-name">${g.name}</h3>
                 </div>
-                <div style="text-align:right;">
-                    <div style="color:var(--success); font-weight:800; font-size:15px;">₹${p.price}</div>
-                    <div style="font-size:10px; color:#fff; background:var(--primary); font-weight:700; padding:4px 8px; border-radius:6px; margin-top:6px; display:inline-block;">AUTO-FILL <i class="fa-solid fa-bolt"></i></div>
+                <div class="sku-cat">${g.cat || 'General'}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin: 8px 0 12px;">${vCount > 1 ? `${vCount} Variants Available` : g.variants[0].quantity}</div>
+            </div>
+            
+            <div>
+                <div class="sku-stats">
+                    <div class="sku-price">₹${basePrice}${vCount>1?'<span style="font-size:10px; color:#64748b;">+</span>':''}</div>
+                    <div class="sku-stock ${isLow ? 'low' : ''}">${g.totalStock} in stock</div>
+                </div>
+                <div class="sku-actions">
+                    <button class="btn-icon btn-edit" onclick="loadProductForEdit('${encodeURIComponent(g.name)}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                    <button class="btn-icon btn-del" onclick="deleteProduct('${encodeURIComponent(g.name)}')"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>
-        `).join('');
-    });
-
-    list.innerHTML = html;
-}
-
-window.importProductFromCatalog = function(product) {
-    document.getElementById('globalCatalogModal').style.display = 'none';
-
-    document.getElementById('productName').value = product.name || '';
-    document.getElementById('productCategory').value = product.category || '';
-    document.getElementById('productBarcode').value = product.barcode || '';
-    document.getElementById('isLooseItem').checked = product.isLoose === true;
-
-    const firstRow = document.querySelector('.variant-row');
-    if(firstRow) {
-        firstRow.querySelector('.var-type').value = product.quantity || '';
-        firstRow.querySelector('.var-price').value = product.price || '';
-        firstRow.querySelector('.var-stock').value = ''; 
+        `;
+        fragment.appendChild(card);
     }
     
-    if(document.getElementById('gstRate')) document.getElementById('gstRate').value = product.gstRate || '0';
-    if(document.getElementById('hsnCode')) document.getElementById('hsnCode').value = product.hsn || '';
-    if(document.getElementById('priceType')) document.getElementById('priceType').value = product.priceType || 'inclusive';
+    grid.appendChild(fragment);
+    if(items.length > 100) {
+        const moreDiv = document.createElement('div');
+        moreDiv.style = "grid-column:1/-1; text-align:center; padding:15px; color:var(--primary); font-size:12px;";
+        moreDiv.innerText = `+ ${items.length - 100} more hidden to optimize performance. Use search to find them.`;
+        grid.appendChild(moreDiv);
+    }
+}
+
+// --- EDIT & DELETE ---
+window.loadProductForEdit = function(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    const targetVariants = allProducts.filter(p => p.name.toLowerCase() === name.toLowerCase());
+    if(!targetVariants.length) return;
+
+    currentEditingName = name;
+    const base = targetVariants[0];
+
+    // Level 1 & 2
+    document.getElementById('pName').value = base.name;
+    document.getElementById('pCategory').value = base.category || '';
+    document.getElementById('pHSN').value = base.hsn || '';
+    document.getElementById('pGSTRate').value = base.gstRate || '';
+    if(base.priceType) document.getElementById('pPriceType').value = base.priceType;
+    document.getElementById('pIsLoose').checked = base.isLoose || false;
+
+    // Open GST if data exists
+    if(base.hsn || base.gstRate) document.getElementById('tierGst').classList.add('active');
+
+    // Level 3 (Load from first variant into global fields for easy view)
+    document.getElementById('pBarcode').value = base.barcode || '';
+    document.getElementById('pExpiry').value = base.expiryDate || '';
+    document.getElementById('pCostPrice').value = base.costPrice || '';
     
+    if(base.barcode || base.expiryDate || base.costPrice || base.isLoose) {
+        document.getElementById('tierAdv').classList.add('active');
+    }
+
+    // Build Variants UI
+    document.getElementById('variantEngine').innerHTML = '';
+    targetVariants.forEach(v => window.addVariantUI(v));
+
     window.scrollTo({top: 0, behavior: 'smooth'});
-    document.getElementById('productStock').focus(); 
-    showToast("✅ Auto-filled! Add your stock and click Save.");
+    document.getElementById('pName').focus();
+    showToast(`Loaded ${name} for editing`);
+}
+
+window.deleteProduct = async function(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    if(!confirm(`Delete all variants of ${name}?`)) return;
+
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const toDelete = allProducts.filter(p => p.name.toLowerCase() === name.toLowerCase());
+    
+    allProducts = allProducts.filter(p => p.name.toLowerCase() !== name.toLowerCase());
+    localStorage.setItem('bharatpos_products', JSON.stringify(allProducts));
+    
+    if(user.merchantId) {
+        const batch = writeBatch(db);
+        toDelete.forEach(p => {
+            const ref = doc(db, "shops", user.merchantId, "products", p.id);
+            batch.delete(ref);
+        });
+        await batch.commit();
+    }
+    
+    filterInventory();
+    showToast("Deleted successfully");
+}
+
+// --- 🟢 BULK IMPORT (EXCEL/CSV TO FIRESTORE VIA BATCH) ---
+window.handleBulkImport = function(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            document.getElementById('inventoryGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Parsing File...</div>';
+            
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+            if(jsonData.length === 0) throw new Error("File is empty");
+
+            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            if(!user.merchantId) throw new Error("Merchant ID missing");
+
+            let batch = writeBatch(db);
+            let opCount = 0;
+            let addedCount = 0;
+
+            for (const row of jsonData) {
+                // Map columns loosely to account for variations in headers
+                const name = row['Name'] || row['Product Name'] || row['Item'];
+                if(!name) continue;
+
+                const skuId = `imp_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+                const productObj = {
+                    id: skuId,
+                    name: String(name),
+                    category: String(row['Category'] || 'General'),
+                    price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
+                    stock: parseFloat(row['Stock'] || row['Qty'] || 0),
+                    quantity: String(row['Unit'] || row['Type'] || '1 pcs'),
+                    barcode: String(row['Barcode'] || ''),
+                    hsn: String(row['HSN'] || ''),
+                    gstRate: String(row['GST'] || ''),
+                    isLoose: String(row['Loose'] || '').toLowerCase() === 'true' || false
+                };
+
+                allProducts.push(productObj);
+                const docRef = doc(db, "shops", user.merchantId, "products", skuId);
+                batch.set(docRef, productObj);
+                
+                opCount++;
+                addedCount++;
+
+                // Firestore batch limit is 500
+                if(opCount === 490) {
+                    await batch.commit();
+                    batch = writeBatch(db);
+                    opCount = 0;
+                }
+            }
+
+            if(opCount > 0) await batch.commit();
+
+            localStorage.setItem('bharatpos_products', JSON.stringify(allProducts));
+            updateCategoryDatalist();
+            filterInventory();
+            showToast(`✅ Imported ${addedCount} products successfully!`);
+
+        } catch (error) {
+            console.error(error);
+            showToast("Import failed. Ensure valid CSV/Excel format.", true);
+            filterInventory();
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+window.pullFreshData = async function() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if(!user.merchantId) return;
+
+    document.getElementById('inventoryGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px;"><i class="fa-solid fa-cloud-arrow-down fa-bounce fa-2x"></i><br><br>Syncing from Cloud...</div>';
+    
+    try {
+        const prodRef = collection(db, "shops", user.merchantId, "products");
+        const snap = await getDocs(prodRef);
+        const fresh = snap.docs.map(d => d.data());
+        
+        allProducts = fresh;
+        localStorage.setItem('bharatpos_products', JSON.stringify(fresh));
+        updateCategoryDatalist();
+        filterInventory();
+        showToast("Sync complete!");
+    } catch(e) {
+        showToast("Sync failed", true);
+        filterInventory();
+    }
+}
+
+// --- 🟢 AI SCANNER UPDATES ---
+let cameraStream = null;
+window.startAIScan = async function() {
+    const box = document.getElementById('scannerBox');
+    const video = document.getElementById('cameraPreview');
+    box.style.display = 'block';
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
+        video.srcObject = cameraStream;
+        // Trigger capture after 3 seconds
+        setTimeout(captureAndSendToAI, 3000);
+    } catch(err) { showToast("Camera access denied", true); box.style.display = 'none'; }
+}
+
+window.stopAIScan = function() {
+    if(cameraStream){ cameraStream.getTracks().forEach(t=>t.stop()); cameraStream=null; }
+    document.getElementById('scannerBox').style.display = 'none';
+}
+
+async function captureAndSendToAI() {
+    if(!cameraStream) return;
+    const video = document.getElementById("cameraPreview"); 
+    const canvas = document.getElementById("captureCanvas");
+    const ctx = canvas.getContext("2d"); 
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1]; 
+    
+    stopAIScan();
+    showToast("✨ AI is analyzing image...");
+
+    try {
+        const url = window.buildUrl ? window.buildUrl('/ai-product-scan') : 'https://server-xy7s.onrender.com/ai-product-scan';
+        const res = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: base64 }) });
+        const data = await res.json();
+        
+        if(data && data.success && data.product){
+            // Fill Level 1
+            document.getElementById("pName").value = data.product.name || "";
+            document.getElementById("pCategory").value = data.product.category || "";
+            
+            const firstVariant = document.querySelector('.variant-box');
+            if(firstVariant) {
+                if(data.product.price) firstVariant.querySelector('.v-price').value = data.product.price;
+            }
+
+            // Fill Level 3 ONLY if toggle is active (AI Guardrail)
+            const isAdvOpen = document.getElementById('tierAdv').classList.contains('active');
+            if (isAdvOpen) {
+                if(data.product.expiry_date) document.getElementById('pExpiry').value = data.product.expiry_date;
+                if(data.product.barcode) document.getElementById('pBarcode').value = data.product.barcode;
+            }
+            
+            showToast("✨ AI Auto-fill complete"); 
+        } 
+    } catch(e) { showToast("AI Scan failed", true); }
 }
 </script>
 </body>
