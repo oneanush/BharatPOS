@@ -6,141 +6,454 @@
   <title>AI Strategist - Bharat POS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
   
   <script src="bharatpos.js"></script>
 
   <style>
-    /* --- VARIABLES & RESET --- */
+    /* ─────────────────────────────────────────────
+       VARIABLES & RESET
+    ───────────────────────────────────────────── */
     :root {
-      --bg-body: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.6);
-      --glass: blur(16px);
-      --border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #00d2ff; /* Cyber Blue */
-      --purple: #a855f7;
+      --bg-body:      #EAF2FF;
+      --bg-card:      #ffffff;
+      --border:       #DBEAFE;
+      --text-main:    #0F172A;
+      --text-muted:   #64748B;
+      --accent:       #1976D2;
+      --accent-dark:  #1565C0;
+      --accent-glow:  rgba(25, 118, 210, 0.12);
+      --accent-soft:  rgba(25, 118, 210, 0.08);
+      --shadow-sm:    0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md:    0 8px 28px rgba(25,118,210,0.10);
+      --shadow-lg:    0 20px 60px rgba(25,118,210,0.13);
+      --radius-card:  20px;
+      --radius-input: 14px;
+      --radius-btn:   10px;
+      --font-head:    'Sora', sans-serif;
+      --font-body:    'DM Sans', sans-serif;
+      --ease:         cubic-bezier(.4,0,.2,1);
+      --trans:        .22s var(--ease);
     }
 
-    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-    
-    body {
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0; padding: 0;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      background-image: 
-        radial-gradient(circle at 10% 20%, rgba(0, 210, 255, 0.1), transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1), transparent 40%);
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-body);
+      background-image:
+        radial-gradient(ellipse 700px 500px at 85% -5%,  rgba(147,197,253,.50), transparent),
+        radial-gradient(ellipse 500px 400px at -5%  92%, rgba(165,180,252,.28), transparent);
       background-attachment: fixed;
+      min-height: 100vh;
+      color: var(--text-main);
     }
 
-    /* --- NAVIGATION --- */
+    /* ─────────────────────────────────────────────
+       NAVBAR
+    ───────────────────────────────────────────── */
     .navbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 15px 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass);
-      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1.5px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(25,118,210,0.07);
     }
-    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
-    .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #f59e0b; }
-    .nav-links { display: flex; gap: 20px; }
-    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
-    .nav-links a:hover { color: var(--accent); }
 
-    /* --- MAIN CONTAINER --- */
-    .ai-container { max-width: 800px; margin: 40px auto; padding: 0 20px; padding-bottom: 80px; }
-    
-    .hero-text { text-align: center; margin-bottom: 30px; animation: fadeIn 0.8s ease-out; }
-    .hero-text h1 { font-size: 32px; margin: 0 0 10px 0; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .hero-text p { color: var(--text-muted); font-size: 15px; margin: 0; }
+    .brand {
+      font-family: var(--font-head);
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: -.2px;
+    }
 
-    /* --- INPUT CARD --- */
+    .global-logo {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 6px;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      transition: background var(--trans), color var(--trans);
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* ─────────────────────────────────────────────
+       MAIN CONTAINER
+    ───────────────────────────────────────────── */
+    .ai-container {
+      max-width: 780px;
+      margin: 48px auto;
+      padding: 0 20px 100px;
+    }
+
+    /* ─────────────────────────────────────────────
+       HERO SECTION
+    ───────────────────────────────────────────── */
+    .hero-text {
+      text-align: center;
+      margin-bottom: 36px;
+      animation: fadeIn 0.7s ease-out both;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-soft);
+      border: 1.5px solid var(--border);
+      color: var(--accent);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 18px;
+    }
+
+    .hero-text h1 {
+      font-family: var(--font-head);
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -.6px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .hero-text h1 span {
+      background: linear-gradient(135deg, #1976D2, #1565C0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-text p {
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ─────────────────────────────────────────────
+       INPUT CARD
+    ───────────────────────────────────────────── */
     .input-card {
-      background: var(--bg-card); backdrop-filter: var(--glass);
-      border: 1px solid var(--border); border-radius: 16px; padding: 6px;
-      box-shadow: 0 0 40px rgba(0, 210, 255, 0.05);
-      transition: border-color 0.3s, box-shadow 0.3s;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 6px;
+      box-shadow: var(--shadow-md);
+      transition: border-color var(--trans), box-shadow var(--trans);
+      animation: fadeIn 0.7s .1s ease-out both;
     }
+
     .input-card:focus-within {
-      border-color: var(--accent); box-shadow: 0 0 20px rgba(0, 210, 255, 0.15);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-glow), var(--shadow-md);
     }
 
     .ai-prompt {
-      width: 100%; background: transparent; border: none;
-      color: #fff; font-size: 16px; font-family: 'Inter', sans-serif;
-      padding: 15px; resize: none; min-height: 60px;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 15px;
+      font-family: var(--font-body);
+      padding: 16px 18px;
+      resize: none;
+      min-height: 70px;
+      line-height: 1.6;
     }
-    .ai-prompt::placeholder { color: rgba(255,255,255,0.3); }
+
+    .ai-prompt::placeholder {
+      color: #b0bec8;
+    }
 
     .action-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 15px; border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px 12px;
+      border-top: 1.5px solid #f1f5f9;
+      gap: 12px;
     }
-    
-    /* Quick Chips */
-    .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+
+    /* ─────────────────────────────────────────────
+       CHIPS
+    ───────────────────────────────────────────── */
+    .chip-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      flex: 1;
+    }
     .chip-scroll::-webkit-scrollbar { display: none; }
+
     .chip {
-      background: rgba(255,255,255,0.05); color: var(--text-muted);
-      border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px;
-      font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s;
+      background: #f1f5ff;
+      color: var(--text-muted);
+      border: 1.5px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--trans), color var(--trans),
+                  border-color var(--trans), transform var(--trans),
+                  box-shadow var(--trans);
+      font-family: var(--font-body);
     }
-    .chip:hover { background: rgba(0, 210, 255, 0.1); color: var(--accent); border-color: var(--accent); }
 
+    .chip:hover {
+      background: rgba(25,118,210,0.10);
+      color: var(--accent);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(25,118,210,0.12);
+    }
+
+    /* ─────────────────────────────────────────────
+       GENERATE BUTTON
+    ───────────────────────────────────────────── */
     .ai-btn {
-      background: var(--accent); color: #000; border: none;
-      padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 14px;
-      cursor: pointer; display: flex; align-items: center; gap: 8px;
-      transition: transform 0.1s, box-shadow 0.2s;
+      background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+      color: #fff;
+      border: none;
+      padding: 11px 22px;
+      border-radius: var(--radius-btn);
+      font-weight: 700;
+      font-size: 14px;
+      font-family: var(--font-body);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: transform var(--trans), box-shadow var(--trans), opacity var(--trans);
+      box-shadow: 0 4px 16px rgba(25,118,210,0.30);
     }
-    .ai-btn:hover { box-shadow: 0 0 15px var(--accent); }
-    .ai-btn:active { transform: scale(0.96); }
-    .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* --- OUTPUT CARD (CYBER THEME) --- */
-    .ai-output-area { margin-top: 30px; min-height: 100px; }
-    
+    .ai-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(25,118,210,0.42);
+    }
+
+    .ai-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 8px rgba(25,118,210,0.25);
+    }
+
+    .ai-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ─────────────────────────────────────────────
+       OUTPUT AREA
+    ───────────────────────────────────────────── */
+    .ai-output-area {
+      margin-top: 28px;
+      min-height: 80px;
+    }
+
+    /* ── Success Card ── */
     .ai-suggestion-card {
-        background: rgba(10, 10, 15, 0.8);
-        border: 1px solid #333;
-        border-left: 4px solid var(--accent);
-        border-radius: 12px; padding: 30px;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-        position: relative; overflow: hidden;
-        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-card);
+      padding: 32px 30px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
+
+    /* Subtle top-right watermark badge */
     .ai-badge {
-        position: absolute; top: 0; right: 0;
-        background: linear-gradient(90deg, #0f172a, var(--accent));
-        color: #fff; font-size: 9px; font-weight: 800;
-        padding: 6px 12px; border-bottom-left-radius: 12px; letter-spacing: 1px;
+      position: absolute;
+      top: 0; right: 0;
+      background: linear-gradient(135deg, #EAF2FF, #C7DDFF);
+      color: var(--accent);
+      font-size: 9px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-bottom-left-radius: 14px;
+      letter-spacing: 1.2px;
+      border-left: 1.5px solid var(--border);
+      border-bottom: 1.5px solid var(--border);
     }
 
-    .ai-text { color: #e2e8f0; line-height: 1.7; font-size: 15px; }
-    .ai-text h3 { margin-top: 0; color: #fff; }
-    .ai-text strong { color: var(--accent); }
-    .ai-text li { margin-bottom: 8px; list-style: none; position: relative; padding-left: 20px; }
-    .ai-text li::before { content: "›"; position: absolute; left: 0; color: var(--purple); font-weight: bold; }
+    /* ── Output Typography ── */
+    .ai-text {
+      color: var(--text-main);
+      line-height: 1.75;
+      font-size: 14.5px;
+    }
 
-    /* --- LOADING ANIMATION --- */
-    .thinking-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: var(--accent); }
-    .brain-waves { display: flex; gap: 6px; margin-bottom: 15px; height: 30px; align-items: center; }
-    .wave { width: 4px; background: var(--accent); animation: wave 1s ease-in-out infinite; border-radius: 2px; }
-    .wave:nth-child(2) { animation-delay: 0.1s; }
-    .wave:nth-child(3) { animation-delay: 0.2s; }
-    .wave:nth-child(4) { animation-delay: 0.3s; }
-    .wave:nth-child(5) { animation-delay: 0.4s; }
-    
-    @keyframes wave { 0%, 100% { height: 10px; opacity: 0.5; } 50% { height: 30px; opacity: 1; } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .ai-text h3 {
+      font-family: var(--font-head);
+      font-size: 17px;
+      color: var(--text-main);
+      margin-bottom: 14px;
+      margin-top: 0;
+    }
 
-    /* Mobile */
+    .ai-text strong {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .ai-text br + br { display: block; margin: 4px 0; }
+
+    .ai-text li {
+      margin-bottom: 10px;
+      list-style: none;
+      position: relative;
+      padding-left: 20px;
+      color: #334155;
+    }
+
+    .ai-text li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    /* ── Loading State ── */
+    .thinking-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-md);
+      animation: fadeIn .3s ease both;
+    }
+
+    .brain-waves {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 18px;
+      height: 32px;
+      align-items: center;
+    }
+
+    .wave {
+      width: 4px;
+      background: linear-gradient(180deg, #1976D2, #1565C0);
+      border-radius: 3px;
+      animation: wave 1s ease-in-out infinite;
+    }
+    .wave:nth-child(2) { animation-delay: .10s; background: linear-gradient(180deg, #2196F3, #1976D2); }
+    .wave:nth-child(3) { animation-delay: .20s; }
+    .wave:nth-child(4) { animation-delay: .30s; background: linear-gradient(180deg, #2196F3, #1976D2); }
+    .wave:nth-child(5) { animation-delay: .40s; }
+
+    .thinking-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      color: var(--accent);
+      text-transform: uppercase;
+      opacity: .8;
+    }
+
+    /* ── Error Card ── */
+    .ai-error-card {
+      background: #fff8f8;
+      border: 1.5px solid #fecaca;
+      border-left: 4px solid #ef4444;
+      border-radius: var(--radius-card);
+      padding: 28px 30px;
+      box-shadow: 0 8px 28px rgba(239,68,68,0.08);
+      animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .ai-error-card h3 {
+      font-family: var(--font-head);
+      font-size: 16px;
+      color: #dc2626;
+      margin-bottom: 8px;
+      margin-top: 0;
+    }
+
+    .ai-error-card p {
+      font-size: 14px;
+      color: #7f1d1d;
+      line-height: 1.6;
+    }
+
+    /* ─────────────────────────────────────────────
+       KEYFRAMES
+    ───────────────────────────────────────────── */
+    @keyframes wave {
+      0%, 100% { height: 8px;  opacity: 0.45; }
+      50%       { height: 30px; opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ─────────────────────────────────────────────
+       RESPONSIVE
+    ───────────────────────────────────────────── */
     @media (max-width: 600px) {
-      .action-bar { flex-direction: column; align-items: stretch; gap: 15px; }
-      .ai-btn { justify-content: center; }
+      .ai-container   { margin: 28px auto; }
+      .hero-text h1   { font-size: 28px; }
+      .action-bar     { flex-direction: column; align-items: stretch; gap: 12px; }
+      .ai-btn         { justify-content: center; }
+      .navbar         { padding: 12px 18px; }
+      .nav-links a    { padding: 6px 10px; font-size: 12px; }
+      .ai-suggestion-card, .ai-error-card { padding: 22px 18px; }
     }
   </style>
 </head>
@@ -159,15 +472,18 @@
 </nav>
 
 <div class="ai-container">
-  
+
   <div class="hero-text">
-    <h1>AI Strategist</h1>
-    <p>Analyze sales, optimize stock, and grow your business.</p>
+    <div class="hero-badge">
+      ✦ Powered by AI
+    </div>
+    <h1>Your <span>AI Strategist</span></h1>
+    <p>Analyze sales, optimize stock, and grow your business with smart insights.</p>
   </div>
 
   <div class="input-card">
-    <textarea id="aiPrompt" class="ai-prompt" rows="2" placeholder="Ask anything (e.g., 'How can I increase profits next week?')..."></textarea>
-    
+    <textarea id="aiPrompt" class="ai-prompt" rows="2" placeholder="Ask anything — e.g. 'How can I increase profits next week?'"></textarea>
+
     <div class="action-bar">
       <div class="chip-scroll">
         <div class="chip" onclick="setPrompt('Analyze my sales trends')">📊 Analyze Sales</div>
@@ -176,7 +492,7 @@
       </div>
       <button id="aiBtn" class="ai-btn" onclick="getAIAdvice()">
         <span>Generate</span>
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
       </button>
     </div>
   </div>
@@ -231,7 +547,7 @@
         <div class="brain-waves">
            <div class="wave"></div><div class="wave"></div><div class="wave"></div><div class="wave"></div><div class="wave"></div>
         </div>
-        <div style="font-size:12px; letter-spacing:1px; opacity:0.8;">PROCESSING RETAIL DATA...</div>
+        <div class="thinking-label">Processing retail data…</div>
       </div>
     `;
     aiBtn.disabled = true;
@@ -276,11 +592,9 @@
     } catch (err) {
         // E. ERROR CARD
         aiOutput.innerHTML = `
-            <div class="ai-suggestion-card" style="border-left-color: #ef4444;">
-                <div class="ai-text" style="color:#fca5a5;">
-                    <h3>⚡ Connection Interrupted</h3>
-                    ${err.message}. Please check your internet and try again.
-                </div>
+            <div class="ai-error-card">
+                <h3>⚡ Connection Interrupted</h3>
+                <p>${err.message}. Please check your internet and try again.</p>
             </div>`;
     } finally {
         aiBtn.disabled = false;
