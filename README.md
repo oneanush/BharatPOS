@@ -39,13 +39,10 @@ It focuses on **speed, simplicity, and real-world usability** — no unnecessary
 ## 🛠️ Tech Stack  
 
 **Frontend:**  
-- HTML / CSS / JavaScript *(or React if used)*  
-
-**Backend:**  
-- Node.js / Express *(or whatever you're using)*  
+- HTML / CSS / JavaScript  
 
 **Database:**  
-- Firebase / MongoDB / SQL *(update accordingly)*  
+- Firebase
 
 ---
 
