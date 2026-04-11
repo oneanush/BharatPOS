@@ -4,502 +4,533 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>AI Strategist - Bharat POS</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-  
+
   <script src="bharatpos.js"></script>
 
   <style>
-    /* ─────────────────────────────────────────────
-       VARIABLES & RESET
-    ───────────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════════
+       LAYER 0 — TOKENS
+    ═══════════════════════════════════════════════════════════ */
     :root {
       --bg-body:      #EAF2FF;
       --bg-card:      #ffffff;
+      --bg-inner:     #F5F9FF;
       --border:       #DBEAFE;
+      --border-strong:#1976D2;
       --text-main:    #0F172A;
       --text-muted:   #64748B;
       --accent:       #1976D2;
       --accent-dark:  #1565C0;
-      --accent-glow:  rgba(25, 118, 210, 0.12);
-      --accent-soft:  rgba(25, 118, 210, 0.08);
-      --shadow-sm:    0 2px 8px rgba(0,0,0,0.06);
-      --shadow-md:    0 8px 28px rgba(25,118,210,0.10);
-      --shadow-lg:    0 20px 60px rgba(25,118,210,0.13);
-      --radius-card:  20px;
-      --radius-input: 14px;
+      --accent-glow:  rgba(25,118,210,0.13);
+      --accent-soft:  rgba(25,118,210,0.07);
+      --shadow-sm:    0 2px 8px  rgba(0,0,0,0.06);
+      --shadow-md:    0 8px 32px rgba(25,118,210,0.11);
+      --shadow-lg:    0 24px 72px rgba(25,118,210,0.15);
+      --shadow-xl:    0 40px 100px rgba(25,118,210,0.18);
+      --radius-wrap:  28px;
+      --radius-card:  18px;
       --radius-btn:   10px;
-      --font-head:    'Sora', sans-serif;
+      --font-head:    'Sora',    sans-serif;
       --font-body:    'DM Sans', sans-serif;
       --ease:         cubic-bezier(.4,0,.2,1);
       --trans:        .22s var(--ease);
     }
 
     *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0; padding: 0;
-      outline: none;
-      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box; margin: 0; padding: 0;
+      outline: none; -webkit-tap-highlight-color: transparent;
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       LAYER 1 — BODY / BACKGROUND
+    ═══════════════════════════════════════════════════════════ */
     body {
       font-family: var(--font-body);
-      background: var(--bg-body);
-      background-image:
-        radial-gradient(ellipse 700px 500px at 85% -5%,  rgba(147,197,253,.50), transparent),
-        radial-gradient(ellipse 500px 400px at -5%  92%, rgba(165,180,252,.28), transparent);
+      background: linear-gradient(145deg, #EAF2FF 0%, #D6E9FF 50%, #C7DDFF 100%);
       background-attachment: fixed;
       min-height: 100vh;
       color: var(--text-main);
+      position: relative;
+      overflow-x: hidden;
     }
 
-    /* ─────────────────────────────────────────────
-       NAVBAR
-    ───────────────────────────────────────────── */
+    /* Animated background blobs */
+    .bg-blob {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-blob-a {
+      width: 520px; height: 520px;
+      background: rgba(135,180,255,0.28);
+      border-radius: 45% 55% 50% 50% / 50% 50% 50% 50%;
+      top: -140px; left: -130px;
+      animation: blobMorph 9s infinite ease-in-out;
+    }
+    .bg-blob-b {
+      width: 600px; height: 600px;
+      background: rgba(135,180,255,0.18);
+      border-radius: 55% 45% 50% 50% / 50% 50% 50% 50%;
+      top: -180px; right: -150px;
+      animation: blobMorph 12s infinite reverse ease-in-out;
+    }
+    .bg-blob-c {
+      width: 400px; height: 400px;
+      background: rgba(165,180,252,0.20);
+      border-radius: 50% 50% 45% 55% / 50% 50% 50% 50%;
+      bottom: -100px; right: 60px;
+      animation: blobMorph 10s infinite ease-in-out;
+    }
+    .bg-blob-d {
+      width: 280px; height: 280px;
+      background: rgba(147,197,253,0.22);
+      border-radius: 60% 40% 55% 45%;
+      bottom: 80px; left: -60px;
+      animation: blobMorph 14s infinite reverse ease-in-out;
+    }
+
+    @keyframes blobMorph {
+      0%,100% { border-radius:45% 55% 50% 50% / 50% 50% 50% 50%; transform:translate(0,0); }
+      25%      { border-radius:55% 45% 48% 52% / 52% 48% 52% 48%; transform:translate(24px,-24px); }
+      50%      { border-radius:48% 52% 55% 45% / 45% 55% 45% 55%; transform:translate(-16px,18px); }
+      75%      { border-radius:52% 48% 45% 55% / 55% 45% 55% 45%; transform:translate(16px,24px); }
+    }
+    @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+    @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+    @keyframes fadeUp  { from{opacity:0;transform:translateY(28px) scale(.97)} to{opacity:1;transform:none} }
+    @keyframes wave    { 0%,100%{height:8px;opacity:.45} 50%{height:30px;opacity:1} }
+    @keyframes floatY  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+    /* ═══════════════════════════════════════════════════════════
+       LAYER 2 — NAVBAR
+    ═══════════════════════════════════════════════════════════ */
     .navbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 28px;
-      background: rgba(255,255,255,0.80);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       border-bottom: 1.5px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 16px rgba(25,118,210,0.07);
+      box-shadow: 0 2px 20px rgba(25,118,210,0.08);
     }
-
     .brand {
       font-family: var(--font-head);
-      font-size: 17px;
-      font-weight: 800;
+      font-size: 17px; font-weight: 800;
       color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      letter-spacing: -.2px;
+      display: flex; align-items: center; gap: 10px;
+      letter-spacing: -.3px;
     }
-
     .global-logo {
-      width: 34px; height: 34px;
+      width: 36px; height: 36px;
       border-radius: 50%;
       border: 2px solid var(--border);
       box-shadow: var(--shadow-sm);
     }
-
-    .nav-links {
-      display: flex;
-      gap: 6px;
-    }
-
+    .nav-links { display: flex; gap: 4px; }
     .nav-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 600;
-      padding: 7px 14px;
-      border-radius: 8px;
+      color: var(--text-muted); text-decoration: none;
+      font-size: 13px; font-weight: 600;
+      padding: 7px 15px; border-radius: 8px;
       transition: background var(--trans), color var(--trans);
     }
+    .nav-links a:hover { color: var(--accent); background: var(--accent-soft); }
 
-    .nav-links a:hover {
-      color: var(--accent);
-      background: var(--accent-soft);
+    /* ═══════════════════════════════════════════════════════════
+       LAYER 3 — PAGE WRAPPER
+    ═══════════════════════════════════════════════════════════ */
+    .page-wrapper {
+      position: relative; z-index: 10;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 48px 20px 80px;
+      min-height: calc(100vh - 65px);
     }
 
-    /* ─────────────────────────────────────────────
-       MAIN CONTAINER
-    ───────────────────────────────────────────── */
-    .ai-container {
-      max-width: 780px;
-      margin: 48px auto;
-      padding: 0 20px 100px;
-    }
-
-    /* ─────────────────────────────────────────────
-       HERO SECTION
-    ───────────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════════
+       LAYER 4 — HERO
+    ═══════════════════════════════════════════════════════════ */
     .hero-text {
       text-align: center;
-      margin-bottom: 36px;
-      animation: fadeIn 0.7s ease-out both;
+      margin-bottom: 32px;
+      animation: fadeIn 0.65s ease-out both;
     }
-
     .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--accent-soft);
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.80);
       border: 1.5px solid var(--border);
       color: var(--accent);
-      font-size: 11.5px;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      padding: 5px 14px;
-      border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 5px 16px; border-radius: 20px;
       margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
     }
-
+    .hero-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      animation: floatY 2s ease-in-out infinite;
+    }
     .hero-text h1 {
       font-family: var(--font-head);
-      font-size: 38px;
-      font-weight: 800;
+      font-size: 40px; font-weight: 800;
       color: var(--text-main);
-      letter-spacing: -.6px;
-      line-height: 1.15;
-      margin-bottom: 12px;
+      letter-spacing: -.7px; line-height: 1.12;
+      margin-bottom: 14px;
     }
-
-    .hero-text h1 span {
-      background: linear-gradient(135deg, #1976D2, #1565C0);
+    .hero-text h1 .grad {
+      background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
     .hero-text p {
       color: var(--text-muted);
-      font-size: 15px;
-      line-height: 1.6;
+      font-size: 15.5px; line-height: 1.65;
+      max-width: 480px; margin: 0 auto;
     }
 
-    /* ─────────────────────────────────────────────
-       INPUT CARD
-    ───────────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════════
+       LAYER 5 — MAIN CARD (the structural fix)
+       Matches login page: white + border: 2px solid #1976D2
+    ═══════════════════════════════════════════════════════════ */
+    .ai-container {
+      width: 100%; max-width: 800px;
+      background: rgba(255,255,255,0.93);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 2px solid var(--border-strong);
+      border-radius: var(--radius-wrap);
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+      animation: fadeUp .65s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    /* Blue header stripe */
+    .card-header-stripe {
+      background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+      padding: 28px 36px 26px;
+      position: relative; overflow: hidden;
+    }
+    .card-header-stripe::before,
+    .card-header-stripe::after {
+      content: '';
+      position: absolute; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.14);
+      pointer-events: none;
+    }
+    .card-header-stripe::before { width:240px; height:240px; top:-90px; right:-60px; }
+    .card-header-stripe::after  { width:140px; height:140px; top:-30px; right:80px; }
+    .stripe-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; z-index: 1;
+    }
+    .stripe-label {
+      font-size: 10.5px; font-weight: 700;
+      letter-spacing: .18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.60); margin-bottom: 5px;
+    }
+    .stripe-title {
+      font-family: var(--font-head);
+      font-size: 22px; font-weight: 800;
+      color: #fff; letter-spacing: -.3px;
+    }
+    .stripe-icon {
+      width: 50px; height: 50px;
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+
+    /* Card body */
+    .card-body { padding: 32px 36px 36px; }
+
+    /* ═══════════════════════════════════════════════════════════
+       LAYER 6 — INPUT INNER CARD
+    ═══════════════════════════════════════════════════════════ */
     .input-card {
-      background: var(--bg-card);
+      background: var(--bg-inner);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-card);
-      padding: 6px;
-      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 22px;
       transition: border-color var(--trans), box-shadow var(--trans);
-      animation: fadeIn 0.7s .1s ease-out both;
     }
-
     .input-card:focus-within {
       border-color: var(--accent);
       box-shadow: 0 0 0 4px var(--accent-glow), var(--shadow-md);
     }
 
-    .ai-prompt {
-      width: 100%;
-      background: transparent;
-      border: none;
-      color: var(--text-main);
-      font-size: 15px;
-      font-family: var(--font-body);
-      padding: 16px 18px;
-      resize: none;
-      min-height: 70px;
-      line-height: 1.6;
+    .prompt-label-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 18px 0;
+    }
+    .prompt-label-icon {
+      width: 26px; height: 26px;
+      background: linear-gradient(135deg, #1976D2, #1565C0);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .prompt-label-text {
+      font-size: 11.5px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text-muted);
     }
 
-    .ai-prompt::placeholder {
-      color: #b0bec8;
+    /* Textarea — id="aiPrompt" preserved for JS */
+    .ai-prompt {
+      width: 100%; background: transparent; border: none;
+      color: var(--text-main); font-size: 15px;
+      font-family: var(--font-body);
+      padding: 12px 18px 18px;
+      resize: none; min-height: 80px; line-height: 1.65;
     }
+    .ai-prompt::placeholder { color: #b0bec8; }
 
     .action-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 12px 12px;
-      border-top: 1.5px solid #f1f5f9;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px 14px;
+      background: rgba(255,255,255,0.70);
+      border-top: 1.5px solid var(--border);
       gap: 12px;
     }
 
-    /* ─────────────────────────────────────────────
+    /* ═══════════════════════════════════════════════════════════
        CHIPS
-    ───────────────────────────────────────────── */
+    ═══════════════════════════════════════════════════════════ */
     .chip-scroll {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      scrollbar-width: none;
-      flex: 1;
+      display: flex; gap: 8px;
+      overflow-x: auto; padding-bottom: 2px;
+      scrollbar-width: none; flex: 1;
     }
     .chip-scroll::-webkit-scrollbar { display: none; }
-
     .chip {
-      background: #f1f5ff;
-      color: var(--text-muted);
+      background: #fff; color: var(--text-muted);
       border: 1.5px solid var(--border);
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
+      padding: 7px 15px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      font-family: var(--font-body);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
       transition: background var(--trans), color var(--trans),
                   border-color var(--trans), transform var(--trans),
                   box-shadow var(--trans);
-      font-family: var(--font-body);
     }
-
     .chip:hover {
-      background: rgba(25,118,210,0.10);
-      color: var(--accent);
+      background: rgba(25,118,210,0.09); color: var(--accent);
       border-color: var(--accent);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(25,118,210,0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(25,118,210,0.14);
     }
+    .chip:active { transform: translateY(0) scale(.97); }
 
-    /* ─────────────────────────────────────────────
-       GENERATE BUTTON
-    ───────────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════════
+       GENERATE BUTTON — id="aiBtn" preserved for JS
+    ═══════════════════════════════════════════════════════════ */
     .ai-btn {
       background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
-      color: #fff;
-      border: none;
-      padding: 11px 22px;
-      border-radius: var(--radius-btn);
-      font-weight: 700;
-      font-size: 14px;
+      color: #fff; border: none;
+      padding: 11px 24px; border-radius: var(--radius-btn);
+      font-weight: 700; font-size: 14px;
       font-family: var(--font-body);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
       white-space: nowrap;
-      transition: transform var(--trans), box-shadow var(--trans), opacity var(--trans);
-      box-shadow: 0 4px 16px rgba(25,118,210,0.30);
+      box-shadow: 0 4px 18px rgba(25,118,210,0.32);
+      transition: transform var(--trans), box-shadow var(--trans);
+    }
+    .ai-btn:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(25,118,210,0.44); }
+    .ai-btn:active { transform: scale(.97); }
+    .ai-btn:disabled { opacity:.52; cursor:not-allowed; transform:none; }
+
+    /* ═══════════════════════════════════════════════════════════
+       OUTPUT DIVIDER
+    ═══════════════════════════════════════════════════════════ */
+    .output-divider {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 20px;
+    }
+    .output-divider hr { flex:1; border:none; border-top:1.5px solid var(--border); }
+    .output-divider span {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--text-muted); white-space: nowrap;
     }
 
-    .ai-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(25,118,210,0.42);
-    }
+    /* ═══════════════════════════════════════════════════════════
+       AI OUTPUT AREA — id="aiOutput" preserved for JS
+    ═══════════════════════════════════════════════════════════ */
+    .ai-output-area { min-height: 60px; }
 
-    .ai-btn:active {
-      transform: scale(0.97);
-      box-shadow: 0 2px 8px rgba(25,118,210,0.25);
-    }
-
-    .ai-btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* ─────────────────────────────────────────────
-       OUTPUT AREA
-    ───────────────────────────────────────────── */
-    .ai-output-area {
-      margin-top: 28px;
-      min-height: 80px;
-    }
-
-    /* ── Success Card ── */
+    /* Success card — class injected by JS */
     .ai-suggestion-card {
-      background: var(--bg-card);
+      background: #fff;
       border: 1.5px solid var(--border);
       border-left: 4px solid var(--accent);
       border-radius: var(--radius-card);
-      padding: 32px 30px;
-      box-shadow: var(--shadow-lg);
-      position: relative;
-      overflow: hidden;
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      padding: 30px 28px;
+      box-shadow: var(--shadow-md);
+      position: relative; overflow: hidden;
+      animation: slideUp .5s cubic-bezier(.16,1,.3,1) both;
     }
-
-    /* Subtle top-right watermark badge */
     .ai-badge {
-      position: absolute;
-      top: 0; right: 0;
+      position: absolute; top: 0; right: 0;
       background: linear-gradient(135deg, #EAF2FF, #C7DDFF);
       color: var(--accent);
-      font-size: 9px;
-      font-weight: 800;
-      padding: 6px 14px;
-      border-bottom-left-radius: 14px;
-      letter-spacing: 1.2px;
+      font-size: 8.5px; font-weight: 800; letter-spacing: 1.3px;
+      padding: 6px 14px; border-bottom-left-radius: 12px;
       border-left: 1.5px solid var(--border);
       border-bottom: 1.5px solid var(--border);
     }
+    .ai-text { color: var(--text-main); line-height: 1.78; font-size: 14.5px; }
+    .ai-text h3 { font-family:var(--font-head); font-size:17px; color:var(--text-main); margin:0 0 14px; font-weight:700; }
+    .ai-text strong { color: var(--accent); font-weight: 700; }
+    .ai-text li { margin-bottom:10px; list-style:none; position:relative; padding-left:20px; color:#334155; }
+    .ai-text li::before { content:"›"; position:absolute; left:0; color:var(--accent); font-weight:700; font-size:18px; line-height:1.3; }
 
-    /* ── Output Typography ── */
-    .ai-text {
-      color: var(--text-main);
-      line-height: 1.75;
-      font-size: 14.5px;
-    }
-
-    .ai-text h3 {
-      font-family: var(--font-head);
-      font-size: 17px;
-      color: var(--text-main);
-      margin-bottom: 14px;
-      margin-top: 0;
-    }
-
-    .ai-text strong {
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    .ai-text br + br { display: block; margin: 4px 0; }
-
-    .ai-text li {
-      margin-bottom: 10px;
-      list-style: none;
-      position: relative;
-      padding-left: 20px;
-      color: #334155;
-    }
-
-    .ai-text li::before {
-      content: "›";
-      position: absolute;
-      left: 0;
-      color: var(--accent);
-      font-weight: 700;
-      font-size: 18px;
-      line-height: 1.3;
-    }
-
-    /* ── Loading State ── */
+    /* Loading state — class injected by JS */
     .thinking-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 20px;
-      background: var(--bg-card);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-card);
-      box-shadow: var(--shadow-md);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 52px 20px;
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: var(--radius-card); box-shadow: var(--shadow-sm);
       animation: fadeIn .3s ease both;
     }
+    .brain-waves { display:flex; gap:5px; margin-bottom:18px; height:32px; align-items:center; }
+    .wave { width:4px; background:linear-gradient(180deg,#1976D2,#1565C0); border-radius:3px; animation:wave 1s ease-in-out infinite; }
+    .wave:nth-child(2) { animation-delay:.10s; background:linear-gradient(180deg,#2196F3,#1976D2); }
+    .wave:nth-child(3) { animation-delay:.20s; }
+    .wave:nth-child(4) { animation-delay:.30s; background:linear-gradient(180deg,#2196F3,#1976D2); }
+    .wave:nth-child(5) { animation-delay:.40s; }
+    .thinking-label { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); opacity:.75; }
 
-    .brain-waves {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 18px;
-      height: 32px;
-      align-items: center;
-    }
-
-    .wave {
-      width: 4px;
-      background: linear-gradient(180deg, #1976D2, #1565C0);
-      border-radius: 3px;
-      animation: wave 1s ease-in-out infinite;
-    }
-    .wave:nth-child(2) { animation-delay: .10s; background: linear-gradient(180deg, #2196F3, #1976D2); }
-    .wave:nth-child(3) { animation-delay: .20s; }
-    .wave:nth-child(4) { animation-delay: .30s; background: linear-gradient(180deg, #2196F3, #1976D2); }
-    .wave:nth-child(5) { animation-delay: .40s; }
-
-    .thinking-label {
-      font-size: 11.5px;
-      font-weight: 700;
-      letter-spacing: .1em;
-      color: var(--accent);
-      text-transform: uppercase;
-      opacity: .8;
-    }
-
-    /* ── Error Card ── */
+    /* Error card — class injected by JS */
     .ai-error-card {
-      background: #fff8f8;
-      border: 1.5px solid #fecaca;
+      background: #fff8f8; border: 1.5px solid #fecaca;
       border-left: 4px solid #ef4444;
-      border-radius: var(--radius-card);
-      padding: 28px 30px;
+      border-radius: var(--radius-card); padding: 28px;
       box-shadow: 0 8px 28px rgba(239,68,68,0.08);
-      animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+      animation: slideUp .4s cubic-bezier(.16,1,.3,1) both;
     }
+    .ai-error-card h3 { font-family:var(--font-head); font-size:16px; color:#dc2626; margin:0 0 8px; font-weight:700; }
+    .ai-error-card p  { font-size:14px; color:#7f1d1d; line-height:1.6; margin:0; }
 
-    .ai-error-card h3 {
-      font-family: var(--font-head);
-      font-size: 16px;
-      color: #dc2626;
-      margin-bottom: 8px;
-      margin-top: 0;
-    }
-
-    .ai-error-card p {
-      font-size: 14px;
-      color: #7f1d1d;
-      line-height: 1.6;
-    }
-
-    /* ─────────────────────────────────────────────
-       KEYFRAMES
-    ───────────────────────────────────────────── */
-    @keyframes wave {
-      0%, 100% { height: 8px;  opacity: 0.45; }
-      50%       { height: 30px; opacity: 1; }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: none; }
-    }
-
-    /* ─────────────────────────────────────────────
+    /* ═══════════════════════════════════════════════════════════
        RESPONSIVE
-    ───────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      .ai-container   { margin: 28px auto; }
-      .hero-text h1   { font-size: 28px; }
-      .action-bar     { flex-direction: column; align-items: stretch; gap: 12px; }
-      .ai-btn         { justify-content: center; }
-      .navbar         { padding: 12px 18px; }
-      .nav-links a    { padding: 6px 10px; font-size: 12px; }
-      .ai-suggestion-card, .ai-error-card { padding: 22px 18px; }
+    ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      .page-wrapper       { padding: 28px 14px 60px; }
+      .hero-text h1       { font-size: 28px; }
+      .hero-text p        { font-size: 14px; }
+      .card-header-stripe { padding: 22px 22px 20px; }
+      .stripe-title       { font-size: 18px; }
+      .card-body          { padding: 22px 18px 28px; }
+      .action-bar         { flex-direction: column; align-items: stretch; gap: 10px; }
+      .ai-btn             { justify-content: center; }
+      .navbar             { padding: 12px 18px; }
+      .nav-links a        { padding: 6px 10px; font-size: 12px; }
+      .ai-suggestion-card,.ai-error-card { padding: 20px 18px; }
+      .bg-blob-b,.bg-blob-c { opacity:.5; }
     }
   </style>
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="brand">
-    <img src="logo.png" class="global-logo">
-    Bharat POS
-  </div>
-  <div class="nav-links">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="billing.html">Billing</a>
-    <a href="settings.html">Settings</a>
-  </div>
-</nav>
+  <!-- Layer 1: Background blobs -->
+  <div class="bg-blob bg-blob-a"></div>
+  <div class="bg-blob bg-blob-b"></div>
+  <div class="bg-blob bg-blob-c"></div>
+  <div class="bg-blob bg-blob-d"></div>
 
-<div class="ai-container">
-
-  <div class="hero-text">
-    <div class="hero-badge">
-      ✦ Powered by AI
+  <!-- Layer 2: Sticky navbar -->
+  <nav class="navbar">
+    <div class="brand">
+      <img src="logo.png" class="global-logo">
+      Bharat POS
     </div>
-    <h1>Your <span>AI Strategist</span></h1>
-    <p>Analyze sales, optimize stock, and grow your business with smart insights.</p>
-  </div>
+    <div class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="billing.html">Billing</a>
+      <a href="settings.html">Settings</a>
+    </div>
+  </nav>
 
-  <div class="input-card">
-    <textarea id="aiPrompt" class="ai-prompt" rows="2" placeholder="Ask anything — e.g. 'How can I increase profits next week?'"></textarea>
+  <!-- Layer 3: Scroll wrapper -->
+  <div class="page-wrapper">
 
-    <div class="action-bar">
-      <div class="chip-scroll">
-        <div class="chip" onclick="setPrompt('Analyze my sales trends')">📊 Analyze Sales</div>
-        <div class="chip" onclick="setPrompt('Suggest stock improvements')">📦 Inventory Audit</div>
-        <div class="chip" onclick="setPrompt('Give me marketing ideas')">🚀 Marketing Ideas</div>
+    <!-- Layer 4: Hero -->
+    <div class="hero-text">
+      <div class="hero-badge">
+        <div class="dot"></div>
+        Powered by AI
       </div>
-      <button id="aiBtn" class="ai-btn" onclick="getAIAdvice()">
-        <span>Generate</span>
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-      </button>
+      <h1>Your <span class="grad">AI Strategist</span></h1>
+      <p>Ask anything about your business — sales, stock, pricing, or growth strategy.</p>
     </div>
-  </div>
 
-  <div id="aiOutput" class="ai-output-area"></div>
+    <!-- Layer 5: Main card (the structural fix — matches login page split-card) -->
+    <div class="ai-container">
 
-</div>
+      <!-- Blue stripe header -->
+      <div class="card-header-stripe">
+        <div class="stripe-inner">
+          <div>
+            <div class="stripe-label">BharatPOS Intelligence</div>
+            <div class="stripe-title">Business Insights Engine</div>
+          </div>
+          <div class="stripe-icon">🧠</div>
+        </div>
+      </div>
+
+      <!-- Card body -->
+      <div class="card-body">
+
+        <!-- Layer 6: Input inner card -->
+        <div class="input-card">
+          <div class="prompt-label-row">
+            <div class="prompt-label-icon">
+              <svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <span class="prompt-label-text">Your Question</span>
+          </div>
+
+          <textarea id="aiPrompt" class="ai-prompt" rows="3"
+            placeholder="Ask anything — e.g. 'How can I increase profits next week?'"></textarea>
+
+          <div class="action-bar">
+            <div class="chip-scroll">
+              <div class="chip" onclick="setPrompt('Analyze my sales trends')">📊 Analyze Sales</div>
+              <div class="chip" onclick="setPrompt('Suggest stock improvements')">📦 Inventory Audit</div>
+              <div class="chip" onclick="setPrompt('Give me marketing ideas')">🚀 Marketing Ideas</div>
+            </div>
+            <button id="aiBtn" class="ai-btn" onclick="getAIAdvice()">
+              <span>Generate</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Output divider -->
+        <div class="output-divider">
+          <hr><span>AI Response</span><hr>
+        </div>
+
+        <!-- Output zone — JS writes into this; id must not change -->
+        <div id="aiOutput" class="ai-output-area"></div>
+
+      </div><!-- /.card-body -->
+    </div><!-- /.ai-container -->
+  </div><!-- /.page-wrapper -->
+
 
 <script>
   // --- 1. DATA GATHERING (Preserved) ---
