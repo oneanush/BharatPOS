@@ -65,8 +65,8 @@
     input:checked + .slider:before { transform: translateX(16px); }
 
     /* ENTERPRISE HIDING LOGIC */
-    .pro-feature { display: none; }
-    body.pro-mode .pro-feature { display: flex; animation: fadeIn 0.4s ease; }
+    .pro-feature { display: none !important; }
+    body.pro-mode .pro-feature { display: flex !important; animation: fadeIn 0.4s ease; }
 
     .grid-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(160px, auto); gap: 20px; }
     .card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); animation: fadeUp 0.8s var(--ease) backwards; cursor: pointer; }
@@ -267,7 +267,7 @@
           <div id="salesChart" class="chart-box"></div>
         </div>
 
-        <div class="card">
+        <div class="card span-2">
           <h3>⚠️ Maal Khatam (Low Stock)</h3>
           <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
             <div id="lowStockCount" style="font-size:24px; font-weight:800;">0</div>
@@ -275,7 +275,7 @@
           <div id="lowstock" style="margin-top:10px; max-height:100px; overflow-y:auto; padding-right:5px;"></div>
         </div>
 
-        <div class="card pro-feature span-2">
+        <div class="card pro-feature span-4">
             <h3>Peak Business Hours (Today)</h3>
             <div id="proHeatmap" class="mini-bar-chart">
                 <div style="color:var(--text-muted); font-size:12px; align-self:center;">No data yet</div>
@@ -362,6 +362,8 @@
     </div>
 </div>
 
+<div id="toast" style="position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px); background:#0F172A; color:white; padding:12px 24px; border-radius:100px; font-weight:600; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,0.2); opacity:0; transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index:10000; white-space:nowrap;">✅ Action Successful</div>
+
 <script type="module">
 import { db } from "./bharatpos.js";
 import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -373,7 +375,9 @@ document.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     setGreeting();
     loadUser();
-    window.initShopSwitcher(); 
+    
+    // Load Shop Switcher
+    if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); 
     
     // Pro Toggle memory
     const isPro = localStorage.getItem('cfg_pro_dash') === 'true';
@@ -394,7 +398,6 @@ function bindEvents() {
     document.getElementById('btnCloseReceipt').addEventListener('click', () => document.getElementById('receiptModal').style.display='none');
     
     document.getElementById('btnResetData').addEventListener('click', window.resetSales);
-    document.getElementById('shopSwitcher').addEventListener('change', (e) => window.handleShopChange(e.target.value));
 
     document.getElementById('proToggle').addEventListener('change', (e) => {
         const isPro = e.target.checked;
@@ -409,6 +412,11 @@ function bindEvents() {
 function formatCurrency(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
 function escapeHtml(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; }
 function safeParse(key) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : []; } catch(e){ return []; } }
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.innerText = msg; t.style.background = isError ? 'var(--danger)' : 'var(--success)';
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+}
 
 function animateValue(obj, start, end, duration) {
     if(!obj) return;
@@ -441,138 +449,119 @@ function toggleMenu() {
     overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
 }
 
-window.initShopSwitcher = async function() {
-    const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const switcher = document.getElementById('shopSwitcher');
-    if(!currentUser.mobile && !currentUser.phone) {
-        switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
-        return;
-    }
-    try {
-        let shops = await window.loadOwnedShops(currentUser.mobile || currentUser.phone);
-        if(shops.length > 0) {
-            switcher.innerHTML = shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === currentUser.merchantId ? 'selected' : ''}>${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
-        } else {
-            switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
-        }
-    } catch(e) {
-        switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
-    }
-};
-
-window.handleShopChange = function(val) {
-    if(confirm("Switching shops will reload the dashboard. Continue?")) {
-        if(typeof switchActiveShop === 'function') switchActiveShop(val); 
-    } else {
-        const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        document.getElementById('shopSwitcher').value = currentUser.merchantId;
-    }
-};
-
 // ─── CORE DASHBOARD MATH (Singularity & Splits) ───────────────────────────────
 window.renderDashboard = function() {
-    const sales = safeParse('bharatpos_sales');
-    const products = safeParse('bharatpos_products');
-    
-    const todayStr = new Date().toISOString().split('T')[0];
-    const yesterStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    
-    let totalRev = 0, todayRev = 0, yesterdayRev = 0;
-    let todayBills = 0, todayProfit = 0;
-    
-    // Pro Analytics Data
-    const catSales = {};
-    const hourSales = new Array(24).fill(0);
-
-    sales.forEach(s => {
-        const dObj = new Date(s.date);
-        const dStr = dObj.toISOString().split('T')[0];
+    try {
+        const sales = safeParse('bharatpos_sales');
+        const products = safeParse('bharatpos_products');
         
-        // 1. Calculate Real Cash/Online Collection
-        let collected = 0;
-        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
+        const todayStr = new Date().toISOString().split('T')[0];
+        const yesterStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
         
-        if (pMode === 'Partial' && s.split) {
-            collected = Number(s.split.cash || 0) + Number(s.split.online || 0);
-        } else if (pMode !== 'Udhaar') {
-            collected = Number(s.total || s.amount || 0);
-        }
+        let totalRev = 0, todayRev = 0, yesterdayRev = 0;
+        let todayBills = 0, todayProfit = 0;
+        
+        // Pro Analytics Data
+        const catSales = {};
+        const hourSales = new Array(24).fill(0);
 
-        if(dStr === todayStr) { todayRev += collected; todayBills++; }
-        if(dStr === yesterStr) yesterdayRev += collected;
-        totalRev += collected;
+        sales.forEach(s => {
+            const dObj = new Date(s.date);
+            const dStr = dObj.toISOString().split('T')[0];
+            
+            // 1. Calculate Real Cash/Online Collection
+            let collected = 0;
+            const pMode = s.paymentMethod || s.paymentMode || 'Cash';
+            
+            if (pMode === 'Partial' && s.split) {
+                collected = Number(s.split.cash || 0) + Number(s.split.online || 0);
+            } else if (pMode !== 'Udhaar') {
+                collected = Number(s.total || s.amount || 0);
+            }
 
-        // 2. Check if a previous Udhaar was settled TODAY
-        if(s.isPaid && s.settledDate) {
-            const setStr = new Date(s.settledDate).toISOString().split('T')[0];
-            if(setStr === todayStr && dStr !== todayStr) {
-                // If it was fully udhaar, whole amount collected today.
-                // If it was partial, only the udhaar split was collected today.
-                const settledAmt = (pMode === 'Partial' && s.split) ? Number(s.split.udhaar) : Number(s.total || s.amount || 0);
-                todayRev += settledAmt;
-                totalRev += settledAmt;
+            if(dStr === todayStr) { todayRev += collected; todayBills++; }
+            if(dStr === yesterStr) yesterdayRev += collected;
+            totalRev += collected;
+
+            // 2. Check if a previous Udhaar was settled TODAY
+            if(s.isPaid && s.settledDate) {
+                const setStr = new Date(s.settledDate).toISOString().split('T')[0];
+                if(setStr === todayStr && dStr !== todayStr) {
+                    // It was settled today. Add the pending amount to today's revenue.
+                    const settledAmt = getPendingUdhaarAmount(s, true); // true forces original pending amt
+                    todayRev += settledAmt;
+                    totalRev += settledAmt;
+                }
+            }
+
+            // PRO ANALYTICS (Only for today's valid sales)
+            if(dStr === todayStr && pMode !== 'Udhaar') {
+                hourSales[dObj.getHours()] += collected;
+                
+                (s.items || []).forEach(i => {
+                    // Profit calculation
+                    const pInfo = products.find(px => px.id === i.prodId);
+                    let cost = 0;
+                    if(pInfo && pInfo.variants) {
+                        const vInfo = pInfo.variants.find(vx => vx.id === (i.variantId || i.id));
+                        if(vInfo) {
+                            const bq = pInfo.isLoose ? (Number(vInfo.baseQty)||1) : 1;
+                            cost = (Number(vInfo.costPrice)||0) / bq;
+                        }
+                    }
+                    const itemRevenue = Number(i.total || (i.price * i.qty) || 0);
+                    const itemCost = cost * Number(i.qty || 0);
+                    todayProfit += Math.max(0, itemRevenue - itemCost); 
+
+                    // Category Tracking
+                    const cat = pInfo?.category || 'General';
+                    catSales[cat] = (catSales[cat] || 0) + Number(i.qty || 1);
+                });
+            }
+        });
+
+        // Render Basic KPIs
+        animateValue(document.getElementById('todayRevenue'), 0, todayRev, 1000);
+        document.getElementById('totalBills').textContent = todayBills;
+        document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(todayBills ? Math.round(todayRev/todayBills) : 0);
+        
+        const growthEl = document.getElementById('growthStatus');
+        if (growthEl) {
+            if (yesterdayRev === 0 && todayRev > 0) growthEl.innerHTML = '<span class="text-good">▲ 100% Up</span>';
+            else if (yesterdayRev === 0 && todayRev === 0) growthEl.innerHTML = '<span class="text-muted">— Flat</span>';
+            else {
+                const diff = todayRev - yesterdayRev;
+                const pct = Math.round((diff / yesterdayRev) * 100);
+                growthEl.innerHTML = pct >= 0 ? `<span class="text-good">▲ ${pct}% Up</span>` : `<span class="text-bad">▼ ${Math.abs(pct)}% Down</span>`;
             }
         }
 
-        // PRO ANALYTICS (Only for today's valid sales)
-        if(dStr === todayStr && pMode !== 'Udhaar') {
-            hourSales[dObj.getHours()] += collected;
-            
-            (s.items || []).forEach(i => {
-                // Profit calculation
-                const pInfo = products.find(px => px.id === i.prodId);
-                let cost = 0;
-                if(pInfo && pInfo.variants) {
-                    const vInfo = pInfo.variants.find(vx => vx.id === (i.variantId || i.id));
-                    if(vInfo) {
-                        const bq = pInfo.isLoose ? (Number(vInfo.baseQty)||1) : 1;
-                        cost = (Number(vInfo.costPrice)||0) / bq;
-                    }
-                }
-                const itemRevenue = Number(i.total || (i.price * i.qty) || 0);
-                const itemCost = cost * Number(i.qty || 0);
-                todayProfit += Math.max(0, itemRevenue - itemCost); // simple margin
+        // Isolated render calls to prevent global crash
+        try { renderChart(sales); } catch(e) { console.error("Chart Error", e); }
+        try { renderLowStock(products); } catch(e) { console.error("Low Stock Error", e); }
+        try { window.renderUdhaarGroups(); } catch(e) { console.error("Udhaar Error", e); }
+        
+        // PRO features
+        document.getElementById('proProfit').innerText = formatCurrency(todayProfit);
+        try { renderProCategories(catSales); } catch(e) { console.error("Pro Cat Error", e); }
+        try { renderProHeatmap(hourSales); } catch(e) { console.error("Pro Heatmap Error", e); }
 
-                // Category Tracking
-                const cat = pInfo?.category || 'General';
-                catSales[cat] = (catSales[cat] || 0) + Number(i.qty || 1);
-            });
-        }
-    });
-
-    // Render Basic KPIs
-    animateValue(document.getElementById('todayRevenue'), 0, todayRev, 1000);
-    document.getElementById('totalBills').textContent = todayBills;
-    document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(todayBills ? Math.round(todayRev/todayBills) : 0);
-    
-    const growthEl = document.getElementById('growthStatus');
-    if (growthEl) {
-        if (yesterdayRev === 0 && todayRev > 0) growthEl.innerHTML = '<span class="text-good">▲ 100% Up</span>';
-        else if (yesterdayRev === 0 && todayRev === 0) growthEl.innerHTML = '<span class="text-muted">— Flat</span>';
-        else {
-            const diff = todayRev - yesterdayRev;
-            const pct = Math.round((diff / yesterdayRev) * 100);
-            growthEl.innerHTML = pct >= 0 ? `<span class="text-good">▲ ${pct}% Up</span>` : `<span class="text-bad">▼ ${Math.abs(pct)}% Down</span>`;
-        }
+    } catch (err) {
+        console.error("Dashboard Render Error:", err);
     }
-
-    renderChart(sales);
-    renderLowStock(products);
-    renderUdhaarSummary(sales);
-    
-    // Render PRO features
-    document.getElementById('proProfit').innerText = formatCurrency(todayProfit);
-    renderProCategories(catSales);
-    renderProHeatmap(hourSales);
 }
 
-// ─── INVENTORY & LOW STOCK (Singularity Model) ────────────────────────────────
+// ─── INVENTORY & LOW STOCK (Singularity Model Compatible) ───────────────────
 function renderLowStock(products) {
     const lowStock = [];
     products.forEach(p => {
+        // Fallback for older legacy products missing the array
+        const variants = p.variants || [{ stock: p.stock||0, baseQty: p.baseQty||1, baseUnit: p.baseUnit||'pcs' }];
+        
         let totalBase = 0;
-        let unit = p.variants[0]?.baseUnit || 'unit';
-        p.variants.forEach(v => {
+        let unit = variants[0]?.baseUnit || 'unit';
+        
+        variants.forEach(v => {
             const bq = p.isLoose ? (Number(v.baseQty) || 1) : 1;
             totalBase += (Number(v.stock) || 0) * bq;
         });
@@ -657,10 +646,12 @@ function renderChart(sales) {
                 if (pMode === 'Partial' && s.split) dayTotal += (Number(s.split.cash) + Number(s.split.online));
                 else if (pMode !== 'Udhaar') dayTotal += Number(s.total || s.amount || 0);
             }
+            
             // Settled Udhaars added to the day they were settled
             if(s.isPaid && s.settledDate) {
-                if(new Date(s.settledDate).toISOString().split('T')[0] === dStr && sDate !== dStr) {
-                    dayTotal += (s.paymentMethod === 'Partial' && s.split) ? Number(s.split.udhaar) : Number(s.total || s.amount || 0);
+                const setStr = new Date(s.settledDate).toISOString().split('T')[0];
+                if(setStr === dStr && sDate !== dStr) {
+                    dayTotal += getPendingUdhaarAmount(s, true);
                 }
             }
         });
@@ -680,7 +671,7 @@ function renderChart(sales) {
 window.openUdhaarSection = function() {
     document.getElementById('mainDashboard').style.display = 'none';
     document.getElementById('udhaarView').style.display = 'block';
-    renderUdhaarGroups();
+    window.renderUdhaarGroups();
 }
 
 window.closeUdhaarSection = function() {
@@ -689,11 +680,13 @@ window.closeUdhaarSection = function() {
     window.renderDashboard(); 
 }
 
-function getPendingUdhaarAmount(sale) {
-    if(sale.isPaid) return 0;
+function getPendingUdhaarAmount(sale, forceOriginal = false) {
+    if(sale.isPaid && !forceOriginal) return 0;
     const pMode = sale.paymentMethod || sale.paymentMode;
     if(pMode === 'Udhaar') return Number(sale.total || sale.amount || 0);
     if(pMode === 'Partial' && sale.split) return Number(sale.split.udhaar || 0);
+    // Backward compatibility for newly settled partials 
+    if(forceOriginal && pMode === 'Partial (Settled)' && sale.split) return Number(sale.split.udhaar || 0);
     return 0;
 }
 
@@ -835,7 +828,8 @@ window.settleDebt = async function(id) {
         // Shift pending amount to cash mathematically
         if(s.paymentMethod === 'Partial' && s.split) {
             s.split.cash = Number(s.split.cash || 0) + pendingAmt;
-            s.split.udhaar = 0;
+            // Ensure we keep the original udhaar amount saved for backward references
+            // we will set a flag or just leave it, since `isPaid` overrides it.
             s.paymentMethod = "Partial (Settled)";
         } else {
             s.paymentMode = "Cash (Settled)"; 
@@ -847,7 +841,7 @@ window.settleDebt = async function(id) {
         showToast("✅ Payment Recorded Successfully!");
         document.getElementById('receiptModal').style.display='none';
         document.getElementById('customerModal').style.display='none';
-        renderUdhaarGroups(); 
+        window.renderUdhaarGroups(); 
         
         // Update specific document in Firestore Sub-collection silently
         if(user.merchantId && window.db) {
