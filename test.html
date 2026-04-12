@@ -821,39 +821,48 @@ function bindAllEvents() {
         processCheckout(window.currentPaymentMode, window.partialSplitData);
     });
 
-    // Partial Math
+   // Partial Math
     document.getElementById('btnClosePartial').addEventListener('click', () => document.getElementById('partialPayModal').style.display='none');
     
     const pcCash = document.getElementById('payCash'), pcOnline = document.getElementById('payOnline'), pcUdhaar = document.getElementById('payUdhaar');
+    
     const recalcPartial = (source) => {
-        const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
-        let c = Number(pcCash.value) || 0;
-        let o = Number(pcOnline.value) || 0;
-        let u = Number(pcUdhaar.value) || 0;
+        const grand = parseFloat(document.getElementById('cartGrandTotal').innerText) || 0;
+        let c = parseFloat(pcCash.value) || 0;
+        let o = parseFloat(pcOnline.value) || 0;
+        let u = parseFloat(pcUdhaar.value) || 0;
 
-        if (source === 'online') {
-            if (o > grand) o = grand;
-            c = Math.max(0, grand - o - u);
-            if (c + o + u > grand) u = grand - c - o;
-        } else if (source === 'udhaar') {
-            if (u > grand) u = grand;
-            c = Math.max(0, grand - o - u);
-            if (c + o + u > grand) o = grand - c - u;
-        } else if (source === 'cash') {
-            if (c > grand) c = grand;
+        if (source === 'cash') {
+            o = Math.max(0, grand - c);
+            u = 0;
+            pcOnline.value = o > 0 ? o : '';
+            pcUdhaar.value = '';
+        } 
+        else if (source === 'online') {
+            u = Math.max(0, grand - c - o);
+            pcUdhaar.value = u > 0 ? u : '';
+            
+            // Prevent entering more than total
+            if (c + o > grand) {
+                pcOnline.value = Math.max(0, grand - c);
+                pcUdhaar.value = '';
+            }
+        } 
+        else if (source === 'udhaar') {
             o = Math.max(0, grand - c - u);
-            if (c + o + u > grand) u = grand - c - o;
+            pcOnline.value = o > 0 ? o : '';
+            
+            // Prevent entering more than total
+            if (c + u > grand) {
+                pcUdhaar.value = Math.max(0, grand - c);
+                pcOnline.value = '';
+            }
         }
-        
-        pcCash.value = c > 0 ? c.toFixed(2) : '';
-        pcOnline.value = o > 0 ? o.toFixed(2) : '';
-        pcUdhaar.value = u > 0 ? u.toFixed(2) : '';
     };
 
     pcCash.addEventListener('input', () => recalcPartial('cash'));
     pcOnline.addEventListener('input', () => recalcPartial('online'));
     pcUdhaar.addEventListener('input', () => recalcPartial('udhaar'));
-
     document.getElementById('btnConfirmPartial').addEventListener('click', () => {
         const c = Number(pcCash.value) || 0;
         const o = Number(pcOnline.value) || 0;
