@@ -83,8 +83,6 @@
     .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
     .barcode-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: var(--primary); padding: 8px; cursor: pointer; font-size: 16px; border-radius: 8px; transition: 0.2s; z-index: 2;}
     .barcode-btn:hover { background: var(--primary-soft); }
-    .floating-label { position: absolute; left: 34px; top: 10px; color: var(--text-muted); font-size: 13px; font-weight: 500; pointer-events: none; transition: 0.2s; }
-    .search-box input:focus ~ .floating-label, .search-box input:not(:placeholder-shown) ~ .floating-label { opacity: 0; }
     
     .cat-filters { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
     .cat-tabs-container::-webkit-scrollbar { display: none; }
@@ -108,7 +106,9 @@
     .pc-cat { font-size: 9px; color: var(--text-light); font-weight: 700; text-transform: uppercase; margin-bottom: auto;}
     .pc-stock { font-size: 10px; font-weight: 700; color: var(--text-muted); background: var(--bg-input); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 6px;}
     
-    .pc-badge-loose { position: absolute; bottom: 0; right: 0; background: var(--purple); color: #fff; font-size: 8px; font-weight: 800; padding: 3px 6px; border-top-left-radius: 8px; }
+    /* Repositioned Badge */
+    .pc-badge { position: absolute; top: 0; left: 0; background: var(--warning); color: #fff; font-size: 9px; font-weight: 800; padding: 2px 6px; border-bottom-right-radius: 6px; z-index: 1;}
+    .pc-badge-loose { position: absolute; bottom: 0; right: 0; background: var(--purple); color: #fff; font-size: 8px; font-weight: 800; padding: 3px 6px; border-top-left-radius: 6px; z-index: 1;}
     
     .pc-info-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.9); border: 1px solid var(--border); color: var(--primary); width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm); z-index: 2;}
     .pc-info-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
@@ -118,8 +118,6 @@
     
     .customer-selector-container { display: flex; gap: 8px; padding: 12px 15px; background: #fff; border-bottom: 1px solid var(--bg-input);}
     .customer-selector { position: relative; flex: 1; }
-    .customer-selector input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; font-weight: 600; outline: none; background: var(--bg-input); font-family: inherit; transition: 0.2s; box-sizing: border-box;}
-    .customer-selector input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 2px var(--primary-glow); }
     .customer-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); z-index: 50; max-height: 200px; overflow-y: auto; display: none; }
     .cust-option { padding: 10px 12px; border-bottom: 1px solid var(--bg-input); cursor: pointer; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; }
     .cust-option:hover { background: var(--bg-input); }
@@ -141,15 +139,10 @@
     .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
     .summary-total { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-hover); font-size: 16px; font-weight: 800; color: var(--text-main); }
     
-    .checkout-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 15px 15px; background: #fff; }
-    .btn-checkout { padding: 10px; border-radius: var(--radius-sm); font-weight: 800; font-size: 12px; border: none; cursor: pointer; transition: 0.2s; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-family: inherit;}
-    .btn-checkout:active { transform: scale(0.97); }
-    .btn-cash { background: linear-gradient(135deg, var(--success), #0F766E); box-shadow: 0 4px 15px rgba(13,148,136,0.3); }
-    .btn-online { background: linear-gradient(135deg, var(--purple), #6D28D9); box-shadow: 0 4px 15px rgba(124,58,237,0.3); }
-    .btn-udhaar { background: linear-gradient(135deg, var(--danger), #B91C1C); box-shadow: 0 4px 15px rgba(220,38,38,0.3); grid-column: span 2; padding: 10px;}
-    .btn-partial { background: linear-gradient(135deg, #475569, #1E293B); box-shadow: 0 4px 15px rgba(0,0,0,0.2); grid-column: span 2; padding: 10px;}
-    .btn-checkout i { font-size: 14px; }
-
+    /* RE-ENGINEERED CHECKOUT BTNS */
+    .btn-mode { padding: 10px; border-radius: var(--radius-sm); font-weight: 700; font-size: 12px; border: 1.5px solid var(--border); cursor: pointer; transition: 0.2s; background: #fff; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit;}
+    .btn-mode.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); box-shadow: 0 4px 10px var(--primary-glow);}
+    
     /* --- MOBILE FLOATING CART BTN --- */
     .mobile-cart-fab { display: none; position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; width: 56px; height: 56px; border-radius: 28px; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 8px 20px rgba(25,118,210,0.4); z-index: 90; cursor: pointer;}
     .mobile-cart-badge { position: absolute; top: -2px; right: -2px; background: var(--danger); color: white; font-size: 10px; font-weight: 800; width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff;}
@@ -166,13 +159,11 @@
     .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FBFF; }
     .modal-body { padding: 20px; overflow-y: auto; }
 
-    /* Buttons inside modals */
     .btn { padding: 12px 20px; border-radius: var(--radius-sm); font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
     .btn:active { transform: scale(0.97); }
     .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: 0 4px 14px var(--primary-glow); width: 100%;}
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
 
-    /* Inputs inside modals */
     .form-group { margin-bottom: 15px; position: relative; }
     .form-input, .form-select { width: 100%; background: #fff; border: 1.5px solid var(--border); color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; transition: all 0.2s; outline: none; font-family: inherit; box-sizing: border-box; }
     .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
@@ -180,9 +171,8 @@
     .form-input:focus ~ .floating-label-mod, .form-input:not(:placeholder-shown) ~ .floating-label-mod { top: -8px; left: 10px; font-size: 11px; font-weight: 700; color: var(--primary); background: #fff; padding: 0 4px; }
     .form-input::placeholder { color: transparent; }
 
-    /* Quick Preset & Step Buttons */
     .preset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-    .btn-preset { background: var(--bg-input); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px 5px; font-weight: 800; font-size: 13px; color: var(--text-main); cursor: pointer; transition: 0.2s; font-family: inherit;}
+    .btn-preset { background: var(--bg-input); border: 1.5px solid var(--border); border-radius: 8px; padding: 15px 5px; font-weight: 800; font-size: 14px; color: var(--text-main); cursor: pointer; transition: 0.2s; font-family: inherit;}
     .btn-preset:hover, .btn-preset.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
 
     .step-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;}
@@ -190,7 +180,6 @@
     .btn-step:hover { border-color: var(--primary); background: var(--bg-input); transform: translateY(-2px); box-shadow: var(--shadow-sm);}
     .btn-step-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: block;}
 
-    /* Badges */
     .bell-icon { position: relative; cursor: pointer; background: var(--bg-input); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main); border: 1px solid var(--border); }
     .bell-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 10px; border: 2px solid #fff; display: none;}
     .bell-icon.active .bell-badge { display: block; animation: pulse 2s infinite; }
@@ -201,7 +190,6 @@
     .inv-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
     .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
     .inv-table th { border-bottom: 1px dashed #000; padding: 6px 2px; text-align: left; }
-    /* Added visual separation for invoice items */
     .inv-table td { padding: 8px 2px; vertical-align: top; border-bottom: 1px dotted #ccc; }
     .inv-table tr:last-child td { border-bottom: none; }
     .inv-right { text-align: right !important; }
@@ -214,16 +202,13 @@
         #invoicePaper { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border: none; box-shadow: none; font-size: 10px;}
     }
 
-    /* SCANNERS */
     #barcodeScannerModal { z-index: 11000; }
     #quaggaPreview { width: 100%; height: 250px; background: #000; border-radius: 12px; overflow: hidden; position: relative; }
     .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 12px #10B981; animation: laser 2s infinite; }
 
-    /* TOAST */
     #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 12000; white-space: nowrap; }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     
-    /* Product Info Specifics */
     .info-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
     .info-detail-row:last-child { border-bottom: none; }
     .info-detail-row span:first-child { color: var(--text-muted); font-weight: 600; }
@@ -232,7 +217,7 @@
 </head>
 <body class="lang-en">
 
-<datalist id="custNameList"></datalist>
+<datalist id="custSearchList"></datalist>
 
 <div id="menuOverlay" class="menu-overlay"></div>
 
@@ -315,14 +300,14 @@
 
         <div class="customer-selector-container">
             <div class="customer-selector">
-                <input type="text" id="custNameInput" placeholder=" " autocomplete="off">
+                <input type="text" id="custNameInput" class="form-input" placeholder=" " autocomplete="off" style="padding: 10px 12px;">
                 <label class="floating-label-mod">
                     <span class="lang-en">Customer Name</span><span class="lang-hinglish">Grahak Ka Naam</span><span class="lang-hi">ग्राहक का नाम</span>
                 </label>
                 <div class="customer-dropdown" id="custNameDropdown"></div>
             </div>
             <div class="customer-selector">
-                <input type="text" id="custPhoneInput" placeholder=" " autocomplete="off">
+                <input type="text" id="custPhoneInput" class="form-input" placeholder=" " autocomplete="off" style="padding: 10px 12px;">
                 <label class="floating-label-mod">
                     <span class="lang-en">Mobile No.</span><span class="lang-hinglish">Mobile Number</span><span class="lang-hi">मोबाइल नंबर</span>
                 </label>
@@ -357,11 +342,25 @@
             </div>
         </div>
 
-        <div class="checkout-btns">
-            <button id="btnPayCash" class="btn-checkout btn-cash"><i class="fa-solid fa-money-bill-wave"></i> <span class="lang-en">CASH</span><span class="lang-hinglish">NAGAD</span><span class="lang-hi">नकद</span></button>
-            <button id="btnPayOnline" class="btn-checkout btn-online"><i class="fa-solid fa-qrcode"></i> UPI / CARD</button>
-            <button id="btnPayPartial" class="btn-checkout btn-partial"><i class="fa-solid fa-calculator"></i> <span class="lang-en">PARTIAL PAYMENT</span><span class="lang-hinglish">MIX PAYMENT</span><span class="lang-hi">आंशिक भुगतान</span></button>
-            <button id="btnPayUdhaar" class="btn-checkout btn-udhaar"><i class="fa-solid fa-book-open"></i> <span class="lang-en">FULL UDHAAR</span><span class="lang-hinglish">PURA UDHAAR</span><span class="lang-hi">पूरा उधार</span></button>
+        <div style="padding: 10px 15px; background: #fff;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase;">Payment Mode</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <button id="modeCash" class="btn-mode active" data-mode="Cash">
+                    <i class="fa-solid fa-money-bill-wave"></i> <span class="lang-en">Cash</span><span class="lang-hinglish">Nagad</span><span class="lang-hi">नकद</span>
+                </button>
+                <button id="modeOnline" class="btn-mode" data-mode="Online">
+                    <i class="fa-solid fa-qrcode"></i> Online
+                </button>
+                <button id="modePartial" class="btn-mode" data-mode="Partial">
+                    <i class="fa-solid fa-calculator"></i> <span class="lang-en">Partial</span><span class="lang-hinglish">Mix Pay</span><span class="lang-hi">मिक्स</span>
+                </button>
+                <button id="modeUdhaar" class="btn-mode" data-mode="Udhaar">
+                    <i class="fa-solid fa-book-open"></i> <span class="lang-en">Udhaar</span><span class="lang-hinglish">Udhaar</span><span class="lang-hi">उधार</span>
+                </button>
+            </div>
+            <button id="btnGenerateBill" class="btn btn-primary" style="width:100%; padding:15px; font-size:15px; font-weight:800; box-shadow:0 6px 20px var(--primary-glow);">
+                <i class="fa-solid fa-check-circle"></i> <span class="lang-en">Create Bill</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाएं</span>
+            </button>
         </div>
     </div>
 </div>
@@ -403,7 +402,7 @@
                         </div>
 
                     <div class="form-group" style="margin-bottom:0; margin-top:15px;">
-                        <input type="number" id="confCustomQty" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; text-align:center; color:var(--primary-dark);">
+                        <input type="number" id="confCustomQty" class="form-input" placeholder=" " style="font-size:20px; font-weight:800; text-align:center; color:var(--primary-dark);">
                         <label class="floating-label-mod" id="confQtyLabel">Quantity</label>
                     </div>
                 </div>
@@ -458,19 +457,19 @@
             </div>
             
             <div class="form-group">
-                <input type="number" id="payCash" class="form-input" placeholder=" " style="font-size:16px; font-weight:800; color:var(--success);">
+                <input type="number" id="payCash" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--success);">
                 <label class="floating-label-mod"><i class="fa-solid fa-money-bill-wave"></i> Cash Amount</label>
             </div>
             <div class="form-group">
-                <input type="number" id="payOnline" class="form-input" placeholder=" " style="font-size:16px; font-weight:800; color:var(--purple);">
+                <input type="number" id="payOnline" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--purple);">
                 <label class="floating-label-mod"><i class="fa-solid fa-qrcode"></i> Online (UPI/Card) Amount</label>
             </div>
             <div class="form-group" style="margin-bottom:25px;">
-                <input type="number" id="payUdhaar" class="form-input" placeholder=" " style="font-size:16px; font-weight:800; color:var(--danger);" readonly>
+                <input type="number" id="payUdhaar" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--danger);">
                 <label class="floating-label-mod"><i class="fa-solid fa-book-open"></i> Udhaar (Pending) Amount</label>
             </div>
 
-            <button type="button" id="btnConfirmPartial" class="btn btn-primary" style="padding:15px; font-size:14px;"><i class="fa-solid fa-check-circle"></i> Complete Transaction</button>
+            <button type="button" id="btnConfirmPartial" class="btn btn-primary" style="padding:16px; font-size:14px;"><i class="fa-solid fa-check-circle"></i> Save Mix Payment</button>
         </div>
     </div>
 </div>
@@ -514,7 +513,7 @@
     <div style="background:#fff; border-radius:16px; padding:15px; width:90%; max-width:400px; text-align:center;">
         <h4 style="margin-top:0; margin-bottom:10px; font-family:'Plus Jakarta Sans'; font-size:14px;"><i class="fa-solid fa-barcode"></i> Scan Product Barcode</h4>
         <div id="cameraPreview" style="width:100%; height:250px; background:#000; border-radius:10px; overflow:hidden; position:relative;">
-            <div style="position:absolute; width:100%; height:2px; background:#10B981; box-shadow:0 0 12px #10B981; animation:laser 2s infinite;"></div>
+            <div class="scan-laser"></div>
         </div>
         <button type="button" class="btn btn-outline" style="margin-top:15px; width:100%;" id="btnCancelBarcode"><i class="fa-solid fa-xmark"></i> Cancel</button>
     </div>
@@ -539,6 +538,8 @@ window.onlineOrders = [];
 window.currentCustomer = { name: '', phone: '' };
 window.activeCategory = 'ALL';
 window.configState = { prod: null, step: 'variant', selectedVariant: null, selectedBrand: null };
+window.currentPaymentMode = 'Cash';
+window.partialSplitData = null;
 
 const langs = ['en', 'hinglish', 'hi'];
 
@@ -663,7 +664,13 @@ function bindAllEvents() {
     });
 
     document.getElementById('productGrid').addEventListener('click', (e) => {
-        if(e.target.closest('.pc-info-btn')) return; // handled separately
+        // Handle Info Button properly with Event Delegation
+        const infoBtn = e.target.closest('.pc-info-btn');
+        if (infoBtn) {
+            const card = infoBtn.closest('.prod-card');
+            if (card) window.openProductInfo(card.getAttribute('data-id'));
+            return;
+        }
         const card = e.target.closest('.prod-card');
         if(card) openAddToCartWizard(card.getAttribute('data-id'));
     });
@@ -681,7 +688,6 @@ function bindAllEvents() {
         
         if(!val) { drop.style.display = 'none'; return; }
         
-        // Search by name or phone (handling legacy mobile key if it exists in local storage)
         const matches = window.customers.filter(c => {
             const phoneVal = c.phone || c.mobile || '';
             return (c.name||'').toLowerCase().startsWith(val) || phoneVal.startsWith(val);
@@ -758,7 +764,6 @@ function bindAllEvents() {
             const p = window.allProducts.find(prod => prod.id === cartItem.prodId);
             const v = p.variants.find(vx => vx.id === cartItem.id);
             
-            // Check inventory limit before adding
             const stockInfo = getVariantStockInfo(p, v);
             let maxAvail = stockInfo.available;
             
@@ -788,35 +793,79 @@ function bindAllEvents() {
 
     document.getElementById('cartDiscountInput').addEventListener('input', renderCart);
 
-    // Payment Flow
-    document.getElementById('btnPayCash').addEventListener('click', () => processCheckout('Cash'));
-    document.getElementById('btnPayOnline').addEventListener('click', () => processCheckout('Online'));
-    document.getElementById('btnPayUdhaar').addEventListener('click', () => {
-        if(!window.currentCustomer.name) return showToast("Customer name required for Udhaar", true);
-        processCheckout('Udhaar');
+    // Payment Flow / Checkout
+    document.querySelectorAll('.btn-mode').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const mode = e.currentTarget.getAttribute('data-mode');
+            window.currentPaymentMode = mode;
+            
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+
+            if(mode === 'Partial') { openPartialPayment(); }
+        });
     });
-    document.getElementById('btnPayPartial').addEventListener('click', openPartialPayment);
-    
+
+    document.getElementById('btnGenerateBill').addEventListener('click', () => {
+        if(window.cart.length === 0) return showToast("Cart is empty", true);
+        if(window.currentPaymentMode === 'Udhaar' && !window.currentCustomer.name) {
+            return showToast("Customer name required for Udhaar", true);
+        }
+        if(window.currentPaymentMode === 'Partial') {
+            const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
+            if(!window.partialSplitData || window.partialSplitData.total !== grand) {
+                openPartialPayment();
+                return;
+            }
+        }
+        processCheckout(window.currentPaymentMode, window.partialSplitData);
+    });
+
     // Partial Math
     document.getElementById('btnClosePartial').addEventListener('click', () => document.getElementById('partialPayModal').style.display='none');
+    
     const pcCash = document.getElementById('payCash'), pcOnline = document.getElementById('payOnline'), pcUdhaar = document.getElementById('payUdhaar');
-    pcCash.addEventListener('input', () => {
-        const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
-        let c = Number(pcCash.value) || 0;
-        if(c > grand) { c = grand; pcCash.value = c; }
-        pcOnline.value = grand - c;
-        pcUdhaar.value = 0;
-    });
-    pcOnline.addEventListener('input', () => {
+    const recalcPartial = (source) => {
         const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
         let c = Number(pcCash.value) || 0;
         let o = Number(pcOnline.value) || 0;
-        if(c + o > grand) { o = grand - c; pcOnline.value = o; }
-        pcUdhaar.value = grand - c - o;
-    });
+        let u = Number(pcUdhaar.value) || 0;
+
+        if (source === 'online') {
+            if (o > grand) o = grand;
+            c = Math.max(0, grand - o - u);
+            if (c + o + u > grand) u = grand - c - o;
+        } else if (source === 'udhaar') {
+            if (u > grand) u = grand;
+            c = Math.max(0, grand - o - u);
+            if (c + o + u > grand) o = grand - c - u;
+        } else if (source === 'cash') {
+            if (c > grand) c = grand;
+            o = Math.max(0, grand - c - u);
+            if (c + o + u > grand) u = grand - c - o;
+        }
+        
+        pcCash.value = c > 0 ? c.toFixed(2) : '';
+        pcOnline.value = o > 0 ? o.toFixed(2) : '';
+        pcUdhaar.value = u > 0 ? u.toFixed(2) : '';
+    };
+
+    pcCash.addEventListener('input', () => recalcPartial('cash'));
+    pcOnline.addEventListener('input', () => recalcPartial('online'));
+    pcUdhaar.addEventListener('input', () => recalcPartial('udhaar'));
+
     document.getElementById('btnConfirmPartial').addEventListener('click', () => {
-        if(Number(pcUdhaar.value) > 0 && !window.currentCustomer.name) return showToast("Customer required for Partial Udhaar", true);
-        processCheckout('Partial', { cash: Number(pcCash.value)||0, online: Number(pcOnline.value)||0, udhaar: Number(pcUdhaar.value)||0 });
+        const c = Number(pcCash.value) || 0;
+        const o = Number(pcOnline.value) || 0;
+        const u = Number(pcUdhaar.value) || 0;
+        const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
+
+        if(Math.abs(c + o + u - grand) > 0.01) return showToast("Amounts must equal Grand Total", true);
+        if(u > 0 && !window.currentCustomer.name) return showToast("Customer required for Partial Udhaar", true);
+
+        window.partialSplitData = { cash: c, online: o, udhaar: u, total: grand };
+        document.getElementById('partialPayModal').style.display = 'none';
+        showToast("Mix Payment Saved");
     });
 
     // Held Carts
@@ -842,6 +891,12 @@ function bindAllEvents() {
         window.cart = []; window.currentCustomer = {name:'', phone:''}; 
         document.getElementById('custNameInput').value = ''; document.getElementById('custPhoneInput').value = '';
         document.getElementById('cartDiscountInput').value = '';
+        
+        // Reset Payment Mode to Cash
+        window.currentPaymentMode = 'Cash'; window.partialSplitData = null;
+        document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+        document.getElementById('modeCash').classList.add('active');
+
         renderCart();
     });
     document.getElementById('btnPrintInvoice').addEventListener('click', window.print);
@@ -852,13 +907,6 @@ function bindAllEvents() {
     // Scanner
     document.getElementById('btnOpenBarcode').addEventListener('click', startBarcodeScan);
     document.getElementById('btnCancelBarcode').addEventListener('click', stopBarcodeScan);
-
-    // Modals Background Clicks
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay && e.target.id !== 'barcodeScannerModal' && e.target.id !== 'invoiceModal') overlay.style.display = 'none';
-        });
-    });
 }
 
 function toggleMenu() {
@@ -907,9 +955,9 @@ function renderProductGrid() {
         
         let badges = '';
         if(vCount > 1) badges += `<div class="pc-badge">${vCount} Types</div>`;
-        if(p.isLoose) badges += `<div class="pc-badge-loose" style="right:${vCount>1?'55px':'0'};">Loose / Wt</div>`;
+        if(p.isLoose) badges += `<div class="pc-badge-loose">Loose / Wt</div>`;
         
-        // Render variant prices simultaneously
+        // Render variant prices simultaneously under name
         const varPrices = p.variants.map(v => {
             const uPrice = getUnitPrice(p, v);
             const uLabel = getUnitLabel(p, v);
@@ -918,7 +966,7 @@ function renderProductGrid() {
         
         return `
         <div class="prod-card" data-id="${p.id}">
-            <button class="pc-info-btn" onclick="event.stopPropagation(); window.openProductInfo('${p.id}')"><i class="fa-solid fa-circle-info"></i></button>
+            <button class="pc-info-btn"><i class="fa-solid fa-circle-info"></i></button>
             ${badges}
             <div class="pc-cat">${p.category || 'Gen'}</div>
             <div class="pc-name">${p.name}</div>
@@ -946,6 +994,9 @@ function renderCart() {
         document.getElementById('cartSubtotal').innerText = '0.00';
         document.getElementById('cartGrandTotal').innerText = '0.00';
         document.getElementById('cartGstRow').style.display = 'none';
+        
+        // Auto-update partial if open
+        if(window.partialSplitData) { window.partialSplitData.total = 0; document.getElementById('payCash').value = ''; }
         return;
     }
 
@@ -954,7 +1005,7 @@ function renderCart() {
     let hasGst = false;
 
     list.innerHTML = window.cart.map((item, idx) => {
-        const amt = item.total; // qty * unitPrice
+        const amt = item.total; 
         let gstAmt = 0;
         if(item.gstRate > 0) {
             hasGst = true;
@@ -990,11 +1041,11 @@ function renderCart() {
     }).join('');
 
     const discount = parseFloat(document.getElementById('cartDiscountInput').value) || 0;
-    const grand = subtotal + totalGst - discount;
+    const grand = Math.max(0, subtotal + totalGst - discount);
 
     document.getElementById('cartTotalItems').innerText = window.cart.length;
     document.getElementById('cartSubtotal').innerText = subtotal.toFixed(2);
-    document.getElementById('cartGrandTotal').innerText = Math.max(0, grand).toFixed(2);
+    document.getElementById('cartGrandTotal').innerText = grand.toFixed(2);
 
     if(hasGst) {
         document.getElementById('cartGstRow').style.display = 'flex';
@@ -1004,7 +1055,7 @@ function renderCart() {
     }
 }
 
-// ─── HIGH-SPEED WIZARD & MATH ─────────────────────────────────────────────────
+// ─── PRODUCT INFO 360 ────────────────────────────────────────────────────────
 window.openProductInfo = function(prodId) {
     const prod = window.allProducts.find(p => p.id === prodId);
     if(!prod) return;
@@ -1046,6 +1097,7 @@ window.openProductInfo = function(prodId) {
     document.getElementById('productInfoModal').style.display = 'flex';
 }
 
+// ─── HIGH-SPEED WIZARD & MATH ─────────────────────────────────────────────────
 function openAddToCartWizard(prodId) {
     const prod = window.allProducts.find(p => p.id === prodId);
     if(!prod || !prod.variants || prod.variants.length === 0) return;
@@ -1235,7 +1287,7 @@ function confirmAddToCart() {
     const existingQty = existingIdx >= 0 ? window.cart[existingIdx].qty : 0;
     
     if (existingQty + qty > maxAvail) {
-        return showToast(`Max stock reached! Only ${formatStock(maxAvail - existingQty, stockInfo.label)} ${stockInfo.label} available.`, true);
+        return showToast(`Max stock reached! Only ${formatStock(maxAvail - existingQty, stockInfo.label)} available.`, true);
     }
 
     if(existingIdx >= 0) {
@@ -1261,6 +1313,7 @@ function confirmAddToCart() {
     document.getElementById('addToCartModal').style.display = 'none';
     renderCart();
     
+    // Auto open mobile cart drawer visually
     if(window.innerWidth <= 900) {
         document.getElementById('rightPane').classList.add('open');
         document.getElementById('btnCloseMobileCart').style.display = 'block';
@@ -1273,18 +1326,16 @@ function openPartialPayment() {
     const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
     document.getElementById('partialGrandTotal').innerText = `₹${grand.toFixed(2)}`;
     document.getElementById('payCash').value = grand.toFixed(2);
-    document.getElementById('payOnline').value = '0';
-    document.getElementById('payUdhaar').value = '0';
+    document.getElementById('payOnline').value = '';
+    document.getElementById('payUdhaar').value = '';
     document.getElementById('partialPayModal').style.display = 'flex';
 }
 
 async function processCheckout(method, split = null) {
-    if(window.cart.length === 0) return showToast("Cart is empty", true);
-
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return showToast("Merchant ID missing", true);
 
-    const btn = document.getElementById(method === 'Partial' ? 'btnConfirmPartial' : `btnPay${method}`);
+    const btn = document.getElementById('btnGenerateBill');
     const origHtml = btn.innerHTML;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`; btn.disabled = true;
 
@@ -1313,7 +1364,6 @@ async function processCheckout(method, split = null) {
         };
 
         const batch = writeBatch(db);
-        
         batch.set(doc(db, "shops", user.merchantId, "sales", saleDoc.id), saleDoc);
 
         // Adjust Stock
