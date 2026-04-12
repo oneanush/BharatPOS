@@ -1,3 +1,1813 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>Inventory - BharatPOS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="quagga.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script type="module" src="bharatpos.js"></script>
 
+  <style>
+    /* --- SAAS UI VARIABLES --- */
+    :root {
+      --bg-body: #EAF2FF; --bg-panel: #FFFFFF; --bg-card: rgba(255,255,255,0.85); --bg-input: #F4F8FF;
+      --border: #DBEAFE; --border-hover: #93C5FD;
+      --primary: #1976D2; --primary-dark: #1565C0; --primary-glow: rgba(25,118,210,0.12); --primary-soft: rgba(25,118,210,0.08);
+      --success: #0D9488; --success-soft: rgba(13,148,136,0.1);
+      --danger: #DC2626; --danger-soft: rgba(220,38,38,0.08);
+      --warning: #F59E0B; --purple: #7C3AED;
+      --text-main: #0F172A; --text-muted: #64748B; --text-light: #94A3B8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(25,118,210,0.08), 0 1px 4px rgba(0,0,0,0.05);
+      --shadow-lg: 0 8px 32px rgba(25,118,210,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px; --radius-xl: 24px;
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    body { background: linear-gradient(135deg, #EAF2FF 0%, #C7DDFF 100%); background-attachment: fixed; color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 80px; overflow-x: hidden; min-height: 100vh; }
+
+    /* --- TRI-LINGUAL DISPLAY LOGIC --- */
+    body.lang-en .lang-hinglish, body.lang-en .lang-hi { display: none !important; }
+    body.lang-hinglish .lang-en, body.lang-hinglish .lang-hi { display: none !important; }
+    body.lang-hi .lang-en, body.lang-hi .lang-hinglish { display: none !important; }
+
+    /* --- HAMBURGER MENU --- */
+    .menu-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s; }
+    .menu-btn:hover { background: var(--primary-soft); color: var(--primary); }
+    .side-menu { position: fixed; top: 0; left: -290px; width: 280px; height: 100vh; background: #FFFFFF; z-index: 9999; transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1); padding: 24px 20px; box-shadow: 12px 0 40px rgba(25,118,210,0.12); border-right: 1px solid var(--border); overflow-y: auto; }
+    .side-menu.open { left: 0; }
+    .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.25); z-index: 9998; backdrop-filter: blur(4px); }
+    .side-menu-brand { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .side-menu-brand-text { font-size: 20px; font-weight: 800; color: var(--text-main); }
+    .side-menu-brand-text span { color: var(--primary); }
+    .side-menu-links { display: flex; flex-direction: column; gap: 4px; }
+    .side-menu-links a { padding: 11px 14px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all 0.18s; border: 1px solid transparent; }
+    .side-menu-links a:hover { background: var(--primary-soft); color: var(--primary); transform: translateX(3px); }
+    .side-menu-links a.active-link { background: linear-gradient(135deg, rgba(25,118,210,0.1), rgba(21,101,192,0.06)); color: var(--primary); border-color: var(--border); }
+    .side-menu-links a.billing-link { color: var(--success); background: rgba(13,148,136,0.06); border-color: rgba(13,148,136,0.15); }
+    .side-menu-links i { width: 18px; text-align: center; font-size: 14px; }
+
+    /* --- NAVBAR --- */
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 62px; background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 rgba(25,118,210,0.06), var(--shadow-sm); }
+    .brand { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: var(--text-main); }
+    .brand-logo-wrap { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #1976D2, #1565C0); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(25,118,210,0.3); }
+    .brand-logo-wrap i { color: #fff; font-size: 15px; }
+    .nav-actions { display: flex; gap: 10px; align-items: center; }
+
+    /* --- LAYOUT --- */
+    .main-container { max-width: 1400px; margin: 28px auto; padding: 0 20px; display: grid; grid-template-columns: 420px 1fr; gap: 24px; align-items: start; }
+    @media(max-width: 1024px) { .main-container { grid-template-columns: 1fr; } }
+    .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-md); transition: box-shadow 0.2s; position: relative;}
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .panel-title { font-size: 15px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; margin: 0; }
+    .panel-title-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .panel-title-icon.blue { background: var(--primary-soft); color: var(--primary); }
+    .panel-title-icon.teal { background: var(--success-soft); color: var(--success); }
+
+    /* --- FORMS --- */
+    .form-group { margin-bottom: 14px; position: relative; }
+    .form-input, .form-select { width: 100%; background: var(--bg-input); border: 1.5px solid var(--border); color: var(--text-main); padding: 13px 14px; border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 500; transition: all 0.2s; appearance: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .form-input:focus, .form-select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px var(--primary-glow); }
+    .form-input::placeholder { color: transparent; }
+    .floating-label { position: absolute; left: 14px; top: 13px; color: var(--text-muted); font-size: 13px; font-weight: 500; pointer-events: none; transition: all 0.2s; background: transparent; }
+    .form-input:focus ~ .floating-label, .form-input:not(:placeholder-shown) ~ .floating-label, .form-select:focus ~ .floating-label, .form-select:valid ~ .floating-label { top: -8px; left: 10px; font-size: 10.5px; font-weight: 700; color: var(--primary); background: #fff; padding: 0 5px; border-radius: 4px; letter-spacing: 0.3px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+
+    .tier-toggle { width: 100%; background: var(--bg-input); border: 1.5px solid var(--border); padding: 11px 15px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .tier-toggle:hover { background: #EBF3FF; border-color: var(--primary); }
+    .tier-content { display: none; padding: 16px; background: linear-gradient(135deg, rgba(25,118,210,0.03), rgba(21,101,192,0.02)); border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; animation: slideDown 0.25s ease; }
+    .tier-content.active { display: block; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Variant Engine Classes */
+    .variant-box { background: linear-gradient(135deg, rgba(25,118,210,0.04), rgba(25,118,210,0.02)); border: 1.5px solid rgba(25,118,210,0.18); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; position: relative; transition: all 0.2s; }
+    .variant-box:hover { border-color: rgba(25,118,210,0.35); }
+    .variant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-remove-var { position: absolute; top: -9px; right: -9px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; box-shadow: 0 2px 8px rgba(220,38,38,0.35); transition: transform 0.2s; }
+    .btn-remove-var:hover { transform: scale(1.1); }
+    
+    .adv-only-field { display: none; margin-top:10px; border-top: 1px dashed rgba(25,118,210,0.2); padding-top:10px;}
+    .loose-only-field { display: none; margin-top:10px; }
+    .show-adv .adv-only-field { display: block; }
+    .show-loose .loose-only-field { display: block; }
+
+    /* BUTTONS */
+    .btn { padding: 13px 20px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, #1976D2, #1565C0); color: white; box-shadow: 0 4px 14px rgba(25,118,210,0.35); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(25,118,210,0.45); }
+    .btn-success { background: linear-gradient(135deg, #0D9488, #0F766E); color: white; box-shadow: 0 4px 14px rgba(13,148,136,0.3); }
+    .btn-success:hover { transform: translateY(-1px); }
+    .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
+    .btn-outline:hover { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+    .btn-scan { background: linear-gradient(135deg, rgba(25,118,210,0.08), rgba(25,118,210,0.04)); border: 1.5px solid var(--border); color: var(--primary); font-weight: 700; }
+    .btn-scan:hover { background: var(--primary-soft); border-color: var(--primary); }
+    .btn-dashed { background: transparent; border: 1.5px dashed var(--border-hover); color: var(--primary); font-weight: 600; }
+    .btn-dashed:hover { background: var(--primary-soft); }
+    .btn-icon-only { padding: 8px; width: auto; border-radius: var(--radius-sm); }
+
+    /* --- FILTER ENGINE --- */
+    .filter-engine { background: #FFFFFF; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px; box-shadow: var(--shadow-sm); }
+    .tier-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
+    .tab-btn { padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;}
+    .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px var(--primary-glow); }
+    .branch-filters { display: flex; gap: 12px; margin-bottom: 12px; }
+    .branch-select { flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: white; font-size: 12px; color: var(--text-main); outline: none; font-family: 'Plus Jakarta Sans', sans-serif;}
+    .deep-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .action-chip { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white; color: var(--text-muted); transition: 0.2s; font-family: 'Plus Jakarta Sans', sans-serif;}
+    .action-chip.active { background: #EAF2FF; border-color: var(--primary); color: var(--primary); }
+
+    /* --- INVENTORY GRID --- */
+    .search-box { position: relative; flex: 1; min-width: 240px; }
+    .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 13px; pointer-events: none; }
+    .search-box input { width: 100%; background: var(--bg-input); border: 1.5px solid var(--border); padding: 11px 16px 11px 38px; border-radius: var(--radius-sm); color: var(--text-main); font-size: 13.5px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; transition: all 0.2s; }
+    .search-box input:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px var(--primary-glow); }
+
+    .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; max-height: 820px; overflow-y: auto; padding-right: 4px; padding-bottom: 20px;}
+    .inventory-grid::-webkit-scrollbar { width: 5px; }
+    .inventory-grid::-webkit-scrollbar-track { background: var(--bg-input); border-radius: 4px; }
+    .inventory-grid::-webkit-scrollbar-thumb { background: #BFDBFE; border-radius: 4px; }
+
+    .sku-card { background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s; cursor: pointer; position: relative;}
+    .sku-card:hover { border-color: #93C5FD; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .sku-header { margin-bottom: 10px; padding-right: 20px; display: flex; gap: 12px; align-items: flex-start; }
+    .bulk-cb { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); margin-top:2px; flex-shrink: 0;}
+    .sku-name { font-size: 14.5px; font-weight: 700; color: var(--text-main); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .sku-cat { display: inline-block; margin-top: 6px; margin-left:30px; font-size: 10.5px; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: var(--primary-soft); padding: 2px 8px; border-radius: 6px; }
+    .sku-tier { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: white; }
+    .tier-a { background: var(--success); } .tier-b { background: var(--warning); } .tier-c { background: var(--text-muted); }
+    
+    .sku-variant-label { font-size: 11px; color: var(--text-light); margin: 6px 0 10px 30px; font-weight: 500; }
+    .sku-stats { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #F4F8FF, #EBF3FF); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 12px; }
+    .sku-price { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--success); }
+    .sku-stock-badge { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--text-muted); background: #fff; padding: 4px 9px; border-radius: 7px; border: 1px solid var(--border); }
+    .sku-stock-badge.low { color: var(--danger); background: var(--danger-soft); border-color: rgba(220,38,38,0.15); }
+    
+    .loading-trigger { text-align: center; padding: 20px; color: var(--text-muted); grid-column: 1/-1; }
+
+    /* --- BULK ACTION BAR --- */
+    .bulk-action-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); padding: 12px 24px; border-radius: 100px; display: flex; align-items: center; gap: 16px; z-index: 9000; box-shadow: 0 10px 40px rgba(0,0,0,0.3); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .bulk-action-bar.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .bulk-info { color: white; font-weight: 600; font-size: 14px; white-space: nowrap; }
+    .bulk-info span { color: var(--accent); font-weight: 800; }
+    .bulk-controls { display: flex; gap: 8px; align-items: center; }
+    .bulk-select, .bulk-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .bulk-select option { background: #0F172A; color: white; }
+
+    /* --- SWITCH --- */
+    .switch { position: relative; display: inline-block; width: 42px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #CBD5E1; transition: .3s; border-radius: 22px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+    input:checked + .slider { background: var(--success); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* --- SCANNERS --- */
+    .scanner-box { background: #0F172A; border-radius: var(--radius-md); overflow: hidden; position: relative; margin-bottom: 20px; display: none; border: 2px solid var(--primary); box-shadow: 0 8px 24px rgba(25,118,210,0.2); }
+    #cameraPreview, #quaggaPreview { width: 100%; height: 240px; object-fit: cover; }
+    .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 12px #10B981; animation: laser 2s infinite; }
+    @keyframes laser { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+    #barcodeScannerModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .barcode-modal-content { background: #fff; border-radius: var(--radius-md); padding: 15px; width: 90%; max-width: 400px; text-align: center; }
+
+    /* --- TOAST & GLOBAL HINT BAR (Mobile & Desktop Tooltip) --- */
+    #toast { position: fixed; bottom: 28px; right: 28px; background: var(--success); color: white; padding: 13px 22px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; max-width: 340px; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    #globalHintBar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0F172A; color: #fff; padding: 10px 20px; border-radius: 100px; font-size: 12.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 11000; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;}
+    #globalHintBar.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* --- MODALS --- */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .modal-box { background: #FFFFFF; width: 90%; max-width: 500px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); display: flex; flex-direction: column; max-height: 85vh; border: 1px solid var(--border); }
+    .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FBFF; }
+    .modal-body { padding: 20px; overflow-y: auto; }
+    .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    .detail-row span:first-child { color: var(--text-muted); font-weight: 600; }
+    .detail-row span:last-child { color: var(--text-main); font-weight: 700; text-align: right; }
+  </style>
+
+  <datalist id="unitOptions">
+    <option value="pcs"></option><option value="kg"></option><option value="g"></option>
+    <option value="L"></option><option value="ml"></option><option value="box"></option>
+    <option value="pack"></option><option value="dozen"></option>
+  </datalist>
+</head>
+<body class="lang-en">
+
+<div id="menuOverlay" class="menu-overlay"></div>
+
+<div id="sideMenu" class="side-menu">
+  <div class="side-menu-brand">
+    <div class="side-menu-brand-text">Bharat<span>POS</span></div>
+    <button id="btnCloseMenu" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+  </div>
+  <div class="side-menu-links">
+    <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
+    <a href="billing.html" class="billing-link"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
+    <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
+    <a href="sales.html"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
+    <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
+    <a href="customers.html"><i class="fa-solid fa-users"></i> <span class="lang-en">Bharat CRM</span><span class="lang-hinglish">Grahak (Customers)</span><span class="lang-hi">ग्राहक</span></a>
+    <a href="forecast.html"><i class="fa-solid fa-brain"></i> <span class="lang-en">DemandMitra AI</span><span class="lang-hinglish">AI Forecast</span><span class="lang-hi">AI भविष्यवाणी</span></a>
+  </div>
+</div>
+
+<nav class="navbar">
+  <div class="brand">
+    <button id="btnOpenMenu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+    <div class="brand-logo-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
+    <div class="nav-breadcrumb">
+      <span>BharatPOS</span> <span style="color:var(--border-hover);">/</span> 
+      <strong>📦 <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></strong>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button id="btnLangToggle" class="btn btn-outline btn-icon-only" title="Change Language" style="font-weight:800;">A/अ</button>
+    <button id="btnNavPos" class="btn btn-success" style="padding:8px 16px;font-size:13px;width:auto;">
+      <i class="fa-solid fa-cash-register"></i> <span class="lang-en">Open POS</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span>
+    </button>
+  </div>
+</nav>
+
+<div class="main-container">
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">
+        <div class="panel-title-icon blue"><i class="fa-solid fa-layer-group"></i></div>
+        <span class="lang-en">Product Engine</span><span class="lang-hinglish">Naya Samaan Jodein</span><span class="lang-hi">नया सामान जोड़ें</span>
+      </h2>
+      <div style="display:flex;gap:8px;">
+        <button id="btnStartScan" type="button" class="btn btn-scan btn-icon-only" data-hint="en:Auto-fill details using Camera|hinglish:Camera se photo khinch kar automatic detail bharein|hi:कैमरा से फोटो खींचकर आटोमेटिक जानकारी भरें">
+            <i class="fa-solid fa-camera-viewfinder"></i> <span class="lang-en">Lens AI</span><span class="lang-hinglish">AI Scan</span><span class="lang-hi">AI स्कैन</span>
+        </button>
+        <button id="btnOpenSettings" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Form Settings (Barcode, Expiry, Batch)|hinglish:Settings: Barcode, Expiry, Batch on/off karein|hi:सेटिंग्स (बारकोड, एक्सपायरी)">
+            <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="scanner-box" id="scannerBox">
+      <div class="scan-laser"></div>
+      <video id="cameraPreview" autoplay playsinline></video>
+      <canvas id="captureCanvas" style="display:none;"></canvas>
+      <div style="position:absolute;bottom:10px;width:100%;text-align:center;">
+        <button id="btnStopScan" type="button" class="btn" style="width:auto;display:inline-flex;padding:7px 18px;font-size:12px;background:rgba(220,38,38,0.85);color:white;border-radius:8px;border:none;">
+          <i class="fa-solid fa-xmark"></i> <span class="lang-en">Stop AI Lens</span><span class="lang-hinglish">Band Karein</span><span class="lang-hi">बंद करें</span>
+        </button>
+      </div>
+    </div>
+
+    <form id="productForm">
+      <div class="form-group">
+        <input type="text" id="pName" class="form-input" placeholder=" " required autocomplete="off">
+        <label class="floating-label"><span class="lang-en">Product Name</span><span class="lang-hinglish">Samaan Ka Naam</span><span class="lang-hi">सामान का नाम</span></label>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="pCategory" class="form-input" list="catList" placeholder=" " autocomplete="off">
+        <label class="floating-label"><span class="lang-en">Category</span><span class="lang-hinglish">Category (Jaise: Sabji, Kirana)</span><span class="lang-hi">श्रेणी (जैसे: किराना)</span></label>
+        <datalist id="catList"></datalist>
+      </div>
+
+      <div id="variantEngineWrapper">
+          <div id="variantEngine"></div>
+      </div>
+
+      <button id="btnAddVariant" type="button" class="btn btn-dashed" style="margin-bottom:18px;font-size:13px;" data-hint="en:Add a different size, color, or weight for this item|hinglish:Samaan ka alag size ya rang jodein|hi:सामान का अलग साइज या रंग जोड़ें">
+        <i class="fa-solid fa-plus"></i> <span class="lang-en">Add Type (Color/Size/Wt)</span><span class="lang-hinglish">+ Ek Aur Type Jodein</span><span class="lang-hi">+ एक और प्रकार जोड़ें</span>
+      </button>
+
+      <button type="button" class="tier-toggle" id="btnToggleGst">
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span style="width:22px;height:22px;border-radius:6px;background:rgba(245,158,11,0.12);display:inline-flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-receipt" style="color:var(--warning);font-size:11px;"></i>
+          </span>
+          <span class="lang-en">Level 2 — GST Config</span><span class="lang-hinglish">Level 2 — Tax & GST</span><span class="lang-hi">लेवल 2 — टैक्स और GST</span>
+        </span>
+        <i class="fa-solid fa-chevron-down chevron" style="color:var(--text-light);font-size:12px;transition:transform 0.2s;"></i>
+      </button>
+      <div id="tierGst" class="tier-content">
+        <div class="variant-grid">
+          <div class="form-group">
+            <input type="text" id="pHSN" class="form-input" placeholder=" ">
+            <label class="floating-label"><span class="lang-en">HSN Code</span><span class="lang-hinglish">HSN Code (Tax ke liye)</span><span class="lang-hi">HSN कोड</span></label>
+          </div>
+          <div class="form-group">
+            <input type="number" id="pGSTRate" class="form-input" placeholder=" ">
+            <label class="floating-label">GST %</label>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <select id="pPriceType" class="form-select">
+            <option value="inclusive" class="lang-en">Inclusive (Rate includes Tax)</option>
+            <option value="inclusive" class="lang-hinglish">Inclusive (Rate mein Tax juda hai)</option>
+            <option value="inclusive" class="lang-hi">Inclusive (टैक्स शामिल है)</option>
+            <option value="exclusive" class="lang-en">Exclusive (Tax added on top)</option>
+            <option value="exclusive" class="lang-hinglish">Exclusive (Tax alag se lagega)</option>
+            <option value="exclusive" class="lang-hi">Exclusive (टैक्स अलग से)</option>
+          </select>
+          <label class="floating-label"><span class="lang-en">Tax Calculation</span><span class="lang-hinglish">Tax Kaise Lagega</span><span class="lang-hi">टैक्स कैसे लगेगा</span></label>
+        </div>
+      </div>
+
+      <div id="advancedFieldsContainer" style="display:none; padding-top:15px; margin-top:10px; border-top:1px dashed var(--border);">
+          <div style="font-size:11px; font-weight:700; color:var(--primary); margin-bottom:12px; text-transform:uppercase;">
+            <span class="lang-en">Advanced Global Details</span><span class="lang-hinglish">Extra Details (Sabke liye)</span><span class="lang-hi">अतिरिक्त जानकारी</span>
+          </div>
+          
+          <div class="form-group" id="looseInputContainer" style="display:none; justify-content:space-between; align-items:center; background:#F8FBFF; padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1px solid var(--border);">
+              <div>
+                  <div style="font-size:13px; font-weight:700; color:var(--text-main);"><span class="lang-en">Sell By Weight / Loose</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान (वजन से)</span></div>
+                  <div style="font-size:11px; color:var(--text-muted); margin-top:2px;"><span class="lang-en">Adds internal Base Qty in Variants</span><span class="lang-hinglish">Daal, Chini, Chawal ke liye on karein</span><span class="lang-hi">दाल, चीनी के लिए चालू करें</span></div>
+              </div>
+              <label class="switch">
+                  <input type="checkbox" id="pIsLoose">
+                  <span class="slider"></span>
+              </label>
+          </div>
+
+          <div class="form-group" id="batchInputContainer" style="display:none;">
+              <div style="display:flex; gap:10px;">
+                  <div style="position:relative; flex:1;">
+                      <input type="text" id="pBatchId" class="form-input" placeholder=" " list="batchList">
+                      <label class="floating-label"><i class="fa-solid fa-layer-group" style="margin-right:4px;"></i> <span class="lang-en">Batch ID (Lot No.)</span><span class="lang-hinglish">Batch Number (Lot)</span><span class="lang-hi">बैच नंबर (लॉट)</span></label>
+                  </div>
+                  <button type="button" id="btnAutoBatch" class="btn btn-outline" style="width:auto; padding:0 15px;"><span class="lang-en">Auto</span><span class="lang-hinglish">Apne aap</span><span class="lang-hi">ऑटो</span></button>
+              </div>
+              <datalist id="batchList"></datalist>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+              <input type="number" id="pReorderPoint" class="form-input" placeholder=" ">
+              <label class="floating-label"><i class="fa-solid fa-bell-concierge" style="margin-right:4px;"></i> <span class="lang-en">Min. Stock Alert Threshold</span><span class="lang-hinglish">Kitna bachne par Alert aaye?</span><span class="lang-hi">न्यूनतम स्टॉक अलर्ट</span></label>
+          </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="margin-top:16px;font-size:15px;" id="saveBtn">
+        <i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="panel" style="padding-bottom: 80px;">
+    <div class="panel-header">
+      <h2 class="panel-title">
+        <div class="panel-title-icon teal"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <span class="lang-en">Inventory List</span><span class="lang-hinglish">Aapka Samaan</span><span class="lang-hi">आपका सामान</span>
+      </h2>
+      <div style="display:flex;gap:8px;">
+        <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--primary);border-color:var(--border-hover);" data-hint="en:Import products from Global Database|hinglish:Pehle se bani list se samaan jodein|hi:बनी-बनाई लिस्ट से सामान जोड़ें">
+          <i class="fa-solid fa-globe"></i> <span class="lang-en">Global DB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">ग्लोबल लिस्ट</span>
+        </button>
+        <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 13px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Export Inventory to Excel|hinglish:Apne samaan ki list Excel mein download karein|hi:एक्सेल में डाउनलोड करें">
+          <i class="fa-solid fa-file-export"></i> <span class="lang-en">Export</span><span class="lang-hinglish">Excel Nikalein</span><span class="lang-hi">एक्सेल निकालें</span>
+        </button>
+        <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 13px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel|hinglish:Excel se naya samaan dalein|hi:एक्सेल से सामान डालें">
+          <i class="fa-solid fa-file-import"></i> <span class="lang-en">Import</span><span class="lang-hinglish">Excel Daalein</span><span class="lang-hi">एक्सेल इंपोर्ट</span>
+        </button>
+        <input type="file" id="csvUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;">
+        <button id="btnSyncCloud" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Backup to Cloud|hinglish:Internet par save karein (Backup)|hi:क्लाउड पर सेव करें">
+          <i class="fa-solid fa-rotate"></i>
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-bottom: 15px;">
+        <div class="search-box" style="flex:1;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder=" " autocomplete="off">
+            <label class="floating-label" style="left:38px; top:12px; background:none;">
+                <span class="lang-en">Search SKU, barcode...</span>
+                <span class="lang-hinglish">Samaan ka naam ya barcode dhundein...</span>
+                <span class="lang-hi">सामान का नाम या बारकोड खोजें...</span>
+            </label>
+        </div>
+        <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 0 15px; border-radius:10px;" title="Aur Filters (More Filters)">
+            <i class="fa-solid fa-filter"></i> <span class="lang-en">Filters ▾</span><span class="lang-hinglish">Aur Filters ▾</span><span class="lang-hi">फ़िल्टर ▾</span>
+        </button>
+    </div>
+
+    <div id="advancedFilterSection" style="display:none; background: #F4F8FF; padding: 15px; border-radius: 14px; margin-bottom:15px; border:1px solid var(--border);">
+      <div class="tier-tabs" id="tierTabs">
+        <button class="tab-btn active" data-tier="ALL">ALL</button>
+        <button class="tab-btn" data-tier="A">Tier A <i class="fa-solid fa-fire" style="color:var(--warning);font-size:10px;"></i></button>
+        <button class="tab-btn" data-tier="B">Tier B</button>
+        <button class="tab-btn" data-tier="C">Tier C</button>
+      </div>
+      <div class="branch-filters">
+        <select id="catTabSelect" class="branch-select"><option value="">Categories ▾</option></select>
+        <select id="batchTabSelect" class="branch-select"><option value="">Batches ▾</option></select>
+      </div>
+      <div class="branch-filters">
+        <select id="filterBrand" class="branch-select"><option value="">All Brands</option></select>
+        <select id="filterTax" class="branch-select"><option value="">All Taxes (GST)</option></select>
+      </div>
+      <div class="deep-actions">
+        <button class="action-chip" data-action="LowStock"><span class="lang-en">Low Stock</span><span class="lang-hinglish">Kam Samaan</span><span class="lang-hi">कम स्टॉक</span></button>
+        <button class="action-chip" data-action="Expiring"><span class="lang-en">Expiring</span><span class="lang-hinglish">Kharab Hone Wala</span><span class="lang-hi">एक्सपायर होने वाला</span></button>
+        <button class="action-chip" data-action="Newest"><span class="lang-en">Newest</span><span class="lang-hinglish">Naya Aaya</span><span class="lang-hi">सबसे नया</span></button>
+      </div>
+    </div>
+
+    <div class="inventory-grid" id="inventoryGrid" data-hint="en:Click checkboxes for Mass Edit|hinglish:Checkboxes se ek sath bahut saare samaan edit karein|hi:चेकबॉक्स से एक साथ बहुत सारे सामान एडिट करें">
+      </div>
+    <div id="loadMoreTrigger" class="loading-trigger" style="display:none;">
+        <span class="lang-en">Loading more items…</span>
+        <span class="lang-hinglish">Aur samaan aa raha hai...</span>
+        <span class="lang-hi">और सामान लोड हो रहा है...</span>
+    </div>
+  </div>
+
+</div>
+
+<div id="bulkActionBar" class="bulk-action-bar">
+    <div class="bulk-info"><span id="bulkCount">0</span> <span class="lang-en">selected</span><span class="lang-hinglish">chune gaye</span><span class="lang-hi">चुने गए</span></div>
+    <div class="bulk-controls">
+        <select id="bulkOperation" class="bulk-select">
+            <option value="" class="lang-en">Select Action...</option>
+            <option value="" class="lang-hinglish">Kya karna hai?</option>
+            <option value="" class="lang-hi">क्या करना है?</option>
+            <option value="category">Change Category</option>
+            <option value="tax">Update GST %</option>
+            <option value="discount">Apply Discount %</option>
+            <option value="delete">Delete Items</option>
+        </select>
+        <input type="text" id="bulkValue" class="bulk-input" placeholder="Value..." style="display:none; width:100px;">
+        <button id="btnApplyBulk" class="btn btn-primary" style="padding: 8px 16px; width: auto;"><span class="lang-en">Apply</span><span class="lang-hinglish">OK</span><span class="lang-hi">ओके</span></button>
+        <button id="btnCancelBulk" class="btn btn-outline" style="padding: 8px 16px; width: auto; color: white; border-color: rgba(255,255,255,0.3); background:transparent;">Cancel</button>
+    </div>
+</div>
+
+<div id="settingsModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-gear" style="color:var(--primary);"></i> <span class="lang-en">Form Settings</span><span class="lang-hinglish">Form Ki Settings</span><span class="lang-hi">फॉर्म सेटिंग्स</span>
+      </h3>
+      <button id="btnCloseSettings" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Sell By Weight</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Defines Base Unit Quantities.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfgLoose"><span class="slider"></span></label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Batch System</span><span class="lang-hinglish">Batch Number System</span><span class="lang-hi">बैच नंबर सिस्टम</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Adds Batch ID auto-generation.</span><span class="lang-hinglish">Dawaion ke batch number ke liye.</span><span class="lang-hi">दवाइयों के बैच के लिए।</span></div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfgBatch"><span class="slider"></span></label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Helpful Hints</span><span class="lang-hinglish">Madad Wale Notes (Hints)</span><span class="lang-hi">मदद वाले नोट्स</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show short notes on hover/touch.</span><span class="lang-hinglish">Touch karne par asaan bhasha me jankari.</span><span class="lang-hi">टच करने पर आसान भाषा में जानकारी।</span></div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfgHints" checked><span class="slider"></span></label>
+      </div>
+      
+      <button id="btnRestartTutorial" class="btn btn-outline" style="margin-top:20px; width:100%;">
+          <i class="fa-solid fa-graduation-cap"></i> <span class="lang-en">Restart Tutorial</span><span class="lang-hinglish">Tutorial Wapas Dekhein</span><span class="lang-hi">ट्यूटोरियल वापस देखें</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="barcodeScannerModal">
+    <div class="barcode-modal-content">
+        <h4 style="margin-top:0; margin-bottom:10px;"><span class="lang-en">Scan Barcode</span><span class="lang-hinglish">Barcode Scan Karein</span><span class="lang-hi">बारकोड स्कैन करें</span></h4>
+        <div id="quaggaPreview" style="background:#000; border-radius:10px; overflow:hidden; position:relative;">
+            <div class="scan-laser"></div>
+        </div>
+        <button type="button" class="btn btn-outline" style="margin-top:15px;" id="btnCancelBarcode"><i class="fa-solid fa-xmark"></i> Cancel</button>
+    </div>
+</div>
+
+<div id="productDetailsModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-header" style="background:var(--primary);color:white;">
+      <h3 id="dName" style="margin:0;font-size:18px;font-weight:800;">Product Name</h3>
+      <button id="btnCloseDetails" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="background:#F8FBFF;">
+      <div style="display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;">
+        <span id="dTier" class="sku-tier" style="position:static;padding:4px 10px;border-radius:12px;width:auto;height:auto;">Tier A</span>
+        <span id="dCat" style="background:#DBEAFE;color:var(--primary-dark);font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;text-transform:uppercase;">Category</span>
+      </div>
+
+      <div style="background:white;border-radius:12px;padding:15px;border:1px solid var(--border);margin-bottom:15px;box-shadow:var(--shadow-sm);">
+        <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:8px;text-transform:uppercase;">Accounting &amp; Tax</div>
+        <div class="detail-row"><span>HSN Code:</span><span id="dHSN">-</span></div>
+        <div class="detail-row"><span>GST Rate:</span><span id="dGST">-</span></div>
+        <div class="detail-row" style="border:none;padding-bottom:0;"><span>Tax Type:</span><span id="dTaxType" style="text-transform:capitalize;">-</span></div>
+      </div>
+
+      <div style="background:white;border-radius:12px;padding:15px;border:1px solid var(--border);margin-bottom:15px;box-shadow:var(--shadow-sm);">
+        <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:8px;text-transform:uppercase;">Global Details</div>
+        <div class="detail-row"><span>Batch ID:</span><span id="dBatch">-</span></div>
+        <div class="detail-row"><span>Alert Threshold:</span><span id="dAlert">-</span></div>
+        <div class="detail-row" style="border:none;padding-bottom:0;"><span>Added On:</span><span id="dAdded">-</span></div>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:8px;text-transform:uppercase;padding-left:5px;">Variants &amp; Operations</div>
+      <div id="dVariantsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button id="btnEditFromModal" class="btn btn-outline" style="color:var(--primary);border-color:var(--primary);">
+          <i class="fa-solid fa-pen"></i> <span class="lang-en">Edit</span><span class="lang-hinglish">Badlein</span><span class="lang-hi">बदलें</span>
+        </button>
+        <button id="btnDeleteFromModal" class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);">
+          <i class="fa-solid fa-trash"></i> <span class="lang-en">Delete</span><span class="lang-hinglish">Hataein</span><span class="lang-hi">हटाएं</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="masterCatalogModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="margin:0;font-size:16px;">
+        <i class="fa-solid fa-globe" style="color:var(--primary);"></i> <span class="lang-en">Global AI MasterDB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">बनी-बनाई लिस्ट</span>
+      </h3>
+      <button id="btnCloseMasterCatalog" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="search-box" style="margin-bottom:15px;">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="masterSearchInput" placeholder=" " autocomplete="off">
+        <label class="floating-label" style="left:38px; top:12px; background:none;">
+            <span class="lang-en">Search global products…</span><span class="lang-hinglish">Duniya bhar ke samaan dhundein...</span><span class="lang-hi">ग्लोबल सामान खोजें...</span>
+        </label>
+      </div>
+      <div id="masterDbList" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;">
+        <div style="text-align:center;padding:20px;color:var(--text-muted);">Click Fetch to load normalized data from cloud.</div>
+      </div>
+      <button id="btnFetchMasterCatalog" class="btn btn-primary" style="margin-top:15px;">
+        <i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="welcomeTutorial" class="modal-overlay" style="z-index: 99999;">
+   <div class="modal-box" style="max-width: 450px; background: #fff; border-radius: 20px;">
+       <div style="padding: 30px; text-align: center;">
+           <div style="width: 60px; height: 60px; background: #EAF2FF; color: #1976D2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 20px;">
+               <i class="fa-solid fa-graduation-cap"></i>
+           </div>
+           <h2 style="margin: 0 0 10px; font-weight: 800; color: #0F172A;">
+               <span class="lang-en">Welcome!</span><span class="lang-hinglish">Swagat Hai! (Welcome)</span><span class="lang-hi">स्वागत है!</span>
+           </h2>
+           <p style="color: #64748B; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
+               <span class="lang-en">Managing inventory in BharatPOS is very easy.</span>
+               <span class="lang-hinglish">BharatPOS inventory mein samaan jodna bahut asaan hai.</span>
+               <span class="lang-hi">भारतपीओएस इन्वेंटरी में सामान जोड़ना बहुत आसान है।</span>
+           </p>
+           
+           <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #DBEAFE;">
+               <strong style="color: #1976D2;"><i class="fa-solid fa-camera"></i> 1. Lens AI:</strong> 
+               <span class="lang-en">Take a photo, name and price will fill automatically!</span>
+               <span class="lang-hinglish">Camera se photo khinchein, naam aur price apne aap bhar jayega!</span>
+               <span class="lang-hi">कैमरा से फोटो खींचें, नाम और मूल्य अपने आप भर जाएगा!</span>
+           </div>
+           <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #DBEAFE;">
+               <strong style="color: #1976D2;"><i class="fa-solid fa-gear"></i> 2. Settings:</strong> 
+               <span class="lang-en">Turn on advanced fields (Barcode, Expiry, Batch) from the Gear icon.</span>
+               <span class="lang-hinglish">Agar Barcode ya Expiry likhna hai, toh 'Gear' icon daba kar on karein.</span>
+               <span class="lang-hi">अगर बारकोड या एक्सपायरी लिखना है, तो 'गियर' आइकन दबा कर ऑन करें।</span>
+           </div>
+           <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #DBEAFE;">
+               <strong style="color: #1976D2;"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Samaan:</strong> 
+               <span class="lang-en">Click any item card to see details or edit. Use checkboxes for mass edit.</span>
+               <span class="lang-hinglish">Kisi bhi samaan ke card par click karke uski details dekhein. Checkbox se ek saath bahut saare edit karein.</span>
+               <span class="lang-hi">किसी भी सामान के कार्ड पर क्लिक करके उसकी जानकारी देखें या बदलें।</span>
+           </div>
+           
+           <button class="btn btn-primary" id="btnCloseTutorial">
+               <span class="lang-en">Got it 👍</span><span class="lang-hinglish">Samajh Gaya 👍</span><span class="lang-hi">समझ गया 👍</span>
+           </button>
+       </div>
+   </div>
+</div>
+
+<div id="toast">✅ Action Successful</div>
+<div id="globalHintBar">Hint Text Here</div>
+
+<script type="module">
+import { db } from "./bharatpos.js";
+import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+window.db = db;
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+window.allProducts = [];
+window.salesHistory = [];
+window.currentEditingId = null;
+window.currentDetailId = null;
+window.currentEditingDate = null;
+window.masterDbCache = [];
+
+window.activeTiers = new Set();
+window.activeCategory = '';
+window.activeBatch = '';
+window.filterState = { brand: '', tax: '', lowStock: false, expiring: false, newest: false, query: '' };
+
+window.currentPage = 0;
+window.pageSize = 50;
+window.currentFilteredData = [];
+window.observer = null;
+
+window.cameraStream = null;
+window.targetBarcodeInput = null;
+window.selectedBulkItems = new Set();
+
+const langs = ['en', 'hinglish', 'hi'];
+
+// ─── INITIALIZATION ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        bindAllEvents();
+        loadSettings();
+
+        // ── LANGUAGE INIT ──
+        const savedLang = localStorage.getItem('app_lang') || 'en'; 
+        document.body.className = `lang-${savedLang}`;
+
+        // ── TUTORIAL INIT ──
+        if(localStorage.getItem('tutorial_inventory') !== 'true') {
+            document.getElementById('welcomeTutorial').style.display = 'flex';
+        }
+
+        window.allProducts = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+        window.salesHistory = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+
+        updateDatalists();
+        applyFilters();
+        setupIntersectionObserver();
+        addVariantUI();
+
+        const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
+        if (isGstGlobal) {
+            document.getElementById('tierGst').classList.add('active');
+            const gstBtn = document.getElementById('btnToggleGst');
+            const chevron = gstBtn.querySelector('.chevron');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+            gstBtn.style.background = '#EAF2FF';
+            gstBtn.style.borderColor = 'var(--primary)';
+            gstBtn.style.color = 'var(--primary)';
+        }
+
+        checkDemandMitraRouting();
+    } catch (err) {
+        console.error("Init Error:", err);
+        showToast("Initialization error. Check console.", true);
+    }
+});
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+function loadSettings() {
+    const isAdv   = localStorage.getItem('cfg_adv_fields') === 'true';
+    const isBatch = localStorage.getItem('cfg_batch') === 'true';
+    const isLoose = localStorage.getItem('cfg_loose') === 'true';
+    const isHints = localStorage.getItem('cfg_hints') !== 'false';
+
+    document.getElementById('cfgAdvFields').checked = isAdv;
+    document.getElementById('cfgBatch').checked     = isBatch;
+    document.getElementById('cfgLoose').checked     = isLoose;
+    document.getElementById('cfgHints').checked     = isHints;
+
+    applySettingsUI(isAdv, isBatch, isLoose);
+}
+
+function saveConfig() {
+    const isAdv   = document.getElementById('cfgAdvFields').checked;
+    const isBatch = document.getElementById('cfgBatch').checked;
+    const isLoose = document.getElementById('cfgLoose').checked;
+    const isHints = document.getElementById('cfgHints').checked;
+
+    localStorage.setItem('cfg_adv_fields', isAdv);
+    localStorage.setItem('cfg_batch',      isBatch);
+    localStorage.setItem('cfg_loose',      isLoose);
+    localStorage.setItem('cfg_hints',      isHints);
+
+    applySettingsUI(isAdv, isBatch, isLoose);
+    showToast(document.body.classList.contains('lang-hin') ? "Settings badal di gayi" : "Settings Updated");
+}
+
+function applySettingsUI(isAdv, isBatch, isLoose) {
+    document.getElementById('advancedFieldsContainer').style.display = (isAdv || isBatch || isLoose) ? 'block' : 'none';
+    document.getElementById('batchInputContainer').style.display     = isBatch ? 'block' : 'none';
+    document.getElementById('looseInputContainer').style.display     = isLoose ? 'flex'  : 'none';
+    
+    const engine = document.getElementById('variantEngineWrapper');
+    if (isAdv) engine.classList.add('show-adv'); else engine.classList.remove('show-adv');
+    if (isLoose) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
+}
+
+// ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
+function bindAllEvents() {
+    document.getElementById('btnLangToggle').addEventListener('click', () => {
+        let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
+        currentIdx = (currentIdx + 1) % langs.length;
+        const nextLang = langs[currentIdx];
+        document.body.className = `lang-${nextLang}`;
+        localStorage.setItem('app_lang', nextLang);
+    });
+
+    document.getElementById('btnExportCsv').addEventListener('click', handleExportCSV);
+
+    document.getElementById('btnCloseTutorial').addEventListener('click', () => {
+        localStorage.setItem('tutorial_inventory', 'true');
+        document.getElementById('welcomeTutorial').style.display = 'none';
+    });
+    document.getElementById('btnRestartTutorial').addEventListener('click', () => {
+        document.getElementById('settingsModal').style.display = 'none';
+        document.getElementById('welcomeTutorial').style.display = 'flex';
+    });
+
+    document.getElementById('btnToggleFilters').addEventListener('click', () => {
+        const area = document.getElementById('advancedFilterSection');
+        area.style.display = area.style.display === 'none' ? 'block' : 'none';
+    });
+
+    const hintBar = document.getElementById('globalHintBar');
+    document.addEventListener('mouseover', handleHintEvent);
+    document.addEventListener('touchstart', handleHintEvent, {passive: true});
+
+    function handleHintEvent(e) {
+        if(localStorage.getItem('cfg_hints') === 'false') return;
+        const target = e.target.closest('[data-hint]');
+        if(target) {
+            const hints = target.getAttribute('data-hint').split('|');
+            let hintText = hints[0].split(':')[1]; 
+            const lang = localStorage.getItem('app_lang') || 'en';
+            
+            hints.forEach(h => {
+                const [l, text] = h.split(':');
+                if(l === lang) hintText = text;
+            });
+
+            hintBar.innerText = `💡 ${hintText}`;
+            hintBar.classList.add('show');
+            clearTimeout(window.hintTimeout);
+            window.hintTimeout = setTimeout(() => hintBar.classList.remove('show'), 3000);
+        }
+    }
+
+    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
+    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
+    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+    document.getElementById('btnNavPos').addEventListener('click', () => window.location.href = 'billing.html');
+
+    document.getElementById('btnToggleGst').addEventListener('click', function () {
+        const content = document.getElementById('tierGst');
+        const chevron = this.querySelector('.chevron');
+        content.classList.toggle('active');
+        if (content.classList.contains('active')) {
+            chevron.style.transform = 'rotate(180deg)';
+            this.style.background   = '#EAF2FF';
+            this.style.borderColor  = 'var(--primary)';
+            this.style.color        = 'var(--primary)';
+        } else {
+            chevron.style.transform = 'rotate(0deg)';
+            this.style.background   = '';
+            this.style.borderColor  = '';
+            this.style.color        = '';
+        }
+    });
+
+    document.getElementById('btnAddVariant').addEventListener('click', () => addVariantUI());
+    document.getElementById('variantEngine').addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.btn-remove-var');
+        if (removeBtn) removeBtn.closest('.variant-box').remove();
+    });
+
+    document.getElementById('productForm').addEventListener('submit', handleSaveProduct);
+    document.getElementById('btnOpenSettings').addEventListener('click',  () => document.getElementById('settingsModal').style.display = 'flex');
+    document.getElementById('btnCloseSettings').addEventListener('click', () => document.getElementById('settingsModal').style.display = 'none');
+    
+    document.getElementById('cfgAdvFields').addEventListener('change', saveConfig);
+    document.getElementById('cfgBatch').addEventListener('change',     saveConfig);
+    document.getElementById('cfgLoose').addEventListener('change',     saveConfig);
+    document.getElementById('cfgHints').addEventListener('change',     saveConfig);
+    
+    document.getElementById('pIsLoose').addEventListener('change', (e) => {
+        const engine = document.getElementById('variantEngineWrapper');
+        if(e.target.checked) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
+    });
+
+    document.getElementById('btnAutoBatch').addEventListener('click', () => {
+        const prefix = (document.getElementById('pCategory').value.substring(0,3).toUpperCase() || 'BAT');
+        document.getElementById('pBatchId').value = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+    });
+
+    document.getElementById('btnOpenMasterCatalog').addEventListener('click',  () => document.getElementById('masterCatalogModal').style.display = 'flex');
+    document.getElementById('btnCloseMasterCatalog').addEventListener('click', () => document.getElementById('masterCatalogModal').style.display = 'none');
+    document.getElementById('btnFetchMasterCatalog').addEventListener('click', fetchMasterCatalog);
+    document.getElementById('masterSearchInput').addEventListener('input', searchMasterDB);
+    document.getElementById('masterDbList').addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const dataStr = e.target.getAttribute('data-json');
+            if (dataStr) importMasterProduct(JSON.parse(dataStr));
+        }
+    });
+
+    document.getElementById('btnTriggerCsv').addEventListener('click',  () => document.getElementById('csvUpload').click());
+    document.getElementById('csvUpload').addEventListener('change',     handleBulkImport);
+    document.getElementById('btnSyncCloud').addEventListener('click',   pullFreshData);
+
+    document.getElementById('tierTabs').addEventListener('click', (e) => {
+        if (e.target.classList.contains('tab-btn') && e.target.tagName !== 'SELECT') {
+            toggleTierFilter(e.target.getAttribute('data-tier'), e.target);
+        }
+    });
+    document.getElementById('catTabSelect').addEventListener('change', (e) => {
+        window.activeCategory = e.target.value;
+        updateAllTabHighlight();
+        applyFilters();
+    });
+    document.getElementById('batchTabSelect').addEventListener('change', (e) => {
+        window.activeBatch = e.target.value;
+        updateAllTabHighlight();
+        applyFilters();
+    });
+
+    document.getElementById('filterBrand').addEventListener('change', applyFilters);
+    document.getElementById('filterTax').addEventListener('change',   applyFilters);
+    document.getElementById('searchInput').addEventListener('input',  applyFilters);
+    document.querySelectorAll('.action-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => toggleChip(e.currentTarget));
+    });
+
+    document.getElementById('inventoryGrid').addEventListener('click', (e) => {
+        const card = e.target.closest('.sku-card');
+        if(e.target.classList.contains('bulk-cb')) return; 
+        if (card) openProductDetails(card.getAttribute('data-id'));
+    });
+
+    document.getElementById('bulkOperation').addEventListener('change', (e) => {
+        const valInput = document.getElementById('bulkValue');
+        if (e.target.value === 'category' || e.target.value === 'tax' || e.target.value === 'discount') {
+            valInput.style.display = 'block';
+            if(e.target.value === 'discount') valInput.placeholder = "Enter %";
+            else if(e.target.value === 'tax') valInput.placeholder = "GST %";
+            else valInput.placeholder = "Category Name";
+        } else {
+            valInput.style.display = 'none';
+        }
+    });
+    document.getElementById('btnApplyBulk').addEventListener('click', executeBulkAction);
+    document.getElementById('btnCancelBulk').addEventListener('click', clearBulkSelection);
+
+    document.getElementById('btnCloseDetails').addEventListener('click',     () => document.getElementById('productDetailsModal').style.display = 'none');
+    document.getElementById('btnEditFromModal').addEventListener('click',    () => {
+        document.getElementById('productDetailsModal').style.display = 'none';
+        if (window.currentDetailId) loadProductForEdit(window.currentDetailId);
+    });
+    document.getElementById('btnDeleteFromModal').addEventListener('click',  () => {
+        document.getElementById('productDetailsModal').style.display = 'none';
+        if (window.currentDetailId) deleteProduct(window.currentDetailId);
+    });
+
+    document.getElementById('btnStartScan').addEventListener('click', startAIScan);
+    document.getElementById('btnStopScan').addEventListener('click',  stopAIScan);
+    document.getElementById('btnCancelBarcode').addEventListener('click', stopBarcodeScan);
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay && e.target.id !== 'barcodeScannerModal') overlay.style.display = 'none';
+        });
+    });
+}
+
+// ─── UTILITY ──────────────────────────────────────────────────────────────────
+function toggleMenu() {
+    document.getElementById('sideMenu').classList.toggle('open');
+    const overlay = document.getElementById('menuOverlay');
+    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+}
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function formatStock(amount, unitType) {
+    const u = (unitType || '').toLowerCase();
+    if (u.includes('kg') || u.includes('g') || u.includes('l') || u.includes('ml')) {
+        return parseFloat(amount || 0).toFixed(2).replace(/\.00$/, '');
+    }
+    return Math.floor(amount || 0);
+}
+
+function checkDemandMitraRouting() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const restockName = urlParams.get('restock');
+    if (restockName) {
+        // Fallback for legacy DemandMitra name-based routing
+        const targetProd = window.allProducts.find(p => p.name === restockName);
+        if(targetProd) {
+            loadProductForEdit(targetProd.id);
+            const tempStock = localStorage.getItem("temp_add_stock");
+            if (tempStock) {
+                setTimeout(() => {
+                    const stockInputs = document.querySelectorAll('.v-add-stock');
+                    if (stockInputs.length > 0) stockInputs[0].value = tempStock;
+                    localStorage.removeItem("temp_add_stock");
+                    showToast(`DemandMitra suggests adding ${tempStock} units.`);
+                }, 500);
+            }
+        }
+    }
+}
+
+// ─── EXPORT CSV ──────────────────────────────────────────────────────────────
+function handleExportCSV() {
+    if(window.allProducts.length === 0) return showToast("No products to export", true);
+    try {
+        const flattened = [];
+        window.allProducts.forEach(p => {
+            p.variants.forEach(v => {
+                flattened.push({
+                    Name: p.name, Category: p.category, Type: v.quantity, Price: v.price, Stock: v.stock,
+                    Brand: v.brand, Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
+                    BaseQty: v.baseQty, BaseUnit: v.baseUnit, BatchID: p.batchId, HSN: p.hsn, GST: p.gstRate, DateAdded: p.dateAdded
+                });
+            });
+        });
+        const ws = XLSX.utils.json_to_sheet(flattened);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+        XLSX.writeFile(wb, `BharatPOS_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showToast("✅ Export Successful!");
+    } catch(e) { showToast("Export Failed", true); }
+}
+
+// ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
+window.startBarcodeScan = function(btnEl) {
+    window.targetBarcodeInput = btnEl.previousElementSibling;
+    const modal = document.getElementById('barcodeScannerModal');
+    modal.style.display = 'flex';
+    
+    Quagga.init({
+        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
+        decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
+    }, function(err) {
+        if (err) { console.log(err); showToast("Scanner failed to start", true); return; }
+        Quagga.start();
+    });
+
+    Quagga.onDetected(function(result) {
+        if(window.targetBarcodeInput && result.codeResult.code) {
+            window.targetBarcodeInput.value = result.codeResult.code;
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(e=>{});
+            stopBarcodeScan();
+            showToast("Barcode Scanned");
+        }
+    });
+};
+
+function stopBarcodeScan() {
+    Quagga.stop();
+    document.getElementById('barcodeScannerModal').style.display = 'none';
+    window.targetBarcodeInput = null;
+}
+
+// ─── VARIANT ENGINE ───────────────────────────────────────────────────────────
+function addVariantUI(data = null) {
+    const container = document.getElementById('variantEngine');
+    const div = document.createElement('div');
+    div.className = 'variant-box';
+    const uid = Math.floor(Math.random() * 10000);
+
+    div.innerHTML = `
+        ${container.children.length > 0 ? `<button type="button" class="btn-remove-var"><i class="fa-solid fa-xmark"></i></button>` : ''}
+        <div class="variant-grid">
+            <div class="form-group" style="margin-bottom:0;">
+                <input type="text" class="form-input v-unit" list="unitOptions" id="u_${uid}" placeholder=" " value="${data?.quantity || ''}" required>
+                <label for="u_${uid}" class="floating-label">
+                    <span class="lang-en">Type (Color, Size, ₹, Wt)</span><span class="lang-hinglish">Type (Rang, Size, Wazan)</span><span class="lang-hi">प्रकार (रंग, साइज़, वजन)</span>
+                </label>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <input type="number" step="0.001" class="form-input v-add-stock" id="s_${uid}" placeholder=" ">
+                <label for="s_${uid}" class="floating-label" style="color:var(--success);">
+                    <span class="lang-en">Add Stock (+/−)</span><span class="lang-hinglish">Stock Jodein (+/-)</span><span class="lang-hi">स्टॉक जोड़ें (+/-)</span>
+                </label>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;margin-bottom:0;">
+            <input type="number" step="0.01" class="form-input v-price" id="p_${uid}" placeholder=" " value="${data?.price || ''}" required style="font-size:17px;font-weight:800;color:var(--success);font-family:'JetBrains Mono',monospace;">
+            <label for="p_${uid}" class="floating-label">
+                <span class="lang-en">Selling Price (₹)</span><span class="lang-hinglish">Bechne Ka Daam (₹)</span><span class="lang-hi">बिक्री मूल्य (₹)</span>
+            </label>
+        </div>
+        
+        <div class="form-group adv-only-field" style="margin-bottom:0; margin-top:10px; border-top:1px dashed rgba(25,118,210,0.2); padding-top:10px;">
+            <input type="text" class="form-input v-brand" placeholder=" " list="brandList" value="${data?.brand || ''}">
+            <label class="floating-label"><i class="fa-solid fa-copyright"></i> Brand / Manufacturer</label>
+        </div>
+        <div class="variant-grid adv-only-field">
+            <div class="form-group" style="margin-bottom:0; position:relative;">
+                <input type="text" class="form-input v-barcode" placeholder=" " value="${data?.barcode || ''}" style="font-family:'JetBrains Mono'; padding-right:40px;">
+                <button type="button" onclick="window.startBarcodeScan(this)" style="position:absolute; right:8px; top:11px; background:none; border:none; color:var(--primary); font-size:16px; cursor:pointer;"><i class="fa-solid fa-barcode"></i></button>
+                <label class="floating-label"><i class="fa-solid fa-barcode"></i> Barcode</label>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <input type="number" step="0.01" class="form-input v-cost" placeholder=" " value="${data?.costPrice || ''}">
+                <label class="floating-label"><i class="fa-solid fa-tags"></i> <span class="lang-en">Cost Price</span><span class="lang-hinglish">Kharid Ka Daam</span><span class="lang-hi">खरीद मूल्य</span></label>
+            </div>
+        </div>
+        <div class="form-group adv-only-field" style="margin-bottom:0;">
+            <input type="date" class="form-input v-expiry" placeholder=" " value="${data?.expiryDate || ''}">
+            <label class="floating-label"><i class="fa-regular fa-calendar-xmark"></i> <span class="lang-en">Expiry Date</span><span class="lang-hinglish">Expiry Date</span><span class="lang-hi">एक्सपायरी डेट</span></label>
+        </div>
+
+        <div class="form-group loose-only-field" style="margin-bottom:0;">
+            <div style="display:flex; gap:8px;">
+                <input type="number" step="0.001" class="form-input v-base-qty" placeholder=" " value="${data?.baseQty || ''}" style="flex:1;">
+                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${data?.baseUnit || 'pcs'}" style="width: 90px;">
+            </div>
+            <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> <span class="lang-en">1 Stock Contains</span><span class="lang-hinglish">1 Stock Mein Kitna</span><span class="lang-hi">1 स्टॉक में मात्रा</span></label>
+        </div>
+
+        <input type="hidden" class="v-id" value="${data?.id || ''}">
+        <input type="hidden" class="v-exist-stock" value="${data?.stock || 0}">
+    `;
+    container.appendChild(div);
+}
+
+// ─── ATOMIC SAVE ENGINE (SINGULARITY MODEL) ──────────────────────────────────
+async function handleSaveProduct(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving…`; btn.disabled = true;
+
+    try {
+        const user      = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const name      = document.getElementById('pName').value.trim();
+        const cat       = document.getElementById('pCategory').value.trim() || 'General';
+        const hsn       = document.getElementById('pHSN').value.trim();
+        const gstRate   = document.getElementById('pGSTRate').value.trim();
+        const priceType = document.getElementById('pPriceType').value;
+
+        const isAdv      = document.getElementById('cfgAdvFields').checked;
+        const isLooseCfg = document.getElementById('cfgLoose').checked;
+        const isBatchCfg = document.getElementById('cfgBatch').checked;
+
+        const isLoose = isLooseCfg ? document.getElementById('pIsLoose').checked : false;
+        const batchId = isBatchCfg ? document.getElementById('pBatchId').value.trim() : "";
+        const reorder = document.getElementById('pReorderPoint').value;
+        const nowIso  = new Date().toISOString();
+
+        const productId = window.currentEditingId || `prod_${Date.now()}`;
+        
+        const productDoc = {
+            id: productId, name: name, category: cat, hsn: hsn, gstRate: gstRate, priceType: priceType,
+            isLoose: isLoose, batchId: batchId, reorderPoint: reorder, 
+            dateAdded: window.currentEditingDate || nowIso,
+            variants: []
+        };
+
+        const variantBoxes = document.querySelectorAll('.variant-box');
+        for (let i = 0; i < variantBoxes.length; i++) {
+            const box      = variantBoxes[i];
+            const unit     = box.querySelector('.v-unit').value.trim();
+            const price    = box.querySelector('.v-price').value;
+            const addStock = parseFloat(box.querySelector('.v-add-stock').value) || 0;
+
+            let vId        = box.querySelector('.v-id').value || `var_${Date.now()}_${i}`;
+            let existStock = parseFloat(box.querySelector('.v-exist-stock').value) || 0;
+            
+            let vBrand     = isAdv ? box.querySelector('.v-brand').value : "";
+            let vBarcode   = isAdv ? box.querySelector('.v-barcode').value : "";
+            let vExpiry    = isAdv ? box.querySelector('.v-expiry').value : "";
+            let vCost      = isAdv ? box.querySelector('.v-cost').value : "";
+            let vBaseQty   = isLoose ? box.querySelector('.v-base-qty').value : "";
+            let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "pcs";
+
+            productDoc.variants.push({
+                id: vId, quantity: unit, price: parseFloat(price), stock: existStock + addStock,
+                brand: vBrand, barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, 
+                baseQty: vBaseQty, baseUnit: vBaseUnit
+            });
+        }
+
+        // Replace in array
+        if(window.currentEditingId) {
+            window.allProducts = window.allProducts.filter(p => p.id !== window.currentEditingId);
+        }
+        window.allProducts.push(productDoc);
+
+        // Local Save First
+        localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+        updateDatalists();
+        applyFilters();
+
+        document.getElementById('productForm').reset();
+        document.getElementById('variantEngine').innerHTML = '';
+        addVariantUI();
+        window.currentEditingId = null;
+        window.currentEditingDate = null;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast("✅ SKU Saved Successfully");
+
+        // Firebase Sync
+        if (user.merchantId && window.db) {
+            try {
+                await setDoc(doc(db, "shops", user.merchantId, "products", productDoc.id), productDoc);
+            } catch (cloudErr) {
+                console.warn("Offline – data saved to device only.");
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Critical error saving data", true);
+    } finally {
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>`; btn.disabled = false;
+    }
+}
+
+// ─── FILTER ENGINE & DATALISTS ────────────────────────────────────────────────
+function calculateABCTiers() {
+    const freqs = {};
+    window.salesHistory.forEach(sale => {
+        (sale.items || []).forEach(item => {
+            if (item.id) freqs[item.id] = (freqs[item.id] || 0) + (item.qty || 1);
+        });
+    });
+    return function (productId) {
+        const f = freqs[productId] || 0;
+        if (f > 20) return 'A';
+        if (f > 5)  return 'B';
+        return 'C';
+    };
+}
+
+function updateDatalists() {
+    const cats = new Set(), brands = new Set(), taxes = new Set(), batches = new Set();
+    window.allProducts.forEach(p => {
+        if (p.category) cats.add(p.category);
+        if (p.gstRate)  taxes.add(p.gstRate);
+        if (p.batchId)  batches.add(p.batchId);
+        (p.variants || []).forEach(v => { if(v.brand) brands.add(v.brand); });
+    });
+
+    document.getElementById('catList').innerHTML   = Array.from(cats).map(c => `<option value="${c}">`).join('');
+    document.getElementById('brandList').innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
+    document.getElementById('batchList').innerHTML = Array.from(batches).map(b => `<option value="${b}">`).join('');
+
+    document.getElementById('catTabSelect').innerHTML = '<option value="">Categories ▾</option>' + 
+        Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
+        
+    document.getElementById('batchTabSelect').innerHTML = '<option value="">Batches ▾</option>' + 
+        Array.from(batches).map(b => `<option value="${b}">${b}</option>`).join('');
+
+    document.getElementById('filterBrand').innerHTML = '<option value="">All Brands</option>' + Array.from(brands).map(b => `<option value="${b}">${b}</option>`).join('');
+    document.getElementById('filterTax').innerHTML = '<option value="">All Taxes (GST)</option>' + Array.from(taxes).map(t => `<option value="${t}">GST ${t}%</option>`).join('');
+}
+
+function updateAllTabHighlight() {
+    if(window.activeTiers.size === 0 && !window.activeCategory && !window.activeBatch) {
+        document.querySelector('[data-tier="ALL"]').classList.add('active');
+    } else {
+        document.querySelector('[data-tier="ALL"]').classList.remove('active');
+    }
+}
+
+function toggleTierFilter(tier, btnEl) {
+    if (tier === 'ALL') {
+        window.activeTiers.clear();
+        window.activeCategory = '';
+        window.activeBatch = '';
+        document.getElementById('catTabSelect').value = '';
+        document.getElementById('batchTabSelect').value = '';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+    } else {
+        if (window.activeTiers.has(tier)) {
+            window.activeTiers.delete(tier);
+            btnEl.classList.remove('active');
+        } else {
+            window.activeTiers.add(tier);
+            btnEl.classList.add('active');
+        }
+        updateAllTabHighlight();
+    }
+    applyFilters();
+}
+
+function toggleChip(btnEl) {
+    btnEl.classList.toggle('active');
+    const action = btnEl.getAttribute('data-action');
+    if (action === 'LowStock')  window.filterState.lowStock  = !window.filterState.lowStock;
+    if (action === 'Expiring')  window.filterState.expiring  = !window.filterState.expiring;
+    if (action === 'Newest')    window.filterState.newest    = !window.filterState.newest;
+    applyFilters();
+}
+
+function applyFilters() {
+    const getTier = calculateABCTiers();
+    window.filterState.brand = document.getElementById('filterBrand').value;
+    window.filterState.tax   = document.getElementById('filterTax').value;
+    window.filterState.query = document.getElementById('searchInput').value.toLowerCase().trim();
+
+    let filtered = window.allProducts; // these are singular product docs now
+
+    // Tab Filters
+    if (window.activeTiers.size > 0) {
+        filtered = filtered.filter(p => p.variants.some(v => window.activeTiers.has(getTier(v.id))));
+    }
+    if (window.activeCategory) {
+        filtered = filtered.filter(p => (p.category || '').toLowerCase() === window.activeCategory.toLowerCase());
+    }
+    if (window.activeBatch) {
+        filtered = filtered.filter(p => (p.batchId || '') === window.activeBatch);
+    }
+
+    // Branch Filters
+    if (window.filterState.brand) {
+        filtered = filtered.filter(p => p.variants.some(v => v.brand === window.filterState.brand));
+    }
+    if (window.filterState.tax) {
+        filtered = filtered.filter(p => p.gstRate == window.filterState.tax);
+    }
+    
+    // Deep Actions
+    if (window.filterState.lowStock) {
+        filtered = filtered.filter(p => {
+            const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
+            let total = 0; p.variants.forEach(v => total += Number(v.stock||0));
+            return total <= threshold;
+        });
+    }
+    if (window.filterState.expiring) {
+        const nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1);
+        filtered = filtered.filter(p => p.variants.some(v => v.expiryDate && new Date(v.expiryDate) < nextMonth));
+    }
+
+    // Sort & Search
+    if (window.filterState.newest) {
+        filtered.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
+    } else if (window.filterState.query === '') {
+        filtered.sort((a, b) => (a.name||'').localeCompare(b.name||''));
+    }
+
+    if (window.filterState.query) {
+        const fuzzyReg = new RegExp(window.filterState.query.split('').join('.*'), 'i');
+        filtered = filtered.filter(p =>
+            (p.name||'').toLowerCase().includes(window.filterState.query) || fuzzyReg.test(p.name||'') ||
+            p.variants.some(v => (v.barcode || '').includes(window.filterState.query))
+        );
+    }
+
+    window.currentFilteredData = filtered;
+    window.currentPage = 0;
+    document.getElementById('inventoryGrid').innerHTML = '';
+    renderChunk();
+}
+
+// ─── BULK ACTION ENGINE ───────────────────────────────────────────────────────
+window.toggleBulkItem = function(id, isChecked) {
+    if(isChecked) window.selectedBulkItems.add(id);
+    else window.selectedBulkItems.delete(id);
+    
+    const bar = document.getElementById('bulkActionBar');
+    if(window.selectedBulkItems.size > 0) {
+        document.getElementById('bulkCount').innerText = window.selectedBulkItems.size;
+        bar.classList.add('show');
+    } else {
+        bar.classList.remove('show');
+    }
+};
+
+function clearBulkSelection() {
+    window.selectedBulkItems.clear();
+    document.getElementById('bulkActionBar').classList.remove('show');
+    document.getElementById('inventoryGrid').innerHTML = '';
+    window.currentPage = 0;
+    renderChunk();
+}
+
+async function executeBulkAction() {
+    const op = document.getElementById('bulkOperation').value;
+    const val = document.getElementById('bulkValue').value.trim();
+    
+    if(!op) return showToast("Select an action first", true);
+    if(op !== 'delete' && !val) return showToast("Please enter a value", true);
+    if(!confirm(`Are you sure you want to modify ${window.selectedBulkItems.size} products?`)) return;
+
+    let modifiedIds = [];
+    let deletedIds = [];
+
+    window.allProducts = window.allProducts.filter(p => {
+        if (window.selectedBulkItems.has(p.id)) {
+            if (op === 'delete') {
+                deletedIds.push(p.id);
+                return false; 
+            } else if (op === 'category') {
+                p.category = val; modifiedIds.push(p);
+            } else if (op === 'tax') {
+                p.gstRate = val; modifiedIds.push(p);
+            } else if (op === 'discount') {
+                const discountPct = parseFloat(val) || 0;
+                p.variants.forEach(v => { v.price = (v.price - (v.price * (discountPct / 100))).toFixed(2); });
+                modifiedIds.push(p);
+            }
+        }
+        return true;
+    });
+
+    localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+
+    if (user.merchantId && window.db) {
+        try {
+            let currentBatch = writeBatch(db);
+            let opCount = 0;
+
+            const commitBatch = async () => {
+                if(opCount > 0) { await currentBatch.commit(); currentBatch = writeBatch(db); opCount = 0; }
+            };
+
+            for (const id of deletedIds) { currentBatch.delete(doc(db, "shops", user.merchantId, "products", id)); opCount++; if (opCount >= 490) await commitBatch(); }
+            for (const p of modifiedIds) { currentBatch.set(doc(db, "shops", user.merchantId, "products", p.id), p); opCount++; if (opCount >= 490) await commitBatch(); }
+            await commitBatch(); 
+        } catch(e) { console.warn("Offline - bulk action saved locally only."); }
+    }
+
+    clearBulkSelection();
+    updateDatalists();
+    applyFilters();
+    showToast("✨ Bulk Action Applied Successfully");
+}
+
+// ─── VIRTUAL SCROLLING ────────────────────────────────────────────────────────
+function renderChunk() {
+    const grid  = document.getElementById('inventoryGrid');
+    const start = window.currentPage * window.pageSize;
+    const end   = start + window.pageSize;
+    const chunk = window.currentFilteredData.slice(start, end);
+    const getTier = calculateABCTiers();
+
+    if (window.currentFilteredData.length === 0 && window.currentPage === 0) {
+        grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:52px 20px;">
+          <div style="width:56px;height:56px;border-radius:16px;background:var(--primary-soft);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <i class="fa-solid fa-box-open" style="color:var(--primary);font-size:22px;"></i>
+          </div>
+          <div style="font-weight:700;font-size:14px;color:var(--text-main);">
+              <span class="lang-en">No SKUs found</span><span class="lang-hinglish">Koi Samaan Nahi Mila</span><span class="lang-hi">कोई सामान नहीं मिला</span>
+          </div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-top:5px;">
+              <span class="lang-en">Adjust filters or search.</span><span class="lang-hinglish">Search ya filter change karein.</span><span class="lang-hi">सर्च या फिल्टर बदलें।</span>
+          </div>
+        </div>`;
+        document.getElementById('loadMoreTrigger').style.display = 'none';
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    chunk.forEach(p => {
+        let totalStock = 0; p.variants.forEach(v => totalStock += Number(v.stock||0));
+        const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
+        const isLow    = totalStock <= threshold;
+        
+        const vCount   = p.variants.length;
+        const basePrice = p.variants[0].price;
+        const tier     = getTier(p.variants[0].id);
+        const formatTotalStock = formatStock(totalStock, p.variants[0].quantity);
+        const isChecked = window.selectedBulkItems.has(p.id) ? 'checked' : '';
+
+        // Safely extract a brand for display if one exists
+        const displayBrand = p.variants[0].brand ? ` • ${p.variants[0].brand}` : '';
+
+        const card = document.createElement('div');
+        card.className = 'sku-card';
+        card.setAttribute('data-id', p.id);
+
+        card.innerHTML = `
+            <div class="sku-tier tier-${tier.toLowerCase()}">${tier}</div>
+            <div>
+                <div class="sku-header">
+                    <input type="checkbox" class="bulk-cb" ${isChecked} onclick="event.stopPropagation(); window.toggleBulkItem('${p.id}', this.checked)">
+                    <h3 class="sku-name">${p.name}</h3>
+                </div>
+                <div class="sku-cat">${p.category || 'General'}</div>
+                <div class="sku-variant-label">
+                    <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
+                    ${vCount > 1 ? `${vCount} Variants` : p.variants[0].quantity}${displayBrand}
+                </div>
+            </div>
+            <div>
+                <div class="sku-stats">
+                    <div class="sku-price">₹${basePrice}${vCount > 1 ? '<span style="font-size:10px;opacity:0.6;"> +</span>' : ''}</div>
+                    <div class="sku-stock-badge ${isLow ? 'low' : ''}">
+                        <i class="fa-solid fa-${isLow ? 'triangle-exclamation' : 'circle-check'}"></i>
+                        ${formatTotalStock} in stock
+                    </div>
+                </div>
+            </div>
+        `;
+        fragment.appendChild(card);
+    });
+
+    grid.appendChild(fragment);
+
+    if (end < window.currentFilteredData.length) {
+        document.getElementById('loadMoreTrigger').style.display = 'block';
+    } else {
+        document.getElementById('loadMoreTrigger').style.display = 'none';
+    }
+}
+
+function setupIntersectionObserver() {
+    const trigger = document.getElementById('loadMoreTrigger');
+    window.observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && (window.currentPage * window.pageSize) < window.currentFilteredData.length) {
+            window.currentPage++;
+            renderChunk();
+        }
+    }, { root: null, threshold: 0.1 });
+    window.observer.observe(trigger);
+}
+
+// ─── 360 PRODUCT DETAILS MODAL ────────────────────────────────────────────────
+function openProductDetails(id) {
+    const base = window.allProducts.find(p => p.id === id);
+    if (!base) return;
+
+    window.currentDetailId = id;
+    const getTier = calculateABCTiers();
+    const tier  = getTier(base.variants[0].id);
+
+    document.getElementById('dName').innerText        = base.name;
+    document.getElementById('dTier').innerText        = `Tier ${tier}`;
+    document.getElementById('dTier').className        = `sku-tier tier-${tier.toLowerCase()}`;
+    document.getElementById('dCat').innerText         = base.category || 'General';
+
+    document.getElementById('dHSN').innerText         = base.hsn     || '-';
+    document.getElementById('dGST').innerText         = base.gstRate ? `${base.gstRate}%` : '-';
+    document.getElementById('dTaxType').innerText     = base.priceType || 'inclusive';
+    document.getElementById('dBatch').innerText       = base.batchId || '-';
+    
+    const threshold = (base.reorderPoint !== undefined && base.reorderPoint !== '') ? base.reorderPoint : 5;
+    document.getElementById('dAlert').innerText       = `${threshold} Units`;
+
+    let dateAddedDisplay = '-';
+    if(base.dateAdded) {
+        const d = new Date(base.dateAdded);
+        if(!isNaN(d.getTime())) dateAddedDisplay = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+    document.getElementById('dAdded').innerText = dateAddedDisplay;
+
+    document.getElementById('dVariantsList').innerHTML = base.variants.map(v => {
+        let details = [];
+        if(v.brand) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-copyright"></i> ${v.brand}</span>`);
+        if(v.barcode) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
+        if(v.expiryDate) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
+        if(v.costPrice) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
+        if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||'pcs'}</span>`);
+        
+        let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11px;">${details.join('')}</div>` : '';
+
+        return `
+        <div style="background:#FFFFFF;padding:12px;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow-sm);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
+                <div style="text-align:right;">
+                    <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:15px;">₹${v.price}</div>
+                    <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--text-muted)'};font-weight:700;margin-top:2px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
+                </div>
+            </div>
+            ${detailsHtml}
+        </div>
+        `;
+    }).join('');
+
+    document.getElementById('productDetailsModal').style.display = 'flex';
+}
+
+function loadProductForEdit(id) {
+    const base = window.allProducts.find(p => p.id === id);
+    if (!base) return;
+
+    window.currentEditingId = base.id;
+    window.currentEditingDate = base.dateAdded;
+
+    document.getElementById('pName').value     = base.name;
+    document.getElementById('pCategory').value = base.category || '';
+    document.getElementById('pHSN').value      = base.hsn      || '';
+    document.getElementById('pGSTRate').value  = base.gstRate  || '';
+    if (base.priceType) document.getElementById('pPriceType').value = base.priceType;
+
+    document.getElementById('pReorderPoint').value = base.reorderPoint || '';
+    document.getElementById('pBatchId').value   = base.batchId || '';
+    document.getElementById('pIsLoose').checked = base.isLoose || false;
+
+    // Auto-enable UI sections if they contain data
+    if (base.batchId) document.getElementById('cfgBatch').checked = true;
+    if (base.isLoose) document.getElementById('cfgLoose').checked = true;
+    if (base.variants.some(v => v.brand || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
+        document.getElementById('cfgAdvFields').checked = true;
+    }
+
+    applySettingsUI(
+        document.getElementById('cfgAdvFields').checked,
+        document.getElementById('cfgBatch').checked,
+        document.getElementById('cfgLoose').checked
+    );
+
+    if (base.hsn || base.gstRate) {
+        const gstContent = document.getElementById('tierGst');
+        if (!gstContent.classList.contains('active')) {
+            gstContent.classList.add('active');
+            const gstBtn = document.getElementById('btnToggleGst');
+            const chevron = gstBtn.querySelector('.chevron');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+            gstBtn.style.background  = '#EAF2FF';
+            gstBtn.style.borderColor = 'var(--primary)';
+            gstBtn.style.color       = 'var(--primary)';
+        }
+    }
+
+    document.getElementById('variantEngine').innerHTML = '';
+    base.variants.forEach(v => addVariantUI(v));
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('pName').focus();
+    
+    const isHin = document.body.classList.contains('lang-hin');
+    showToast(isHin ? `✏️ "${base.name}" Edit mode mein khul gaya` : `✏️ Loaded "${base.name}" for editing`);
+}
+
+async function deleteProduct(id) {
+    const base = window.allProducts.find(p => p.id === id);
+    if(!base) return;
+
+    const isHin = document.body.classList.contains('lang-hin') || document.body.classList.contains('lang-hi');
+    const confirmMsg = isHin ? `Kya aap "${base.name}" ko pakka delete karna chahte hain?` : `Delete product "${base.name}"?`;
+    if (!confirm(confirmMsg)) return;
+
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    window.allProducts = window.allProducts.filter(p => p.id !== id);
+    localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+    applyFilters();
+    showToast(isHin ? "🗑️ Samaan delete ho gaya" : "🗑️ Deleted successfully");
+
+    if (user.merchantId && window.db) {
+        try {
+            await deleteDoc(doc(db, "shops", user.merchantId, "products", id));
+        } catch (e) {
+            console.warn("Delete offline mode — removed locally only.", e);
+        }
+    }
+}
+
+// ─── MASTER CATALOG ───────────────────────────────────────────────────────────
+async function fetchMasterCatalog() {
+    const btn = document.getElementById('btnFetchMasterCatalog');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching…`; btn.disabled = true;
+    try {
+        if (!window.db) throw new Error("Firebase disconnected");
+        const masterRef = collection(db, "masterCatalog");
+        const snap      = await getDocs(masterRef);
+        window.masterDbCache   = snap.docs.map(d => d.data());
+        searchMasterDB();
+        showToast("MasterDB Synced");
+    } catch (e) {
+        console.error(e);
+        showToast("Failed to fetch MasterDB", true);
+    } finally {
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>`; btn.disabled = false;
+    }
+}
+
+function searchMasterDB() {
+    const q    = document.getElementById('masterSearchInput').value.toLowerCase().trim();
+    const list = document.getElementById('masterDbList');
+
+    if (window.masterDbCache.length === 0) return;
+    const filtered = window.masterDbCache.filter(p => (p.name || '').toLowerCase().includes(q)).slice(0, 50);
+
+    list.innerHTML = filtered.map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#F8FBFF;padding:10px 15px;border:1px solid var(--border);border-radius:10px;">
+            <div>
+                <div style="font-weight:700;font-size:14px;color:var(--text-main);">${p.name}</div>
+                <div style="font-size:11px;color:var(--text-muted);">${p.category || 'Gen'} • ₹${p.price}</div>
+            </div>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:11px;width:auto;" data-json='${JSON.stringify(p).replace(/'/g, "&#39;")}'>Import</button>
+        </div>
+    `).join('');
+}
+
+function importMasterProduct(p) {
+    document.getElementById('masterCatalogModal').style.display = 'none';
+    document.getElementById('pName').value     = p.name     || '';
+    document.getElementById('pCategory').value = p.category || '';
+    document.getElementById('pHSN').value      = p.hsn      || '';
+    document.getElementById('pGSTRate').value  = p.gstRate  || '';
+    if (document.getElementById('cfgLoose').checked) {
+        document.getElementById('pIsLoose').checked = p.isLoose || false;
+    }
+
+    const firstRow = document.querySelector('.variant-box');
+    if (firstRow) {
+        if (p.quantity) firstRow.querySelector('.v-unit').value  = p.quantity;
+        if (p.price)    firstRow.querySelector('.v-price').value = p.price;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('pName').focus();
+    showToast(`Imported "${p.name}"`);
+}
+
+// ─── BULK CSV/XLSX IMPORT (Adapted for Singularity Model) ───────────────────
+async function handleBulkImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        try {
+            document.getElementById('inventoryGrid').innerHTML =
+                '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i><br><br><span style="font-weight:600;">Parsing file…</span></div>';
+
+            const data     = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            if (jsonData.length === 0) throw new Error("File is empty");
+
+            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            let batch = (user.merchantId && window.db) ? writeBatch(db) : null;
+            let opCount = 0, addedCount = 0;
+
+            for (const row of jsonData) {
+                const name = row['Name'] || row['Product Name'] || row['Item'];
+                if (!name) continue;
+
+                const skuId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                const productDoc = {
+                    id: skuId, name: String(name), category: String(row['Category'] || 'General'),
+                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: '',
+                    reorderPoint: String(row['Reorder Point'] || row['Min Stock'] || ''),
+                    isLoose: String(row['Loose'] || '').toLowerCase() === 'true', dateAdded: new Date().toISOString(),
+                    variants: [{
+                        id: `${skuId}_v0`,
+                        quantity: String(row['Unit'] || row['Type'] || '1 pcs'),
+                        price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
+                        stock: parseFloat(row['Stock'] || row['Qty'] || 0),
+                        brand: String(row['Brand'] || ''), barcode: String(row['Barcode'] || ''),
+                        costPrice: '', expiryDate: '', baseQty: '', baseUnit: 'pcs'
+                    }]
+                };
+
+                window.allProducts.push(productDoc);
+                if (batch && user.merchantId) { batch.set(doc(db, "shops", user.merchantId, "products", skuId), productDoc); }
+                opCount++; addedCount++;
+
+                if (batch && opCount === 490) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
+            }
+
+            if (batch && opCount > 0 && user.merchantId) await batch.commit();
+
+            localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+            updateDatalists();
+            applyFilters();
+            showToast(`✅ Imported ${addedCount} products successfully!`);
+
+        } catch (error) {
+            console.error(error);
+            showToast("Import failed. Ensure valid CSV/Excel format.", true);
+            applyFilters();
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// ─── CLOUD SYNC (Adapted for Singularity Model) ───────────────────────────────
+async function pullFreshData() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if (!user.merchantId || !window.db) { showToast("No active cloud connection", true); return; }
+
+    document.getElementById('inventoryGrid').innerHTML =
+        '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);"><i class="fa-solid fa-cloud-arrow-down fa-bounce fa-2x" style="color:var(--primary);"></i><br><br><span style="font-weight:600;">Syncing from Cloud…</span></div>';
+
+    try {
+        const snap  = await getDocs(collection(db, "shops", user.merchantId, "products"));
+        let fresh = snap.docs.map(d => d.data());
+        
+        // Backward compatibility migration block: If old data structure is pulled (no variants array)
+        fresh = fresh.map(p => {
+            if(!p.variants) {
+                return {
+                    id: p.id, name: p.name, category: p.category, hsn: p.hsn, gstRate: p.gstRate, priceType: p.priceType,
+                    isLoose: p.isLoose, batchId: p.batchId, reorderPoint: p.reorderPoint, dateAdded: p.dateAdded || new Date().toISOString(),
+                    variants: [{
+                        id: `${p.id}_v0`, quantity: p.quantity || '1 pcs', price: p.price || 0, stock: p.stock || 0,
+                        brand: p.brand || '', barcode: p.barcode || '', expiryDate: p.expiryDate || '', costPrice: p.costPrice || '',
+                        baseQty: p.baseQty || '', baseUnit: p.baseUnit || 'pcs'
+                    }]
+                };
+            }
+            return p;
+        });
+
+        window.allProducts = fresh;
+        localStorage.setItem('bharatpos_products', JSON.stringify(fresh));
+        updateDatalists();
+        applyFilters();
+        showToast("☁️ Sync complete!");
+    } catch (e) {
+        showToast("Sync failed", true);
+        applyFilters();
+    }
+}
+
+// ─── LENS AI SCANNER ──────────────────────────────────────────────────────────
+async function startAIScan() {
+    const box   = document.getElementById('scannerBox');
+    const video = document.getElementById('cameraPreview');
+    box.style.display = 'block';
+    try {
+        window.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = window.cameraStream;
+        setTimeout(captureAndSendToAI, 3000);
+    } catch (err) {
+        showToast("Camera access denied", true);
+        box.style.display = 'none';
+    }
+}
+
+function stopAIScan() {
+    if (window.cameraStream) { window.cameraStream.getTracks().forEach(t => t.stop()); window.cameraStream = null; }
+    document.getElementById('scannerBox').style.display = 'none';
+}
+
+async function captureAndSendToAI() {
+    if (!window.cameraStream) return;
+    const video  = document.getElementById("cameraPreview");
+    const canvas = document.getElementById("captureCanvas");
+    const ctx    = canvas.getContext("2d");
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
+
+    stopAIScan();
+    showToast("✨ AI Lens analyzing...");
+
+    try {
+        const url  = window.buildUrl ? window.buildUrl('/ai-product-scan') : 'https://server-xy7s.onrender.com/ai-product-scan';
+        const res  = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: base64 }) });
+        const data = await res.json();
+
+        if (data && data.success && data.product) {
+            if(!document.getElementById("pName").value) document.getElementById("pName").value = data.product.name || "";
+            if(!document.getElementById("pCategory").value) document.getElementById("pCategory").value = data.product.category || "";
+
+            const firstVariant = document.querySelector('.variant-box');
+            if (firstVariant && data.product.price && !firstVariant.querySelector('.v-price').value) {
+                firstVariant.querySelector('.v-price').value = data.product.price;
+            }
+
+            if (document.getElementById('cfgAdvFields').checked && firstVariant) {
+                const bCode = firstVariant.querySelector('.v-barcode');
+                const eDate = firstVariant.querySelector('.v-expiry');
+                if (data.product.expiry_date && !eDate.value) eDate.value = data.product.expiry_date;
+                if (data.product.barcode && !bCode.value) bCode.value = data.product.barcode;
+            }
+            showToast("✨ AI Auto-fill complete");
+        }
+    } catch (e) {
+        showToast("AI Lens failed", true);
+    }
+}
+</script>
+</body>
+</html>
 
 
