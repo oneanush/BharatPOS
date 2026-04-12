@@ -105,14 +105,11 @@
     .btn-success:hover { transform: translateY(-1px); }
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
     .btn-outline:hover { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
-    .btn-scan { background: linear-gradient(135deg, rgba(25,118,210,0.08), rgba(25,118,210,0.04)); border: 1.5px solid var(--border); color: var(--primary); font-weight: 700; }
-    .btn-scan:hover { background: var(--primary-soft); border-color: var(--primary); }
     .btn-dashed { background: transparent; border: 1.5px dashed var(--border-hover); color: var(--primary); font-weight: 600; }
     .btn-dashed:hover { background: var(--primary-soft); }
     .btn-icon-only { padding: 8px; width: auto; border-radius: var(--radius-sm); }
 
     /* --- FILTER ENGINE --- */
-    .filter-engine { background: #FFFFFF; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px; box-shadow: var(--shadow-sm); animation: slideDown 0.2s ease;}
     .tier-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
     .tab-btn { padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;}
     .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px var(--primary-glow); }
@@ -211,7 +208,7 @@
   <div class="side-menu-links">
     <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
     <a href="billing.html" class="billing-link"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
-    <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
+    <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory / Stock</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
     <a href="sales.html"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
     <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
     <a href="customers.html"><i class="fa-solid fa-users"></i> <span class="lang-en">Bharat CRM</span><span class="lang-hinglish">Grahak (Customers)</span><span class="lang-hi">ग्राहक</span></a>
@@ -373,7 +370,10 @@
         <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--primary);border-color:var(--border-hover);" data-hint="en:Import products from Global Database|hinglish:Pehle se bani list se samaan jodein|hi:बनी-बनाई लिस्ट से सामान जोड़ें">
           <i class="fa-solid fa-globe"></i> <span class="lang-en">Global DB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">ग्लोबल लिस्ट</span>
         </button>
-        <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 13px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel|hinglish:Excel se samaan dalein|hi:एक्सेल से सामान डालें">
+        <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 13px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Export Inventory to Excel|hinglish:Apne samaan ki list Excel mein download karein|hi:एक्सेल में डाउनलोड करें">
+          <i class="fa-solid fa-file-export"></i> <span class="lang-en">Export</span><span class="lang-hinglish">Excel Nikalein</span><span class="lang-hi">एक्सेल निकालें</span>
+        </button>
+        <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 13px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel|hinglish:Excel se naya samaan dalein|hi:एक्सेल से सामान डालें">
           <i class="fa-solid fa-file-import"></i> <span class="lang-en">Import</span><span class="lang-hinglish">Excel Daalein</span><span class="lang-hi">एक्सेल इंपोर्ट</span>
         </button>
         <input type="file" id="csvUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;">
@@ -393,8 +393,8 @@
                 <span class="lang-hi">सामान का नाम या बारकोड खोजें...</span>
             </label>
         </div>
-        <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 0 15px; border-radius:10px;">
-            <i class="fa-solid fa-filter"></i> <span class="lang-en">Filters ▾</span><span class="lang-hinglish">Aur Filters ▾</span><span class="lang-hi">फ़िल्टर ▾</span>
+        <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 0 15px; border-radius:10px;" title="Aur Filters (More Filters)">
+            <i class="fa-solid fa-filter"></i> <span class="lang-en">Filters</span><span class="lang-hinglish">Aur Filters</span><span class="lang-hi">फ़िल्टर</span> ▾
         </button>
     </div>
 
@@ -461,14 +461,14 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Thresholds.</span><span class="lang-hinglish">Barcode, Expiry form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Thresholds & Cost.</span><span class="lang-hinglish">Barcode, Expiry form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Sell By Weight</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Defines Base Unit Quantities.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Defines Base Unit Quantities inside Variants.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgLoose"><span class="slider"></span></label>
       </div>
@@ -505,7 +505,7 @@
 </div>
 
 <div id="productDetailsModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:400px;">
+  <div class="modal-box" style="max-width:500px;">
     <div class="modal-header" style="background:var(--primary);color:white;">
       <h3 id="dName" style="margin:0;font-size:18px;font-weight:800;">Product Name</h3>
       <button id="btnCloseDetails" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
@@ -527,7 +527,7 @@
       </div>
 
       <div style="background:white;border-radius:12px;padding:15px;border:1px solid var(--border);margin-bottom:15px;box-shadow:var(--shadow-sm);">
-        <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:8px;text-transform:uppercase;">Operations</div>
+        <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:8px;text-transform:uppercase;">Global Details</div>
         <div class="detail-row"><span>Batch ID:</span><span id="dBatch">-</span></div>
         <div class="detail-row"><span>Alert Threshold:</span><span id="dAlert">-</span></div>
         <div class="detail-row" style="border:none;padding-bottom:0;"><span>Added On:</span><span id="dAdded">-</span></div>
@@ -668,7 +668,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupIntersectionObserver();
         addVariantUI();
 
-        // Auto-open GST tier if global setting requires it
         const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
         if (isGstGlobal) {
             document.getElementById('tierGst').classList.add('active');
@@ -737,6 +736,9 @@ function bindAllEvents() {
         document.body.className = `lang-${nextLang}`;
         localStorage.setItem('app_lang', nextLang);
     });
+
+    // Export Button
+    document.getElementById('btnExportCsv').addEventListener('click', handleExportCSV);
 
     // Tutorial Buttons
     document.getElementById('btnCloseTutorial').addEventListener('click', () => {
@@ -945,14 +947,33 @@ function checkDemandMitraRouting() {
     }
 }
 
-// ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
+// ─── EXPORT CSV ──────────────────────────────────────────────────────────────
+function handleExportCSV() {
+    if(window.allProducts.length === 0) return showToast("No products to export", true);
+    try {
+        const ws = XLSX.utils.json_to_sheet(window.allProducts);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+        XLSX.writeFile(wb, `BharatPOS_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showToast("✅ Export Successful!");
+    } catch(e) {
+        showToast("Export Failed", true);
+    }
+}
+
+// ─── QUAGGA BARCODE ENGINE (Fast Auto-focus) ─────────────────────────────────
 window.startBarcodeScan = function(btnEl) {
     window.targetBarcodeInput = btnEl.previousElementSibling;
     const modal = document.getElementById('barcodeScannerModal');
     modal.style.display = 'flex';
     
     Quagga.init({
-        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
+        inputStream: { 
+            name: "Live", 
+            type: "LiveStream", 
+            target: document.querySelector('#quaggaPreview'), 
+            constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } 
+        },
         decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
     }, function(err) {
         if (err) { console.log(err); showToast("Scanner failed to start", true); return; }
@@ -1132,7 +1153,7 @@ async function handleSaveProduct(e) {
     }
 }
 
-// ─── FILTER ENGINE & DATALISTS ────────────────────────────────────────────────
+// ─── FILTER ENGINE & DATALISTS (Multi-Select Support) ────────────────────────
 function calculateABCTiers() {
     const freqs = {};
     window.salesHistory.forEach(sale => {
@@ -1218,6 +1239,7 @@ function applyFilters() {
 
     let filtered = window.allProducts;
 
+    // Apply Multi-Select Tiers
     if (window.activeTiers.size > 0) {
         filtered = filtered.filter(p => window.activeTiers.has(getTier(p.id)));
     }
@@ -1484,33 +1506,32 @@ function openProductDetails(encodedName) {
     const threshold = (base.reorderPoint !== undefined && base.reorderPoint !== '') ? base.reorderPoint : 5;
     document.getElementById('dAlert').innerText       = `${threshold} Units`;
 
+    let dateAddedDisplay = '-';
+    if(base.dateAdded) {
+        const d = new Date(base.dateAdded);
+        if(!isNaN(d.getTime())) dateAddedDisplay = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+    document.getElementById('dAdded').innerText = dateAddedDisplay;
+
     document.getElementById('dVariantsList').innerHTML = variants.map(v => {
-        let advHtml = '';
-        if(document.getElementById('cfgAdvFields').checked) {
-            advHtml = `
-            <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11px;">
-                <span style="color:var(--text-muted);"><i class="fa-solid fa-barcode"></i> ${v.barcode || '-'}</span>
-                <span style="color:var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate || '-'}</span>
-                <span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ${v.costPrice ? `₹${v.costPrice}` : '-'}</span>
-            </div>`;
-        }
-        let looseHtml = '';
-        if(document.getElementById('cfgLoose').checked && v.baseQty) {
-            looseHtml = `<div style="font-size:10px; color:var(--text-light); margin-top:2px;"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||''}</div>`;
-        }
+        let details = [];
+        if(v.barcode) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
+        if(v.expiryDate) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
+        if(v.costPrice) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
+        if(v.baseQty) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||''}</span>`);
+        
+        let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11px;">${details.join('')}</div>` : '';
+
         return `
         <div style="background:#FFFFFF;padding:12px;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow-sm);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                    <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
-                    ${looseHtml}
-                </div>
+                <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
                 <div style="text-align:right;">
                     <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:15px;">₹${v.price}</div>
                     <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--text-muted)'};font-weight:700;margin-top:2px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
                 </div>
             </div>
-            ${advHtml}
+            ${detailsHtml}
         </div>
         `;
     }).join('');
@@ -1532,6 +1553,25 @@ function loadProductForEdit(encodedName) {
     document.getElementById('pGSTRate').value  = base.gstRate  || '';
     if (base.priceType) document.getElementById('pPriceType').value = base.priceType;
 
+    document.getElementById('pReorderPoint').value = base.reorderPoint || '';
+    document.getElementById('pBrand').value = base.brand || '';
+    document.getElementById('pBatchId').value   = base.batchId || '';
+    document.getElementById('pIsLoose').checked = base.isLoose || false;
+
+    // Auto-enable UI sections if they contain data
+    if (base.brand || base.barcode || base.expiryDate || base.costPrice || base.reorderPoint) {
+        document.getElementById('cfgAdvFields').checked = true;
+    }
+    if (base.batchId) document.getElementById('cfgBatch').checked = true;
+    if (base.isLoose) document.getElementById('cfgLoose').checked = true;
+
+    // Apply Settings
+    applySettingsUI(
+        document.getElementById('cfgAdvFields').checked,
+        document.getElementById('cfgBatch').checked,
+        document.getElementById('cfgLoose').checked
+    );
+
     if (base.hsn || base.gstRate) {
         const gstContent = document.getElementById('tierGst');
         if (!gstContent.classList.contains('active')) {
@@ -1545,26 +1585,19 @@ function loadProductForEdit(encodedName) {
         }
     }
 
-    if (document.getElementById('cfgLoose').checked) document.getElementById('pIsLoose').checked = base.isLoose || false;
-    document.getElementById('pReorderPoint').value = base.reorderPoint || '';
-    
-    if (document.getElementById('cfgAdvFields').checked) document.getElementById('pBrand').value = base.brand || '';
-    if (document.getElementById('cfgBatch').checked) document.getElementById('pBatchId').value   = base.batchId || '';
-
-    if(base.isLoose) document.getElementById('variantEngineWrapper').classList.add('show-loose');
-    if(document.getElementById('cfgAdvFields').checked) document.getElementById('variantEngineWrapper').classList.add('show-adv');
-
     document.getElementById('variantEngine').innerHTML = '';
     targetVariants.forEach(v => addVariantUI(v));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     document.getElementById('pName').focus();
-    showToast(document.body.classList.contains('lang-hin') ? `✏️ "${name}" Edit mode mein khul gaya` : `✏️ Loaded "${name}" for editing`);
+    
+    const isHin = document.body.classList.contains('lang-hin');
+    showToast(isHin ? `✏️ "${name}" Edit mode mein khul gaya` : `✏️ Loaded "${name}" for editing`);
 }
 
 async function deleteProduct(encodedName) {
     const name = decodeURIComponent(encodedName);
-    const isHin = document.body.classList.contains('lang-hin');
+    const isHin = document.body.classList.contains('lang-hin') || document.body.classList.contains('lang-hi');
     const confirmMsg = isHin ? `Kya aap "${name}" ko pakka delete karna chahte hain?` : `Delete all variants of "${name}"?`;
     if (!confirm(confirmMsg)) return;
 
@@ -1582,7 +1615,7 @@ async function deleteProduct(encodedName) {
             toDelete.forEach(p => batch.delete(doc(db, "shops", user.merchantId, "products", p.id)));
             await batch.commit();
         } catch (e) {
-            console.warn("Delete offline mode — removed locally only.");
+            console.warn("Delete offline mode — removed locally only.", e);
         }
     }
 }
@@ -1602,7 +1635,7 @@ async function fetchMasterCatalog() {
         console.error(e);
         showToast("Failed to fetch MasterDB", true);
     } finally {
-        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Fetch Global Database`; btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>`; btn.disabled = false;
     }
 }
 
@@ -1798,8 +1831,6 @@ async function captureAndSendToAI() {
 </script>
 </body>
 </html>
-
-
 
 
 
