@@ -76,21 +76,19 @@
     .floating-label { position: absolute; left: 14px; top: 13px; color: var(--text-muted); font-size: 13px; font-weight: 500; pointer-events: none; transition: all 0.2s; background: transparent; }
     .form-input:focus ~ .floating-label, .form-input:not(:placeholder-shown) ~ .floating-label, .form-select:focus ~ .floating-label, .form-select:valid ~ .floating-label { top: -8px; left: 10px; font-size: 10.5px; font-weight: 700; color: var(--primary); background: #fff; padding: 0 5px; border-radius: 4px; letter-spacing: 0.3px; }
 
-    /* Accordion Toggles */
     .tier-toggle { width: 100%; background: var(--bg-input); border: 1.5px solid var(--border); padding: 11px 15px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif; }
     .tier-toggle:hover { background: #EBF3FF; border-color: var(--primary); }
     .tier-content { display: none; padding: 16px; background: linear-gradient(135deg, rgba(25,118,210,0.03), rgba(21,101,192,0.02)); border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; animation: slideDown 0.25s ease; }
     .tier-content.active { display: block; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Variant Engine Classes */
+    /* Variant Engine */
     .variant-box { background: linear-gradient(135deg, rgba(25,118,210,0.04), rgba(25,118,210,0.02)); border: 1.5px solid rgba(25,118,210,0.18); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; position: relative; transition: all 0.2s; }
     .variant-box:hover { border-color: rgba(25,118,210,0.35); }
     .variant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .btn-remove-var { position: absolute; top: -9px; right: -9px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; box-shadow: 0 2px 8px rgba(220,38,38,0.35); transition: transform 0.2s; }
     .btn-remove-var:hover { transform: scale(1.1); }
     
-    /* Logic Toggles for Variant Details */
     .adv-only-field { display: none; margin-top:10px; border-top: 1px dashed rgba(25,118,210,0.2); padding-top:10px;}
     .loose-only-field { display: none; margin-top:10px; }
     .show-adv .adv-only-field { display: block; }
@@ -111,7 +109,7 @@
     .btn-dashed:hover { background: var(--primary-soft); }
     .btn-icon-only { padding: 8px; width: auto; border-radius: var(--radius-sm); }
 
-    /* --- FILTER ENGINE (3-LAYER) --- */
+    /* --- FILTER ENGINE --- */
     .filter-engine { background: #FFFFFF; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px; box-shadow: var(--shadow-sm); }
     .tier-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
     .tab-btn { padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;}
@@ -159,11 +157,14 @@
     input:checked + .slider { background: var(--success); }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* --- SCANNER --- */
+    /* --- SCANNERS --- */
     .scanner-box { background: #0F172A; border-radius: var(--radius-md); overflow: hidden; position: relative; margin-bottom: 20px; display: none; border: 2px solid var(--primary); box-shadow: 0 8px 24px rgba(25,118,210,0.2); }
-    #cameraPreview { width: 100%; height: 240px; object-fit: cover; }
+    #cameraPreview, #quaggaPreview { width: 100%; height: 240px; object-fit: cover; }
     .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 12px #10B981; animation: laser 2s infinite; }
     @keyframes laser { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+    #barcodeScannerModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .barcode-modal-content { background: #fff; border-radius: var(--radius-md); padding: 15px; width: 90%; max-width: 400px; text-align: center; }
 
     /* --- TOAST --- */
     #toast { position: fixed; bottom: 28px; right: 28px; background: var(--success); color: white; padding: 13px 22px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; max-width: 340px; }
@@ -243,7 +244,7 @@
       <canvas id="captureCanvas" style="display:none;"></canvas>
       <div style="position:absolute;bottom:10px;width:100%;text-align:center;">
         <button id="btnStopScan" type="button" class="btn" style="width:auto;display:inline-flex;padding:7px 18px;font-size:12px;background:rgba(220,38,38,0.85);color:white;border-radius:8px;border:none;">
-          <i class="fa-solid fa-xmark"></i> Stop Scan
+          <i class="fa-solid fa-xmark"></i> Stop AI Lens
         </button>
       </div>
     </div>
@@ -364,6 +365,9 @@
         <select id="catTabSelect" class="tab-btn" style="appearance:none; padding-right:20px; outline:none; cursor:pointer;">
             <option value="">Categories ▾</option>
         </select>
+        <select id="batchTabSelect" class="tab-btn" style="appearance:none; padding-right:20px; outline:none; cursor:pointer;">
+            <option value="">Batches ▾</option>
+        </select>
       </div>
       <div class="branch-filters">
         <select id="filterBrand" class="branch-select"><option value="">All Brands</option></select>
@@ -399,7 +403,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;font-size:14px;color:var(--text-main);">Enable Advanced Fields</div>
-          <div style="font-size:11px;color:var(--text-muted);">Show Barcode, Expiry, Cost Price &amp; Brand.</div>
+          <div style="font-size:11px;color:var(--text-muted);">Show Barcode, Expiry, Cost Price inside Variants.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
       </div>
@@ -419,6 +423,16 @@
       </div>
     </div>
   </div>
+</div>
+
+<div id="barcodeScannerModal">
+    <div class="barcode-modal-content">
+        <h4 style="margin-top:0; margin-bottom:10px;">Scan Barcode</h4>
+        <div id="quaggaPreview" style="background:#000; border-radius:10px; overflow:hidden; position:relative;">
+            <div class="scan-laser"></div>
+        </div>
+        <button type="button" class="btn btn-outline" style="margin-top:15px;" onclick="window.stopBarcodeScan()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+    </div>
 </div>
 
 <div id="productDetailsModal" class="modal-overlay">
@@ -441,7 +455,7 @@
         <div class="detail-row"><span>HSN Code:</span><span id="dHSN">-</span></div>
         <div class="detail-row"><span>GST Rate:</span><span id="dGST">-</span></div>
         <div class="detail-row" style="border:none;padding-bottom:0;"><span>Tax Type:</span><span id="dTaxType" style="text-transform:capitalize;">-</span></div>
-        <div class="detail-row" style="border:none;padding-bottom:0;"><span>Batch ID:</span><span id="dBatchID">-</span></div>
+        <div class="detail-row" style="border:none;padding-bottom:0;margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;"><span>Batch ID:</span><span id="dBatchId">-</span></div>
       </div>
 
       <div style="font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:8px;text-transform:uppercase;padding-left:5px;">Variants &amp; Operations</div>
@@ -495,8 +509,10 @@ window.currentEditingName = null;
 window.currentDetailName = null;
 window.masterDbCache = [];
 
-window.activeTier = 'ALL';
+// Filtering multi-select state
+window.activeTiers = new Set();
 window.activeCategory = '';
+window.activeBatch = '';
 window.filterState = { brand: '', tax: '', lowStock: false, expiring: false, newest: false, query: '' };
 
 window.currentPage = 0;
@@ -504,6 +520,7 @@ window.pageSize = 50;
 window.currentFilteredData = [];
 window.observer = null;
 window.cameraStream = null;
+window.targetBarcodeInput = null;
 
 // ─── INITIALIZATION ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -569,7 +586,6 @@ function applySettingsUI(isAdv, isBatch, isLoose) {
     document.getElementById('batchInputContainer').style.display     = isBatch ? 'block' : 'none';
     document.getElementById('looseInputContainer').style.display     = isLoose ? 'flex'  : 'none';
     
-    // Toggle advanced classes in the variant engine
     const engine = document.getElementById('variantEngineWrapper');
     if (isAdv) engine.classList.add('show-adv'); else engine.classList.remove('show-adv');
     if (isLoose) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
@@ -577,13 +593,11 @@ function applySettingsUI(isAdv, isBatch, isLoose) {
 
 // ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
 function bindAllEvents() {
-    // Navigation
     document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
     document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
     document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
     document.getElementById('btnNavPos').addEventListener('click', () => window.location.href = 'billing.html');
 
-    // Forms & Settings
     document.getElementById('btnToggleGst').addEventListener('click', function () {
         const content = document.getElementById('tierGst');
         const chevron = this.querySelector('.chevron');
@@ -619,13 +633,11 @@ function bindAllEvents() {
         if(e.target.checked) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
     });
 
-    // Auto-Batch System
     document.getElementById('btnAutoBatch').addEventListener('click', () => {
         const prefix = (document.getElementById('pCategory').value.substring(0,3).toUpperCase() || 'BAT');
         document.getElementById('pBatchId').value = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
     });
 
-    // Master Catalog
     document.getElementById('btnOpenMasterCatalog').addEventListener('click',  () => document.getElementById('masterCatalogModal').style.display = 'flex');
     document.getElementById('btnCloseMasterCatalog').addEventListener('click', () => document.getElementById('masterCatalogModal').style.display = 'none');
     document.getElementById('btnFetchMasterCatalog').addEventListener('click', fetchMasterCatalog);
@@ -637,18 +649,27 @@ function bindAllEvents() {
         }
     });
 
-    // Bulk Import & Cloud
     document.getElementById('btnTriggerCsv').addEventListener('click',  () => document.getElementById('csvUpload').click());
     document.getElementById('csvUpload').addEventListener('change',     handleBulkImport);
     document.getElementById('btnSyncCloud').addEventListener('click',   pullFreshData);
 
-    // Filters
+    // Multi-Select Tier Filtering
     document.getElementById('tierTabs').addEventListener('click', (e) => {
         if (e.target.classList.contains('tab-btn') && e.target.tagName !== 'SELECT') {
-            setTabTier(e.target);
+            toggleTierFilter(e.target.getAttribute('data-tier'), e.target);
         }
     });
-    document.getElementById('catTabSelect').addEventListener('change', (e) => setCategoryTab(e.target));
+    document.getElementById('catTabSelect').addEventListener('change', (e) => {
+        window.activeCategory = e.target.value;
+        updateAllTabHighlight();
+        applyFilters();
+    });
+    document.getElementById('batchTabSelect').addEventListener('change', (e) => {
+        window.activeBatch = e.target.value;
+        updateAllTabHighlight();
+        applyFilters();
+    });
+
     document.getElementById('filterBrand').addEventListener('change', applyFilters);
     document.getElementById('filterTax').addEventListener('change',   applyFilters);
     document.getElementById('searchInput').addEventListener('input',  applyFilters);
@@ -656,7 +677,6 @@ function bindAllEvents() {
         chip.addEventListener('click', (e) => toggleChip(e.currentTarget));
     });
 
-    // Inventory Grid & Modals
     document.getElementById('inventoryGrid').addEventListener('click', (e) => {
         const card = e.target.closest('.sku-card');
         if (card) openProductDetails(card.getAttribute('data-name'));
@@ -672,13 +692,12 @@ function bindAllEvents() {
         if (window.currentDetailName) deleteProduct(window.currentDetailName);
     });
 
-    // Scanner
     document.getElementById('btnStartScan').addEventListener('click', startAIScan);
     document.getElementById('btnStopScan').addEventListener('click',  stopAIScan);
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) overlay.style.display = 'none';
+            if (e.target === overlay && e.target.id !== 'barcodeScannerModal') overlay.style.display = 'none';
         });
     });
 }
@@ -706,7 +725,6 @@ function formatStock(amount, unitType) {
     return Math.floor(amount || 0);
 }
 
-// ─── DEMAND MITRA ────────────────────────────────────────────────────────────
 function checkDemandMitraRouting() {
     const urlParams = new URLSearchParams(window.location.search);
     const restockName = urlParams.get('restock');
@@ -725,6 +743,36 @@ function checkDemandMitraRouting() {
 }
 
 // ─── VARIANT ENGINE ───────────────────────────────────────────────────────────
+window.startBarcodeScan = function(btnEl) {
+    window.targetBarcodeInput = btnEl.previousElementSibling;
+    const modal = document.getElementById('barcodeScannerModal');
+    modal.style.display = 'flex';
+    
+    Quagga.init({
+        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment" } },
+        decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
+    }, function(err) {
+        if (err) { console.log(err); showToast("Scanner failed to start", true); return; }
+        Quagga.start();
+    });
+
+    Quagga.onDetected(function(result) {
+        if(window.targetBarcodeInput && result.codeResult.code) {
+            window.targetBarcodeInput.value = result.codeResult.code;
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(e=>{});
+            window.stopBarcodeScan();
+            showToast("Barcode Scanned");
+        }
+    });
+};
+
+window.stopBarcodeScan = function() {
+    Quagga.stop();
+    document.getElementById('barcodeScannerModal').style.display = 'none';
+    window.targetBarcodeInput = null;
+};
+
 function addVariantUI(data = null) {
     const container = document.getElementById('variantEngine');
     const div = document.createElement('div');
@@ -749,8 +797,9 @@ function addVariantUI(data = null) {
         </div>
         
         <div class="variant-grid adv-only-field">
-            <div class="form-group" style="margin-bottom:0;">
-                <input type="text" class="form-input v-barcode" placeholder=" " value="${data?.barcode || ''}" style="font-family:'JetBrains Mono';">
+            <div class="form-group" style="margin-bottom:0; position:relative;">
+                <input type="text" class="form-input v-barcode" placeholder=" " value="${data?.barcode || ''}" style="font-family:'JetBrains Mono'; padding-right:40px;">
+                <button type="button" onclick="window.startBarcodeScan(this)" style="position:absolute; right:8px; top:11px; background:none; border:none; color:var(--primary); font-size:16px; cursor:pointer;"><i class="fa-solid fa-barcode"></i></button>
                 <label class="floating-label"><i class="fa-solid fa-barcode"></i> Barcode</label>
             </div>
             <div class="form-group" style="margin-bottom:0;">
@@ -764,8 +813,11 @@ function addVariantUI(data = null) {
         </div>
 
         <div class="form-group loose-only-field" style="margin-bottom:0;">
-            <input type="number" step="0.001" class="form-input v-base-qty" placeholder=" " value="${data?.baseQty || ''}">
-            <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> 1 Stock Contains (Qty in Kg/L/Pcs)</label>
+            <div style="display:flex; gap:8px;">
+                <input type="number" step="0.001" class="form-input v-base-qty" placeholder=" " value="${data?.baseQty || ''}" style="flex:1;">
+                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${data?.baseUnit || ''}" style="width: 90px;">
+            </div>
+            <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> 1 Stock Contains</label>
         </div>
 
         <input type="hidden" class="v-id" value="${data?.id || ''}">
@@ -819,12 +871,13 @@ async function handleSaveProduct(e) {
             let vExpiry    = isAdv ? box.querySelector('.v-expiry').value : "";
             let vCost      = isAdv ? box.querySelector('.v-cost').value : "";
             let vBaseQty   = isLoose ? box.querySelector('.v-base-qty').value : "";
+            let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "";
 
             const finalData = {
                 id: vId, name: name, category: cat, brand: brand, batchId: batchId,
                 quantity: unit, price: parseFloat(price), stock: existStock + addStock,
                 hsn: hsn, gstRate: gstRate, priceType: priceType, isLoose: isLoose,
-                barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, baseQty: vBaseQty, dateAdded: vAdded
+                barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, baseQty: vBaseQty, baseUnit: vBaseUnit, dateAdded: vAdded
             };
 
             window.allProducts.push(finalData);
@@ -832,7 +885,6 @@ async function handleSaveProduct(e) {
             newSavedIds.push(vId);
         }
 
-        // Local Save First
         localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
         updateDatalists();
         applyFilters();
@@ -844,7 +896,6 @@ async function handleSaveProduct(e) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         showToast("✅ SKU Saved Successfully");
 
-        // Firebase Sync
         if (user.merchantId && db) {
             try {
                 const batch = writeBatch(db);
@@ -857,7 +908,6 @@ async function handleSaveProduct(e) {
                 console.warn("Offline – data saved to device only.");
             }
         }
-
     } catch (err) {
         console.error(err);
         showToast("Critical error saving data", true);
@@ -866,7 +916,7 @@ async function handleSaveProduct(e) {
     }
 }
 
-// ─── FILTER ENGINE & DATALISTS ────────────────────────────────────────────────
+// ─── FILTER ENGINE & DATALISTS (Multi-Select Support) ────────────────────────
 function calculateABCTiers() {
     const freqs = {};
     window.salesHistory.forEach(sale => {
@@ -895,33 +945,43 @@ function updateDatalists() {
     document.getElementById('brandList').innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
     document.getElementById('batchList').innerHTML = Array.from(batches).map(b => `<option value="${b}">`).join('');
 
-    // Update the Category Select Dropdown in the Tab Bar
     document.getElementById('catTabSelect').innerHTML = '<option value="">Categories ▾</option>' + 
         Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
+        
+    document.getElementById('batchTabSelect').innerHTML = '<option value="">Batches ▾</option>' + 
+        Array.from(batches).map(b => `<option value="${b}">${b}</option>`).join('');
 
     document.getElementById('filterBrand').innerHTML = '<option value="">All Brands</option>' + Array.from(brands).map(b => `<option value="${b}">${b}</option>`).join('');
     document.getElementById('filterTax').innerHTML = '<option value="">All Taxes (GST)</option>' + Array.from(taxes).map(t => `<option value="${t}">GST ${t}%</option>`).join('');
 }
 
-function setCategoryTab(selectEl) {
-    const val = selectEl.value;
-    if(val) {
-        window.activeTier = 'CAT';
-        window.activeCategory = val;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        selectEl.classList.add('active');
-        applyFilters();
+function updateAllTabHighlight() {
+    if(window.activeTiers.size === 0 && !window.activeCategory && !window.activeBatch) {
+        document.querySelector('[data-tier="ALL"]').classList.add('active');
     } else {
-        // Fallback to ALL if cleared
-        document.querySelector('[data-tier="ALL"]').click();
+        document.querySelector('[data-tier="ALL"]').classList.remove('active');
     }
 }
 
-function setTabTier(btnEl) {
-    window.activeTier = btnEl.getAttribute('data-tier');
-    document.getElementById('catTabSelect').value = ""; // reset dropdown
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btnEl.classList.add('active');
+function toggleTierFilter(tier, btnEl) {
+    if (tier === 'ALL') {
+        window.activeTiers.clear();
+        window.activeCategory = '';
+        window.activeBatch = '';
+        document.getElementById('catTabSelect').value = '';
+        document.getElementById('batchTabSelect').value = '';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+    } else {
+        if (window.activeTiers.has(tier)) {
+            window.activeTiers.delete(tier);
+            btnEl.classList.remove('active');
+        } else {
+            window.activeTiers.add(tier);
+            btnEl.classList.add('active');
+        }
+        updateAllTabHighlight();
+    }
     applyFilters();
 }
 
@@ -942,10 +1002,15 @@ function applyFilters() {
 
     let filtered = window.allProducts;
 
-    if (window.activeTier === 'A' || window.activeTier === 'B' || window.activeTier === 'C') {
-        filtered = filtered.filter(p => getTier(p.id) === window.activeTier);
-    } else if (window.activeTier === 'CAT') {
+    // Apply Multi-Select Tiers
+    if (window.activeTiers.size > 0) {
+        filtered = filtered.filter(p => window.activeTiers.has(getTier(p.id)));
+    }
+    if (window.activeCategory) {
         filtered = filtered.filter(p => (p.category || '').toLowerCase() === window.activeCategory.toLowerCase());
+    }
+    if (window.activeBatch) {
+        filtered = filtered.filter(p => (p.batchId || '') === window.activeBatch);
     }
 
     if (window.filterState.brand)    filtered = filtered.filter(p => p.brand === window.filterState.brand);
@@ -960,21 +1025,21 @@ function applyFilters() {
     if (window.filterState.newest) {
         filtered.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
     } else if (window.filterState.query === '') {
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) => (a.name||'').localeCompare(b.name||''));
     }
 
     if (window.filterState.query) {
         const fuzzyReg = new RegExp(window.filterState.query.split('').join('.*'), 'i');
         filtered = filtered.filter(p =>
-            p.name.toLowerCase().includes(window.filterState.query) ||
-            fuzzyReg.test(p.name) ||
+            (p.name||'').toLowerCase().includes(window.filterState.query) ||
+            fuzzyReg.test(p.name||'') ||
             (p.barcode || '').includes(window.filterState.query)
         );
     }
 
     const grouped = {};
     filtered.forEach(p => {
-        const k = p.name.toLowerCase();
+        const k = (p.name||'').toLowerCase();
         if (!grouped[k]) grouped[k] = { name: p.name, cat: p.category, brand: p.brand, totalStock: 0, variants: [] };
         grouped[k].totalStock += Number(p.stock || 0);
         grouped[k].variants.push(p);
@@ -1001,7 +1066,7 @@ function renderChunk() {
             <i class="fa-solid fa-box-open" style="color:var(--primary);font-size:22px;"></i>
           </div>
           <div style="font-weight:700;font-size:14px;color:var(--text-main);">No SKUs found</div>
-          <div style="font-size:12.5px;color:var(--text-muted);margin-top:5px;">Add your first product using the form</div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-top:5px;">Adjust filters or use search.</div>
         </div>`;
         document.getElementById('loadMoreTrigger').style.display = 'none';
         return;
@@ -1069,7 +1134,7 @@ function setupIntersectionObserver() {
 function openProductDetails(encodedName) {
     const name     = decodeURIComponent(encodedName);
     window.currentDetailName = name;
-    const variants = window.allProducts.filter(p => p.name.toLowerCase() === name.toLowerCase());
+    const variants = window.allProducts.filter(p => (p.name||'').toLowerCase() === name.toLowerCase());
     if (!variants.length) return;
 
     const base  = variants[0];
@@ -1085,6 +1150,7 @@ function openProductDetails(encodedName) {
     document.getElementById('dHSN').innerText         = base.hsn     || '-';
     document.getElementById('dGST').innerText         = base.gstRate ? `${base.gstRate}%` : '-';
     document.getElementById('dTaxType').innerText     = base.priceType || 'inclusive';
+    document.getElementById('dBatch').innerText       = base.batchId || '-';
 
     document.getElementById('dVariantsList').innerHTML = variants.map(v => {
         let advHtml = '';
@@ -1096,10 +1162,17 @@ function openProductDetails(encodedName) {
                 <span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ${v.costPrice ? `₹${v.costPrice}` : '-'}</span>
             </div>`;
         }
+        let looseHtml = '';
+        if(document.getElementById('cfgLoose').checked && v.baseQty) {
+            looseHtml = `<div style="font-size:10px; color:var(--text-light); margin-top:2px;"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||''}</div>`;
+        }
         return `
         <div style="background:#FFFFFF;padding:12px;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow-sm);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</span>
+                <div>
+                    <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
+                    ${looseHtml}
+                </div>
                 <div style="text-align:right;">
                     <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:15px;">₹${v.price}</div>
                     <div style="font-size:11px;color:${v.stock <= 5 ? 'var(--danger)' : 'var(--text-muted)'};font-weight:700;margin-top:2px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
@@ -1114,8 +1187,8 @@ function openProductDetails(encodedName) {
 }
 
 function loadProductForEdit(encodedName) {
-    const name             = decodeURIComponent(encodedName);
-    const targetVariants = window.allProducts.filter(p => p.name.toLowerCase() === name.toLowerCase());
+    const name = decodeURIComponent(encodedName);
+    const targetVariants = window.allProducts.filter(p => (p.name||'').toLowerCase() === name.toLowerCase());
     if (!targetVariants.length) return;
 
     window.currentEditingName = name;
@@ -1144,8 +1217,8 @@ function loadProductForEdit(encodedName) {
     if (document.getElementById('cfgAdvFields').checked) document.getElementById('pBrand').value = base.brand || '';
     if (document.getElementById('cfgBatch').checked) document.getElementById('pBatchId').value   = base.batchId || '';
 
-    // Apply the loose toggles immediately if true
     if(base.isLoose) document.getElementById('variantEngineWrapper').classList.add('show-loose');
+    if(document.getElementById('cfgAdvFields').checked) document.getElementById('variantEngineWrapper').classList.add('show-adv');
 
     document.getElementById('variantEngine').innerHTML = '';
     targetVariants.forEach(v => addVariantUI(v));
@@ -1160,9 +1233,9 @@ async function deleteProduct(encodedName) {
     if (!confirm(`Delete all variants of "${name}"?`)) return;
 
     const user     = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const toDelete = window.allProducts.filter(p => p.name.toLowerCase() === name.toLowerCase());
+    const toDelete = window.allProducts.filter(p => (p.name||'').toLowerCase() === name.toLowerCase());
 
-    window.allProducts = window.allProducts.filter(p => p.name.toLowerCase() !== name.toLowerCase());
+    window.allProducts = window.allProducts.filter(p => (p.name||'').toLowerCase() !== name.toLowerCase());
     localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
     applyFilters();
     showToast("🗑️ Deleted successfully");
@@ -1202,7 +1275,8 @@ function searchMasterDB() {
     const list = document.getElementById('masterDbList');
 
     if (window.masterDbCache.length === 0) return;
-    const filtered = window.masterDbCache.filter(p => p.name.toLowerCase().includes(q)).slice(0, 50);
+    // 🟢 FIXED: Safe string checking to prevent TypeError
+    const filtered = window.masterDbCache.filter(p => (p.name || '').toLowerCase().includes(q)).slice(0, 50);
 
     list.innerHTML = filtered.map(p => `
         <div style="display:flex;justify-content:space-between;align-items:center;background:#F8FBFF;padding:10px 15px;border:1px solid var(--border);border-radius:10px;">
@@ -1373,7 +1447,6 @@ async function captureAndSendToAI() {
                 firstVariant.querySelector('.v-price').value = data.product.price;
             }
 
-            // Fill advanced fields if enabled (and empty)
             if (document.getElementById('cfgAdvFields').checked && firstVariant) {
                 const bCode = firstVariant.querySelector('.v-barcode');
                 const eDate = firstVariant.querySelector('.v-expiry');
@@ -1389,3 +1462,17 @@ async function captureAndSendToAI() {
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
