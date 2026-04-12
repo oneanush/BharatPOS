@@ -105,11 +105,14 @@
     .btn-success:hover { transform: translateY(-1px); }
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
     .btn-outline:hover { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+    .btn-scan { background: linear-gradient(135deg, rgba(25,118,210,0.08), rgba(25,118,210,0.04)); border: 1.5px solid var(--border); color: var(--primary); font-weight: 700; }
+    .btn-scan:hover { background: var(--primary-soft); border-color: var(--primary); }
     .btn-dashed { background: transparent; border: 1.5px dashed var(--border-hover); color: var(--primary); font-weight: 600; }
     .btn-dashed:hover { background: var(--primary-soft); }
     .btn-icon-only { padding: 8px; width: auto; border-radius: var(--radius-sm); }
 
     /* --- FILTER ENGINE --- */
+    .filter-engine { background: #FFFFFF; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px; box-shadow: var(--shadow-sm); animation: slideDown 0.2s ease;}
     .tier-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
     .tab-btn { padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;}
     .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px var(--primary-glow); }
@@ -188,15 +191,21 @@
     .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
     .detail-row span:first-child { color: var(--text-muted); font-weight: 600; }
     .detail-row span:last-child { color: var(--text-main); font-weight: 700; text-align: right; }
+    
+    /* Ensure no datalist issues */
+    datalist { display: none; }
   </style>
-
-  <datalist id="unitOptions">
-    <option value="pcs"></option><option value="kg"></option><option value="g"></option>
-    <option value="L"></option><option value="ml"></option><option value="box"></option>
-    <option value="pack"></option><option value="dozen"></option>
-  </datalist>
 </head>
 <body class="lang-en">
+
+<datalist id="unitOptions">
+  <option value="pcs"></option><option value="kg"></option><option value="g"></option>
+  <option value="L"></option><option value="ml"></option><option value="box"></option>
+  <option value="pack"></option><option value="dozen"></option>
+</datalist>
+<datalist id="brandList"></datalist>
+<datalist id="catList"></datalist>
+<datalist id="batchList"></datalist>
 
 <div id="menuOverlay" class="menu-overlay"></div>
 
@@ -208,7 +217,7 @@
   <div class="side-menu-links">
     <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
     <a href="billing.html" class="billing-link"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
-    <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory / Stock</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
+    <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
     <a href="sales.html"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
     <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
     <a href="customers.html"><i class="fa-solid fa-users"></i> <span class="lang-en">Bharat CRM</span><span class="lang-hinglish">Grahak (Customers)</span><span class="lang-hi">ग्राहक</span></a>
@@ -271,7 +280,6 @@
       <div class="form-group">
         <input type="text" id="pCategory" class="form-input" list="catList" placeholder=" " autocomplete="off">
         <label class="floating-label"><span class="lang-en">Category</span><span class="lang-hinglish">Category (Jaise: Sabji, Kirana)</span><span class="lang-hi">श्रेणी (जैसे: किराना)</span></label>
-        <datalist id="catList"></datalist>
       </div>
 
       <div id="variantEngineWrapper">
@@ -331,12 +339,6 @@
               </label>
           </div>
 
-          <div class="form-group">
-              <input type="text" id="pBrand" class="form-input" placeholder=" " list="brandList">
-              <label class="floating-label"><i class="fa-solid fa-copyright" style="margin-right:4px;"></i> <span class="lang-en">Brand / Manufacturer</span><span class="lang-hinglish">Samaan Ki Company (Brand)</span><span class="lang-hi">सामान की कंपनी (ब्रांड)</span></label>
-              <datalist id="brandList"></datalist>
-          </div>
-
           <div class="form-group" id="batchInputContainer" style="display:none;">
               <div style="display:flex; gap:10px;">
                   <div style="position:relative; flex:1;">
@@ -345,7 +347,6 @@
                   </div>
                   <button type="button" id="btnAutoBatch" class="btn btn-outline" style="width:auto; padding:0 15px;"><span class="lang-en">Auto</span><span class="lang-hinglish">Apne aap</span><span class="lang-hi">ऑटो</span></button>
               </div>
-              <datalist id="batchList"></datalist>
           </div>
 
           <div class="form-group" style="margin-bottom:0;">
@@ -394,7 +395,7 @@
             </label>
         </div>
         <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 0 15px; border-radius:10px;" title="Aur Filters (More Filters)">
-            <i class="fa-solid fa-filter"></i> <span class="lang-en">Filters</span><span class="lang-hinglish">Aur Filters</span><span class="lang-hi">फ़िल्टर</span> ▾
+            <i class="fa-solid fa-filter"></i> <span class="lang-en">Filters ▾</span><span class="lang-hinglish">Aur Filters ▾</span><span class="lang-hi">फ़िल्टर ▾</span>
         </button>
     </div>
 
@@ -461,14 +462,14 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Thresholds & Cost.</span><span class="lang-hinglish">Barcode, Expiry form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Sell By Weight</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Defines Base Unit Quantities inside Variants.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Defines Base Unit Quantities.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgLoose"><span class="slider"></span></label>
       </div>
@@ -514,9 +515,6 @@
       <div style="display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;">
         <span id="dTier" class="sku-tier" style="position:static;padding:4px 10px;border-radius:12px;width:auto;height:auto;">Tier A</span>
         <span id="dCat" style="background:#DBEAFE;color:var(--primary-dark);font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;text-transform:uppercase;">Category</span>
-        <span style="background:#FFFFFF;border:1px solid var(--border);color:var(--text-muted);font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;">
-          <i class="fa-solid fa-copyright"></i> <span id="dBrandText">Brand</span>
-        </span>
       </div>
 
       <div style="background:white;border-radius:12px;padding:15px;border:1px solid var(--border);margin-bottom:15px;box-shadow:var(--shadow-sm);">
@@ -621,12 +619,15 @@
 <script type="module">
 import { db } from "./bharatpos.js";
 import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 window.db = db;
+
 // ─── STATE ───────────────────────────────────────────────────────────────────
 window.allProducts = [];
 window.salesHistory = [];
-window.currentEditingName = null;
-window.currentDetailName = null;
+window.currentEditingId = null;
+window.currentDetailId = null;
+window.currentEditingDate = null;
 window.masterDbCache = [];
 
 window.activeTiers = new Set();
@@ -691,7 +692,7 @@ function loadSettings() {
     const isAdv   = localStorage.getItem('cfg_adv_fields') === 'true';
     const isBatch = localStorage.getItem('cfg_batch') === 'true';
     const isLoose = localStorage.getItem('cfg_loose') === 'true';
-    const isHints = localStorage.getItem('cfg_hints') !== 'false'; // Default True
+    const isHints = localStorage.getItem('cfg_hints') !== 'false';
 
     document.getElementById('cfgAdvFields').checked = isAdv;
     document.getElementById('cfgBatch').checked     = isBatch;
@@ -728,7 +729,6 @@ function applySettingsUI(isAdv, isBatch, isLoose) {
 
 // ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
 function bindAllEvents() {
-    // Language Toggle
     document.getElementById('btnLangToggle').addEventListener('click', () => {
         let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
         currentIdx = (currentIdx + 1) % langs.length;
@@ -737,10 +737,8 @@ function bindAllEvents() {
         localStorage.setItem('app_lang', nextLang);
     });
 
-    // Export Button
     document.getElementById('btnExportCsv').addEventListener('click', handleExportCSV);
 
-    // Tutorial Buttons
     document.getElementById('btnCloseTutorial').addEventListener('click', () => {
         localStorage.setItem('tutorial_inventory', 'true');
         document.getElementById('welcomeTutorial').style.display = 'none';
@@ -750,13 +748,11 @@ function bindAllEvents() {
         document.getElementById('welcomeTutorial').style.display = 'flex';
     });
 
-    // Hidden Filters Toggle
     document.getElementById('btnToggleFilters').addEventListener('click', () => {
         const area = document.getElementById('advancedFilterSection');
         area.style.display = area.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Global Hint Engine (Desktop Hover & Mobile Touch)
     const hintBar = document.getElementById('globalHintBar');
     document.addEventListener('mouseover', handleHintEvent);
     document.addEventListener('touchstart', handleHintEvent, {passive: true});
@@ -766,7 +762,7 @@ function bindAllEvents() {
         const target = e.target.closest('[data-hint]');
         if(target) {
             const hints = target.getAttribute('data-hint').split('|');
-            let hintText = hints[0].split(':')[1]; // Default en
+            let hintText = hints[0].split(':')[1]; 
             const lang = localStorage.getItem('app_lang') || 'en';
             
             hints.forEach(h => {
@@ -869,7 +865,7 @@ function bindAllEvents() {
     document.getElementById('inventoryGrid').addEventListener('click', (e) => {
         const card = e.target.closest('.sku-card');
         if(e.target.classList.contains('bulk-cb')) return; 
-        if (card) openProductDetails(card.getAttribute('data-name'));
+        if (card) openProductDetails(card.getAttribute('data-id'));
     });
 
     document.getElementById('bulkOperation').addEventListener('change', (e) => {
@@ -889,11 +885,11 @@ function bindAllEvents() {
     document.getElementById('btnCloseDetails').addEventListener('click',     () => document.getElementById('productDetailsModal').style.display = 'none');
     document.getElementById('btnEditFromModal').addEventListener('click',    () => {
         document.getElementById('productDetailsModal').style.display = 'none';
-        if (window.currentDetailName) loadProductForEdit(window.currentDetailName);
+        if (window.currentDetailId) loadProductForEdit(window.currentDetailId);
     });
     document.getElementById('btnDeleteFromModal').addEventListener('click',  () => {
         document.getElementById('productDetailsModal').style.display = 'none';
-        if (window.currentDetailName) deleteProduct(window.currentDetailName);
+        if (window.currentDetailId) deleteProduct(window.currentDetailId);
     });
 
     document.getElementById('btnStartScan').addEventListener('click', startAIScan);
@@ -934,15 +930,19 @@ function checkDemandMitraRouting() {
     const urlParams = new URLSearchParams(window.location.search);
     const restockName = urlParams.get('restock');
     if (restockName) {
-        loadProductForEdit(restockName);
-        const tempStock = localStorage.getItem("temp_add_stock");
-        if (tempStock) {
-            setTimeout(() => {
-                const stockInputs = document.querySelectorAll('.v-add-stock');
-                if (stockInputs.length > 0) stockInputs[0].value = tempStock;
-                localStorage.removeItem("temp_add_stock");
-                showToast(`DemandMitra suggests adding ${tempStock} units.`);
-            }, 500);
+        // Fallback for legacy DemandMitra name-based routing
+        const targetProd = window.allProducts.find(p => p.name === restockName);
+        if(targetProd) {
+            loadProductForEdit(targetProd.id);
+            const tempStock = localStorage.getItem("temp_add_stock");
+            if (tempStock) {
+                setTimeout(() => {
+                    const stockInputs = document.querySelectorAll('.v-add-stock');
+                    if (stockInputs.length > 0) stockInputs[0].value = tempStock;
+                    localStorage.removeItem("temp_add_stock");
+                    showToast(`DemandMitra suggests adding ${tempStock} units.`);
+                }, 500);
+            }
         }
     }
 }
@@ -951,14 +951,22 @@ function checkDemandMitraRouting() {
 function handleExportCSV() {
     if(window.allProducts.length === 0) return showToast("No products to export", true);
     try {
-        const ws = XLSX.utils.json_to_sheet(window.allProducts);
+        const flattened = [];
+        window.allProducts.forEach(p => {
+            p.variants.forEach(v => {
+                flattened.push({
+                    Name: p.name, Category: p.category, Type: v.quantity, Price: v.price, Stock: v.stock,
+                    Brand: v.brand, Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
+                    BaseQty: v.baseQty, BaseUnit: v.baseUnit, BatchID: p.batchId, HSN: p.hsn, GST: p.gstRate, DateAdded: p.dateAdded
+                });
+            });
+        });
+        const ws = XLSX.utils.json_to_sheet(flattened);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Inventory");
         XLSX.writeFile(wb, `BharatPOS_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
         showToast("✅ Export Successful!");
-    } catch(e) {
-        showToast("Export Failed", true);
-    }
+    } catch(e) { showToast("Export Failed", true); }
 }
 
 // ─── QUAGGA BARCODE ENGINE (Fast Auto-focus) ─────────────────────────────────
@@ -1010,9 +1018,7 @@ function addVariantUI(data = null) {
             <div class="form-group" style="margin-bottom:0;">
                 <input type="text" class="form-input v-unit" list="unitOptions" id="u_${uid}" placeholder=" " value="${data?.quantity || ''}" required>
                 <label for="u_${uid}" class="floating-label">
-                    <span class="lang-en">Type (Color, Size, ₹, Wt)</span>
-                    <span class="lang-hinglish">Type (Rang, Size, Wazan)</span>
-                    <span class="lang-hi">प्रकार (रंग, साइज़, वजन)</span>
+                    <span class="lang-en">Type (Color, Size, ₹, Wt)</span><span class="lang-hinglish">Type (Rang, Size, Wazan)</span><span class="lang-hi">प्रकार (रंग, साइज़, वजन)</span>
                 </label>
             </div>
             <div class="form-group" style="margin-bottom:0;">
@@ -1029,6 +1035,10 @@ function addVariantUI(data = null) {
             </label>
         </div>
         
+        <div class="form-group adv-only-field" style="margin-bottom:0; margin-top:10px; border-top:1px dashed rgba(25,118,210,0.2); padding-top:10px;">
+            <input type="text" class="form-input v-brand" placeholder=" " list="brandList" value="${data?.brand || ''}">
+            <label class="floating-label"><i class="fa-solid fa-copyright"></i> Brand / Manufacturer</label>
+        </div>
         <div class="variant-grid adv-only-field">
             <div class="form-group" style="margin-bottom:0; position:relative;">
                 <input type="text" class="form-input v-barcode" placeholder=" " value="${data?.barcode || ''}" style="font-family:'JetBrains Mono'; padding-right:40px;">
@@ -1048,19 +1058,18 @@ function addVariantUI(data = null) {
         <div class="form-group loose-only-field" style="margin-bottom:0;">
             <div style="display:flex; gap:8px;">
                 <input type="number" step="0.001" class="form-input v-base-qty" placeholder=" " value="${data?.baseQty || ''}" style="flex:1;">
-                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${data?.baseUnit || ''}" style="width: 90px;">
+                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${data?.baseUnit || 'pcs'}" style="width: 90px;">
             </div>
             <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> <span class="lang-en">1 Stock Contains</span><span class="lang-hinglish">1 Stock Mein Kitna</span><span class="lang-hi">1 स्टॉक में मात्रा</span></label>
         </div>
 
         <input type="hidden" class="v-id" value="${data?.id || ''}">
         <input type="hidden" class="v-exist-stock" value="${data?.stock || 0}">
-        <input type="hidden" class="v-added" value="${data?.dateAdded || ''}">
     `;
     container.appendChild(div);
 }
 
-// ─── ATOMIC SAVE ENGINE ───────────────────────────────────────────────────────
+// ─── ATOMIC SAVE ENGINE (SINGULARITY MODEL) ──────────────────────────────────
 async function handleSaveProduct(e) {
     e.preventDefault();
     const btn = document.getElementById('saveBtn');
@@ -1079,47 +1088,48 @@ async function handleSaveProduct(e) {
         const isBatchCfg = document.getElementById('cfgBatch').checked;
 
         const isLoose = isLooseCfg ? document.getElementById('pIsLoose').checked : false;
-        const brand   = isAdv ? document.getElementById('pBrand').value.trim()    : "";
         const batchId = isBatchCfg ? document.getElementById('pBatchId').value.trim() : "";
         const reorder = document.getElementById('pReorderPoint').value;
         const nowIso  = new Date().toISOString();
 
-        let oldVariants = window.currentEditingName ? window.allProducts.filter(p => (p.name||'').toLowerCase() === window.currentEditingName.toLowerCase()) : [];
-        window.allProducts = window.allProducts.filter(p => (p.name||'').toLowerCase() !== (window.currentEditingName || name).toLowerCase());
+        const productId = window.currentEditingId || `prod_${Date.now()}`;
+        
+        const productDoc = {
+            id: productId, name: name, category: cat, hsn: hsn, gstRate: gstRate, priceType: priceType,
+            isLoose: isLoose, batchId: batchId, reorderPoint: reorder, 
+            dateAdded: window.currentEditingDate || nowIso,
+            variants: []
+        };
 
         const variantBoxes = document.querySelectorAll('.variant-box');
-        const newSavedData = [];
-        const newSavedIds  = [];
-
         for (let i = 0; i < variantBoxes.length; i++) {
             const box      = variantBoxes[i];
             const unit     = box.querySelector('.v-unit').value.trim();
             const price    = box.querySelector('.v-price').value;
             const addStock = parseFloat(box.querySelector('.v-add-stock').value) || 0;
 
-            let vId        = box.querySelector('.v-id').value || `sku_${Date.now()}_${i}`;
+            let vId        = box.querySelector('.v-id').value || `var_${Date.now()}_${i}`;
             let existStock = parseFloat(box.querySelector('.v-exist-stock').value) || 0;
-            let vAdded     = box.querySelector('.v-added').value || nowIso;
             
+            let vBrand     = isAdv ? box.querySelector('.v-brand').value : "";
             let vBarcode   = isAdv ? box.querySelector('.v-barcode').value : "";
             let vExpiry    = isAdv ? box.querySelector('.v-expiry').value : "";
             let vCost      = isAdv ? box.querySelector('.v-cost').value : "";
             let vBaseQty   = isLoose ? box.querySelector('.v-base-qty').value : "";
-            let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "";
+            let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "pcs";
 
-            const finalData = {
-                id: vId, name: name, category: cat, brand: brand, batchId: batchId, reorderPoint: reorder,
-                quantity: unit, price: parseFloat(price), stock: existStock + addStock,
-                hsn: hsn, gstRate: gstRate, priceType: priceType, isLoose: isLoose,
-                barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, baseQty: vBaseQty, baseUnit: vBaseUnit, dateAdded: vAdded
-            };
-
-            window.allProducts.push(finalData);
-            newSavedData.push(finalData);
-            newSavedIds.push(vId);
+            productDoc.variants.push({
+                id: vId, quantity: unit, price: parseFloat(price), stock: existStock + addStock,
+                brand: vBrand, barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, 
+                baseQty: vBaseQty, baseUnit: vBaseUnit
+            });
         }
 
-        // Local Save First
+        if(window.currentEditingId) {
+            window.allProducts = window.allProducts.filter(p => p.id !== window.currentEditingId);
+        }
+        window.allProducts.push(productDoc);
+
         localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
         updateDatalists();
         applyFilters();
@@ -1127,33 +1137,27 @@ async function handleSaveProduct(e) {
         document.getElementById('productForm').reset();
         document.getElementById('variantEngine').innerHTML = '';
         addVariantUI();
-        window.currentEditingName = null;
+        window.currentEditingId = null;
+        window.currentEditingDate = null;
         window.scrollTo({ top: 0, behavior: 'smooth' });
         showToast("✅ SKU Saved Successfully");
 
-        // Firebase Sync
         if (user.merchantId && window.db) {
             try {
-                const batch = writeBatch(db);
-                newSavedData.forEach(data => { batch.set(doc(db, "shops", user.merchantId, "products", data.id), data); });
-                for (const old of oldVariants) {
-                    if (!newSavedIds.includes(old.id)) { batch.delete(doc(db, "shops", user.merchantId, "products", old.id)); }
-                }
-                await batch.commit();
+                await setDoc(doc(db, "shops", user.merchantId, "products", productDoc.id), productDoc);
             } catch (cloudErr) {
                 console.warn("Offline – data saved to device only.");
             }
         }
-
     } catch (err) {
         console.error(err);
         showToast("Critical error saving data", true);
     } finally {
-        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Save to Database`; btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>`; btn.disabled = false;
     }
 }
 
-// ─── FILTER ENGINE & DATALISTS (Multi-Select Support) ────────────────────────
+// ─── FILTER ENGINE & DATALISTS ────────────────────────────────────────────────
 function calculateABCTiers() {
     const freqs = {};
     window.salesHistory.forEach(sale => {
@@ -1173,9 +1177,9 @@ function updateDatalists() {
     const cats = new Set(), brands = new Set(), taxes = new Set(), batches = new Set();
     window.allProducts.forEach(p => {
         if (p.category) cats.add(p.category);
-        if (p.brand)    brands.add(p.brand);
         if (p.gstRate)  taxes.add(p.gstRate);
         if (p.batchId)  batches.add(p.batchId);
+        (p.variants || []).forEach(v => { if(v.brand) brands.add(v.brand); });
     });
 
     document.getElementById('catList').innerHTML   = Array.from(cats).map(c => `<option value="${c}">`).join('');
@@ -1239,9 +1243,8 @@ function applyFilters() {
 
     let filtered = window.allProducts;
 
-    // Apply Multi-Select Tiers
     if (window.activeTiers.size > 0) {
-        filtered = filtered.filter(p => window.activeTiers.has(getTier(p.id)));
+        filtered = filtered.filter(p => p.variants.some(v => window.activeTiers.has(getTier(v.id))));
     }
     if (window.activeCategory) {
         filtered = filtered.filter(p => (p.category || '').toLowerCase() === window.activeCategory.toLowerCase());
@@ -1250,20 +1253,23 @@ function applyFilters() {
         filtered = filtered.filter(p => (p.batchId || '') === window.activeBatch);
     }
 
-    if (window.filterState.brand)    filtered = filtered.filter(p => p.brand === window.filterState.brand);
-    if (window.filterState.tax)      filtered = filtered.filter(p => p.gstRate == window.filterState.tax);
+    if (window.filterState.brand) {
+        filtered = filtered.filter(p => p.variants.some(v => v.brand === window.filterState.brand));
+    }
+    if (window.filterState.tax) {
+        filtered = filtered.filter(p => p.gstRate == window.filterState.tax);
+    }
     
     if (window.filterState.lowStock) {
         filtered = filtered.filter(p => {
             const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
-            return Number(p.stock || 0) <= threshold;
+            let total = 0; p.variants.forEach(v => total += Number(v.stock||0));
+            return total <= threshold;
         });
     }
-
     if (window.filterState.expiring) {
-        const nextMonth = new Date();
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-        filtered = filtered.filter(p => p.expiryDate && new Date(p.expiryDate) < nextMonth);
+        const nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1);
+        filtered = filtered.filter(p => p.variants.some(v => v.expiryDate && new Date(v.expiryDate) < nextMonth));
     }
 
     if (window.filterState.newest) {
@@ -1275,33 +1281,21 @@ function applyFilters() {
     if (window.filterState.query) {
         const fuzzyReg = new RegExp(window.filterState.query.split('').join('.*'), 'i');
         filtered = filtered.filter(p =>
-            (p.name||'').toLowerCase().includes(window.filterState.query) ||
-            fuzzyReg.test(p.name||'') ||
-            (p.barcode || '').includes(window.filterState.query)
+            (p.name||'').toLowerCase().includes(window.filterState.query) || fuzzyReg.test(p.name||'') ||
+            p.variants.some(v => (v.barcode || '').includes(window.filterState.query))
         );
     }
 
-    const grouped = {};
-    filtered.forEach(p => {
-        const k = (p.name||'').toLowerCase();
-        if (!grouped[k]) grouped[k] = { name: p.name, cat: p.category, brand: p.brand, totalStock: 0, variants: [] };
-        grouped[k].totalStock += Number(p.stock || 0);
-        grouped[k].variants.push(p);
-    });
-    window.currentFilteredData = Object.values(grouped);
-
+    window.currentFilteredData = filtered;
     window.currentPage = 0;
     document.getElementById('inventoryGrid').innerHTML = '';
     renderChunk();
 }
 
 // ─── BULK ACTION ENGINE ───────────────────────────────────────────────────────
-window.toggleBulkItem = function(encodedName, isChecked) {
-    if(isChecked) {
-        window.selectedBulkItems.add(encodedName);
-    } else {
-        window.selectedBulkItems.delete(encodedName);
-    }
+window.toggleBulkItem = function(id, isChecked) {
+    if(isChecked) window.selectedBulkItems.add(id);
+    else window.selectedBulkItems.delete(id);
     
     const bar = document.getElementById('bulkActionBar');
     if(window.selectedBulkItems.size > 0) {
@@ -1332,20 +1326,17 @@ async function executeBulkAction() {
     let deletedIds = [];
 
     window.allProducts = window.allProducts.filter(p => {
-        const encName = encodeURIComponent(p.name);
-        if (window.selectedBulkItems.has(encName)) {
+        if (window.selectedBulkItems.has(p.id)) {
             if (op === 'delete') {
                 deletedIds.push(p.id);
                 return false; 
             } else if (op === 'category') {
-                p.category = val;
-                modifiedIds.push(p);
+                p.category = val; modifiedIds.push(p);
             } else if (op === 'tax') {
-                p.gstRate = val;
-                modifiedIds.push(p);
+                p.gstRate = val; modifiedIds.push(p);
             } else if (op === 'discount') {
                 const discountPct = parseFloat(val) || 0;
-                p.price = (p.price - (p.price * (discountPct / 100))).toFixed(2);
+                p.variants.forEach(v => { v.price = (v.price - (v.price * (discountPct / 100))).toFixed(2); });
                 modifiedIds.push(p);
             }
         }
@@ -1361,29 +1352,13 @@ async function executeBulkAction() {
             let opCount = 0;
 
             const commitBatch = async () => {
-                if(opCount > 0) {
-                    await currentBatch.commit();
-                    currentBatch = writeBatch(db);
-                    opCount = 0;
-                }
+                if(opCount > 0) { await currentBatch.commit(); currentBatch = writeBatch(db); opCount = 0; }
             };
 
-            for (const id of deletedIds) {
-                currentBatch.delete(doc(db, "shops", user.merchantId, "products", id));
-                opCount++;
-                if (opCount >= 490) await commitBatch();
-            }
-
-            for (const p of modifiedIds) {
-                currentBatch.set(doc(db, "shops", user.merchantId, "products", p.id), p);
-                opCount++;
-                if (opCount >= 490) await commitBatch();
-            }
-            
+            for (const id of deletedIds) { currentBatch.delete(doc(db, "shops", user.merchantId, "products", id)); opCount++; if (opCount >= 490) await commitBatch(); }
+            for (const p of modifiedIds) { currentBatch.set(doc(db, "shops", user.merchantId, "products", p.id), p); opCount++; if (opCount >= 490) await commitBatch(); }
             await commitBatch(); 
-        } catch(e) {
-            console.warn("Offline - bulk action saved locally only.");
-        }
+        } catch(e) { console.warn("Offline - bulk action saved locally only."); }
     }
 
     clearBulkSelection();
@@ -1419,33 +1394,34 @@ function renderChunk() {
 
     const fragment = document.createDocumentFragment();
 
-    chunk.forEach(g => {
-        const threshold = (g.variants[0].reorderPoint !== undefined && g.variants[0].reorderPoint !== '') ? Number(g.variants[0].reorderPoint) : 5;
-        const isLow    = g.totalStock <= threshold;
+    chunk.forEach(p => {
+        let totalStock = 0; p.variants.forEach(v => totalStock += Number(v.stock||0));
+        const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
+        const isLow    = totalStock <= threshold;
         
-        const vCount   = g.variants.length;
-        const basePrice = g.variants[0].price;
-        const tier     = getTier(g.variants[0].id);
-        const formatTotalStock = formatStock(g.totalStock, g.variants[0].quantity);
-        const encodedName = encodeURIComponent(g.name);
-        
-        const isChecked = window.selectedBulkItems.has(encodedName) ? 'checked' : '';
+        const vCount   = p.variants.length;
+        const basePrice = p.variants[0].price;
+        const tier     = getTier(p.variants[0].id);
+        const formatTotalStock = formatStock(totalStock, p.variants[0].quantity);
+        const isChecked = window.selectedBulkItems.has(p.id) ? 'checked' : '';
+
+        const displayBrand = p.variants[0].brand ? ` • ${p.variants[0].brand}` : '';
 
         const card = document.createElement('div');
         card.className = 'sku-card';
-        card.setAttribute('data-name', encodedName);
+        card.setAttribute('data-id', p.id);
 
         card.innerHTML = `
             <div class="sku-tier tier-${tier.toLowerCase()}">${tier}</div>
             <div>
                 <div class="sku-header">
-                    <input type="checkbox" class="bulk-cb" ${isChecked} onclick="event.stopPropagation(); window.toggleBulkItem('${encodedName}', this.checked)">
-                    <h3 class="sku-name">${g.name}</h3>
+                    <input type="checkbox" class="bulk-cb" ${isChecked} onclick="event.stopPropagation(); window.toggleBulkItem('${p.id}', this.checked)">
+                    <h3 class="sku-name">${p.name}</h3>
                 </div>
-                <div class="sku-cat">${g.cat || 'General'}</div>
+                <div class="sku-cat">${p.category || 'General'}</div>
                 <div class="sku-variant-label">
                     <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
-                    ${vCount > 1 ? `${vCount} Variants` : g.variants[0].quantity}${g.brand ? ` • ${g.brand}` : ''}
+                    ${vCount > 1 ? `${vCount} Variants` : p.variants[0].quantity}${displayBrand}
                 </div>
             </div>
             <div>
@@ -1482,21 +1458,18 @@ function setupIntersectionObserver() {
 }
 
 // ─── 360 PRODUCT DETAILS MODAL ────────────────────────────────────────────────
-function openProductDetails(encodedName) {
-    const name     = decodeURIComponent(encodedName);
-    window.currentDetailName = name;
-    const variants = window.allProducts.filter(p => (p.name||'').toLowerCase() === name.toLowerCase());
-    if (!variants.length) return;
+function openProductDetails(id) {
+    const base = window.allProducts.find(p => p.id === id);
+    if (!base) return;
 
-    const base  = variants[0];
+    window.currentDetailId = id;
     const getTier = calculateABCTiers();
-    const tier  = getTier(base.id);
+    const tier  = getTier(base.variants[0].id);
 
     document.getElementById('dName').innerText        = base.name;
     document.getElementById('dTier').innerText        = `Tier ${tier}`;
     document.getElementById('dTier').className        = `sku-tier tier-${tier.toLowerCase()}`;
     document.getElementById('dCat').innerText         = base.category || 'General';
-    document.getElementById('dBrandText').innerText   = base.brand || 'No Brand';
 
     document.getElementById('dHSN').innerText         = base.hsn     || '-';
     document.getElementById('dGST').innerText         = base.gstRate ? `${base.gstRate}%` : '-';
@@ -1513,12 +1486,13 @@ function openProductDetails(encodedName) {
     }
     document.getElementById('dAdded').innerText = dateAddedDisplay;
 
-    document.getElementById('dVariantsList').innerHTML = variants.map(v => {
+    document.getElementById('dVariantsList').innerHTML = base.variants.map(v => {
         let details = [];
+        if(v.brand) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-copyright"></i> ${v.brand}</span>`);
         if(v.barcode) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
         if(v.expiryDate) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
         if(v.costPrice) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
-        if(v.baseQty) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||''}</span>`);
+        if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||'pcs'}</span>`);
         
         let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11px;">${details.join('')}</div>` : '';
 
@@ -1539,13 +1513,12 @@ function openProductDetails(encodedName) {
     document.getElementById('productDetailsModal').style.display = 'flex';
 }
 
-function loadProductForEdit(encodedName) {
-    const name = decodeURIComponent(encodedName);
-    const targetVariants = window.allProducts.filter(p => (p.name||'').toLowerCase() === name.toLowerCase());
-    if (!targetVariants.length) return;
+function loadProductForEdit(id) {
+    const base = window.allProducts.find(p => p.id === id);
+    if (!base) return;
 
-    window.currentEditingName = name;
-    const base = targetVariants[0];
+    window.currentEditingId = base.id;
+    window.currentEditingDate = base.dateAdded;
 
     document.getElementById('pName').value     = base.name;
     document.getElementById('pCategory').value = base.category || '';
@@ -1554,18 +1527,15 @@ function loadProductForEdit(encodedName) {
     if (base.priceType) document.getElementById('pPriceType').value = base.priceType;
 
     document.getElementById('pReorderPoint').value = base.reorderPoint || '';
-    document.getElementById('pBrand').value = base.brand || '';
     document.getElementById('pBatchId').value   = base.batchId || '';
     document.getElementById('pIsLoose').checked = base.isLoose || false;
 
-    // Auto-enable UI sections if they contain data
-    if (base.brand || base.barcode || base.expiryDate || base.costPrice || base.reorderPoint) {
-        document.getElementById('cfgAdvFields').checked = true;
-    }
     if (base.batchId) document.getElementById('cfgBatch').checked = true;
     if (base.isLoose) document.getElementById('cfgLoose').checked = true;
+    if (base.variants.some(v => v.brand || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
+        document.getElementById('cfgAdvFields').checked = true;
+    }
 
-    // Apply Settings
     applySettingsUI(
         document.getElementById('cfgAdvFields').checked,
         document.getElementById('cfgBatch').checked,
@@ -1586,34 +1556,32 @@ function loadProductForEdit(encodedName) {
     }
 
     document.getElementById('variantEngine').innerHTML = '';
-    targetVariants.forEach(v => addVariantUI(v));
+    base.variants.forEach(v => addVariantUI(v));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     document.getElementById('pName').focus();
     
     const isHin = document.body.classList.contains('lang-hin');
-    showToast(isHin ? `✏️ "${name}" Edit mode mein khul gaya` : `✏️ Loaded "${name}" for editing`);
+    showToast(isHin ? `✏️ "${base.name}" Edit mode mein khul gaya` : `✏️ Loaded "${base.name}" for editing`);
 }
 
-async function deleteProduct(encodedName) {
-    const name = decodeURIComponent(encodedName);
+async function deleteProduct(id) {
+    const base = window.allProducts.find(p => p.id === id);
+    if(!base) return;
+
     const isHin = document.body.classList.contains('lang-hin') || document.body.classList.contains('lang-hi');
-    const confirmMsg = isHin ? `Kya aap "${name}" ko pakka delete karna chahte hain?` : `Delete all variants of "${name}"?`;
+    const confirmMsg = isHin ? `Kya aap "${base.name}" ko pakka delete karna chahte hain?` : `Delete product "${base.name}"?`;
     if (!confirm(confirmMsg)) return;
 
-    const user     = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const toDelete = window.allProducts.filter(p => (p.name||'').toLowerCase() === name.toLowerCase());
-
-    window.allProducts = window.allProducts.filter(p => (p.name||'').toLowerCase() !== name.toLowerCase());
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    window.allProducts = window.allProducts.filter(p => p.id !== id);
     localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
     applyFilters();
     showToast(isHin ? "🗑️ Samaan delete ho gaya" : "🗑️ Deleted successfully");
 
     if (user.merchantId && window.db) {
         try {
-            const batch = writeBatch(db);
-            toDelete.forEach(p => batch.delete(doc(db, "shops", user.merchantId, "products", p.id)));
-            await batch.commit();
+            await deleteDoc(doc(db, "shops", user.merchantId, "products", id));
         } catch (e) {
             console.warn("Delete offline mode — removed locally only.", e);
         }
@@ -1702,33 +1670,27 @@ async function handleBulkImport(event) {
                 if (!name) continue;
 
                 const skuId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                const pObj = {
-                    id: skuId,
-                    name:     String(name),
-                    category: String(row['Category'] || 'General'),
-                    price:    parseFloat(row['Price']  || row['Sell Price'] || row['Rate'] || 0),
-                    stock:    parseFloat(row['Stock']  || row['Qty'] || 0),
-                    quantity: String(row['Unit'] || row['Type'] || '1 pcs'),
-                    barcode:  String(row['Barcode']    || ''),
-                    hsn:      String(row['HSN']        || ''),
-                    gstRate:  String(row['GST']        || ''),
-                    brand:    String(row['Brand']      || ''),
+                const productDoc = {
+                    id: skuId, name: String(name), category: String(row['Category'] || 'General'),
+                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: String(row['BatchID'] || row['Batch'] || ''),
                     reorderPoint: String(row['Reorder Point'] || row['Min Stock'] || ''),
-                    isLoose:  String(row['Loose']  || '').toLowerCase() === 'true',
-                    dateAdded: new Date().toISOString()
+                    isLoose: String(row['Loose'] || '').toLowerCase() === 'true', dateAdded: new Date().toISOString(),
+                    variants: [{
+                        id: `${skuId}_v0`,
+                        quantity: String(row['Type'] || row['Unit'] || '1 pcs'),
+                        price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
+                        stock: parseFloat(row['Stock'] || row['Qty'] || 0),
+                        brand: String(row['Brand'] || ''), barcode: String(row['Barcode'] || ''),
+                        costPrice: String(row['CostPrice'] || row['Cost'] || ''), expiryDate: String(row['Expiry'] || ''), 
+                        baseQty: String(row['BaseQty'] || ''), baseUnit: String(row['BaseUnit'] || 'pcs')
+                    }]
                 };
 
-                window.allProducts.push(pObj);
-                if (batch && user.merchantId) {
-                    batch.set(doc(db, "shops", user.merchantId, "products", skuId), pObj);
-                }
+                window.allProducts.push(productDoc);
+                if (batch && user.merchantId) { batch.set(doc(db, "shops", user.merchantId, "products", skuId), productDoc); }
                 opCount++; addedCount++;
 
-                if (batch && opCount === 490) {
-                    await batch.commit();
-                    batch = writeBatch(db);
-                    opCount = 0;
-                }
+                if (batch && opCount === 490) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
             }
 
             if (batch && opCount > 0 && user.merchantId) await batch.commit();
@@ -1757,7 +1719,23 @@ async function pullFreshData() {
 
     try {
         const snap  = await getDocs(collection(db, "shops", user.merchantId, "products"));
-        const fresh = snap.docs.map(d => d.data());
+        let fresh = snap.docs.map(d => d.data());
+        
+        fresh = fresh.map(p => {
+            if(!p.variants) {
+                return {
+                    id: p.id, name: p.name, category: p.category, hsn: p.hsn, gstRate: p.gstRate, priceType: p.priceType,
+                    isLoose: p.isLoose, batchId: p.batchId, reorderPoint: p.reorderPoint, dateAdded: p.dateAdded || new Date().toISOString(),
+                    variants: [{
+                        id: `${p.id}_v0`, quantity: p.quantity || '1 pcs', price: p.price || 0, stock: p.stock || 0,
+                        brand: p.brand || '', barcode: p.barcode || '', expiryDate: p.expiryDate || '', costPrice: p.costPrice || '',
+                        baseQty: p.baseQty || '', baseUnit: p.baseUnit || 'pcs'
+                    }]
+                };
+            }
+            return p;
+        });
+
         window.allProducts = fresh;
         localStorage.setItem('bharatpos_products', JSON.stringify(fresh));
         updateDatalists();
