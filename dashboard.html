@@ -3,21 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Bharat POS — Command Center</title>
+  <title>BharatPOS — Command Center</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-
-<script type="module" src="bharatpos.js"></script>
+  <script type="module" src="bharatpos.js"></script>
   
   <style>
     /* --- THEME VARIABLES --- */
     :root {
       --bg-body: #0f172a; --bg-card: rgba(30, 41, 59, 0.7); --border: rgba(255, 255, 255, 0.1);
       --text-main: #f8fafc; --text-muted: #94a3b8; --accent: #f59e0b;
-      --success: #10b981; --danger: #ef4444; --primary: #3b82f6; --glass: blur(12px);
+      --success: #10b981; --danger: #ef4444; --primary: #3b82f6; --purple: #8b5cf6; --glass: blur(12px);
       --ease: cubic-bezier(0.23, 1, 0.32, 1);
     }
 
@@ -39,7 +38,8 @@
     /* --- NAVIGATION --- */
     .navbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
     .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: #fff; }
-    .global-logo { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
+    .brand-logo-wrap { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #D97706); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+    .brand-logo-wrap i { color: #000; font-size: 16px; }
     .brand span { color: var(--accent); }
     .nav-btn-bill { background: var(--success); color: #000; font-weight: 800; padding: 8px 16px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: 0.2s; display: flex; align-items: center; gap: 6px; }
     .nav-btn-bill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
@@ -48,16 +48,25 @@
     @media(max-width: 599px) { .mobile-hide { display: none; } }
 
     /* --- LAYOUT GRID --- */
-    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    .welcome-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; animation: fadeUp 0.6s var(--ease); }
-    .welcome-sub { color: var(--text-muted); font-size: 14px; }
-    .welcome-title { font-size: 24px; font-weight: 700; margin: 4px 0 0; }
-    .ai-sync-pill { font-size: 11px; padding: 6px 12px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; color: var(--text-muted); transition: 0.3s; }
-    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; transition: 0.3s; }
-    .syncing .sync-dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 1s infinite; }
-    .synced .sync-dot { background: var(--success); box-shadow: 0 0 5px var(--success); }
-    .error .sync-dot { background: var(--danger); }
-    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .welcome-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; animation: fadeUp 0.6s var(--ease); flex-wrap: wrap; gap: 15px;}
+    .welcome-sub { color: var(--text-muted); font-size: 14px; font-weight: 600; }
+    .welcome-title { font-size: 28px; font-weight: 800; margin: 4px 0 0; }
+    
+    /* PRO TOGGLE */
+    .pro-toggle-wrap { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; }
+    .pro-toggle-wrap span { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
+    .pro-toggle-wrap i { color: var(--accent); }
+    .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background: var(--primary); box-shadow: 0 0 10px var(--primary-glow);}
+    input:checked + .slider:before { transform: translateX(16px); }
+
+    /* ENTERPRISE HIDING LOGIC */
+    .pro-feature { display: none; }
+    body.pro-mode .pro-feature { display: flex; animation: fadeIn 0.4s ease; }
 
     .grid-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(160px, auto); gap: 20px; }
     .card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); animation: fadeUp 0.8s var(--ease) backwards; cursor: pointer; }
@@ -65,11 +74,21 @@
     .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 0 0 10px 0; font-weight: 700; }
     .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .stat-sub { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    
     .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
     .span-4 { grid-column: span 4; }
     
-    @media (max-width: 900px) { .grid-dashboard { grid-template-columns: 1fr 1fr; } .span-2, .span-4 { grid-column: span 2; } }
+    @media (max-width: 1024px) { .grid-dashboard { grid-template-columns: repeat(2, 1fr); } .span-2, .span-3, .span-4 { grid-column: span 2; } }
     @media (max-width: 600px) { .grid-dashboard { display: flex; flex-direction: column; } }
+
+    /* Pro Analytics Charts */
+    .mini-bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 40px; margin-top: 10px;}
+    .m-bar { flex: 1; background: #334155; border-radius: 2px 2px 0 0; min-height: 4px; transition: 0.5s ease; position: relative;}
+    .m-bar:hover { background: var(--primary); }
+    
+    .list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+    .list-row:last-child { border-bottom: none; }
 
     .chart-box { height: 180px; display: flex; align-items: flex-end; justify-content: space-between; padding-top: 20px; padding-left: 10px; padding-bottom: 5px; border-left: 2px solid rgba(255,255,255,0.1); border-bottom: 2px solid rgba(255,255,255,0.1); background: linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 100% 25%; }
     .bar-group { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 12%; height: 100%; }
@@ -77,15 +96,19 @@
     .bar.active { background: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     .bar-label { font-size: 10px; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
 
+    /* Stock Alerts */
     .stock-alert-item { background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--danger); padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; }
     .stock-alert-item:hover { transform: translateX(3px); background: rgba(239, 68, 68, 0.15); }
-    .stock-name { font-weight: 600; font-size: 13px; color: #f8fafc; display: block; }
-    .stock-qty { color: var(--danger); font-size: 11px; margin-top:2px; }
-    .btn-action { background: var(--text-main); color: var(--bg-body); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; display: inline-block; }
+    .stock-name { font-weight: 600; font-size: 13px; color: #f8fafc; display: block; line-height: 1.2;}
+    .stock-qty { color: var(--danger); font-size: 11px; margin-top:4px; display: block; font-weight: 700;}
+    .btn-action { background: var(--text-main); color: var(--bg-body); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; display: inline-block; transition: 0.2s;}
+    .btn-action:hover { opacity: 0.9; }
+    
     .text-good { color: var(--success); } .text-bad { color: var(--danger); } .text-warn { color: var(--accent); }
     .card-crm { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(99, 102, 241, 0.3); }
     .card-crm:hover { border-color: #6366f1; }
 
+    /* UDHAAR VIEW */
     #udhaarView { display: none; animation: fadeIn 0.4s ease; }
     .udhaar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
     .btn-back { background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
@@ -93,6 +116,7 @@
     .total-dues-card { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(15,23,42,0.8)); border: 1px solid rgba(239,68,68,0.4); border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
     .dues-label { font-size: 12px; color: #fca5a5; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
     .dues-amount { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: #fff; margin-top: 5px; }
+    
     .group-card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
     .group-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
     .group-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
@@ -101,95 +125,71 @@
     .debt-amt { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--danger); }
     .debt-count { font-size: 10px; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; margin-left: 10px; color: var(--text-muted); }
 
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-    .modal-box { background: #1e293b; width: 95%; max-width: 450px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-height: 90vh; display: flex; flex-direction: column; }
+    /* MODALS */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .modal-box { background: #1e293b; width: 95%; max-width: 480px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-height: 90vh; display: flex; flex-direction: column; }
     .modal-header { padding: 15px 20px; background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .modal-body { padding: 0; overflow-y: auto; }
     .inv-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border); }
     .inv-info h4 { margin: 0 0 4px 0; font-size: 14px; color: #fff; }
     .inv-info p { margin: 0; font-size: 11px; color: var(--text-muted); }
     .inv-action { text-align: right; }
-    .inv-price { font-weight: 700; color: var(--danger); font-size: 14px; margin-bottom: 5px; }
-    .btn-view { background: rgba(59, 130, 246, 0.2); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .inv-price { font-weight: 700; color: var(--danger); font-size: 14px; margin-bottom: 5px; font-family:'JetBrains Mono';}
+    .btn-view { background: rgba(59, 130, 246, 0.2); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s;}
+    .btn-view:hover { background: var(--primary); color: white; }
 
-    .receipt-content { padding: 20px; background: #fff; color: #000; font-family: 'Courier New', monospace; }
-    .rec-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top:10px; }
+    /* REAL-WORLD INVOICE STYLES */
+    .receipt-content { padding: 20px; background: #fff; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.4;}
+    .rec-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top:10px; margin-bottom:10px; }
     .rec-table th { text-align: left; border-bottom: 1px dashed #000; padding-bottom: 5px; }
-    .rec-table td { padding: 4px 0; }
-    .rec-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right; font-weight: 800; font-size: 1.2em; }
+    .rec-table td { padding: 6px 0; vertical-align: top; border-bottom: 1px dotted #ccc;}
+    .rec-table tr:last-child td { border-bottom: none; }
+    .rec-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right; font-weight: 800; font-size: 16px; }
     .btn-settle { width: 100%; padding: 15px; background: var(--success); color: #000; border: none; font-size: 14px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-settle:hover { opacity: 0.9; }
 
     .footer-zone { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid var(--border); }
-    .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+    .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600;}
     .btn-danger:hover { background: var(--danger); color: white; }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .dash-ticker-wrap { background: #020617; border-bottom: 1px solid #334155; height: 40px; display: flex; align-items: center; overflow: hidden; position: relative; z-index: 90; }
-    .dt-label { background: #ef4444; color: white; padding: 0 15px; height: 100%; display: flex; align-items: center; font-weight: 800; font-size: 11px; letter-spacing: 1px; z-index: 10; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
-    .dt-content { white-space: nowrap; animation: ticker 20s linear infinite; color: #f1f5f9; font-family: 'JetBrains Mono', monospace; font-size: 13px; padding-left: 20px; }
-    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-    .broadcast-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-    .broadcast-box { background: #1e293b; border: 1px solid #6366f1; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 0 50px rgba(99, 102, 241, 0.3); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .bc-icon { font-size: 45px; color: #f59e0b; margin-bottom: 20px; }
-    .broadcast-box h2 { color: #fff; margin: 0 0 10px 0; font-size: 22px; }
-    .broadcast-box p { color: #cbd5e1; margin-bottom: 25px; line-height: 1.6; font-size: 14px; }
-    .broadcast-box button { background: #6366f1; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
-    @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
   </style>
 </head>
 <body>
 
-<div id="dashboardTicker" class="dash-ticker-wrap" style="display:none;">
-    <div class="dt-label">📢 UPDATE</div>
-    <div class="dt-content" id="dashTickerText">Waiting for updates...</div>
-</div>
-
-<div id="broadcastModal" class="broadcast-overlay">
-    <div class="broadcast-box">
-        <div class="bc-icon"><i class="fa-solid fa-bullhorn"></i></div>
-        <h2 id="bcTitle">New Alert</h2>
-        <p id="bcBody">Message loading...</p>
-        <button onclick="closeBroadcast()">OK, Got it</button>
-    </div>
-</div>
-
-<div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
+<div id="menuOverlay" class="menu-overlay"></div>
 <div id="sideMenu" class="side-menu">
-    <button onclick="toggleMenu()" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
-    <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:40px; margin-top:10px;">
-        Bharat<span style="color:var(--accent);">POS</span>
-    </div>
-    <div class="side-menu-links">
-        <a href="dashboard.html" style="color:var(--accent); background:rgba(245,158,11,0.1);"><i class="fa-solid fa-home"></i> Home</a>
-        <a href="products.html"><i class="fa-solid fa-box-open"></i> Stock / Inventory</a>
-        <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Purani Bikri</a>
-        <a href="reports.html"><i class="fa-solid fa-file-invoice-dollar"></i> Reports</a>
-        <a href="ai.html"><i class="fa-solid fa-robot" style="color:var(--accent);"></i> AI Madad</a>
-        <a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a>
-    </div>
+  <button id="btnCloseMenu" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
+  <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:40px; margin-top:10px;">
+      Bharat<span style="color:var(--accent);">POS</span>
+  </div>
+  <div class="side-menu-links">
+      <a href="dashboard.html" class="active-link" style="background:rgba(59, 130, 246, 0.1);"><i class="fa-solid fa-chart-pie"></i> Command Center</a>
+      <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> Bill Banao</a>
+      <a href="products.html"><i class="fa-solid fa-box-open"></i> Inventory / Stock</a>
+      <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
+      <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> Finance HQ</a>
+      <a href="customers.html"><i class="fa-solid fa-users"></i> Bharat CRM</a>
+      <a href="forecast.html"><i class="fa-solid fa-brain" style="color:var(--accent);"></i> DemandMitra AI</a>
+      <a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a>
+  </div>
 </div>
 
 <nav class="navbar">
   <div style="display:flex; align-items:center; gap:15px;">
-      <button class="menu-btn" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
+      <button class="menu-btn" id="btnOpenMenu"><i class="fa-solid fa-bars"></i></button>
       <div class="brand">
-        <img src="logo.png" class="global-logo" alt="Logo">
+        <div class="brand-logo-wrap"><i class="fa-solid fa-chart-pie"></i></div>
         Bharat<span>POS</span>
       </div>
   </div>
   
   <div style="display:flex; align-items:center; gap:12px;">
       <a href="billing.html" class="nav-btn-bill"><i class="fa-solid fa-file-invoice"></i> <span class="mobile-hide">Bill Banao</span></a>
-      
-      <select id="shopSwitcher" onchange="handleShopChange(this.value)" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff; padding:6px 8px; border-radius:8px; font-size:12px; outline:none; cursor:pointer; max-width:120px; text-overflow: ellipsis;">
+      <select id="shopSwitcher" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff; padding:8px 10px; border-radius:8px; font-size:12px; font-weight:600; outline:none; cursor:pointer; max-width:140px; text-overflow: ellipsis;">
           <option value="" disabled>Loading...</option>
       </select>
-      
-      <button onclick="document.getElementById('addBranchModal').style.display='flex'" style="background:var(--primary); border:none; color:white; width:32px; height:32px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(59,130,246,0.3);"><i class="fa-solid fa-store"></i><span style="font-size:10px; margin-left:2px;">+</span></button>
-              
       <div id="profileName" class="profile-pill">Guest</div>
   </div>
 </nav>
@@ -202,9 +202,14 @@
             <div class="welcome-sub" id="dateDisplay">Loading...</div>
             <h1 class="welcome-title" id="greetingDisplay">Namaste</h1>
         </div>
-        <div id="aiSyncStatus" class="ai-sync-pill">
-            <div class="sync-dot"></div>
-            <span id="aiSyncText">AI Chalu Hai...</span>
+        
+        <div class="pro-toggle-wrap">
+            <i class="fa-solid fa-gear"></i>
+            <span>Pro Analytics</span>
+            <label class="switch">
+              <input type="checkbox" id="proToggle">
+              <span class="slider"></span>
+            </label>
         </div>
       </div>
 
@@ -212,46 +217,49 @@
         
         <div class="card span-2" style="background: linear-gradient(180deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,1) 100%); border-top: 2px solid var(--success);">
           <div style="display:flex; justify-content:space-between;">
-            <h3>Aaj Ki Kamai (Revenue)</h3>
-            <span style="font-size:12px; background:rgba(16,185,129,0.1); color:var(--success); padding:2px 8px; border-radius:4px;">Live</span>
+            <h3>Aaj Ki Kamai (Net Collection)</h3>
+            <span style="font-size:10px; font-weight:800; background:rgba(16,185,129,0.1); color:var(--success); padding:3px 8px; border-radius:4px; text-transform:uppercase;">Cash + Online</span>
           </div>
           <div>
             <div id="todayRevenue" class="stat-value">₹0</div>
             <div class="stat-sub">
               <span id="growthStatus">—</span> 
-              <span id="growthHint" style="opacity:0.6;">Kal ke mukable</span>
+              <span style="opacity:0.6;">vs Yesterday</span>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <h3>Aaj Ke Total Bills</h3>
+          <h3>Total Bills (Today)</h3>
           <div id="totalBills" class="stat-value">0</div>
           <div class="stat-sub" id="avgBill">Avg Bill: ₹0</div>
-          <div style="height:4px; width:100%; background:#334155; margin-top:15px; border-radius:2px; overflow:hidden;">
-            <div style="height:100%; width:60%; background:var(--text-main); opacity:0.5;"></div>
-          </div>
         </div>
 
-        <a href="customers.html" class="card card-crm">
-           <div style="display:flex; justify-content:space-between;">
-             <h3 style="color:#a5b4fc;">Grahak (Customers)</h3>
-             <span style="font-size:16px;">👥</span>
-           </div>
-           <div>
-             <div style="font-size:16px; font-weight:700; color:#fff;">Customer Khata & Offers</div>
-             <div class="stat-sub">Sabka hisab yahan dekhein</div>
-           </div>
-           <div style="margin-top:10px; font-size:11px; color:#a5b4fc;">List Dekhein ➔</div>
-        </a>
-
-        <div class="card" style="border-left: 4px solid var(--danger); cursor: pointer;" onclick="openUdhaarSection()">
+        <div class="card" style="border-left: 4px solid var(--danger); cursor: pointer;" id="btnOpenUdhaar">
           <div style="display:flex; justify-content:space-between;">
-            <h3>Baki Udhaar</h3>
+            <h3>Pending Udhaar</h3>
             <span style="font-size:16px;">➔</span>
           </div>
           <div id="totalUdhaar" class="stat-value text-bad">₹0</div>
-          <div class="stat-sub" id="udhaarCount">Sab hisab clear hai</div>
+          <div class="stat-sub" id="udhaarCount">Sab clear hai</div>
+        </div>
+
+        <div class="card pro-feature span-2" style="border-top: 2px solid var(--purple);">
+          <div style="display:flex; justify-content:space-between;">
+            <h3>Est. Gross Profit (Today)</h3>
+            <i class="fa-solid fa-chart-line" style="color:var(--purple);"></i>
+          </div>
+          <div>
+            <div id="proProfit" class="stat-value" style="color:var(--purple);">₹0</div>
+            <div class="stat-sub">Based on Variant Cost Prices</div>
+          </div>
+        </div>
+
+        <div class="card pro-feature span-2">
+            <h3>Top Categories (Volume)</h3>
+            <div id="proCatList" style="margin-top:10px;">
+                <div style="color:var(--text-muted); font-size:12px;">Waiting for sales data...</div>
+            </div>
         </div>
 
         <div class="card span-2">
@@ -260,34 +268,35 @@
         </div>
 
         <div class="card">
-          <h3>⚠️ Maal Khatam (Alerts)</h3>
+          <h3>⚠️ Maal Khatam (Low Stock)</h3>
           <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
-            <div id="lowStockCount" style="font-size:20px; font-weight:700;">Loading...</div>
+            <div id="lowStockCount" style="font-size:24px; font-weight:800;">0</div>
           </div>
-          <div id="lowstock" style="margin-top:10px; max-height:60px; overflow-y:auto;"></div>
+          <div id="lowstock" style="margin-top:10px; max-height:100px; overflow-y:auto; padding-right:5px;"></div>
         </div>
 
-        <div class="card span-4" style="min-height:auto;">
-          <h3>🚀 Jaldi Bikne Wala Maal (Restock)</h3>
-          <div id="smartOrders" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px;">
-            Sab stock barabar hai.
-          </div>
+        <div class="card pro-feature span-2">
+            <h3>Peak Business Hours (Today)</h3>
+            <div id="proHeatmap" class="mini-bar-chart">
+                <div style="color:var(--text-muted); font-size:12px; align-self:center;">No data yet</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:9px; color:var(--text-muted); margin-top:5px; font-weight:700;">
+                <span>9 AM</span><span>1 PM</span><span>5 PM</span><span>9 PM</span>
+            </div>
         </div>
 
       </div>
 
       <div class="footer-zone">
-        <button onclick="resetSales()" class="btn-danger">⚠ Sara Data Delete Karein (Savdhan)</button>
-        <div style="margin-top:10px; font-size:11px; color:#475569;">
-          BharatPOS System v2.0 • Made for India
-        </div>
+        <button id="btnResetData" class="btn-danger">⚠ Reset All Local Data</button>
+        <div style="margin-top:10px; font-size:11px; color:#475569; font-weight:600;">BharatPOS Enterprise v3.0</div>
       </div>
   </div>
 
   <div id="udhaarView">
       <div class="udhaar-header">
-          <button class="btn-back" onclick="closeUdhaarSection()">⬅ Back to Dashboard</button>
-          <h2 style="font-size:20px; font-weight:700; color:#fff; margin:0;">📒 Udhaar Khata</h2>
+          <button class="btn-back" id="btnCloseUdhaar"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+          <h2 style="font-size:20px; font-weight:800; color:#fff; margin:0;"><i class="fa-solid fa-book-open" style="color:var(--danger);"></i> Udhaar Khata</h2>
       </div>
 
       <div class="total-dues-card">
@@ -295,7 +304,7 @@
           <div class="dues-label">Total Pending Collection</div>
           <div class="dues-amount" id="udhaarPendingTotal">₹0</div>
         </div>
-        <i class="fa-solid fa-hand-holding-dollar" style="font-size:30px; color:var(--danger); opacity:0.8;"></i>
+        <i class="fa-solid fa-hand-holding-dollar" style="font-size:36px; color:var(--danger); opacity:0.6;"></i>
       </div>
 
       <div id="udhaarGroupList">
@@ -309,156 +318,147 @@
     <div class="modal-box">
       <div class="modal-header">
         <div>
-          <h3 style="margin:0; font-size:16px; color:#fff;" id="custModalName">Customer</h3>
-          <small style="color:var(--text-muted);" id="custModalPhone">Phone</small>
+          <h3 style="margin:0; font-size:16px; color:#fff; font-weight:800;" id="custModalName">Customer</h3>
+          <div style="color:var(--text-muted); font-size:12px; margin-top:4px; font-weight:600;" id="custModalPhone">Phone</div>
         </div>
-        <button onclick="document.getElementById('customerModal').style.display='none'" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">&times;</button>
+        <button id="btnCloseCustomerModal" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;">&times;</button>
       </div>
-      <div class="modal-body" id="invoiceListBody"></div>
+      <div class="modal-body" id="invoiceListBody" style="padding:10px 0;"></div>
     </div>
 </div>
 
 <div id="receiptModal" class="modal-overlay" style="z-index: 2200;">
-    <div class="modal-box" style="max-width:350px; background:white;">
-      <div class="modal-header" style="background:#f8f9fa; border-bottom:1px solid #ddd; color:#333;">
-        <strong>Invoice Details</strong>
-        <button onclick="document.getElementById('receiptModal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#333;">&times;</button>
-      </div>
+    <div class="modal-box" style="max-width:380px; background:#f1f5f9; padding:20px; border-radius:0;">
       <div class="receipt-content">
-        <div style="text-align:center; margin-bottom:10px;">
-          <h3 style="margin:0;">BHARAT POS</h3>
-          <div style="font-size:10px;" id="rec-id"></div>
-          <div style="font-size:10px;" id="rec-date"></div>
+        <div style="text-align:center; margin-bottom:15px; border-bottom:1px dashed #000; padding-bottom:10px;">
+          <h3 style="margin:0; font-size:16px;" id="rec-shop">BHARAT POS</h3>
+          <div style="font-size:11px; margin-top:4px;" id="rec-id"></div>
+          <div style="font-size:11px;" id="rec-date"></div>
         </div>
-        <div style="font-size:12px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:5px;">
-          Customer: <span id="rec-name"></span><br>
-          Phone: <span id="rec-phone"></span>
+        <div style="font-size:12px; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:10px;">
+          <strong>Bill To:</strong> <span id="rec-name"></span> <span id="rec-phone" style="color:#555;"></span>
         </div>
         <table class="rec-table">
-          <thead><tr><th>Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Amt</th></tr></thead>
+          <thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Amt</th></tr></thead>
           <tbody id="rec-items"></tbody>
         </table>
-        <div class="rec-total">Total: <span id="rec-total"></span></div>
+        
+        <div style="border-top:1px dashed #000; padding-top:10px; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#555;">
+                <span>Total Bill Value:</span><span id="rec-full-total">₹0</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#555;" id="rec-split-info">
+                </div>
+            <div class="rec-total" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #000; padding-top:10px;">
+                <span style="font-size:12px; color:var(--danger);">PENDING UDHAAR:</span>
+                <span id="rec-due" style="color:var(--danger);">₹0</span>
+            </div>
+        </div>
       </div>
-      <button id="btnSettle" class="btn-settle">✅ Mark Paid (Cash)</button>
+      <div style="display:flex; gap:10px; margin-top:15px;">
+          <button id="btnSettle" class="btn-settle">✅ Receive Cash</button>
+          <button id="btnCloseReceipt" class="btn-settle" style="background:#e2e8f0; color:#333;">Close</button>
+      </div>
     </div>
 </div>
 
-<div id="addBranchModal" class="modal-overlay" style="z-index:3000;">
-    <div class="modal-box" style="padding:25px; width:90%; max-width:400px; max-height:none; background:#1e293b;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0; color:#fff; font-size:18px;">🏪 Add Branch Shop</h3>
-            <button onclick="document.getElementById('addBranchModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
-        </div>
-        
-        <div style="margin-bottom:15px;">
-            <label style="font-size:12px; color:var(--text-muted); font-weight:bold;">Branch Name</label>
-            <input type="text" id="newBranchName" placeholder="e.g. Branch - South Area" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; color:#fff; margin-top:5px; outline:none;">
-        </div>
-        
-        <div style="margin-bottom:25px;">
-            <label style="font-size:12px; color:var(--text-muted); font-weight:bold;">Category</label>
-            <select id="newBranchCat" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; color:#fff; margin-top:5px; outline:none;">
-                <option value="GROCERY">Kirana / Grocery</option>
-                <option value="MEDICAL">Pharmacy / Medical</option>
-                <option value="ELECTRONIC">Electronics</option>
-                <option value="OTHER">Other</option>
-            </select>
-        </div>
-        
-        <button onclick="submitNewBranch(event)" style="width:100%; padding:14px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; transition:0.2s;">Create Branch</button>
-    </div>
-</div>
 <script type="module">
-// 🟢 1. IMPORT FIREBASE SDK & YOUR DATABASE
 import { db } from "./bharatpos.js";
-import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // --- 1. UTILS & HELPERS ---
-  function formatCurrency(n){ 
-    return '₹' + Number(n || 0).toLocaleString('en-IN'); 
-  }
-  
-  function escapeHtml(str){ 
-    if(!str) return ''; 
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;'); 
-  }
+window.db = db;
 
-  function safeParse(key) {
-    try {
-      const data = localStorage.getItem(key);
-      if (!data || data === "undefined" || data === "null") return [];
-      return JSON.parse(data);
-    } catch (e) {
-      return [];
-    }
-  }
+// ─── INIT & UTILS ─────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+    bindEvents();
+    setGreeting();
+    loadUser();
+    window.initShopSwitcher(); 
+    
+    // Pro Toggle memory
+    const isPro = localStorage.getItem('cfg_pro_dash') === 'true';
+    document.getElementById('proToggle').checked = isPro;
+    if(isPro) document.body.classList.add('pro-mode');
 
-  function getApiUrl(endpoint) {
-    if (typeof buildUrl === 'function') return buildUrl(endpoint);
-    return endpoint; 
-  }
+    setTimeout(window.renderDashboard, 100);
+});
 
-  function animateValue(obj, start, end, duration) {
+function bindEvents() {
+    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
+    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
+    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+    
+    document.getElementById('btnOpenUdhaar').addEventListener('click', window.openUdhaarSection);
+    document.getElementById('btnCloseUdhaar').addEventListener('click', window.closeUdhaarSection);
+    document.getElementById('btnCloseCustomerModal').addEventListener('click', () => document.getElementById('customerModal').style.display='none');
+    document.getElementById('btnCloseReceipt').addEventListener('click', () => document.getElementById('receiptModal').style.display='none');
+    
+    document.getElementById('btnResetData').addEventListener('click', window.resetSales);
+    document.getElementById('shopSwitcher').addEventListener('change', (e) => window.handleShopChange(e.target.value));
+
+    document.getElementById('proToggle').addEventListener('change', (e) => {
+        const isPro = e.target.checked;
+        localStorage.setItem('cfg_pro_dash', isPro);
+        if(isPro) document.body.classList.add('pro-mode');
+        else document.body.classList.remove('pro-mode');
+    });
+
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) window.renderDashboard(); });
+}
+
+function formatCurrency(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+function escapeHtml(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; }
+function safeParse(key) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : []; } catch(e){ return []; } }
+
+function animateValue(obj, start, end, duration) {
+    if(!obj) return;
     let startTimestamp = null;
     const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      if(obj) obj.innerHTML = formatCurrency(Math.floor(progress * (end - start) + start));
-      if (progress < 1) { window.requestAnimationFrame(step); }
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = formatCurrency(Math.floor(progress * (end - start) + start));
+        if (progress < 1) window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
-  }
+}
 
-  function setGreeting() {
+function setGreeting() {
     const d = new Date();
     document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const hour = d.getHours();
-    const txt = hour < 12 ? "Namaste" : (hour < 18 ? "Namaste" : "Namaste");
-    document.getElementById('greetingDisplay').textContent = txt + ", Seth Ji";
-  }
+    document.getElementById('greetingDisplay').textContent = (hour < 12 ? "Good Morning" : (hour < 18 ? "Good Afternoon" : "Good Evening")) + ", Seth Ji";
+}
 
-  window.toggleMenu = function() {
-      const menu = document.getElementById('sideMenu');
-      const overlay = document.getElementById('menuOverlay');
-      if(menu.classList.contains('open')) {
-          menu.classList.remove('open');
-          overlay.style.display = 'none';
-      } else {
-          menu.classList.add('open');
-          overlay.style.display = 'block';
-      }
-  }
+function loadUser() {
+    const u = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const el = document.getElementById('profileName');
+    if(el) el.textContent = u.name ? u.name.split(' ')[0] : 'Merchant';
+}
+
+function toggleMenu() {
+    document.getElementById('sideMenu').classList.toggle('open');
+    const overlay = document.getElementById('menuOverlay');
+    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+}
+
 window.initShopSwitcher = async function() {
     const currentUser = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const switcher = document.getElementById('shopSwitcher');
-    
-    // If no mobile is attached to the account yet, just show the current shop
     if(!currentUser.mobile && !currentUser.phone) {
         switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
         return;
     }
-
     try {
-        // Fetch the shops using our new Ironclad function from bharatpos.js
         let shops = await window.loadOwnedShops(currentUser.mobile || currentUser.phone);
-
         if(shops.length > 0) {
-            // Rebuild the dropdown HTML
-            switcher.innerHTML = shops.map(s => 
-                `<option value="${s.merchantId}" ${s.merchantId === currentUser.merchantId ? 'selected' : ''}>
-                    ${window.escapeHTML ? window.escapeHTML(s.shopName) : s.shopName} ${s.isMain ? '⭐ (Main)' : ''}
-                </option>`
-            ).join('');
+            switcher.innerHTML = shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === currentUser.merchantId ? 'selected' : ''}>${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
         } else {
-            // Ultimate fallback
             switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
         }
     } catch(e) {
-        console.error("Shop Switcher Error", e);
         switcher.innerHTML = `<option value="${currentUser.merchantId}">${currentUser.shopName || 'Main Shop'}</option>`;
     }
-}; // <-- This brace properly closes the initShopSwitcher function
+};
 
 window.handleShopChange = function(val) {
     if(confirm("Switching shops will reload the dashboard. Continue?")) {
@@ -468,96 +468,122 @@ window.handleShopChange = function(val) {
         document.getElementById('shopSwitcher').value = currentUser.merchantId;
     }
 };
-  // 🟢 FIREBASE: ADD NEW BRANCH
-  window.submitNewBranch = async function(event) {
-      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-      const shopName = document.getElementById('newBranchName').value.trim();
-      const category = document.getElementById('newBranchCat').value;
-      
-      if(!shopName) return alert("Enter Branch Name");
-      
-      let mobileNum = user.mobile || user.phone;
-      if(!mobileNum) {
-          mobileNum = prompt("Branch link karne ke liye apna 10-digit Mobile Number confirm karein:");
-          if(!mobileNum || mobileNum.trim().length !== 10) return alert("Sahi mobile number jaruri hai.");
-          user.mobile = mobileNum.trim();
-          localStorage.setItem('bharatpos_user', JSON.stringify(user));
-      }
 
-      if(!user.merchantId) return alert("Critical Error: Merchant ID missing. Please re-login.");
-
-      try {
-          const btn = event.target;
-          btn.innerText = "Creating...";
-          
-          // Generate Branch ID and save directly to Firestore
-          const branchId = `${user.merchantId}-B${Math.floor(1000 + Math.random() * 9000)}`;
-          const shopRef = doc(db, "shops", branchId);
-          
-          await setDoc(shopRef, {
-              merchantId: branchId,
-              profile: { mobile: mobileNum, shopName, category, isBranch: true, parentId: user.merchantId }
-          });
-          
-          alert(`Branch '${shopName}' created successfully! Select the new branch from the dropdown menu to switch to it.`);
-          document.getElementById('addBranchModal').style.display='none';
-          document.getElementById('newBranchName').value = '';
-          btn.innerText = "Create Branch";
-          window.initShopSwitcher(); // Refresh dropdown
-      } catch(e) { 
-          alert("Firebase Error: Could not create branch.");
-          console.error(e);
-          event.target.innerText = "Create Branch";
-      }
-  }
-
-  // --- 3. MAIN DASHBOARD LOGIC ---
-  function loadUser(){
-    try {
-      const u = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-      const el = document.getElementById('profileName');
-      if(el) el.textContent = u.name ? u.name : 'Dukandaar';
-    } catch(e) {}
-  }
-
-  window.renderDashboard = function(){
+// ─── CORE DASHBOARD MATH (Singularity & Splits) ───────────────────────────────
+window.renderDashboard = function() {
     const sales = safeParse('bharatpos_sales');
     const products = safeParse('bharatpos_products');
     
-    let totalRev = 0, todayRev = 0, yesterdayRev = 0;
     const todayStr = new Date().toISOString().split('T')[0];
     const yesterStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const productCounts = {};
+    
+    let totalRev = 0, todayRev = 0, yesterdayRev = 0;
+    let todayBills = 0, todayProfit = 0;
+    
+    // Pro Analytics Data
+    const catSales = {};
+    const hourSales = new Array(24).fill(0);
 
     sales.forEach(s => {
-        const amt = Number(s.amount || s.total || 0);
-        const sDate = s.date ? s.date.substring(0, 10) : '';
-        totalRev += amt;
-        if(sDate === todayStr) todayRev += amt;
-        if(sDate === yesterStr) yesterdayRev += amt;
+        const dObj = new Date(s.date);
+        const dStr = dObj.toISOString().split('T')[0];
         
-        (s.items || []).forEach(i => {
-            if(i.name) productCounts[i.name] = (productCounts[i.name] || 0) + Number(i.qty || 0);
-        });
+        // 1. Calculate Real Cash/Online Collection
+        let collected = 0;
+        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
+        
+        if (pMode === 'Partial' && s.split) {
+            collected = Number(s.split.cash || 0) + Number(s.split.online || 0);
+        } else if (pMode !== 'Udhaar') {
+            collected = Number(s.total || s.amount || 0);
+        }
+
+        if(dStr === todayStr) { todayRev += collected; todayBills++; }
+        if(dStr === yesterStr) yesterdayRev += collected;
+        totalRev += collected;
+
+        // 2. Check if a previous Udhaar was settled TODAY
+        if(s.isPaid && s.settledDate) {
+            const setStr = new Date(s.settledDate).toISOString().split('T')[0];
+            if(setStr === todayStr && dStr !== todayStr) {
+                // If it was fully udhaar, whole amount collected today.
+                // If it was partial, only the udhaar split was collected today.
+                const settledAmt = (pMode === 'Partial' && s.split) ? Number(s.split.udhaar) : Number(s.total || s.amount || 0);
+                todayRev += settledAmt;
+                totalRev += settledAmt;
+            }
+        }
+
+        // PRO ANALYTICS (Only for today's valid sales)
+        if(dStr === todayStr && pMode !== 'Udhaar') {
+            hourSales[dObj.getHours()] += collected;
+            
+            (s.items || []).forEach(i => {
+                // Profit calculation
+                const pInfo = products.find(px => px.id === i.prodId);
+                let cost = 0;
+                if(pInfo && pInfo.variants) {
+                    const vInfo = pInfo.variants.find(vx => vx.id === (i.variantId || i.id));
+                    if(vInfo) {
+                        const bq = pInfo.isLoose ? (Number(vInfo.baseQty)||1) : 1;
+                        cost = (Number(vInfo.costPrice)||0) / bq;
+                    }
+                }
+                const itemRevenue = Number(i.total || (i.price * i.qty) || 0);
+                const itemCost = cost * Number(i.qty || 0);
+                todayProfit += Math.max(0, itemRevenue - itemCost); // simple margin
+
+                // Category Tracking
+                const cat = pInfo?.category || 'General';
+                catSales[cat] = (catSales[cat] || 0) + Number(i.qty || 1);
+            });
+        }
     });
 
+    // Render Basic KPIs
     animateValue(document.getElementById('todayRevenue'), 0, todayRev, 1000);
-    document.getElementById('totalBills').textContent = sales.length;
-    document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(sales.length ? Math.round(totalRev/sales.length) : 0);
+    document.getElementById('totalBills').textContent = todayBills;
+    document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(todayBills ? Math.round(todayRev/todayBills) : 0);
     
     const growthEl = document.getElementById('growthStatus');
     if (growthEl) {
-        if (yesterdayRev === 0 && todayRev > 0) growthEl.innerHTML = '<span class="text-good">▲ 100% Badhotri</span>';
+        if (yesterdayRev === 0 && todayRev > 0) growthEl.innerHTML = '<span class="text-good">▲ 100% Up</span>';
+        else if (yesterdayRev === 0 && todayRev === 0) growthEl.innerHTML = '<span class="text-muted">— Flat</span>';
         else {
             const diff = todayRev - yesterdayRev;
-            const pct = yesterdayRev ? Math.round((diff / yesterdayRev) * 100) : 0;
-            growthEl.innerHTML = pct >= 0 ? `<span class="text-good">▲ ${pct}% Badhotri</span>` : `<span class="text-bad">▼ ${Math.abs(pct)}% Kami</span>`;
+            const pct = Math.round((diff / yesterdayRev) * 100);
+            growthEl.innerHTML = pct >= 0 ? `<span class="text-good">▲ ${pct}% Up</span>` : `<span class="text-bad">▼ ${Math.abs(pct)}% Down</span>`;
         }
     }
 
-    // Stock
-    const lowStock = products.filter(p => Number(p.stock || 0) <= 5);
-    document.getElementById('lowStockCount').innerHTML = `<span class="${lowStock.length > 0 ? 'text-warn' : ''}">${lowStock.length} Items Khatam</span>`;
+    renderChart(sales);
+    renderLowStock(products);
+    renderUdhaarSummary(sales);
+    
+    // Render PRO features
+    document.getElementById('proProfit').innerText = formatCurrency(todayProfit);
+    renderProCategories(catSales);
+    renderProHeatmap(hourSales);
+}
+
+// ─── INVENTORY & LOW STOCK (Singularity Model) ────────────────────────────────
+function renderLowStock(products) {
+    const lowStock = [];
+    products.forEach(p => {
+        let totalBase = 0;
+        let unit = p.variants[0]?.baseUnit || 'unit';
+        p.variants.forEach(v => {
+            const bq = p.isLoose ? (Number(v.baseQty) || 1) : 1;
+            totalBase += (Number(v.stock) || 0) * bq;
+        });
+        
+        const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
+        if(totalBase <= threshold) {
+            lowStock.push({ name: p.name, stock: totalBase, unit: p.isLoose ? unit : 'pcs', threshold });
+        }
+    });
+
+    document.getElementById('lowStockCount').innerHTML = `<span class="${lowStock.length > 0 ? 'text-bad' : 'text-good'}">${lowStock.length}</span>`;
     
     const lowListEl = document.getElementById('lowstock');
     if(lowListEl) {
@@ -566,328 +592,297 @@ window.handleShopChange = function(val) {
                 <div class="stock-alert-item">
                     <div>
                         <span class="stock-name">${escapeHtml(p.name)}</span> 
-                        <span class="stock-qty">Sirf ${p.stock} Bache hain</span>
-                    </div>
-                    <a href="products.html?restock=${encodeURIComponent(p.name)}" class="btn-action" style="font-size:10px; padding:6px 10px;">Mangwao</a>
-                </div>`).join('')
-            : '<span style="color:var(--text-muted); font-size:12px;">Sab Samaan Full Hai. (All Good)</span>';
-    }
-
-    const smartOrdersEl = document.getElementById('smartOrders');
-    if(smartOrdersEl) {
-        const smartRestock = products.filter(p => {
-            const sold = productCounts[p.name] || 0;
-            return Number(p.stock || 0) < 10 && sold > 2; 
-        });
-        
-        smartOrdersEl.innerHTML = smartRestock.length > 0
-            ? smartRestock.map(p => `
-                <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
-                    <div style="font-weight:600; font-size:13px; margin-bottom:5px;">${escapeHtml(p.name)}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:11px; color:var(--text-muted)">Stock: ${p.stock}</span>
-                        <a href="products.html?restock=${encodeURIComponent(p.name)}" class="btn-action">Order Karein</a>
+                        <span class="stock-qty">Only ${parseFloat(p.stock).toFixed(2).replace(/\.00$/,'')} ${p.unit} left (Alert at ${p.threshold})</span>
                     </div>
                 </div>`).join('')
-            : '<div style="color:var(--text-muted); padding:10px;">Sab badhiya chal raha hai.</div>';
+            : '<span style="color:var(--text-muted); font-size:12px; display:block; text-align:center; padding:10px;">All stock levels healthy.</span>';
     }
+}
 
-    renderChart(sales);
+// ─── PRO ANALYTICS RENDERING ──────────────────────────────────────────────────
+function renderProCategories(catSales) {
+    const listEl = document.getElementById('proCatList');
+    const sorted = Object.entries(catSales).sort((a,b) => b[1] - a[1]).slice(0, 4);
+    
+    if(sorted.length === 0) {
+        listEl.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">No sales today yet.</div>';
+        return;
+    }
+    
+    const maxQty = sorted[0][1];
+    listEl.innerHTML = sorted.map(c => {
+        const pct = Math.max(10, (c[1]/maxQty)*100);
+        return `
+        <div class="list-row">
+            <span style="font-weight:600; color:var(--text-main);">${c[0]}</span>
+            <div style="display:flex; align-items:center; gap:10px; width:50%;">
+                <div style="flex:1; height:6px; background:#334155; border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:${pct}%; background:var(--primary);"></div>
+                </div>
+                <span style="font-size:11px; color:var(--text-muted); font-weight:700; width:30px; text-align:right;">${c[1]}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
 
-    // Udhaar Summary
-    const pendingUdhaar = sales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true));
-    const totalPending = pendingUdhaar.reduce((sum, s) => sum + Number(s.amount || s.total || 0), 0);
-    document.getElementById('totalUdhaar').textContent = formatCurrency(totalPending);
-    document.getElementById('udhaarCount').textContent = pendingUdhaar.length ? `${pendingUdhaar.length} Logon ka baki hai` : 'Sab hisab clear hai';
+function renderProHeatmap(hourSales) {
+    const mapEl = document.getElementById('proHeatmap');
+    // Only care about 9 AM (9) to 9 PM (21) = 13 slots
+    const activeHours = hourSales.slice(9, 22);
+    const maxSale = Math.max(...activeHours, 1); // prevent div by 0
+    
+    mapEl.innerHTML = activeHours.map(h => {
+        const pct = (h / maxSale) * 100;
+        return `<div class="m-bar" style="height:${Math.max(5, pct)}%;" title="₹${h.toFixed(0)}"></div>`;
+    }).join('');
+}
 
-    sendDashboardSnapshot({ totalRev, todayRev, salesCount: sales.length, lowStock, productCounts });
-  }
-
-  function renderChart(sales) {
+// ─── CHARTS ───────────────────────────────────────────────────────────────────
+function renderChart(sales) {
     const ctx = document.getElementById('salesChart');
     if(!ctx) return;
-    let html = '';
     const today = new Date();
-    
     let maxVal = 0;
     const daysData = [];
+    
     for(let i=6; i>=0; i--) {
         const d = new Date(today); d.setDate(d.getDate() - i);
         const dStr = d.toISOString().split('T')[0];
-        const dayTotal = sales.filter(s => (s.date||'').startsWith(dStr)).reduce((sum,s)=>sum+Number(s.amount||s.total||0),0);
+        
+        let dayTotal = 0;
+        sales.forEach(s => {
+            const sDate = new Date(s.date).toISOString().split('T')[0];
+            if(sDate === dStr) {
+                const pMode = s.paymentMethod || s.paymentMode || 'Cash';
+                if (pMode === 'Partial' && s.split) dayTotal += (Number(s.split.cash) + Number(s.split.online));
+                else if (pMode !== 'Udhaar') dayTotal += Number(s.total || s.amount || 0);
+            }
+            // Settled Udhaars added to the day they were settled
+            if(s.isPaid && s.settledDate) {
+                if(new Date(s.settledDate).toISOString().split('T')[0] === dStr && sDate !== dStr) {
+                    dayTotal += (s.paymentMethod === 'Partial' && s.split) ? Number(s.split.udhaar) : Number(s.total || s.amount || 0);
+                }
+            }
+        });
+        
         if(dayTotal > maxVal) maxVal = dayTotal;
         daysData.push({ date: d, val: dayTotal });
     }
 
-    daysData.forEach(item => {
+    ctx.innerHTML = daysData.map(item => {
         const h = maxVal > 0 ? (item.val / maxVal * 100) : 5; 
         const dateStr = item.date.toLocaleDateString('en-US',{weekday:'short'});
-        html += `<div class="bar-group"><div class="bar ${item.val>0?'active':''}" style="height:${h}%"></div><div class="bar-label">${dateStr}</div></div>`;
+        return `<div class="bar-group" title="₹${item.val.toFixed(2)}"><div class="bar ${item.val>0?'active':''}" style="height:${h}%"></div><div class="bar-label">${dateStr}</div></div>`;
+    }).join('');
+}
+
+// ─── UDHAAR KHATA (Split Payment Compatible) ──────────────────────────────────
+window.openUdhaarSection = function() {
+    document.getElementById('mainDashboard').style.display = 'none';
+    document.getElementById('udhaarView').style.display = 'block';
+    renderUdhaarGroups();
+}
+
+window.closeUdhaarSection = function() {
+    document.getElementById('udhaarView').style.display = 'none';
+    document.getElementById('mainDashboard').style.display = 'block';
+    window.renderDashboard(); 
+}
+
+function getPendingUdhaarAmount(sale) {
+    if(sale.isPaid) return 0;
+    const pMode = sale.paymentMethod || sale.paymentMode;
+    if(pMode === 'Udhaar') return Number(sale.total || sale.amount || 0);
+    if(pMode === 'Partial' && sale.split) return Number(sale.split.udhaar || 0);
+    return 0;
+}
+
+window.renderUdhaarGroups = function() {
+    const sales = safeParse('bharatpos_sales');
+    const container = document.getElementById('udhaarGroupList');
+    
+    const pending = sales.filter(s => getPendingUdhaarAmount(s) > 0);
+
+    const totalPending = pending.reduce((acc, s) => acc + getPendingUdhaarAmount(s), 0);
+    document.getElementById('udhaarPendingTotal').innerText = formatCurrency(totalPending);
+    
+    // Update Dashboard Mini-Card
+    document.getElementById('totalUdhaar').textContent = formatCurrency(totalPending);
+    document.getElementById('udhaarCount').textContent = pending.length ? `${pending.length} Pending Bills` : 'Sab clear hai';
+
+    if (pending.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#94a3b8; font-weight:600;"><i class="fa-solid fa-check-circle" style="font-size:30px; margin-bottom:10px; color:var(--success); display:block;"></i> Sab clear hai! No pending dues.</div>`;
+        return;
+    }
+
+    const groups = {};
+    pending.forEach(inv => {
+        const ph = inv.customerPhone || inv.phone || "Unknown";
+        const name = inv.customerName || inv.customer || "Walk-in";
+        const amt = getPendingUdhaarAmount(inv);
+        
+        if(!groups[ph]) groups[ph] = { phone: ph, name: name, total: 0, count: 0 };
+        if(groups[ph].name === "Walk-in" && name !== "Walk-in") groups[ph].name = name;
+        
+        groups[ph].total += amt;
+        groups[ph].count++;
     });
-    ctx.innerHTML = html;
-  }
 
-  // --- 4. UDHAAR VIEW LOGIC (Merged) ---
-  window.openUdhaarSection = function() {
-      document.getElementById('mainDashboard').style.display = 'none';
-      document.getElementById('udhaarView').style.display = 'block';
-      renderUdhaarGroups();
-  }
+    const sortedGroups = Object.values(groups).sort((a,b) => b.total - a.total);
 
-  window.closeUdhaarSection = function() {
-      document.getElementById('udhaarView').style.display = 'none';
-      document.getElementById('mainDashboard').style.display = 'block';
-      window.renderDashboard(); 
-  }
+    container.innerHTML = sortedGroups.map(g => `
+        <div class="group-card" onclick="window.openCustomerModal('${g.phone}')">
+            <div>
+                <div class="cust-name">${g.name}</div>
+                <div class="cust-phone"><i class="fa-solid fa-phone"></i> ${g.phone}</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="debt-amt">${formatCurrency(g.total)}</div>
+                <div class="debt-count">${g.count} Bills</div>
+            </div>
+        </div>
+    `).join('');
+}
 
-  function renderUdhaarGroups() {
-      const allSales = safeParse('bharatpos_sales');
-      const container = document.getElementById('udhaarGroupList');
-      const pending = allSales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true));
+window.openCustomerModal = function(phone) {
+    const sales = safeParse('bharatpos_sales');
+    const invoices = sales.filter(s => 
+        (s.customerPhone === phone || s.phone === phone || (phone === "Unknown" && !s.customerPhone && !s.phone)) && 
+        getPendingUdhaarAmount(s) > 0
+    );
+    
+    invoices.sort((a,b) => new Date(b.date) - new Date(a.date));
+    if(!invoices.length) return;
 
-      const totalPending = pending.reduce((acc, s) => acc + Number(s.amount || s.total || 0), 0);
-      document.getElementById('udhaarPendingTotal').innerText = formatCurrency(totalPending);
+    const first = invoices[0];
+    document.getElementById('custModalName').textContent = first.customerName || first.customer || "Customer";
+    document.getElementById('custModalPhone').textContent = phone;
 
-      if (pending.length === 0) {
-          container.innerHTML = `<div style="text-align:center; padding:30px; color:#94a3b8;">No pending dues! 🎉</div>`;
-          return;
-      }
+    const listBody = document.getElementById('invoiceListBody');
+    listBody.innerHTML = invoices.map(inv => {
+        const dataStr = encodeURIComponent(JSON.stringify(inv));
+        const amt = getPendingUdhaarAmount(inv);
+        const invId = inv.id || inv.invoiceNo || '???';
+        const pMode = inv.paymentMethod || inv.paymentMode;
 
-      const groups = {};
-      pending.forEach(inv => {
-          const ph = inv.phone || "Unknown";
-          const name = inv.customerName || inv.customer || "Walk-in";
-          const amt = Number(inv.amount || inv.total || 0);
-          if(!groups[ph]) groups[ph] = { phone: ph, name: name, total: 0, count: 0 };
-          if(groups[ph].name === "Walk-in" && name !== "Walk-in") groups[ph].name = name;
-          groups[ph].total += amt;
-          groups[ph].count++;
-      });
+        return `
+        <div class="inv-item">
+            <div class="inv-info">
+                <h4>#${invId.slice(-8)}</h4>
+                <p>${new Date(inv.date).toLocaleDateString()} • <span style="color:var(--warning);">${pMode}</span></p>
+            </div>
+            <div class="inv-action">
+                <div class="inv-price">${formatCurrency(amt)}</div>
+                <button class="btn-view" onclick="window.openReceipt('${dataStr}')">Settle Bill</button>
+            </div>
+        </div>`;
+    }).join('');
 
-      const sortedGroups = Object.values(groups).sort((a,b) => b.total - a.total);
+    document.getElementById('customerModal').style.display = 'flex';
+}
 
-      container.innerHTML = sortedGroups.map(g => `
-          <div class="group-card" onclick="openCustomerModal('${g.phone}')">
-              <div>
-                  <div class="cust-name">${g.name}</div>
-                  <div class="cust-phone"><i class="fa-solid fa-phone"></i> ${g.phone}</div>
-              </div>
-              <div style="text-align:right;">
-                  <div class="debt-amt">${formatCurrency(g.total)}</div>
-                  <div class="debt-count">${g.count} Bills</div>
-              </div>
-          </div>
-      `).join('');
-  }
+window.openReceipt = function(dataStr) {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const inv = JSON.parse(decodeURIComponent(dataStr));
+    const pendingAmt = getPendingUdhaarAmount(inv);
+    const invId = inv.id || inv.invoiceNo;
 
-  window.openCustomerModal = function(phone) {
-      const allSales = safeParse('bharatpos_sales');
-      const invoices = allSales.filter(s => 
-          (s.phone === phone || (phone === "Unknown" && !s.phone)) && 
-          s.paymentMode === 'Udhaar' && s.isPaid !== true
-      );
-      
-      invoices.sort((a,b) => new Date(b.date) - new Date(a.date));
-      const first = invoices[0];
-      document.getElementById('custModalName').textContent = first.customerName || first.customer || "Customer";
-      document.getElementById('custModalPhone').textContent = phone;
+    document.getElementById('rec-shop').innerText = user.shopName || "BHARAT POS";
+    document.getElementById('rec-id').innerText = "INV: " + invId.slice(-8);
+    document.getElementById('rec-date').innerText = new Date(inv.date).toLocaleString();
+    document.getElementById('rec-name').innerText = inv.customerName || inv.customer || 'Walk-in';
+    document.getElementById('rec-phone').innerText = inv.customerPhone || inv.phone || '';
+    
+    const tbody = document.getElementById('rec-items');
+    tbody.innerHTML = (inv.items || []).map(i => {
+        const qtyPrint = i.isLoose ? `${parseFloat(i.qty).toFixed(3)} ${i.unitLabel||'kg'}` : `${i.qty}`;
+        const amt = i.total || (i.price * i.qty);
+        return `<tr><td>${i.name} <div style="font-size:9px; color:#555;">${i.variant||''}</div></td><td style="text-align:center">${qtyPrint}</td><td style="text-align:right">${amt.toFixed(2)}</td></tr>`;
+    }).join('');
 
-      const listBody = document.getElementById('invoiceListBody');
-      listBody.innerHTML = invoices.map(inv => {
-          const dataStr = encodeURIComponent(JSON.stringify(inv));
-          const amt = inv.amount || inv.total || 0;
-          const invId = inv.id || inv.invoiceNo || '???';
+    document.getElementById('rec-full-total').innerText = `₹${Number(inv.total || inv.amount || 0).toFixed(2)}`;
+    
+    if(inv.split) {
+        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>Cash: ₹${inv.split.cash} | Online: ₹${inv.split.online}</span>`;
+    } else {
+        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>₹0.00</span>`;
+    }
 
-          return `
-          <div class="inv-item">
-              <div class="inv-info">
-                  <h4>#${invId}</h4>
-                  <p>${new Date(inv.date).toLocaleDateString()}</p>
-              </div>
-              <div class="inv-action">
-                  <div class="inv-price">${formatCurrency(amt)}</div>
-                  <button class="btn-view" onclick="openReceipt('${dataStr}')">Settle</button>
-              </div>
-          </div>`;
-      }).join('');
+    document.getElementById('rec-due').innerText = formatCurrency(pendingAmt);
 
-      document.getElementById('customerModal').style.display = 'flex';
-  }
+    const payBtn = document.getElementById('btnSettle');
+    payBtn.onclick = () => window.settleDebt(invId);
 
-  window.openReceipt = function(dataStr) {
-      const inv = JSON.parse(decodeURIComponent(dataStr));
-      const amt = inv.amount || inv.total || 0;
-      const invId = inv.id || inv.invoiceNo;
+    document.getElementById('receiptModal').style.display = 'flex';
+}
 
-      document.getElementById('rec-id').innerText = "INV: " + invId;
-      document.getElementById('rec-date').innerText = new Date(inv.date).toLocaleString();
-      document.getElementById('rec-name').innerText = inv.customerName || inv.customer;
-      document.getElementById('rec-phone').innerText = inv.phone;
-      document.getElementById('rec-total').innerText = formatCurrency(amt);
+// 🟢 FIREBASE: Update Udhaar (Handles Partial Clearance safely)
+window.settleDebt = async function(id) {
+    if(!confirm("Mark this pending amount as PAID (Cash Received)?")) return;
 
-      const tbody = document.getElementById('rec-items');
-      tbody.innerHTML = (inv.items || []).map(i => `
-          <tr><td>${i.name}</td><td style="text-align:right">${i.qty}</td><td style="text-align:right">${Math.round(i.price * i.qty)}</td></tr>
-      `).join('');
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const allSales = safeParse('bharatpos_sales');
+    const index = allSales.findIndex(s => (s.id === id || s.invoiceNo === id));
 
-      const payBtn = document.getElementById('btnSettle');
-      payBtn.onclick = () => window.settleDebt(invId);
+    if(index > -1) {
+        const s = allSales[index];
+        const pendingAmt = getPendingUdhaarAmount(s);
+        
+        // Update Locally for instant UI refresh
+        s.isPaid = true;
+        s.settledDate = new Date().toISOString();
+        
+        // Shift pending amount to cash mathematically
+        if(s.paymentMethod === 'Partial' && s.split) {
+            s.split.cash = Number(s.split.cash || 0) + pendingAmt;
+            s.split.udhaar = 0;
+            s.paymentMethod = "Partial (Settled)";
+        } else {
+            s.paymentMode = "Cash (Settled)"; 
+            s.paymentMethod = "Cash (Settled)";
+        }
+        
+        localStorage.setItem('bharatpos_sales', JSON.stringify(allSales));
 
-      document.getElementById('receiptModal').style.display = 'flex';
-  }
+        showToast("✅ Payment Recorded Successfully!");
+        document.getElementById('receiptModal').style.display='none';
+        document.getElementById('customerModal').style.display='none';
+        renderUdhaarGroups(); 
+        
+        // Update specific document in Firestore Sub-collection silently
+        if(user.merchantId && window.db) {
+            try {
+                const saleRef = doc(db, "shops", user.merchantId, "sales", id);
+                
+                let updateData = { 
+                    isPaid: true, 
+                    settledDate: s.settledDate 
+                };
 
-  // 🟢 FIREBASE: Update Udhaar specific bill directly in Firestore
-  window.settleDebt = async function(id) {
-      if(!confirm("Mark this invoice as PAID?")) return;
+                if(s.split) {
+                    updateData.paymentMethod = "Partial (Settled)";
+                    updateData.split = s.split;
+                } else {
+                    updateData.paymentMode = "Cash (Settled)";
+                    updateData.paymentMethod = "Cash (Settled)";
+                }
 
-      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-      const allSales = safeParse('bharatpos_sales');
-      const index = allSales.findIndex(s => (s.id == id || s.invoiceNo == id));
+                await updateDoc(saleRef, updateData);
+            } catch(e) {
+                console.error("Firebase Udhaar Update Failed:", e);
+            }
+        }
+    } else {
+        alert("Error: Invoice not found.");
+    }
+}
 
-      if(index > -1) {
-          // 1. Update Locally for instant UI refresh
-          allSales[index].isPaid = true;
-          allSales[index].paymentMode = "Cash (Settled)"; 
-          allSales[index].settledDate = new Date().toISOString();
-          localStorage.setItem('bharatpos_sales', JSON.stringify(allSales));
-
-          alert("✅ Payment Recorded!");
-          document.getElementById('receiptModal').style.display='none';
-          document.getElementById('customerModal').style.display='none';
-          renderUdhaarGroups(); 
-          
-          // 2. Update specific document in Firestore Sub-collection silently
-          if(user.merchantId) {
-              try {
-                  const saleRef = doc(db, "shops", user.merchantId, "sales", id);
-                  await updateDoc(saleRef, { 
-                      isPaid: true, 
-                      paymentMode: "Cash (Settled)", 
-                      settledDate: new Date().toISOString() 
-                  });
-              } catch(e) {
-                  console.error("Firebase Udhaar Update Failed:", e);
-              }
-          }
-      } else {
-          alert("Error: Invoice not found.");
-      }
-  }
-
-  window.resetSales = function(){
-    if (confirm('⚠ Sawdhan: Kya aap pura purana hisab delete karna chahte hain?')){ 
+window.resetSales = function(){
+    if (confirm('⚠ CAUTION: Are you sure you want to delete all local sales history?')){ 
         try { localStorage.setItem('bharatpos_sales','[]'); } catch(e) {} 
         window.renderDashboard(); 
     }
-  }
-
-  // --- 5. AI SYNC LOGIC (Still using Render Microservice) ---
-  window.sendDashboardSnapshot = async function(metrics) {
-      const statusEl = document.getElementById('aiSyncStatus');
-      const textEl = document.getElementById('aiSyncText');
-      
-      const snapshot = {
-          type: 'dashboard_sync',
-          generated_at: new Date().toISOString(),
-          revenue_total: metrics.totalRev,
-          revenue_today: metrics.todayRev,
-          sales_count: metrics.salesCount,
-          low_stock_count: metrics.lowStock.length,
-          low_stock_items: metrics.lowStock.slice(0, 10).map(p => p.name), 
-          top_selling: Object.entries(metrics.productCounts)
-                              .sort((a,b)=>b[1]-a[1])
-                              .slice(0,5)
-                              .map(x=> ({name: x[0], qty: x[1]}))
-      };
-
-      if(statusEl) statusEl.className = 'ai-sync-pill syncing';
-      if(textEl) textEl.innerText = "AI Soch Raha Hai...";
-      
-      try {
-          const url = getApiUrl('/ai-business-consult');
-          
-          const res = await fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                  snapshot: snapshot, 
-                  user_prompt: "Background Sync" 
-              })
-          });
-          
-          if(res.ok) {
-             if(statusEl) statusEl.className = 'ai-sync-pill synced';
-             if(textEl) textEl.innerText = "AI Active";
-          } else {
-             throw new Error(`Server Error: ${res.status}`);
-          }
-      } catch(e) {
-          if(statusEl) statusEl.className = 'ai-sync-pill error';
-          if(textEl) textEl.innerText = "Net Nahi Hai";
-      }
-  }
-
-  // --- 6. EXECUTION START ---
-  document.addEventListener("DOMContentLoaded", () => {
-      setGreeting();
-      loadUser();
-      window.initShopSwitcher(); 
-      setTimeout(window.renderDashboard, 100);
-  });
-
-  document.addEventListener("visibilitychange", () => { 
-      if (!document.hidden) window.renderDashboard(); 
-  });
-
-  // --- 7. FIREBASE: RECEIVER LOGIC (Ticker & Broadcasts) ---
-  setInterval(checkIncomingMessages, 10000);
-
-  async function checkIncomingMessages() {
-      try {
-          // Fetch settings/alerts from Global Firestore database
-          const alertRef = doc(db, "system", "alerts");
-          const alertSnap = await getDoc(alertRef);
-          
-          if (alertSnap.exists()) {
-              const data = alertSnap.data();
-              
-              // 1. Live Ticker Updates
-              if(data.tickerText) {
-                  const bar = document.getElementById('dashboardTicker');
-                  const txt = document.getElementById('dashTickerText');
-                  
-                  if(txt.innerText !== data.tickerText) {
-                      txt.innerText = data.tickerText;
-                      txt.innerHTML = `<span>${data.tickerText}</span> &nbsp;&nbsp;&bull;&nbsp;&nbsp; <span>${data.tickerText}</span>`;
-                      if(bar) bar.style.display = 'flex';
-                  }
-              }
-
-              // 2. Global Broadcasts
-              if(data.broadcast && data.broadcast.time) {
-                  const lastSeen = localStorage.getItem('last_broadcast_id');
-                  const msg = data.broadcast;
-                  
-                  if(msg.time > (lastSeen || 0)) {
-                      document.getElementById('bcTitle').innerText = msg.title;
-                      document.getElementById('bcBody').innerText = msg.body;
-                      document.getElementById('broadcastModal').style.display = 'flex';
-                      
-                      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                      audio.play().catch(e => console.log("Audio blocked"));
-                      
-                      localStorage.setItem('last_broadcast_id', msg.time);
-                  }
-              }
-          }
-      } catch(e) { 
-          // Silent Fail for offline gracefully 
-      }
-  }
-
-  window.closeBroadcast = function() {
-      document.getElementById('broadcastModal').style.display = 'none';
-  }
+}
 </script>
 </body>
 </html>
