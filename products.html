@@ -176,7 +176,7 @@
     #barcodeScannerModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     .barcode-modal-content { background: #fff; border-radius: var(--radius-md); padding: 15px; width: 90%; max-width: 400px; text-align: center; }
 
-    /* --- TOAST & GLOBAL HINT BAR (Mobile & Desktop Tooltip) --- */
+    /* --- TOAST & GLOBAL HINT BAR --- */
     #toast { position: fixed; bottom: 28px; right: 28px; background: var(--success); color: white; padding: 13px 22px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; max-width: 340px; }
     #toast.show { transform: translateY(0); opacity: 1; }
 
@@ -192,7 +192,6 @@
     .detail-row span:first-child { color: var(--text-muted); font-weight: 600; }
     .detail-row span:last-child { color: var(--text-main); font-weight: 700; text-align: right; }
     
-    /* Ensure no datalist issues */
     datalist { display: none; }
   </style>
 </head>
@@ -462,7 +461,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
+          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry, Brand form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
       </div>
@@ -595,9 +594,9 @@
            </div>
            <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #DBEAFE;">
                <strong style="color: #1976D2;"><i class="fa-solid fa-gear"></i> 2. Settings:</strong> 
-               <span class="lang-en">Turn on advanced fields (Barcode, Expiry, Batch) from the Gear icon.</span>
-               <span class="lang-hinglish">Agar Barcode ya Expiry likhna hai, toh 'Gear' icon daba kar on karein.</span>
-               <span class="lang-hi">अगर बारकोड या एक्सपायरी लिखना है, तो 'गियर' आइकन दबा कर ऑन करें।</span>
+               <span class="lang-en">Turn on advanced fields (Brand, Barcode, Expiry) from the Gear icon.</span>
+               <span class="lang-hinglish">Agar Brand, Barcode ya Expiry likhna hai, toh 'Gear' icon daba kar on karein.</span>
+               <span class="lang-hi">अगर ब्रांड, बारकोड या एक्सपायरी लिखना है, तो 'गियर' आइकन दबा कर ऑन करें।</span>
            </div>
            <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #DBEAFE;">
                <strong style="color: #1976D2;"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Samaan:</strong> 
@@ -645,6 +644,38 @@ window.targetBarcodeInput = null;
 window.selectedBulkItems = new Set();
 
 const langs = ['en', 'hinglish', 'hi'];
+
+// ─── MATH AUTO-FILL LOGIC ──────────────────────────────────────────────────
+// This function handles the bi-directional sync between brand/variant stocks.
+window.syncVariantMath = function(variantBox, source) {
+    const brandStocks = Array.from(variantBox.querySelectorAll('.vb-stock'));
+    const totalStockInput = variantBox.querySelector('.v-add-stock');
+    
+    // If no brand stocks exist, skip math
+    if(brandStocks.length === 0) return;
+
+    if (source === 'brand') {
+        // Sum all brand stocks and set the total variant stock
+        let sum = 0;
+        brandStocks.forEach(input => sum += (parseFloat(input.value) || 0));
+        totalStockInput.value = sum;
+    } else if (source === 'total') {
+        // If total is typed, try to auto-fill an empty brand stock
+        const targetTotal = parseFloat(totalStockInput.value) || 0;
+        let filledSum = 0;
+        let emptyInputs = [];
+        brandStocks.forEach(input => {
+            if (input.value === '') emptyInputs.push(input);
+            else filledSum += parseFloat(input.value);
+        });
+        
+        if (emptyInputs.length === 1) {
+            emptyInputs[0].value = Math.max(0, targetTotal - filledSum);
+        } else if (brandStocks.length === 1) {
+            brandStocks[0].value = targetTotal;
+        }
+    }
+};
 
 // ─── INITIALIZATION ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -753,6 +784,7 @@ function bindAllEvents() {
         area.style.display = area.style.display === 'none' ? 'block' : 'none';
     });
 
+    // Global Hint Engine (Desktop Hover & Mobile Touch)
     const hintBar = document.getElementById('globalHintBar');
     document.addEventListener('mouseover', handleHintEvent);
     document.addEventListener('touchstart', handleHintEvent, {passive: true});
@@ -800,9 +832,38 @@ function bindAllEvents() {
     });
 
     document.getElementById('btnAddVariant').addEventListener('click', () => addVariantUI());
+    
+    // Variant Engine Math & Remove Delegation
     document.getElementById('variantEngine').addEventListener('click', (e) => {
+        // Remove Variant
         const removeBtn = e.target.closest('.btn-remove-var');
         if (removeBtn) removeBtn.closest('.variant-box').remove();
+        
+        // Add Sub-Brand Row
+        const addBrandBtn = e.target.closest('.btn-add-brand');
+        if (addBrandBtn) {
+            const container = e.target.closest('.variant-brands-container').querySelector('.brand-list');
+            container.insertAdjacentHTML('beforeend', window.getBrandRowHTML());
+        }
+        
+        // Remove Sub-Brand Row
+        const removeBrandBtn = e.target.closest('.btn-remove-brand');
+        if (removeBrandBtn) {
+            const row = e.target.closest('.brand-row');
+            const variantBox = row.closest('.variant-box');
+            row.remove();
+            window.syncVariantMath(variantBox, 'brand'); // Re-calc total variant stock
+        }
+    });
+
+    // Auto-math Listeners
+    document.getElementById('variantEngine').addEventListener('input', (e) => {
+        if (e.target.classList.contains('vb-stock')) {
+            window.syncVariantMath(e.target.closest('.variant-box'), 'brand');
+        }
+        if (e.target.classList.contains('v-add-stock')) {
+            window.syncVariantMath(e.target.closest('.variant-box'), 'total');
+        }
     });
 
     document.getElementById('productForm').addEventListener('submit', handleSaveProduct);
@@ -954,9 +1015,15 @@ function handleExportCSV() {
         const flattened = [];
         window.allProducts.forEach(p => {
             p.variants.forEach(v => {
+                // Flatten brands if multiple exist
+                let brandsStr = '';
+                if(v.brands && v.brands.length > 0) {
+                    brandsStr = v.brands.map(b => `${b.name}(${b.stock})`).join(', ');
+                }
+
                 flattened.push({
                     Name: p.name, Category: p.category, Type: v.quantity, Price: v.price, Stock: v.stock,
-                    Brand: v.brand, Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
+                    Brands: brandsStr, Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
                     BaseQty: v.baseQty, BaseUnit: v.baseUnit, BatchID: p.batchId, HSN: p.hsn, GST: p.gstRate, DateAdded: p.dateAdded
                 });
             });
@@ -969,19 +1036,14 @@ function handleExportCSV() {
     } catch(e) { showToast("Export Failed", true); }
 }
 
-// ─── QUAGGA BARCODE ENGINE (Fast Auto-focus) ─────────────────────────────────
+// ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
 window.startBarcodeScan = function(btnEl) {
     window.targetBarcodeInput = btnEl.previousElementSibling;
     const modal = document.getElementById('barcodeScannerModal');
     modal.style.display = 'flex';
     
     Quagga.init({
-        inputStream: { 
-            name: "Live", 
-            type: "LiveStream", 
-            target: document.querySelector('#quaggaPreview'), 
-            constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } 
-        },
+        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
         decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
     }, function(err) {
         if (err) { console.log(err); showToast("Scanner failed to start", true); return; }
@@ -1005,12 +1067,34 @@ function stopBarcodeScan() {
     window.targetBarcodeInput = null;
 }
 
-// ─── VARIANT ENGINE ───────────────────────────────────────────────────────────
+// ─── VARIANT ENGINE (Multi-Brand Sub-Engine) ──────────────────────────────────
+window.getBrandRowHTML = function(name = '', stock = '') {
+    return `
+    <div class="brand-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
+        <div style="flex:2; position:relative;">
+            <input type="text" class="form-input vb-name" list="brandList" placeholder="Brand Name" style="padding:10px 12px; font-size:12px;" value="${name}">
+        </div>
+        <div style="flex:1; position:relative;">
+            <input type="number" step="0.001" class="form-input vb-stock" placeholder="Stock" style="padding:10px 12px; font-size:12px;" value="${stock}">
+        </div>
+        <button type="button" class="btn-remove-brand" style="background:none; border:none; color:var(--danger); cursor:pointer; padding:5px;"><i class="fa-solid fa-xmark"></i></button>
+    </div>`;
+}
+
 function addVariantUI(data = null) {
     const container = document.getElementById('variantEngine');
     const div = document.createElement('div');
     div.className = 'variant-box';
     const uid = Math.floor(Math.random() * 10000);
+
+    // Build the sub-brands HTML
+    let brandsHtml = '';
+    const brandsArray = data?.brands || (data?.brand ? [{name: data.brand, stock: data.stock || 0}] : []);
+    if (brandsArray.length > 0) {
+        brandsArray.forEach(b => { brandsHtml += window.getBrandRowHTML(b.name, b.stock); });
+    } else {
+        brandsHtml = window.getBrandRowHTML('', ''); // 1 empty row by default
+    }
 
     div.innerHTML = `
         ${container.children.length > 0 ? `<button type="button" class="btn-remove-var"><i class="fa-solid fa-xmark"></i></button>` : ''}
@@ -1022,9 +1106,9 @@ function addVariantUI(data = null) {
                 </label>
             </div>
             <div class="form-group" style="margin-bottom:0;">
-                <input type="number" step="0.001" class="form-input v-add-stock" id="s_${uid}" placeholder=" ">
+                <input type="number" step="0.001" class="form-input v-add-stock" id="s_${uid}" placeholder=" " value="${data?.stock || ''}">
                 <label for="s_${uid}" class="floating-label" style="color:var(--success);">
-                    <span class="lang-en">Add Stock (+/−)</span><span class="lang-hinglish">Stock Jodein (+/-)</span><span class="lang-hi">स्टॉक जोड़ें (+/-)</span>
+                    <span class="lang-en">Total Stock</span><span class="lang-hinglish">Kul Stock</span><span class="lang-hi">कुल स्टॉक</span>
                 </label>
             </div>
         </div>
@@ -1035,10 +1119,12 @@ function addVariantUI(data = null) {
             </label>
         </div>
         
-        <div class="form-group adv-only-field" style="margin-bottom:0; margin-top:10px; border-top:1px dashed rgba(25,118,210,0.2); padding-top:10px;">
-            <input type="text" class="form-input v-brand" placeholder=" " list="brandList" value="${data?.brand || ''}">
-            <label class="floating-label"><i class="fa-solid fa-copyright"></i> Brand / Manufacturer</label>
+        <div class="variant-brands-container adv-only-field" style="margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;">
+           <label class="floating-label" style="position:static; display:block; margin-bottom:8px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-copyright"></i> Brands & Stock List</label>
+           <div class="brand-list">${brandsHtml}</div>
+           <button type="button" class="btn btn-dashed btn-add-brand" style="padding: 6px; font-size: 11px; width:auto; display:inline-block;"><i class="fa-solid fa-plus"></i> <span class="lang-en">Add Brand</span><span class="lang-hinglish">+ Brand Jodein</span><span class="lang-hi">+ ब्रांड जोड़ें</span></button>
         </div>
+
         <div class="variant-grid adv-only-field">
             <div class="form-group" style="margin-bottom:0; position:relative;">
                 <input type="text" class="form-input v-barcode" placeholder=" " value="${data?.barcode || ''}" style="font-family:'JetBrains Mono'; padding-right:40px;">
@@ -1064,7 +1150,7 @@ function addVariantUI(data = null) {
         </div>
 
         <input type="hidden" class="v-id" value="${data?.id || ''}">
-        <input type="hidden" class="v-exist-stock" value="${data?.stock || 0}">
+        <input type="hidden" class="v-added" value="${data?.dateAdded || ''}">
     `;
     container.appendChild(div);
 }
@@ -1106,21 +1192,31 @@ async function handleSaveProduct(e) {
             const box      = variantBoxes[i];
             const unit     = box.querySelector('.v-unit').value.trim();
             const price    = box.querySelector('.v-price').value;
-            const addStock = parseFloat(box.querySelector('.v-add-stock').value) || 0;
+            const stock    = parseFloat(box.querySelector('.v-add-stock').value) || 0;
 
             let vId        = box.querySelector('.v-id').value || `var_${Date.now()}_${i}`;
-            let existStock = parseFloat(box.querySelector('.v-exist-stock').value) || 0;
+            let vAdded     = box.querySelector('.v-added').value || nowIso;
             
-            let vBrand     = isAdv ? box.querySelector('.v-brand').value : "";
             let vBarcode   = isAdv ? box.querySelector('.v-barcode').value : "";
             let vExpiry    = isAdv ? box.querySelector('.v-expiry').value : "";
             let vCost      = isAdv ? box.querySelector('.v-cost').value : "";
             let vBaseQty   = isLoose ? box.querySelector('.v-base-qty').value : "";
             let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "pcs";
 
+            // Extract sub-brands
+            let vBrands = [];
+            if(isAdv) {
+                const brandRows = box.querySelectorAll('.brand-row');
+                brandRows.forEach(row => {
+                    const bName = row.querySelector('.vb-name').value.trim();
+                    const bStock = parseFloat(row.querySelector('.vb-stock').value) || 0;
+                    if(bName || bStock > 0) vBrands.push({ name: bName, stock: bStock });
+                });
+            }
+
             productDoc.variants.push({
-                id: vId, quantity: unit, price: parseFloat(price), stock: existStock + addStock,
-                brand: vBrand, barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, 
+                id: vId, quantity: unit, price: parseFloat(price), stock: stock,
+                brands: vBrands, barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, 
                 baseQty: vBaseQty, baseUnit: vBaseUnit
             });
         }
@@ -1179,7 +1275,9 @@ function updateDatalists() {
         if (p.category) cats.add(p.category);
         if (p.gstRate)  taxes.add(p.gstRate);
         if (p.batchId)  batches.add(p.batchId);
-        (p.variants || []).forEach(v => { if(v.brand) brands.add(v.brand); });
+        (p.variants || []).forEach(v => {
+            if(v.brands) v.brands.forEach(b => { if(b.name) brands.add(b.name); });
+        });
     });
 
     document.getElementById('catList').innerHTML   = Array.from(cats).map(c => `<option value="${c}">`).join('');
@@ -1254,7 +1352,7 @@ function applyFilters() {
     }
 
     if (window.filterState.brand) {
-        filtered = filtered.filter(p => p.variants.some(v => v.brand === window.filterState.brand));
+        filtered = filtered.filter(p => p.variants.some(v => v.brands && v.brands.some(b => b.name === window.filterState.brand)));
     }
     if (window.filterState.tax) {
         filtered = filtered.filter(p => p.gstRate == window.filterState.tax);
@@ -1405,7 +1503,10 @@ function renderChunk() {
         const formatTotalStock = formatStock(totalStock, p.variants[0].quantity);
         const isChecked = window.selectedBulkItems.has(p.id) ? 'checked' : '';
 
-        const displayBrand = p.variants[0].brand ? ` • ${p.variants[0].brand}` : '';
+        let displayBrand = '';
+        if(p.variants[0].brands && p.variants[0].brands.length > 0) {
+            displayBrand = ` • ${p.variants[0].brands[0].name}${p.variants[0].brands.length > 1 ? ' (+More)' : ''}`;
+        }
 
         const card = document.createElement('div');
         card.className = 'sku-card';
@@ -1488,7 +1589,12 @@ function openProductDetails(id) {
 
     document.getElementById('dVariantsList').innerHTML = base.variants.map(v => {
         let details = [];
-        if(v.brand) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-copyright"></i> ${v.brand}</span>`);
+        
+        let brandsSummary = '';
+        if(v.brands && v.brands.length > 0) {
+            brandsSummary = `<div style="font-size:10px; color:var(--text-light); margin-top:2px;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name} (${b.stock})`).join(', ') + `</div>`;
+        }
+
         if(v.barcode) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
         if(v.expiryDate) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
         if(v.costPrice) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
@@ -1499,7 +1605,10 @@ function openProductDetails(id) {
         return `
         <div style="background:#FFFFFF;padding:12px;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow-sm);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
+                <div>
+                    <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
+                    ${brandsSummary}
+                </div>
                 <div style="text-align:right;">
                     <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:15px;">₹${v.price}</div>
                     <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--text-muted)'};font-weight:700;margin-top:2px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
@@ -1530,9 +1639,10 @@ function loadProductForEdit(id) {
     document.getElementById('pBatchId').value   = base.batchId || '';
     document.getElementById('pIsLoose').checked = base.isLoose || false;
 
+    // Auto-enable UI sections if they contain data
     if (base.batchId) document.getElementById('cfgBatch').checked = true;
     if (base.isLoose) document.getElementById('cfgLoose').checked = true;
-    if (base.variants.some(v => v.brand || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
+    if (base.variants.some(v => (v.brands && v.brands.length>0) || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
         document.getElementById('cfgAdvFields').checked = true;
     }
 
@@ -1646,7 +1756,7 @@ function importMasterProduct(p) {
     showToast(`Imported "${p.name}"`);
 }
 
-// ─── BULK CSV/XLSX IMPORT ─────────────────────────────────────────────────────
+// ─── BULK CSV/XLSX IMPORT (Adapted for Singularity Model) ───────────────────
 async function handleBulkImport(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1670,9 +1780,12 @@ async function handleBulkImport(event) {
                 if (!name) continue;
 
                 const skuId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                const brandStr = String(row['Brand'] || '');
+                const brandsArray = brandStr ? [{ name: brandStr, stock: parseFloat(row['Stock'] || row['Qty'] || 0) }] : [];
+
                 const productDoc = {
                     id: skuId, name: String(name), category: String(row['Category'] || 'General'),
-                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: String(row['BatchID'] || row['Batch'] || ''),
+                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: '',
                     reorderPoint: String(row['Reorder Point'] || row['Min Stock'] || ''),
                     isLoose: String(row['Loose'] || '').toLowerCase() === 'true', dateAdded: new Date().toISOString(),
                     variants: [{
@@ -1680,7 +1793,7 @@ async function handleBulkImport(event) {
                         quantity: String(row['Type'] || row['Unit'] || '1 pcs'),
                         price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
                         stock: parseFloat(row['Stock'] || row['Qty'] || 0),
-                        brand: String(row['Brand'] || ''), barcode: String(row['Barcode'] || ''),
+                        brands: brandsArray, barcode: String(row['Barcode'] || ''),
                         costPrice: String(row['CostPrice'] || row['Cost'] || ''), expiryDate: String(row['Expiry'] || ''), 
                         baseQty: String(row['BaseQty'] || ''), baseUnit: String(row['BaseUnit'] || 'pcs')
                     }]
@@ -1709,7 +1822,7 @@ async function handleBulkImport(event) {
     reader.readAsArrayBuffer(file);
 }
 
-// ─── CLOUD SYNC ───────────────────────────────────────────────────────────────
+// ─── CLOUD SYNC (Adapted for Singularity Model) ───────────────────────────────
 async function pullFreshData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if (!user.merchantId || !window.db) { showToast("No active cloud connection", true); return; }
@@ -1721,14 +1834,16 @@ async function pullFreshData() {
         const snap  = await getDocs(collection(db, "shops", user.merchantId, "products"));
         let fresh = snap.docs.map(d => d.data());
         
+        // Backward compatibility migration block
         fresh = fresh.map(p => {
             if(!p.variants) {
+                const brandsArray = p.brand ? [{ name: p.brand, stock: p.stock || 0 }] : [];
                 return {
                     id: p.id, name: p.name, category: p.category, hsn: p.hsn, gstRate: p.gstRate, priceType: p.priceType,
                     isLoose: p.isLoose, batchId: p.batchId, reorderPoint: p.reorderPoint, dateAdded: p.dateAdded || new Date().toISOString(),
                     variants: [{
                         id: `${p.id}_v0`, quantity: p.quantity || '1 pcs', price: p.price || 0, stock: p.stock || 0,
-                        brand: p.brand || '', barcode: p.barcode || '', expiryDate: p.expiryDate || '', costPrice: p.costPrice || '',
+                        brands: brandsArray, barcode: p.barcode || '', expiryDate: p.expiryDate || '', costPrice: p.costPrice || '',
                         baseQty: p.baseQty || '', baseUnit: p.baseUnit || 'pcs'
                     }]
                 };
