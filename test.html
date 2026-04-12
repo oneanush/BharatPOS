@@ -64,12 +64,12 @@
     /* --- POS LAYOUT --- */
     .pos-container { display: flex; height: calc(100vh - 60px); overflow: hidden; width: 100%; max-width: 1600px; margin: 0 auto; }
     .left-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); background: var(--bg-body); position: relative;}
-    .right-pane { width: 400px; background: #fff; display: flex; flex-direction: column; z-index: 10; transition: transform 0.3s ease; }
+    .right-pane { width: 420px; background: #fff; display: flex; flex-direction: column; z-index: 10; transition: transform 0.3s ease; }
     
     @media(max-width: 900px) {
         .pos-container { flex-direction: column; }
         .left-pane { flex: 1; height: 100%; }
-        .right-pane { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100%; box-shadow: -5px 0 30px rgba(0,0,0,0.1); }
+        .right-pane { position: fixed; top: 0; right: -100%; width: 100%; max-width: 420px; height: 100%; box-shadow: -5px 0 30px rgba(0,0,0,0.1); }
         .right-pane.open { right: 0; }
     }
 
@@ -93,17 +93,23 @@
     .prod-card { background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;}
     .prod-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
     .prod-card:active { transform: scale(0.97); }
-    .pc-name { font-size: 14px; font-weight: 700; color: var(--text-main); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .pc-name { font-size: 14px; font-weight: 700; color: var(--text-main); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-right:20px; }
     .pc-cat { font-size: 10px; color: var(--text-light); font-weight: 600; text-transform: uppercase; margin-bottom: 8px;}
     .pc-bottom { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; }
     .pc-price { font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace; font-size: 15px; }
     .pc-stock { font-size: 11px; font-weight: 700; color: var(--text-muted); background: var(--bg-input); padding: 2px 6px; border-radius: 4px; }
-    .pc-badge { position: absolute; top: 0; right: 0; background: var(--warning); color: #fff; font-size: 9px; font-weight: 800; padding: 3px 8px; border-bottom-left-radius: 8px; }
+    
+    .pc-badge { position: absolute; bottom: 0; right: 0; background: var(--warning); color: #fff; font-size: 9px; font-weight: 800; padding: 3px 8px; border-top-left-radius: 8px; }
+    .pc-badge-loose { position: absolute; bottom: 0; right: 0; background: var(--purple); color: #fff; font-size: 9px; font-weight: 800; padding: 3px 8px; border-top-left-radius: 8px; }
+    
+    .pc-info-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.9); border: 1px solid var(--border); color: var(--primary); width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm);}
+    .pc-info-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
     /* --- RIGHT PANE (CART) --- */
     .cart-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; }
-    .customer-selector { position: relative; margin: 15px 20px; }
-    .customer-selector input { width: 100%; border: 1.5px dashed var(--border-hover); padding: 12px 15px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; outline: none; background: #fff; font-family: inherit; transition: 0.2s;}
+    
+    .customer-selector { display: flex; gap:10px; margin: 15px 20px; position: relative; }
+    .customer-selector input { flex:1; border: 1.5px dashed var(--border-hover); padding: 12px 15px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; outline: none; background: #fff; font-family: inherit; transition: 0.2s;}
     .customer-selector input:focus { border-color: var(--primary); background: var(--bg-input); }
     .customer-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); z-index: 50; max-height: 200px; overflow-y: auto; display: none; }
     .cust-option { padding: 10px 15px; border-bottom: 1px solid var(--bg-input); cursor: pointer; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; }
@@ -123,8 +129,8 @@
     .cart-item:hover .ci-del { opacity: 1; }
 
     .cart-summary { padding: 15px 20px; background: #F8FAFC; border-top: 1px solid var(--border); }
-    .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
-    .summary-total { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-hover); font-size: 18px; font-weight: 800; color: var(--text-main); }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+    .summary-total { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-hover); font-size: 18px; font-weight: 800; color: var(--text-main); }
     
     .checkout-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 20px 20px; background: #F8FAFC; }
     .btn-checkout { padding: 15px; border-radius: var(--radius-sm); font-weight: 800; font-size: 14px; border: none; cursor: pointer; transition: 0.2s; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit;}
@@ -165,10 +171,15 @@
     .form-input:focus ~ .floating-label, .form-input:not(:placeholder-shown) ~ .floating-label { top: -8px; left: 10px; font-size: 11px; font-weight: 700; color: var(--primary); background: #fff; padding: 0 4px; }
     .form-input::placeholder { color: transparent; }
 
-    /* Quick Preset Buttons (Weights & Quantities) */
+    /* Quick Preset & Step Buttons */
     .preset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-    .btn-preset { background: var(--bg-input); border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 5px; font-weight: 700; font-size: 13px; color: var(--text-main); cursor: pointer; transition: 0.2s; }
+    .btn-preset { background: var(--bg-input); border: 1.5px solid var(--border); border-radius: 8px; padding: 15px 5px; font-weight: 800; font-size: 14px; color: var(--text-main); cursor: pointer; transition: 0.2s; font-family: inherit;}
     .btn-preset:hover, .btn-preset.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+
+    .step-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;}
+    .btn-step { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; font-weight: 700; font-size: 14px; color: var(--text-main); cursor: pointer; transition: 0.2s; text-align: left; display: flex; justify-content: space-between; align-items: center;}
+    .btn-step:hover { border-color: var(--primary); background: var(--bg-input); transform: translateY(-2px); box-shadow: var(--shadow-sm);}
+    .btn-step-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: block;}
 
     /* Badges */
     .bell-icon { position: relative; cursor: pointer; background: var(--bg-input); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main); border: 1px solid var(--border); }
@@ -200,6 +211,12 @@
     /* TOAST */
     #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; white-space: nowrap; }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    
+    /* Product Info Specifics */
+    .info-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
+    .info-detail-row:last-child { border-bottom: none; }
+    .info-detail-row span:first-child { color: var(--text-muted); font-weight: 600; }
+    .info-detail-row span:last-child { color: var(--text-main); font-weight: 700; text-align: right; }
   </style>
 </head>
 <body class="lang-en">
@@ -285,13 +302,21 @@
             </div>
         </div>
 
-        <div class="customer-selector">
-            <input type="text" id="custSearchInput" placeholder=" " autocomplete="off">
-            <label class="floating-label" style="top:11px; left:15px; background:none;">
-                <i class="fa-solid fa-user-plus" style="margin-right:4px;"></i> 
-                <span class="lang-en">Customer Mobile / Name</span><span class="lang-hinglish">Grahak ka Number/Naam</span><span class="lang-hi">ग्राहक का नंबर/नाम</span>
-            </label>
-            <div class="customer-dropdown" id="custDropdown"></div>
+        <div style="display:flex; gap:10px; margin: 15px 20px;">
+            <div class="customer-selector" style="flex:1; margin:0;">
+                <input type="text" id="custNameInput" placeholder=" " autocomplete="off">
+                <label class="floating-label" style="top:11px; left:15px; background:none;">
+                    <span class="lang-en">Customer Name</span><span class="lang-hinglish">Grahak ka Naam</span><span class="lang-hi">ग्राहक का नाम</span>
+                </label>
+                <div class="customer-dropdown" id="custNameDropdown"></div>
+            </div>
+            <div class="customer-selector" style="flex:1; margin:0;">
+                <input type="text" id="custMobileInput" placeholder=" " autocomplete="off">
+                <label class="floating-label" style="top:11px; left:15px; background:none;">
+                    <span class="lang-en">Mobile No.</span><span class="lang-hinglish">Mobile No.</span><span class="lang-hi">मोबाइल नं.</span>
+                </label>
+                <div class="customer-dropdown" id="custMobileDropdown"></div>
+            </div>
         </div>
 
         <div class="cart-items" id="cartItemsList">
@@ -310,6 +335,10 @@
             <div class="summary-row" id="cartGstRow" style="display:none; color:var(--warning);">
                 <span>Total GST:</span>
                 <span><span style="font-family:'JetBrains Mono';">₹</span><span id="cartTotalGst">0.00</span></span>
+            </div>
+            <div class="summary-row" style="color:var(--success);">
+                <span>Discount (₹):</span>
+                <input type="number" id="cartDiscountInput" style="width:80px; text-align:right; border:1px solid var(--success-soft); border-radius:6px; padding:4px 8px; outline:none; font-weight:700; color:var(--success);" placeholder="0">
             </div>
             <div class="summary-total">
                 <span>Grand Total:</span>
@@ -332,67 +361,76 @@
 </div>
 
 <div id="addToCartModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3 id="confProdName" style="margin:0; font-size:16px; font-weight:800;">Product Name</h3>
-            <button id="btnCloseConf" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-box" style="border-radius:24px 24px 0 0;">
+        <div class="modal-header" style="background:var(--primary); color:white; border-radius:24px 24px 0 0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button id="btnConfBack" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;display:none;"><i class="fa-solid fa-arrow-left"></i></button>
+                <h3 id="confProdName" style="margin:0; font-size:16px; font-weight:800;">Product Name</h3>
+            </div>
+            <button id="btnCloseConf" style="background:none;border:none;font-size:18px;cursor:pointer;color:white;"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="background:#F8FBFF; padding:20px;">
             
-            <div class="form-group">
-                <select id="confVariantSelect" class="form-select"></select>
-                <label class="floating-label"><span class="lang-en">Select Type/Size</span><span class="lang-hinglish">Type Chunein</span><span class="lang-hi">प्रकार चुनें</span></label>
+            <h4 id="confStepTitle" style="margin-top:0; margin-bottom:15px; font-size:14px; color:var(--text-muted); text-transform:uppercase;">Select Option</h4>
+            
+            <div id="stepVariant" style="display:none;">
+                <div class="step-grid" id="confVariantGrid"></div>
             </div>
 
-            <div class="form-group" id="confBrandGroup" style="display:none;">
-                <select id="confBrandSelect" class="form-select"></select>
-                <label class="floating-label"><i class="fa-solid fa-copyright"></i> <span class="lang-en">Select Brand</span><span class="lang-hinglish">Brand Chunein</span><span class="lang-hi">ब्रांड चुनें</span></label>
+            <div id="stepBrand" style="display:none;">
+                <div class="step-grid" id="confBrandGrid"></div>
             </div>
 
-            <div style="background:#F8FAFC; padding:15px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                    <span style="font-size:12px; font-weight:700; color:var(--text-muted);" id="confPriceLabel">Price per unit:</span>
-                    <span style="font-size:16px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';" id="confBasePrice">₹0.00</span>
-                </div>
-                
-                <div id="confPcsUI" style="display:none;">
-                    <div class="preset-grid">
-                        <button type="button" class="btn-preset" data-val="1">1</button>
-                        <button type="button" class="btn-preset" data-val="2">2</button>
-                        <button type="button" class="btn-preset" data-val="3">3</button>
-                        <button type="button" class="btn-preset" data-val="4">4</button>
-                        <button type="button" class="btn-preset" data-val="5">5</button>
-                        <button type="button" class="btn-preset" data-val="6">6</button>
-                        <button type="button" class="btn-preset" data-val="10">10</button>
-                        <button type="button" class="btn-preset" data-val="12">12</button>
+            <div id="stepQty" style="display:none;">
+                <div style="background:#FFFFFF; padding:15px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px; box-shadow:var(--shadow-sm);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px dashed var(--border);">
+                        <span style="font-size:13px; font-weight:700; color:var(--text-muted);" id="confPriceLabel">Rate:</span>
+                        <span style="font-size:16px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';" id="confUnitPriceDisplay">₹0.00 / unit</span>
+                    </div>
+                    
+                    <div id="confPresetContainer">
+                        </div>
+
+                    <div class="form-group" style="margin-bottom:0; margin-top:15px;">
+                        <input type="number" id="confCustomQty" class="form-input" placeholder=" " style="font-size:20px; font-weight:800; text-align:center; color:var(--primary-dark);">
+                        <label class="floating-label" id="confQtyLabel">Quantity</label>
                     </div>
                 </div>
 
-                <div id="confWeightUI" style="display:none;">
-                    <div class="preset-grid">
-                        <button type="button" class="btn-preset" data-val="0.05">50g</button>
-                        <button type="button" class="btn-preset" data-val="0.1">100g</button>
-                        <button type="button" class="btn-preset" data-val="0.25">250g</button>
-                        <button type="button" class="btn-preset" data-val="0.5">500g</button>
-                        <button type="button" class="btn-preset" data-val="1">1 Kg/L</button>
-                        <button type="button" class="btn-preset" data-val="2">2 Kg/L</button>
-                        <button type="button" class="btn-preset" data-val="5">5 Kg/L</button>
-                        <button type="button" class="btn-preset" data-val="10">10 Kg/L</button>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:0 5px;">
+                    <span style="font-weight:700; color:var(--text-main); font-size:16px;">Total:</span>
+                    <span style="font-weight:800; color:var(--primary); font-size:26px; font-family:'JetBrains Mono';" id="confItemTotal">₹0.00</span>
                 </div>
 
-                <div class="form-group" style="margin-bottom:0; margin-top:10px;">
-                    <input type="number" id="confCustomQty" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; text-align:center;">
-                    <label class="floating-label" id="confQtyLabel">Quantity</label>
-                </div>
+                <button type="button" id="btnConfirmAddToCart" class="btn btn-primary" style="font-size:16px; padding:15px; box-shadow: 0 8px 20px var(--primary-glow);"><i class="fa-solid fa-cart-plus"></i> <span class="lang-en">Add to Bill</span><span class="lang-hinglish">Bill Mein Jodein</span><span class="lang-hi">बिल में जोड़ें</span></button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div id="productInfoModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:400px;">
+        <div class="modal-header" style="background:var(--primary); color:white;">
+            <h3 id="infoName" style="margin:0; font-size:18px; font-weight:800;">Product Name</h3>
+            <button id="btnCloseInfo" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="background:#F8FBFF;">
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <span id="infoCat" style="background:#DBEAFE; color:var(--primary-dark); font-size:10px; font-weight:700; padding:4px 10px; border-radius:12px; text-transform:uppercase;">Category</span>
+                <span id="infoLoose" style="display:none; background:var(--purple); color:white; font-size:10px; font-weight:700; padding:4px 10px; border-radius:12px; text-transform:uppercase;">Loose / Weight</span>
             </div>
 
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:0 5px;">
-                <span style="font-weight:700; color:var(--text-main);">Item Total:</span>
-                <span style="font-weight:800; color:var(--primary); font-size:22px; font-family:'JetBrains Mono';" id="confItemTotal">₹0.00</span>
+            <div style="background:white; border-radius:12px; padding:15px; border:1px solid var(--border); margin-bottom:15px; box-shadow:var(--shadow-sm);">
+                <div style="font-size:11px; color:var(--primary); font-weight:700; margin-bottom:8px; text-transform:uppercase;">Global Details</div>
+                <div class="info-detail-row"><span>HSN Code:</span><span id="infoHSN">-</span></div>
+                <div class="info-detail-row"><span>GST Rate:</span><span id="infoGST">-</span></div>
+                <div class="info-detail-row"><span>Batch ID:</span><span id="infoBatch">-</span></div>
             </div>
 
-            <button type="button" id="btnConfirmAddToCart" class="btn btn-primary" style="font-size:16px; padding:15px;"><i class="fa-solid fa-cart-plus"></i> <span class="lang-en">Add to Bill</span><span class="lang-hinglish">Bill Mein Jodein</span><span class="lang-hi">बिल में जोड़ें</span></button>
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700; margin-bottom:8px; text-transform:uppercase; padding-left:5px;">Variants & Pricing</div>
+            <div id="infoVariantsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+            
         </div>
     </div>
 </div>
@@ -405,24 +443,24 @@
         </div>
         <div class="modal-body">
             <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Grand Total</div>
-                <div style="font-size:28px; font-weight:800; color:var(--text-main); font-family:'JetBrains Mono';" id="partialGrandTotal">₹0.00</div>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Grand Total To Pay</div>
+                <div style="font-size:32px; font-weight:800; color:var(--text-main); font-family:'JetBrains Mono';" id="partialGrandTotal">₹0.00</div>
             </div>
             
             <div class="form-group">
-                <input type="number" id="payCash" class="form-input" placeholder=" " style="font-size:16px; font-weight:700; color:var(--success);">
+                <input type="number" id="payCash" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--success);">
                 <label class="floating-label"><i class="fa-solid fa-money-bill-wave"></i> Cash Amount</label>
             </div>
             <div class="form-group">
-                <input type="number" id="payOnline" class="form-input" placeholder=" " style="font-size:16px; font-weight:700; color:var(--purple);">
+                <input type="number" id="payOnline" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--purple);">
                 <label class="floating-label"><i class="fa-solid fa-qrcode"></i> Online (UPI/Card) Amount</label>
             </div>
             <div class="form-group" style="margin-bottom:25px;">
-                <input type="number" id="payUdhaar" class="form-input" placeholder=" " style="font-size:16px; font-weight:700; color:var(--danger);" readonly>
+                <input type="number" id="payUdhaar" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--danger);" readonly>
                 <label class="floating-label"><i class="fa-solid fa-book-open"></i> Udhaar (Pending) Amount</label>
             </div>
 
-            <button type="button" id="btnConfirmPartial" class="btn btn-primary" style="padding:15px;"><i class="fa-solid fa-check-circle"></i> Complete Transaction</button>
+            <button type="button" id="btnConfirmPartial" class="btn btn-primary" style="padding:16px; font-size:15px;"><i class="fa-solid fa-check-circle"></i> Complete Transaction</button>
         </div>
     </div>
 </div>
@@ -465,7 +503,7 @@
 <div id="barcodeScannerModal" class="modal-overlay" style="background:rgba(0,0,0,0.9); z-index:11000;">
     <div style="background:#fff; border-radius:16px; padding:15px; width:90%; max-width:400px; text-align:center;">
         <h4 style="margin-top:0; margin-bottom:10px; font-family:'Plus Jakarta Sans';"><i class="fa-solid fa-barcode"></i> Scan Product Barcode</h4>
-        <div id="quaggaPreview" style="width:100%; height:250px; background:#000; border-radius:10px; overflow:hidden; position:relative;">
+        <div id="cameraPreview" style="width:100%; height:250px; background:#000; border-radius:10px; overflow:hidden; position:relative;">
             <div style="position:absolute; width:100%; height:2px; background:#10B981; box-shadow:0 0 12px #10B981; animation:laser 2s infinite;"></div>
         </div>
         <button type="button" class="btn btn-outline" style="margin-top:15px; width:100%;" id="btnCancelBarcode"><i class="fa-solid fa-xmark"></i> Cancel</button>
@@ -490,9 +528,10 @@ window.onlineOrders = [];
 
 window.currentCustomer = { name: '', mobile: '' };
 window.activeCategory = 'ALL';
-window.configState = { prodId: null, variants: [], selectedVarIdx: 0, brands: [], selectedBrand: '' };
+window.configState = { prod: null, step: 'variant', selectedVariant: null, selectedBrand: null };
 
 const langs = ['en', 'hinglish', 'hi'];
+let isScanning = false;
 
 // ─── INITIALIZATION ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -506,7 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.customers = JSON.parse(localStorage.getItem('bharatpos_customers') || '[]');
         window.heldCarts = JSON.parse(localStorage.getItem('bharatpos_held_carts') || '[]');
         
-        // Sort products by popularity
         const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
         const freqs = {};
         sales.forEach(s => (s.items||[]).forEach(i => freqs[i.id] = (freqs[i.id]||0) + (i.qty||1)));
@@ -516,9 +554,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderProductGrid();
         renderCart();
         
-        // Listen to Online Orders
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(user.merchantId && db) {
+        if(user.merchantId && window.db) {
             onSnapshot(collection(db, "shops", user.merchantId, "onlineOrders"), (snap) => {
                 window.onlineOrders = snap.docs.map(d => ({...d.data(), orderId: d.id}));
                 document.getElementById('onlineBadge').innerText = window.onlineOrders.length;
@@ -534,7 +571,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
 function bindAllEvents() {
-    // Nav & Lang
     document.getElementById('btnLangToggle').addEventListener('click', () => {
         let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
         currentIdx = (currentIdx + 1) % langs.length;
@@ -547,7 +583,6 @@ function bindAllEvents() {
     document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
     document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
     
-    // Mobile Cart FAB
     document.getElementById('mobileCartFab').addEventListener('click', () => {
         document.getElementById('rightPane').classList.add('open');
         document.getElementById('btnCloseMobileCart').style.display = 'block';
@@ -557,7 +592,6 @@ function bindAllEvents() {
         document.getElementById('btnCloseMobileCart').style.display = 'none';
     });
 
-    // Catalog Events
     document.getElementById('prodSearchInput').addEventListener('input', renderProductGrid);
     document.getElementById('catTabs').addEventListener('click', (e) => {
         if(e.target.classList.contains('cat-chip')) {
@@ -569,54 +603,72 @@ function bindAllEvents() {
     });
 
     document.getElementById('productGrid').addEventListener('click', (e) => {
+        if(e.target.closest('.pc-info-btn')) return; // handled separately
         const card = e.target.closest('.prod-card');
-        if(card) openAddToCartModal(card.getAttribute('data-id'));
+        if(card) openAddToCartWizard(card.getAttribute('data-id'));
     });
 
-    // Customer Search
-    const custInp = document.getElementById('custSearchInput');
-    const custDrop = document.getElementById('custDropdown');
-    custInp.addEventListener('input', (e) => {
+    // Customer Auto-suggest
+    const cName = document.getElementById('custNameInput');
+    const cMob = document.getElementById('custMobileInput');
+    const dName = document.getElementById('custNameDropdown');
+    const dMob = document.getElementById('custMobileDropdown');
+
+    const handleSearch = (e, drop) => {
         const val = e.target.value.toLowerCase().trim();
-        window.currentCustomer = { name: e.target.value, mobile: '' }; // default unstructured
-        if(!val) { custDrop.style.display = 'none'; return; }
+        window.currentCustomer.name = cName.value;
+        window.currentCustomer.mobile = cMob.value;
         
+        if(!val) { drop.style.display = 'none'; return; }
         const matches = window.customers.filter(c => (c.name||'').toLowerCase().startsWith(val) || (c.mobile||'').startsWith(val)).slice(0, 5);
         if(matches.length > 0) {
-            custDrop.innerHTML = matches.map(c => `<div class="cust-option" data-name="${c.name}" data-mobile="${c.mobile}"><span>${c.name}</span><span style="color:var(--text-muted);">${c.mobile}</span></div>`).join('');
-            custDrop.style.display = 'block';
+            drop.innerHTML = matches.map(c => `<div class="cust-option" data-name="${c.name}" data-mobile="${c.mobile}"><span>${c.name}</span><span style="color:var(--text-muted);">${c.mobile}</span></div>`).join('');
+            drop.style.display = 'block';
         } else {
-            custDrop.style.display = 'none';
+            drop.style.display = 'none';
         }
-    });
-    custDrop.addEventListener('click', (e) => {
+    };
+    cName.addEventListener('input', (e) => handleSearch(e, dName));
+    cMob.addEventListener('input', (e) => handleSearch(e, dMob));
+
+    const handleSelect = (e, drop) => {
         const opt = e.target.closest('.cust-option');
         if(opt) {
             window.currentCustomer = { name: opt.getAttribute('data-name'), mobile: opt.getAttribute('data-mobile') };
-            custInp.value = `${window.currentCustomer.name} (${window.currentCustomer.mobile})`;
-            custDrop.style.display = 'none';
+            cName.value = window.currentCustomer.name;
+            cMob.value = window.currentCustomer.mobile;
+            drop.style.display = 'none';
         }
-    });
-    document.addEventListener('click', (e) => { if(e.target !== custInp && e.target !== custDrop) custDrop.style.display = 'none'; });
+    };
+    dName.addEventListener('click', (e) => handleSelect(e, dName));
+    dMob.addEventListener('click', (e) => handleSelect(e, dMob));
 
-    // Config Modal Events
-    document.getElementById('btnCloseConf').addEventListener('click', () => document.getElementById('addToCartModal').style.display='none');
-    document.getElementById('confVariantSelect').addEventListener('change', (e) => {
-        window.configState.selectedVarIdx = parseInt(e.target.value);
-        updateConfigUI();
+    document.addEventListener('click', (e) => { 
+        if(e.target !== cName && e.target !== dName) dName.style.display = 'none'; 
+        if(e.target !== cMob && e.target !== dMob) dMob.style.display = 'none'; 
     });
-    document.getElementById('confBrandSelect').addEventListener('change', (e) => {
-        window.configState.selectedBrand = e.target.value;
+
+    // Wizard Flow Events
+    document.getElementById('btnCloseConf').addEventListener('click', () => document.getElementById('addToCartModal').style.display='none');
+    document.getElementById('btnConfBack').addEventListener('click', wizardBack);
+    document.getElementById('confVariantGrid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-step');
+        if(btn) wizardSelectVariant(btn.getAttribute('data-vid'));
+    });
+    document.getElementById('confBrandGrid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-step');
+        if(btn) wizardSelectBrand(btn.getAttribute('data-bname'));
     });
     
-    // Preset Buttons Config
-    document.querySelectorAll('.btn-preset').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+    // Qty Presets
+    document.getElementById('confPresetContainer').addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-preset');
+        if(btn) {
             document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            document.getElementById('confCustomQty').value = e.target.getAttribute('data-val');
+            btn.classList.add('active');
+            document.getElementById('confCustomQty').value = btn.getAttribute('data-val');
             recalcConfigTotal();
-        });
+        }
     });
     document.getElementById('confCustomQty').addEventListener('input', () => {
         document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
@@ -624,28 +676,27 @@ function bindAllEvents() {
     });
     document.getElementById('btnConfirmAddToCart').addEventListener('click', confirmAddToCart);
 
-    // Cart Controls
+    // Cart Interactions
     document.getElementById('cartItemsList').addEventListener('click', (e) => {
         const idx = e.target.closest('[data-idx]')?.getAttribute('data-idx');
         if(idx === undefined) return;
         
         if(e.target.closest('.ci-del')) {
             window.cart.splice(idx, 1);
-            renderCart();
         } else if(e.target.closest('.ci-plus')) {
             window.cart[idx].qty += 1;
-            window.cart[idx].total = window.cart[idx].qty * window.cart[idx].price;
-            renderCart();
+            window.cart[idx].total = window.cart[idx].qty * window.cart[idx].unitPrice;
         } else if(e.target.closest('.ci-minus')) {
             if(window.cart[idx].qty > 1) {
                 window.cart[idx].qty -= 1;
-                window.cart[idx].total = window.cart[idx].qty * window.cart[idx].price;
-                renderCart();
+                window.cart[idx].total = window.cart[idx].qty * window.cart[idx].unitPrice;
             }
         }
+        renderCart();
     });
+    document.getElementById('cartDiscountInput').addEventListener('input', renderCart);
 
-    // Payment Flow
+    // Checkout Flow
     document.getElementById('btnPayCash').addEventListener('click', () => processCheckout('Cash'));
     document.getElementById('btnPayOnline').addEventListener('click', () => processCheckout('Online'));
     document.getElementById('btnPayUdhaar').addEventListener('click', () => {
@@ -654,29 +705,29 @@ function bindAllEvents() {
     });
     document.getElementById('btnPayPartial').addEventListener('click', openPartialPayment);
     
-    // Partial Math
     document.getElementById('btnClosePartial').addEventListener('click', () => document.getElementById('partialPayModal').style.display='none');
     const pcCash = document.getElementById('payCash'), pcOnline = document.getElementById('payOnline'), pcUdhaar = document.getElementById('payUdhaar');
+    
     pcCash.addEventListener('input', () => {
-        const total = window.cart.reduce((s, i) => s + i.total, 0);
+        const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
         let c = Number(pcCash.value) || 0;
-        if(c > total) { c = total; pcCash.value = c; }
-        pcOnline.value = total - c;
+        if(c > grand) { c = grand; pcCash.value = c; }
+        pcOnline.value = grand - c;
         pcUdhaar.value = 0;
     });
     pcOnline.addEventListener('input', () => {
-        const total = window.cart.reduce((s, i) => s + i.total, 0);
+        const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
         let c = Number(pcCash.value) || 0;
         let o = Number(pcOnline.value) || 0;
-        if(c + o > total) { o = total - c; pcOnline.value = o; }
-        pcUdhaar.value = total - c - o;
+        if(c + o > grand) { o = grand - c; pcOnline.value = o; }
+        pcUdhaar.value = grand - c - o;
     });
     document.getElementById('btnConfirmPartial').addEventListener('click', () => {
         if(Number(pcUdhaar.value) > 0 && !window.currentCustomer.name) return showToast("Customer required for Partial Udhaar", true);
         processCheckout('Partial', { cash: Number(pcCash.value)||0, online: Number(pcOnline.value)||0, udhaar: Number(pcUdhaar.value)||0 });
     });
 
-    // Held Carts
+    // Hold/Online Carts
     document.getElementById('btnHoldCart').addEventListener('click', holdCurrentCart);
     document.getElementById('btnViewHeld').addEventListener('click', showHeldCarts);
     document.getElementById('btnCloseHeld').addEventListener('click', () => document.getElementById('heldCartsModal').style.display='none');
@@ -685,7 +736,6 @@ function bindAllEvents() {
         if(idx !== undefined && e.target.tagName === 'BUTTON') restoreHeldCart(idx);
     });
 
-    // Online Orders
     document.getElementById('btnOnlineOrders').addEventListener('click', showOnlineOrders);
     document.getElementById('btnCloseOnline').addEventListener('click', () => document.getElementById('onlineOrdersModal').style.display='none');
     document.getElementById('onlineOrdersList').addEventListener('click', (e) => {
@@ -696,9 +746,15 @@ function bindAllEvents() {
     // Invoice
     document.getElementById('btnCloseInvoice').addEventListener('click', () => {
         document.getElementById('invoiceModal').style.display='none';
-        window.cart = []; window.currentCustomer = {name:'', mobile:''}; document.getElementById('custSearchInput').value = ''; renderCart();
+        window.cart = []; window.currentCustomer = {name:'', mobile:''}; 
+        document.getElementById('custNameInput').value = ''; document.getElementById('custMobileInput').value = '';
+        document.getElementById('cartDiscountInput').value = '';
+        renderCart();
     });
     document.getElementById('btnPrintInvoice').addEventListener('click', window.print);
+
+    // Product Info Modal
+    document.getElementById('btnCloseInfo').addEventListener('click', () => document.getElementById('productInfoModal').style.display='none');
 
     // Scanner
     document.getElementById('btnOpenBarcode').addEventListener('click', startBarcodeScan);
@@ -757,15 +813,20 @@ function renderProductGrid() {
         const vBase = p.variants?.[0] || {price: 0, stock: 0};
         let totalStock = 0; (p.variants||[]).forEach(v => totalStock += Number(v.stock||0));
         
+        let badges = '';
+        if(vCount > 1) badges += `<div class="pc-badge">${vCount} Types</div>`;
+        if(p.isLoose) badges += `<div class="pc-badge-loose" style="right:${vCount>1?'55px':'0'};">Loose / Wt</div>`;
+        
         return `
         <div class="prod-card" data-id="${p.id}">
+            <button class="pc-info-btn" onclick="event.stopPropagation(); window.openProductInfo('${p.id}')"><i class="fa-solid fa-circle-info"></i></button>
+            ${badges}
             <div class="pc-cat">${p.category || 'Gen'}</div>
             <div class="pc-name">${p.name}</div>
             <div class="pc-bottom">
                 <span class="pc-price">₹${vBase.price}</span>
                 <span class="pc-stock">${totalStock} in stock</span>
             </div>
-            ${vCount > 1 ? `<div class="pc-badge">${vCount} Types</div>` : ''}
         </div>
         `;
     }).join('');
@@ -794,7 +855,7 @@ function renderCart() {
     let hasGst = false;
 
     list.innerHTML = window.cart.map((item, idx) => {
-        const amt = item.qty * item.price;
+        const amt = item.total; // qty * unitPrice
         let gstAmt = 0;
         if(item.gstRate > 0) {
             hasGst = true;
@@ -802,7 +863,6 @@ function renderCart() {
                 gstAmt = amt * (item.gstRate / 100);
                 subtotal += amt;
             } else {
-                // inclusive: amt is total. base = amt / (1 + rate/100). gst = amt - base.
                 const base = amt / (1 + (item.gstRate / 100));
                 gstAmt = amt - base;
                 subtotal += base;
@@ -816,10 +876,10 @@ function renderCart() {
         <div class="cart-item">
             <div class="ci-details">
                 <div class="ci-name">${item.name}</div>
-                <div class="ci-meta">${item.variant} ${item.brand ? `• ${item.brand}` : ''} @ ₹${item.price}</div>
+                <div class="ci-meta">${item.variant} ${item.brand ? `• ${item.brand}` : ''} @ ₹${item.unitPrice.toFixed(2)}/${item.unitLabel}</div>
                 <div class="ci-controls">
                     <button class="ci-btn ci-minus" data-idx="${idx}">-</button>
-                    <span class="ci-qty">${item.qty}</span>
+                    <span class="ci-qty">${item.qty} ${item.unitLabel}</span>
                     <button class="ci-btn ci-plus" data-idx="${idx}">+</button>
                 </div>
             </div>
@@ -830,11 +890,12 @@ function renderCart() {
         </div>`;
     }).join('');
 
-    const grand = subtotal + totalGst;
+    const discount = parseFloat(document.getElementById('cartDiscountInput').value) || 0;
+    const grand = subtotal + totalGst - discount;
 
     document.getElementById('cartTotalItems').innerText = window.cart.length;
     document.getElementById('cartSubtotal').innerText = subtotal.toFixed(2);
-    document.getElementById('cartGrandTotal').innerText = grand.toFixed(2);
+    document.getElementById('cartGrandTotal').innerText = Math.max(0, grand).toFixed(2);
 
     if(hasGst) {
         document.getElementById('cartGstRow').style.display = 'flex';
@@ -844,94 +905,241 @@ function renderCart() {
     }
 }
 
-// ─── ADD TO CART CONFIGURATOR ─────────────────────────────────────────────────
-function openAddToCartModal(prodId) {
+// ─── HIGH-SPEED WIZARD & MATH ─────────────────────────────────────────────────
+function getUnitPrice(prod, variant) {
+    if (!prod.isLoose) return Number(variant.price);
+    const baseQty = Number(variant.baseQty) || 1;
+    return Number(variant.price) / baseQty;
+}
+function getUnitLabel(prod, variant) {
+    if (!prod.isLoose) return 'unit';
+    return variant.baseUnit || 'unit';
+}
+
+window.openProductInfo = function(prodId) {
+    const prod = window.allProducts.find(p => p.id === prodId);
+    if(!prod) return;
+    
+    document.getElementById('infoName').innerText = prod.name;
+    document.getElementById('infoCat').innerText = prod.category || 'General';
+    document.getElementById('infoLoose').style.display = prod.isLoose ? 'inline-block' : 'none';
+    
+    document.getElementById('infoHSN').innerText = prod.hsn || '-';
+    document.getElementById('infoGST').innerText = prod.gstRate ? `${prod.gstRate}%` : '-';
+    document.getElementById('infoBatch').innerText = prod.batchId || '-';
+
+    document.getElementById('infoVariantsList').innerHTML = prod.variants.map(v => {
+        const uPrice = getUnitPrice(prod, v);
+        const uLabel = getUnitLabel(prod, v);
+        let brandsStr = '';
+        if(v.brands && v.brands.length > 0) {
+            brandsStr = `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name}(${b.stock})`).join(', ') + `</div>`;
+        }
+        
+        return `
+        <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span style="font-weight:700; color:var(--text-main); font-size:13px;">${v.quantity}</span>
+                    <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">₹${uPrice.toFixed(2)} per ${uLabel}</div>
+                    ${brandsStr}
+                </div>
+                <div style="text-align:right;">
+                    <div style="color:var(--success); font-weight:800; font-size:14px;">Total ₹${v.price}</div>
+                    <div style="font-size:10px; color:var(--text-muted); font-weight:600;">Stock: ${v.stock}</div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('productInfoModal').style.display = 'flex';
+}
+
+function openAddToCartWizard(prodId) {
     const prod = window.allProducts.find(p => p.id === prodId);
     if(!prod || !prod.variants || prod.variants.length === 0) return;
 
-    window.configState = { prodId: prod.id, variants: prod.variants, selectedVarIdx: 0, brands: [], selectedBrand: '' };
-
+    window.configState = { prod: prod, step: 'variant', selectedVariant: null, selectedBrand: null };
     document.getElementById('confProdName').innerText = prod.name;
     
-    const vSel = document.getElementById('confVariantSelect');
-    vSel.innerHTML = prod.variants.map((v, i) => `<option value="${i}">${v.quantity} - ₹${v.price}</option>`).join('');
-    vSel.value = "0";
-
-    updateConfigUI();
+    if(prod.variants.length > 1) {
+        wizardRenderVariants();
+    } else {
+        window.configState.selectedVariant = prod.variants[0];
+        checkBrandStep();
+    }
     document.getElementById('addToCartModal').style.display = 'flex';
 }
 
-function updateConfigUI() {
-    const v = window.configState.variants[window.configState.selectedVarIdx];
-    document.getElementById('confBasePrice').innerText = `₹${v.price}`;
-    
-    // Brands Logic
-    const bGrp = document.getElementById('confBrandGroup');
-    const bSel = document.getElementById('confBrandSelect');
+function wizardRenderVariants() {
+    window.configState.step = 'variant';
+    document.getElementById('stepVariant').style.display = 'block';
+    document.getElementById('stepBrand').style.display = 'none';
+    document.getElementById('stepQty').style.display = 'none';
+    document.getElementById('btnConfBack').style.display = 'none';
+    document.getElementById('confStepTitle').innerText = "Select Type/Size";
+
+    const grid = document.getElementById('confVariantGrid');
+    grid.innerHTML = window.configState.prod.variants.map(v => `
+        <button class="btn-step" data-vid="${v.id}">
+            <div>
+                <span>${v.quantity}</span>
+                <span class="btn-step-sub">Stock: ${v.stock}</span>
+            </div>
+            <span style="color:var(--success); font-weight:800;">₹${v.price}</span>
+        </button>
+    `).join('');
+}
+
+function wizardSelectVariant(vid) {
+    window.configState.selectedVariant = window.configState.prod.variants.find(v => v.id === vid);
+    checkBrandStep();
+}
+
+function checkBrandStep() {
+    const v = window.configState.selectedVariant;
     if(v.brands && v.brands.length > 0) {
-        window.configState.brands = v.brands;
-        bSel.innerHTML = v.brands.map(b => `<option value="${b.name}">${b.name} (${b.stock} left)</option>`).join('');
-        window.configState.selectedBrand = v.brands[0].name;
-        bGrp.style.display = 'block';
+        wizardRenderBrands();
     } else {
-        window.configState.brands = [];
         window.configState.selectedBrand = '';
-        bGrp.style.display = 'none';
+        wizardRenderQty();
+    }
+}
+
+function wizardRenderBrands() {
+    window.configState.step = 'brand';
+    document.getElementById('stepVariant').style.display = 'none';
+    document.getElementById('stepBrand').style.display = 'block';
+    document.getElementById('stepQty').style.display = 'none';
+    document.getElementById('btnConfBack').style.display = window.configState.prod.variants.length > 1 ? 'block' : 'none';
+    document.getElementById('confStepTitle').innerText = "Select Brand";
+
+    const grid = document.getElementById('confBrandGrid');
+    grid.innerHTML = window.configState.selectedVariant.brands.map(b => `
+        <button class="btn-step" data-bname="${b.name}">
+            <span>${b.name}</span>
+            <span style="color:var(--text-muted); font-size:12px;">Stock: ${b.stock}</span>
+        </button>
+    `).join('');
+}
+
+function wizardSelectBrand(bName) {
+    window.configState.selectedBrand = bName;
+    wizardRenderQty();
+}
+
+function wizardRenderQty() {
+    window.configState.step = 'qty';
+    document.getElementById('stepVariant').style.display = 'none';
+    document.getElementById('stepBrand').style.display = 'none';
+    document.getElementById('stepQty').style.display = 'block';
+    
+    const p = window.configState.prod;
+    const v = window.configState.selectedVariant;
+    
+    let backShows = false;
+    if(v.brands && v.brands.length > 0) backShows = true;
+    else if(p.variants.length > 1) backShows = true;
+    document.getElementById('btnConfBack').style.display = backShows ? 'block' : 'none';
+    
+    document.getElementById('confStepTitle').innerText = "Select Quantity";
+
+    const uPrice = getUnitPrice(p, v);
+    const uLabel = getUnitLabel(p, v);
+    document.getElementById('confUnitPriceDisplay').innerText = `₹${uPrice.toFixed(2)} / ${uLabel}`;
+    
+    const container = document.getElementById('confPresetContainer');
+    
+    if (p.isLoose) {
+        // Loose items show weight presets
+        container.innerHTML = `
+        <div class="preset-grid">
+            <button type="button" class="btn-preset" data-val="0.05">50g</button>
+            <button type="button" class="btn-preset" data-val="0.1">100g</button>
+            <button type="button" class="btn-preset" data-val="0.25">250g</button>
+            <button type="button" class="btn-preset" data-val="0.5">500g</button>
+            <button type="button" class="btn-preset" data-val="1">1 ${uLabel}</button>
+            <button type="button" class="btn-preset" data-val="2">2 ${uLabel}</button>
+            <button type="button" class="btn-preset" data-val="5">5 ${uLabel}</button>
+            <button type="button" class="btn-preset" data-val="10">10 ${uLabel}</button>
+        </div>`;
+    } else {
+        // Non-loose standard unit selection
+        container.innerHTML = `
+        <div class="preset-grid">
+            <button type="button" class="btn-preset" data-val="1">1</button>
+            <button type="button" class="btn-preset" data-val="2">2</button>
+            <button type="button" class="btn-preset" data-val="3">3</button>
+            <button type="button" class="btn-preset" data-val="4">4</button>
+            <button type="button" class="btn-preset" data-val="5">5</button>
+            <button type="button" class="btn-preset" data-val="6">6</button>
+            <button type="button" class="btn-preset" data-val="10">10</button>
+            <button type="button" class="btn-preset" data-val="12">12</button>
+        </div>`;
     }
 
-    // UI Type Logic (Pcs vs Weight)
-    const unit = (v.quantity || '').toLowerCase();
-    const isWeight = unit.includes('kg') || unit.includes('g') || unit.includes('l') || unit.includes('ml');
-    
-    document.getElementById('confPcsUI').style.display = isWeight ? 'none' : 'block';
-    document.getElementById('confWeightUI').style.display = isWeight ? 'block' : 'none';
-    document.getElementById('confQtyLabel').innerText = isWeight ? 'Multiplier / Exact Qty' : 'Quantity (Pcs)';
-    
     document.getElementById('confCustomQty').value = '1';
-    document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
     recalcConfigTotal();
 }
 
+function wizardBack() {
+    const step = window.configState.step;
+    const p = window.configState.prod;
+    const v = window.configState.selectedVariant;
+
+    if(step === 'qty') {
+        if(v.brands && v.brands.length > 0) wizardRenderBrands();
+        else if(p.variants.length > 1) wizardRenderVariants();
+    } else if(step === 'brand') {
+        wizardRenderVariants();
+    }
+}
+
 function recalcConfigTotal() {
-    const v = window.configState.variants[window.configState.selectedVarIdx];
+    const p = window.configState.prod;
+    const v = window.configState.selectedVariant;
+    const uPrice = getUnitPrice(p, v);
     const qty = parseFloat(document.getElementById('confCustomQty').value) || 0;
-    const tot = v.price * qty;
+    const tot = uPrice * qty;
     document.getElementById('confItemTotal').innerText = `₹${tot.toFixed(2)}`;
 }
 
 function confirmAddToCart() {
-    const prod = window.allProducts.find(p => p.id === window.configState.prodId);
-    const v = window.configState.variants[window.configState.selectedVarIdx];
+    const p = window.configState.prod;
+    const v = window.configState.selectedVariant;
     const qty = parseFloat(document.getElementById('confCustomQty').value) || 0;
     
     if(qty <= 0) return showToast("Enter valid quantity", true);
 
-    // Check if already in cart
-    const existingIdx = window.cart.findIndex(i => i.prodId === prod.id && i.variant === v.quantity && i.brand === window.configState.selectedBrand);
+    const uPrice = getUnitPrice(p, v);
+    const uLabel = getUnitLabel(p, v);
+    const brandStr = window.configState.selectedBrand || '';
+
+    const existingIdx = window.cart.findIndex(i => i.prodId === p.id && i.variant === v.quantity && i.brand === brandStr);
     
     if(existingIdx >= 0) {
         window.cart[existingIdx].qty += qty;
-        window.cart[existingIdx].total = window.cart[existingIdx].qty * window.cart[existingIdx].price;
+        window.cart[existingIdx].total = window.cart[existingIdx].qty * uPrice;
     } else {
         window.cart.push({
             id: v.id,
-            prodId: prod.id,
-            name: prod.name,
+            prodId: p.id,
+            name: p.name,
             variant: v.quantity,
-            brand: window.configState.selectedBrand,
+            brand: brandStr,
             qty: qty,
-            price: parseFloat(v.price),
-            total: parseFloat(v.price) * qty,
-            hsn: prod.hsn || '',
-            gstRate: parseFloat(prod.gstRate || 0),
-            priceType: prod.priceType || 'inclusive'
+            unitPrice: uPrice,
+            unitLabel: uLabel,
+            total: uPrice * qty,
+            hsn: p.hsn || '',
+            gstRate: parseFloat(p.gstRate || 0),
+            priceType: p.priceType || 'inclusive'
         });
     }
 
     document.getElementById('addToCartModal').style.display = 'none';
     renderCart();
     
-    // Auto open mobile cart drawer visually
     if(window.innerWidth <= 900) {
         document.getElementById('rightPane').classList.add('open');
         document.getElementById('btnCloseMobileCart').style.display = 'block';
@@ -941,9 +1149,9 @@ function confirmAddToCart() {
 // ─── CHECKOUT & PAYMENTS ──────────────────────────────────────────────────────
 function openPartialPayment() {
     if(window.cart.length === 0) return showToast("Cart is empty", true);
-    const total = window.cart.reduce((s, i) => s + i.total, 0);
-    document.getElementById('partialGrandTotal').innerText = `₹${total.toFixed(2)}`;
-    document.getElementById('payCash').value = total.toFixed(2);
+    const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
+    document.getElementById('partialGrandTotal').innerText = `₹${grand.toFixed(2)}`;
+    document.getElementById('payCash').value = grand.toFixed(2);
     document.getElementById('payOnline').value = '0';
     document.getElementById('payUdhaar').value = '0';
     document.getElementById('partialPayModal').style.display = 'flex';
@@ -960,12 +1168,13 @@ async function processCheckout(method, split = null) {
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`; btn.disabled = true;
 
     try {
-        const total = window.cart.reduce((s, i) => s + i.total, 0);
+        const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
+        const discount = parseFloat(document.getElementById('cartDiscountInput').value) || 0;
         let cashAmt = 0, onlineAmt = 0, udhaarAmt = 0;
 
-        if(method === 'Cash') cashAmt = total;
-        else if(method === 'Online') onlineAmt = total;
-        else if(method === 'Udhaar') udhaarAmt = total;
+        if(method === 'Cash') cashAmt = grand;
+        else if(method === 'Online') onlineAmt = grand;
+        else if(method === 'Udhaar') udhaarAmt = grand;
         else if(method === 'Partial' && split) {
             cashAmt = split.cash; onlineAmt = split.online; udhaarAmt = split.udhaar;
         }
@@ -976,32 +1185,44 @@ async function processCheckout(method, split = null) {
             customer: window.currentCustomer.name || 'Walk-in',
             customerMobile: window.currentCustomer.mobile || '',
             items: window.cart,
-            total: total,
+            total: grand,
+            discount: discount,
             paymentMethod: method,
             split: { cash: cashAmt, online: onlineAmt, udhaar: udhaarAmt }
         };
 
         const batch = writeBatch(db);
         
-        // 1. Save Sale
         batch.set(doc(db, "shops", user.merchantId, "sales", saleDoc.id), saleDoc);
 
-        // 2. Reduce Stock
+        // Adjust Stock
         window.cart.forEach(cItem => {
             const pIdx = window.allProducts.findIndex(p => p.id === cItem.prodId);
             if(pIdx > -1) {
                 const vIdx = window.allProducts[pIdx].variants.findIndex(v => v.id === cItem.id);
                 if(vIdx > -1) {
-                    window.allProducts[pIdx].variants[vIdx].stock -= cItem.qty;
-                    // Note: If multi-brand, we should ideally reduce the specific brand stock too. 
-                    // For brevity and stability, reducing the variant total stock is minimum viable.
+                    // Note: cItem.qty is in baseUnits. 
+                    // To accurately deduct from 'stock' (which is in stock units), we reverse the math:
+                    // If 1 stock = 50 kg (baseQty). And user bought 2 kg (qty). We deduct 2/50 from stock.
+                    const p = window.allProducts[pIdx];
+                    const v = p.variants[vIdx];
+                    let deduction = cItem.qty;
+                    if(p.isLoose) {
+                        const bq = Number(v.baseQty) || 1;
+                        deduction = cItem.qty / bq;
+                    }
+                    v.stock -= deduction;
+                    
+                    if(cItem.brand && v.brands) {
+                        const bIdx = v.brands.findIndex(b => b.name === cItem.brand);
+                        if(bIdx > -1) v.brands[bIdx].stock -= deduction;
+                    }
                     batch.set(doc(db, "shops", user.merchantId, "products", cItem.prodId), window.allProducts[pIdx]);
                 }
             }
         });
         localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
 
-        // 3. Customer Ledger for Udhaar
         if(udhaarAmt > 0 && window.currentCustomer.name) {
             const custId = window.currentCustomer.mobile || window.currentCustomer.name.toLowerCase().replace(/\s/g,'_');
             let cIdx = window.customers.findIndex(c => c.id === custId);
@@ -1015,7 +1236,6 @@ async function processCheckout(method, split = null) {
             batch.set(doc(db, "shops", user.merchantId, "customers", custId), window.customers[cIdx]);
         }
 
-        // Add to local sales history for sorting
         const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
         sales.push(saleDoc);
         localStorage.setItem('bharatpos_sales', JSON.stringify(sales));
@@ -1023,9 +1243,7 @@ async function processCheckout(method, split = null) {
         await batch.commit();
 
         document.getElementById('partialPayModal').style.display = 'none';
-        generateInvoice(saleDoc); // Opens Invoice Modal. Modal close resets cart.
-        
-        // Reload grid to show new stocks
+        generateInvoice(saleDoc);
         renderProductGrid();
 
     } catch(e) {
@@ -1047,29 +1265,31 @@ function generateInvoice(sale) {
 
     sale.items.forEach(i => {
         let taxHtml = '';
+        const amt = i.total;
         if(hasGst) {
-            let base = i.total; let tax = 0;
+            let base = amt; let tax = 0;
             if(i.gstRate > 0) {
-                if(i.priceType === 'inclusive') { base = i.total / (1 + (i.gstRate/100)); tax = i.total - base; }
-                else { tax = i.total * (i.gstRate/100); base = i.total; }
+                if(i.priceType === 'inclusive') { base = amt / (1 + (i.gstRate/100)); tax = amt - base; }
+                else { tax = amt * (i.gstRate/100); base = amt; }
             }
             totalTax += tax; subtotal += base;
             taxHtml = `<td class="inv-center">${i.gstRate}%</td>`;
         } else {
-            subtotal += i.total;
+            subtotal += amt;
         }
 
         rows += `
         <tr>
             <td>${i.name} <div style="font-size:10px; color:#555;">${i.variant} ${i.brand?`(${i.brand})`:''}</div></td>
-            <td class="inv-center">${i.qty}</td>
-            <td class="inv-center">${i.price}</td>
+            <td class="inv-center">${i.qty}${i.unitLabel==='unit'?'':i.unitLabel}</td>
+            <td class="inv-center">${i.unitPrice.toFixed(2)}</td>
             ${taxHtml}
-            <td class="inv-right">${i.total.toFixed(2)}</td>
+            <td class="inv-right">${amt.toFixed(2)}</td>
         </tr>`;
     });
 
     let taxSummary = hasGst ? `<div class="inv-row"><span>Total GST:</span><span>₹${totalTax.toFixed(2)}</span></div>` : '';
+    let discountRow = sale.discount > 0 ? `<div class="inv-row" style="color:red;"><span>Discount:</span><span>-₹${sale.discount.toFixed(2)}</span></div>` : '';
 
     const html = `
         <div class="inv-header">
@@ -1097,8 +1317,9 @@ function generateInvoice(sale) {
         <div class="inv-totals">
             <div class="inv-row"><span>SubTotal:</span><span>₹${subtotal.toFixed(2)}</span></div>
             ${taxSummary}
+            ${discountRow}
             <div class="inv-row" style="font-weight:bold; font-size:16px; margin-top:5px;">
-                <span>Grand Total:</span><span>₹${(subtotal + totalTax).toFixed(2)}</span>
+                <span>Grand Total:</span><span>₹${sale.total.toFixed(2)}</span>
             </div>
             ${sale.paymentMethod === 'Partial' ? `
             <div style="font-size:10px; margin-top:10px; border-top:1px dotted #ccc; padding-top:5px;">
@@ -1119,10 +1340,14 @@ function holdCurrentCart() {
         id: `hold_${Date.now()}`,
         time: new Date().toLocaleTimeString(),
         cust: window.currentCustomer,
-        items: [...window.cart]
+        items: [...window.cart],
+        discount: parseFloat(document.getElementById('cartDiscountInput').value) || 0
     });
     localStorage.setItem('bharatpos_held_carts', JSON.stringify(window.heldCarts));
-    window.cart = []; window.currentCustomer = {name:'', mobile:''}; document.getElementById('custSearchInput').value = '';
+    
+    window.cart = []; window.currentCustomer = {name:'', mobile:''}; 
+    document.getElementById('custNameInput').value = ''; document.getElementById('custMobileInput').value = '';
+    document.getElementById('cartDiscountInput').value = '';
     renderCart();
     showToast("Cart held securely.");
 }
@@ -1149,7 +1374,10 @@ function restoreHeldCart(idx) {
     const h = window.heldCarts[idx];
     window.cart = [...h.items];
     window.currentCustomer = {...h.cust};
-    document.getElementById('custSearchInput').value = window.currentCustomer.name ? `${window.currentCustomer.name} (${window.currentCustomer.mobile})` : '';
+    document.getElementById('custNameInput').value = window.currentCustomer.name;
+    document.getElementById('custMobileInput').value = window.currentCustomer.mobile;
+    document.getElementById('cartDiscountInput').value = h.discount || '';
+    
     window.heldCarts.splice(idx, 1);
     localStorage.setItem('bharatpos_held_carts', JSON.stringify(window.heldCarts));
     document.getElementById('heldCartsModal').style.display = 'none';
@@ -1181,25 +1409,27 @@ async function loadOnlineOrderToCart(orderId) {
     const order = window.onlineOrders.find(o => o.orderId === orderId);
     if(!order) return;
 
-    if(window.cart.length > 0) holdCurrentCart(); // Auto hold current to avoid mixing
+    if(window.cart.length > 0) holdCurrentCart();
     
-    // Map order items to cart format
     window.cart = order.items.map(i => {
-        const prod = window.allProducts.find(p => p.id === i.prodId) || { hsn: '', gstRate: 0, priceType: 'inclusive' };
+        const p = window.allProducts.find(prod => prod.id === i.prodId);
+        const uPrice = p ? (p.priceType === 'inclusive' ? i.price : i.price) : i.price; // Basic fallback
         return {
             id: i.variantId || 'unknown', prodId: i.prodId, name: i.name, variant: i.variant || '1 pcs', brand: '',
-            qty: i.qty, price: i.price, total: i.qty * i.price, hsn: prod.hsn, gstRate: prod.gstRate, priceType: prod.priceType
+            qty: i.qty, unitPrice: i.price, unitLabel: 'unit', total: i.qty * i.price, 
+            hsn: p?.hsn||'', gstRate: p?.gstRate||0, priceType: p?.priceType||'inclusive'
         };
     });
+    
     window.currentCustomer = { name: order.customerName, mobile: order.customerMobile || '' };
-    document.getElementById('custSearchInput').value = `${order.customerName} (${order.customerMobile||''})`;
+    document.getElementById('custNameInput').value = order.customerName;
+    document.getElementById('custMobileInput').value = order.customerMobile || '';
     
     document.getElementById('onlineOrdersModal').style.display = 'none';
     renderCart();
     
-    // Optional: Delete the order from firebase once loaded
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    if(user.merchantId && db) {
+    if(user.merchantId && window.db) {
         await deleteDoc(doc(db, "shops", user.merchantId, "onlineOrders", orderId));
     }
 }
@@ -1224,7 +1454,6 @@ function startBarcodeScan() {
             audio.play().catch(e=>{});
             stopBarcodeScan();
             
-            // Search all products -> variants for barcode
             let foundProd = null, foundVar = null;
             window.allProducts.forEach(p => {
                 const v = p.variants.find(vx => vx.barcode === code);
@@ -1232,13 +1461,11 @@ function startBarcodeScan() {
             });
 
             if(foundProd && foundVar) {
-                // Automatically open modal for this product and pre-select the variant
-                openAddToCartModal(foundProd.id);
+                openAddToCartWizard(foundProd.id);
                 const varIdx = foundProd.variants.findIndex(v => v.id === foundVar.id);
                 if(varIdx > -1) {
-                    document.getElementById('confVariantSelect').value = varIdx;
                     window.configState.selectedVarIdx = varIdx;
-                    updateConfigUI();
+                    wizardSelectVariant(foundVar.id);
                 }
             } else {
                 showToast("Product not found in inventory", true);
