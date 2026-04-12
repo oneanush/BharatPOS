@@ -441,13 +441,11 @@
 </head>
 <body>
 
-  <!-- Layer 1: Background blobs -->
   <div class="bg-blob bg-blob-a"></div>
   <div class="bg-blob bg-blob-b"></div>
   <div class="bg-blob bg-blob-c"></div>
   <div class="bg-blob bg-blob-d"></div>
 
-  <!-- Layer 2: Sticky navbar -->
   <nav class="navbar">
     <div class="brand">
       <img src="logo.png" class="global-logo">
@@ -460,10 +458,8 @@
     </div>
   </nav>
 
-  <!-- Layer 3: Scroll wrapper -->
   <div class="page-wrapper">
 
-    <!-- Layer 4: Hero -->
     <div class="hero-text">
       <div class="hero-badge">
         <div class="dot"></div>
@@ -473,10 +469,8 @@
       <p>Ask anything about your business — sales, stock, pricing, or growth strategy.</p>
     </div>
 
-    <!-- Layer 5: Main card (the structural fix — matches login page split-card) -->
     <div class="ai-container">
 
-      <!-- Blue stripe header -->
       <div class="card-header-stripe">
         <div class="stripe-inner">
           <div>
@@ -487,10 +481,8 @@
         </div>
       </div>
 
-      <!-- Card body -->
       <div class="card-body">
 
-        <!-- Layer 6: Input inner card -->
         <div class="input-card">
           <div class="prompt-label-row">
             <div class="prompt-label-icon">
@@ -519,58 +511,59 @@
           </div>
         </div>
 
-        <!-- Output divider -->
         <div class="output-divider">
           <hr><span>AI Response</span><hr>
         </div>
 
-        <!-- Output zone — JS writes into this; id must not change -->
         <div id="aiOutput" class="ai-output-area"></div>
 
-      </div><!-- /.card-body -->
-    </div><!-- /.ai-container -->
-  </div><!-- /.page-wrapper -->
+      </div></div></div><script>
 
+  // --- 1. DATA GATHERING (Updated to support Singularity Variants) ---
+  window.getStoredSnapshot = function() {
+    try {
+      const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
+      const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+      
+      let revenue = 0;
+      sales.forEach(s => revenue += Number(s.total || s.amount || 0));
 
-<script>
-  const url = window.buildUrl ? window.buildUrl('/ai-business-consult') : null;
-if (!url) throw new Error("System is still initializing. Please try again.");
+      const lowStockItems = products.filter(p => {
+          let totalStock = 0;
+          if (p.variants && Array.isArray(p.variants)) {
+              p.variants.forEach(v => {
+                  const bq = p.isLoose ? (Number(v.baseQty) || 1) : 1;
+                  totalStock += (Number(v.stock) || 0) * bq;
+              });
+          } else {
+              totalStock = Number(p.stock || 0);
+          }
+          const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
+          return totalStock <= threshold;
+      }).map(p => p.name || 'Unknown');
 
+      // Ensure we always return a valid object even if data is empty
+      return {
+        generated_at: new Date().toISOString(),
+        revenue: revenue || 0,
+        total_bills: sales.length || 0,
+        products_count: products.length || 0,
+        low_stock: lowStockItems
+      };
+    } catch (e) {
+      console.error("Snapshot error:", e);
+      return { generated_at: new Date().toISOString(), error: "Data load failed" };
+    }
+  };
 
-
-  
-  // --- 1. DATA GATHERING (Preserved) ---
-  
-  function getStoredSnapshot() {
-  try {
-    const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
-    const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
-    
-    let revenue = 0;
-    sales.forEach(s => revenue += Number(s.total || 0));
-
-    // Ensure we always return a valid object even if data is empty
-    return {
-      generated_at: new Date().toISOString(),
-      revenue: revenue || 0,
-      total_bills: sales.length || 0,
-      products_count: products.length || 0,
-      low_stock: products.filter(p => Number(p.stock || 0) <= 5).map(p => p.name || 'Unknown')
-    };
-  } catch (e) {
-    console.error("Snapshot error:", e);
-    return { generated_at: new Date().toISOString(), error: "Data load failed" };
-  }
-}
   // --- 2. UI LOGIC ---
-  function setPrompt(text) {
+  window.setPrompt = function(text) {
     const el = document.getElementById('aiPrompt');
     el.value = text;
     el.focus();
-    // Optional: Auto-submit
-    // getAIAdvice(); 
-  }
-async function getAIAdvice() {
+  };
+
+  window.getAIAdvice = async function() {
     const aiOutput = document.getElementById('aiOutput');
     const aiBtn = document.getElementById('aiBtn');
     const promptBox = document.getElementById('aiPrompt');
@@ -589,7 +582,7 @@ async function getAIAdvice() {
     try {
         // 2. Build Data
         const prompt = promptBox ? promptBox.value.trim() : '';
-        const snapshot = getStoredSnapshot();
+        const snapshot = window.getStoredSnapshot();
         
         if (typeof window.buildUrl !== 'function') {
             throw new Error("Core library not loaded yet.");
@@ -634,7 +627,7 @@ async function getAIAdvice() {
     } finally {
         aiBtn.disabled = false;
     }
-}
+  };
 </script>
 </body>
 </html>
