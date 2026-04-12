@@ -112,7 +112,7 @@
     .btn-icon-only { padding: 8px; width: auto; border-radius: var(--radius-sm); }
 
     /* --- FILTER ENGINE --- */
-    .filter-engine { background: #FFFFFF; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px; box-shadow: var(--shadow-sm); }
+    .filter-engine { background: #FFFFFF; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px; box-shadow: var(--shadow-sm); animation: slideDown 0.2s ease;}
     .tier-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
     .tab-btn { padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;}
     .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px var(--primary-glow); }
@@ -191,15 +191,21 @@
     .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
     .detail-row span:first-child { color: var(--text-muted); font-weight: 600; }
     .detail-row span:last-child { color: var(--text-main); font-weight: 700; text-align: right; }
+    
+    /* Ensure no datalist issues */
+    datalist { display: none; }
   </style>
-
-  <datalist id="unitOptions">
-    <option value="pcs"></option><option value="kg"></option><option value="g"></option>
-    <option value="L"></option><option value="ml"></option><option value="box"></option>
-    <option value="pack"></option><option value="dozen"></option>
-  </datalist>
 </head>
 <body class="lang-en">
+
+<datalist id="unitOptions">
+  <option value="pcs"></option><option value="kg"></option><option value="g"></option>
+  <option value="L"></option><option value="ml"></option><option value="box"></option>
+  <option value="pack"></option><option value="dozen"></option>
+</datalist>
+<datalist id="brandList"></datalist>
+<datalist id="catList"></datalist>
+<datalist id="batchList"></datalist>
 
 <div id="menuOverlay" class="menu-overlay"></div>
 
@@ -274,7 +280,6 @@
       <div class="form-group">
         <input type="text" id="pCategory" class="form-input" list="catList" placeholder=" " autocomplete="off">
         <label class="floating-label"><span class="lang-en">Category</span><span class="lang-hinglish">Category (Jaise: Sabji, Kirana)</span><span class="lang-hi">श्रेणी (जैसे: किराना)</span></label>
-        <datalist id="catList"></datalist>
       </div>
 
       <div id="variantEngineWrapper">
@@ -288,7 +293,7 @@
       <button type="button" class="tier-toggle" id="btnToggleGst">
         <span style="display:flex;align-items:center;gap:8px;">
           <span style="width:22px;height:22px;border-radius:6px;background:rgba(245,158,11,0.12);display:inline-flex;align-items:center;justify-content:center;">
-            <i class="fa-solid fa-receipt" style="color:var(--warning);font-size:11px;"></i>
+            <i class="fa-solid fa-receipt" style="color:var(--accent);font-size:11px;"></i>
           </span>
           <span class="lang-en">Level 2 — GST Config</span><span class="lang-hinglish">Level 2 — Tax & GST</span><span class="lang-hi">लेवल 2 — टैक्स और GST</span>
         </span>
@@ -342,7 +347,6 @@
                   </div>
                   <button type="button" id="btnAutoBatch" class="btn btn-outline" style="width:auto; padding:0 15px;"><span class="lang-en">Auto</span><span class="lang-hinglish">Apne aap</span><span class="lang-hi">ऑटो</span></button>
               </div>
-              <datalist id="batchList"></datalist>
           </div>
 
           <div class="form-group" style="margin-bottom:0;">
@@ -965,14 +969,19 @@ function handleExportCSV() {
     } catch(e) { showToast("Export Failed", true); }
 }
 
-// ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
+// ─── QUAGGA BARCODE ENGINE (Fast Auto-focus) ─────────────────────────────────
 window.startBarcodeScan = function(btnEl) {
     window.targetBarcodeInput = btnEl.previousElementSibling;
     const modal = document.getElementById('barcodeScannerModal');
     modal.style.display = 'flex';
     
     Quagga.init({
-        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
+        inputStream: { 
+            name: "Live", 
+            type: "LiveStream", 
+            target: document.querySelector('#quaggaPreview'), 
+            constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } 
+        },
         decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
     }, function(err) {
         if (err) { console.log(err); showToast("Scanner failed to start", true); return; }
@@ -1116,13 +1125,11 @@ async function handleSaveProduct(e) {
             });
         }
 
-        // Replace in array
         if(window.currentEditingId) {
             window.allProducts = window.allProducts.filter(p => p.id !== window.currentEditingId);
         }
         window.allProducts.push(productDoc);
 
-        // Local Save First
         localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
         updateDatalists();
         applyFilters();
@@ -1135,7 +1142,6 @@ async function handleSaveProduct(e) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         showToast("✅ SKU Saved Successfully");
 
-        // Firebase Sync
         if (user.merchantId && window.db) {
             try {
                 await setDoc(doc(db, "shops", user.merchantId, "products", productDoc.id), productDoc);
@@ -1235,9 +1241,8 @@ function applyFilters() {
     window.filterState.tax   = document.getElementById('filterTax').value;
     window.filterState.query = document.getElementById('searchInput').value.toLowerCase().trim();
 
-    let filtered = window.allProducts; // these are singular product docs now
+    let filtered = window.allProducts;
 
-    // Tab Filters
     if (window.activeTiers.size > 0) {
         filtered = filtered.filter(p => p.variants.some(v => window.activeTiers.has(getTier(v.id))));
     }
@@ -1248,7 +1253,6 @@ function applyFilters() {
         filtered = filtered.filter(p => (p.batchId || '') === window.activeBatch);
     }
 
-    // Branch Filters
     if (window.filterState.brand) {
         filtered = filtered.filter(p => p.variants.some(v => v.brand === window.filterState.brand));
     }
@@ -1256,7 +1260,6 @@ function applyFilters() {
         filtered = filtered.filter(p => p.gstRate == window.filterState.tax);
     }
     
-    // Deep Actions
     if (window.filterState.lowStock) {
         filtered = filtered.filter(p => {
             const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
@@ -1269,7 +1272,6 @@ function applyFilters() {
         filtered = filtered.filter(p => p.variants.some(v => v.expiryDate && new Date(v.expiryDate) < nextMonth));
     }
 
-    // Sort & Search
     if (window.filterState.newest) {
         filtered.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
     } else if (window.filterState.query === '') {
@@ -1403,7 +1405,6 @@ function renderChunk() {
         const formatTotalStock = formatStock(totalStock, p.variants[0].quantity);
         const isChecked = window.selectedBulkItems.has(p.id) ? 'checked' : '';
 
-        // Safely extract a brand for display if one exists
         const displayBrand = p.variants[0].brand ? ` • ${p.variants[0].brand}` : '';
 
         const card = document.createElement('div');
@@ -1529,7 +1530,6 @@ function loadProductForEdit(id) {
     document.getElementById('pBatchId').value   = base.batchId || '';
     document.getElementById('pIsLoose').checked = base.isLoose || false;
 
-    // Auto-enable UI sections if they contain data
     if (base.batchId) document.getElementById('cfgBatch').checked = true;
     if (base.isLoose) document.getElementById('cfgLoose').checked = true;
     if (base.variants.some(v => v.brand || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
@@ -1646,7 +1646,7 @@ function importMasterProduct(p) {
     showToast(`Imported "${p.name}"`);
 }
 
-// ─── BULK CSV/XLSX IMPORT (Adapted for Singularity Model) ───────────────────
+// ─── BULK CSV/XLSX IMPORT ─────────────────────────────────────────────────────
 async function handleBulkImport(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1672,16 +1672,17 @@ async function handleBulkImport(event) {
                 const skuId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
                 const productDoc = {
                     id: skuId, name: String(name), category: String(row['Category'] || 'General'),
-                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: '',
+                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: String(row['BatchID'] || row['Batch'] || ''),
                     reorderPoint: String(row['Reorder Point'] || row['Min Stock'] || ''),
                     isLoose: String(row['Loose'] || '').toLowerCase() === 'true', dateAdded: new Date().toISOString(),
                     variants: [{
                         id: `${skuId}_v0`,
-                        quantity: String(row['Unit'] || row['Type'] || '1 pcs'),
+                        quantity: String(row['Type'] || row['Unit'] || '1 pcs'),
                         price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
                         stock: parseFloat(row['Stock'] || row['Qty'] || 0),
                         brand: String(row['Brand'] || ''), barcode: String(row['Barcode'] || ''),
-                        costPrice: '', expiryDate: '', baseQty: '', baseUnit: 'pcs'
+                        costPrice: String(row['CostPrice'] || row['Cost'] || ''), expiryDate: String(row['Expiry'] || ''), 
+                        baseQty: String(row['BaseQty'] || ''), baseUnit: String(row['BaseUnit'] || 'pcs')
                     }]
                 };
 
@@ -1708,7 +1709,7 @@ async function handleBulkImport(event) {
     reader.readAsArrayBuffer(file);
 }
 
-// ─── CLOUD SYNC (Adapted for Singularity Model) ───────────────────────────────
+// ─── CLOUD SYNC ───────────────────────────────────────────────────────────────
 async function pullFreshData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if (!user.merchantId || !window.db) { showToast("No active cloud connection", true); return; }
@@ -1720,7 +1721,6 @@ async function pullFreshData() {
         const snap  = await getDocs(collection(db, "shops", user.merchantId, "products"));
         let fresh = snap.docs.map(d => d.data());
         
-        // Backward compatibility migration block: If old data structure is pulled (no variants array)
         fresh = fresh.map(p => {
             if(!p.variants) {
                 return {
@@ -1809,5 +1809,4 @@ async function captureAndSendToAI() {
 </script>
 </body>
 </html>
-
 
