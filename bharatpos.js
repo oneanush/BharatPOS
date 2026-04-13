@@ -1,33 +1,40 @@
+// ==========================================================
 // --- MASTER DATABASE BRIDGE ---
-
-// Save data asynchronously
+// ==========================================================
 window.dbSave = async function(key, data) {
     try {
-        // We stringify it to keep it consistent with how localStorage behaved
-        await localforage.setItem(key, JSON.stringify(data));
-        return true;
+        if (typeof localforage !== 'undefined') {
+            await localforage.setItem(key, JSON.stringify(data));
+            return true;
+        } else {
+            localStorage.setItem(key, JSON.stringify(data));
+            return true;
+        }
     } catch (err) {
         console.error(`Database Error saving ${key}:`, err);
         return false;
     }
 };
 
-// Fetch data asynchronously
 window.dbGet = async function(key, defaultValue = '[]') {
     try {
-        const value = await localforage.getItem(key);
-        // If it doesn't exist yet, return the default value
-        if (value === null) return JSON.parse(defaultValue);
+        let value = null;
+        if (typeof localforage !== 'undefined') {
+            value = await localforage.getItem(key);
+        }
         
+        // Fallback to localStorage if not found in IndexedDB (migration)
+        if (value === null) {
+            value = localStorage.getItem(key);
+        }
+
+        if (value === null) return JSON.parse(defaultValue);
         return JSON.parse(value);
     } catch (err) {
         console.error(`Database Error reading ${key}:`, err);
         return JSON.parse(defaultValue);
     }
 };
-
-
-
 
 // ==========================================================
 // 🟢 1. FIREBASE SDK INITIALIZATION
@@ -66,7 +73,7 @@ window.buildUrl = function(endpoint) {
 const buildUrl = window.buildUrl;
 
 // ==========================================================
-// 💾 3. STORAGE KEYS & HELPERS
+// 💾 3. ASYNC STORAGE KEYS & HELPERS
 // ==========================================================
 const LS_KEYS = {
   PRODUCTS: 'bharatpos_products',
@@ -87,21 +94,21 @@ const formatCurrency = window.formatCurrency;
 const escapeHTML = window.escapeHTML;
 
 // --- SETTINGS CRUD ---
-window.getSettings = function(){
+window.getSettings = async function(){
   const defaults = { theme:'light', adminPw:'admin123', storeName:'BharatPOS' };
-  try { return JSON.parse(localStorage.getItem(LS_KEYS.SETTINGS) || JSON.stringify(defaults)); }
-  catch(e){ localStorage.setItem(LS_KEYS.SETTINGS, JSON.stringify(defaults)); return defaults; }
+  try { return await window.dbGet(LS_KEYS.SETTINGS, JSON.stringify(defaults)); }
+  catch(e){ await window.dbSave(LS_KEYS.SETTINGS, defaults); return defaults; }
 }
-window.saveSettings = function(s){ localStorage.setItem(LS_KEYS.SETTINGS, JSON.stringify(s)); }
+window.saveSettings = async function(s){ await window.dbSave(LS_KEYS.SETTINGS, s); }
 
 // --- PRODUCTS CRUD ---
-window.getProducts = function(){
-  try { return JSON.parse(localStorage.getItem(LS_KEYS.PRODUCTS) || '[]'); }
-  catch(e){ localStorage.setItem(LS_KEYS.PRODUCTS, '[]'); return []; }
+window.getProducts = async function(){
+  try { return await window.dbGet(LS_KEYS.PRODUCTS, '[]'); }
+  catch(e){ await window.dbSave(LS_KEYS.PRODUCTS, []); return []; }
 }
 let _productSyncTimer = null;
-window.saveProducts = function(arr){
-  localStorage.setItem(LS_KEYS.PRODUCTS, JSON.stringify(arr));
+window.saveProducts = async function(arr){
+  await window.dbSave(LS_KEYS.PRODUCTS, arr);
   try { if (_productSyncTimer) clearTimeout(_productSyncTimer); } catch(e){}
   _productSyncTimer = setTimeout(()=> {
       try { pushProductsToServer(); } catch(e){ console.warn('Product push failed', e); }
@@ -111,22 +118,22 @@ const getProducts = window.getProducts;
 const saveProducts = window.saveProducts;
 
 // --- SALES CRUD ---
-window.getSales = function(){
-  try { return JSON.parse(localStorage.getItem(LS_KEYS.SALES) || '[]'); }
-  catch(e){ localStorage.setItem(LS_KEYS.SALES, '[]'); return []; }
+window.getSales = async function(){
+  try { return await window.dbGet(LS_KEYS.SALES, '[]'); }
+  catch(e){ await window.dbSave(LS_KEYS.SALES, []); return []; }
 }
-window.saveSales = function(arr){ localStorage.setItem(LS_KEYS.SALES, JSON.stringify(arr)); }
+window.saveSales = async function(arr){ await window.dbSave(LS_KEYS.SALES, arr); }
 const getSales = window.getSales;
 const saveSales = window.saveSales;
 
 // --- CUSTOMERS CRUD ---
-window.getCustomers = function(){
-  try { return JSON.parse(localStorage.getItem('bharatpos_customers') || '[]'); }
-  catch(e){ localStorage.setItem('bharatpos_customers', '[]'); return []; }
+window.getCustomers = async function(){
+  try { return await window.dbGet('bharatpos_customers', '[]'); }
+  catch(e){ await window.dbSave('bharatpos_customers', []); return []; }
 }
 let _customerSyncTimer = null;
-window.saveCustomers = function(arr){
-  localStorage.setItem('bharatpos_customers', JSON.stringify(arr));
+window.saveCustomers = async function(arr){
+  await window.dbSave('bharatpos_customers', arr);
   try { if (_customerSyncTimer) clearTimeout(_customerSyncTimer); } catch(e){}
   _customerSyncTimer = setTimeout(()=> {
       try { pushCustomersToServer(); } catch(e){ console.warn('Customer push failed', e); }
@@ -151,7 +158,7 @@ window.pushProductsToServer = async function(){
   try{
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return;
-    const products = getProducts();
+    const products = await getProducts(); // Async Bridge
     
     const batch = writeBatch(db);
     products.forEach(p => {
@@ -169,7 +176,7 @@ window.pushCustomersToServer = async function(){
   try{
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return;
-    const customers = getCustomers();
+    const customers = await getCustomers(); // Async Bridge
     
     const batch = writeBatch(db);
     customers.forEach(c => {
@@ -197,7 +204,7 @@ window.syncBillToServer = async function(billData) {
         await setDoc(billRef, billData);
         
         const batch = writeBatch(db);
-        const allProducts = getProducts();
+        const allProducts = await getProducts(); // Async Bridge
         billData.items.forEach(cartItem => {
             const pRef = doc(db, "shops", userSettings.merchantId, "products", cartItem.id);
             const localP = allProducts.find(p => p.id === cartItem.id);
@@ -235,23 +242,30 @@ window.registerOrUpdateMerchantProfile = async function(){
   }catch(e){ console.warn('Profile update failed', e); }
 }
 
-// --- FULL BACKUP (Legacy Stringifier Fallback) ---
-window.gatherFullLocalBackup = function() {
+// --- ASYNC FULL BACKUP ---
+window.gatherFullLocalBackup = async function() {
   const keysOfInterest = [ 'bharatpos_products','bharatpos_sales','bharatpos_customers','bharatpos_settings', 'shopName','shopPhone','shopAddress','bharatpos_bill_footer','bharatpos_bill_size', 'upiQR','bharatpos_user','bill_items','temp_add_product_id','temp_new_barcode', 'bharatpos_last_import','bharatpos_last_sent_reports_snapshot_hash' ];
   const backup = {};
+  
+  // Scrape synchronous fallback data
   keysOfInterest.forEach(k => {
     const v = localStorage.getItem(k);
     if (v !== null && v !== undefined) {
       try { backup[k] = JSON.parse(v); } catch(e) { backup[k] = v; }
     }
   });
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (!k) continue;
-    if (k.startsWith('bharatpos_') && !backup.hasOwnProperty(k)) {
-      try { backup[k] = JSON.parse(localStorage.getItem(k)); } catch(e) { backup[k] = localStorage.getItem(k); }
-    }
-  }
+  
+  // Scrape IndexedDB Async Data
+  try {
+      if (typeof localforage !== 'undefined') {
+          const lfKeys = await localforage.keys();
+          for(let k of lfKeys) {
+              const v = await localforage.getItem(k);
+              try { backup[k] = JSON.parse(v); } catch(e) { backup[k] = v; }
+          }
+      }
+  } catch(e) { console.error("Backup IndexedDB scrape failed", e); }
+
   try { backup._meta = { generatedAt: new Date().toISOString(), userAgent: navigator.userAgent }; } catch(e){}
   return backup;
 }
@@ -269,7 +283,7 @@ window.pushFullBackupToServer = async function() {
   try {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if (!user.merchantId) return; 
-    const payload = window.gatherFullLocalBackup();
+    const payload = await window.gatherFullLocalBackup();
     
     const backupRef = doc(db, "shops", user.merchantId, "legacy_backup", "latest");
     await setDoc(backupRef, { backupData: payload, timestamp: new Date().toISOString() });
@@ -298,7 +312,6 @@ window.loadOwnedShops = async function(mobileNum) {
             isMain: !d.data().profile?.isBranch
         }));
 
-        // The Ironclad Safety Net: Ensure the main shop is always in the list
         const mainId = user.masterId || user.merchantId;
         const mainExists = shops.find(s => s.merchantId === mainId || s.isMain === true);
         
@@ -328,20 +341,20 @@ window.switchActiveShop = async function(targetMerchantId) {
     
     const savedMobile = user.mobile || user.phone;
     
-    // Attempt to push any unsynced data from the current branch before switching
     if (typeof pushFullBackupToServer === 'function') { 
         try { await pushFullBackupToServer(); } catch(e){} 
     }
 
     try {
-        // 1. Wipe local memory for complete data isolation
-        localStorage.removeItem('bharatpos_products');
-        localStorage.removeItem('bharatpos_sales');
-        localStorage.removeItem('bharatpos_customers');
-        localStorage.removeItem('bill_items');
-        localStorage.removeItem('bharatpos_ai_cache');
+        // Wipe local memory (IndexedDB wipe)
+        if (typeof localforage !== 'undefined') {
+            await localforage.removeItem('bharatpos_products');
+            await localforage.removeItem('bharatpos_sales');
+            await localforage.removeItem('bharatpos_customers');
+            await localforage.removeItem('bill_items');
+            await localforage.removeItem('bharatpos_ai_cache');
+        }
 
-        // 2. Fetch Target Shop Profile
         const shopRef = doc(db, "shops", targetMerchantId);
         const shopSnap = await getDoc(shopRef);
         
@@ -352,23 +365,20 @@ window.switchActiveShop = async function(targetMerchantId) {
             localStorage.setItem('bharatpos_user', JSON.stringify(merchantData));
             localStorage.setItem('shopName', merchantData.shopName || '');
 
-            // 3. Fetch Subcollections for the new branch
             const pSnap = await getDocs(collection(db, "shops", targetMerchantId, "products"));
             const fetchedProducts = pSnap.docs.map(d => d.data());
-            if(fetchedProducts.length) localStorage.setItem('bharatpos_products', JSON.stringify(fetchedProducts));
+            if(fetchedProducts.length) await window.dbSave('bharatpos_products', fetchedProducts);
 
             const cSnap = await getDocs(collection(db, "shops", targetMerchantId, "customers"));
             const fetchedCustomers = cSnap.docs.map(d => d.data());
-            if(fetchedCustomers.length) localStorage.setItem('bharatpos_customers', JSON.stringify(fetchedCustomers));
+            if(fetchedCustomers.length) await window.dbSave('bharatpos_customers', fetchedCustomers);
 
             const sSnap = await getDocs(collection(db, "shops", targetMerchantId, "sales"));
             const fetchedSales = sSnap.docs.map(d => d.data());
-            if(fetchedSales.length) localStorage.setItem('bharatpos_sales', JSON.stringify(fetchedSales));
+            if(fetchedSales.length) await window.dbSave('bharatpos_sales', fetchedSales);
 
-            // Reload the current page to instantly reflect new branch data
             window.location.reload(); 
         } else {
-            // Empty Branch Fallback Handling
             const allShops = await window.loadOwnedShops(savedMobile);
             const targetShopInfo = allShops.find(s => s.merchantId === targetMerchantId);
             
@@ -390,9 +400,9 @@ window.switchActiveShop = async function(targetMerchantId) {
 }
 
 // ==========================================================
-// 📦 6. PRODUCT / INVENTORY FUNCTIONS (Legacy Support)
+// 📦 6. PRODUCT / INVENTORY FUNCTIONS
 // ==========================================================
-window.addProduct = function() {
+window.addProduct = async function() {
   const nameEl = document.getElementById('productName');
   const priceEl = document.getElementById('productPrice');
   const stockEl = document.getElementById('productStock');
@@ -413,7 +423,7 @@ window.addProduct = function() {
 
   if (!name || isNaN(price) || isNaN(stock)) { alert('Enter valid product info'); return; }
 
-  const products = getProducts();
+  const products = await getProducts(); // Async bridge
   const existing = products.find(p => p.name.toLowerCase() === name.toLowerCase());
 
   if (existing) {
@@ -427,18 +437,18 @@ window.addProduct = function() {
     products.push({ id: uid('p'), name, price, stock, taxPercent, category, barcode, quantity });
   }
 
-  saveProducts(products);
+  await saveProducts(products); // Async bridge
 
   nameEl.value = ''; priceEl.value = ''; stockEl.value = ''; taxEl.value = ''; catEl.value = '';
   if (barcodeEl) barcodeEl.value = '';
   if (qtyEl) qtyEl.value = '';
 
-  if (typeof window.renderCategoryFilters === 'function') window.renderCategoryFilters();
-  if (typeof window._renderProductGrid === 'function') window._renderProductGrid();
+  if (typeof window.renderCategoryFilters === 'function') await window.renderCategoryFilters();
+  if (typeof window._renderProductGrid === 'function') await window._renderProductGrid();
 }
 
-window.renderCategoryFilters = function(){
-  const products = getProducts();
+window.renderCategoryFilters = async function(){
+  const products = await getProducts();
   const categories = [...new Set(products.map(p => p.category || 'General'))];
   const filterBox = document.getElementById("categoryFilters");
   if(!filterBox) return;
@@ -446,8 +456,8 @@ window.renderCategoryFilters = function(){
     categories.map(c => `<button onclick="filterByCategory('${c}')">${c}</button>`).join("");
 }
 
-window.filterByCategory = function(cat){
-  const products = getProducts();
+window.filterByCategory = async function(cat){
+  const products = await getProducts();
   const filtered = cat === 'all' ? products : products.filter(p => p.category === cat);
   const productList = document.getElementById('productList');
   if(!productList) return;
@@ -460,42 +470,42 @@ window.filterByCategory = function(cat){
               <div class="prod-qty">×${qty}</div>
             </button>`;
   }).join('');
-  attachProductGridHandlers();
+  if(typeof window.attachProductGridHandlers === 'function') window.attachProductGridHandlers();
 }
 
-window.updateProduct = function(id, data){
-  const products = getProducts();
+window.updateProduct = async function(id, data){
+  const products = await getProducts();
   const i = products.findIndex(p=>p.id===id);
   if(i===-1) return false;
   products[i] = {...products[i], ...data};
-  saveProducts(products);
+  await saveProducts(products);
   return true;
 }
 
-window.deleteProduct = function(pid){
-  let products = getProducts();
+window.deleteProduct = async function(pid){
+  let products = await getProducts();
   products = products.filter(p=>p.id!==pid);
-  saveProducts(products);
+  await saveProducts(products);
   return products;
 }
 
 // ==========================================================
-// 🛒 7. CHECKOUT & BILLING LOGIC (Legacy Support)
+// 🛒 7. CHECKOUT & BILLING LOGIC
 // ==========================================================
 window.genInvoiceNo = function(){ return 'INV' + Date.now().toString().slice(-8); }
 window.todayISO = function(){ return new Date().toISOString(); }
 const genInvoiceNo = window.genInvoiceNo;
 const todayISO = window.todayISO;
 
-window.checkoutCart = function(cartItems, customer='Walk-in', paymentMode='cash', discount=0){
+window.checkoutCart = async function(cartItems, customer='Walk-in', paymentMode='cash', discount=0){
   if(!cartItems || !Array.isArray(cartItems) || cartItems.length===0) throw new Error('Cart empty');
 
-  const products = getProducts();
+  const products = await getProducts();
   cartItems.forEach(it=>{
     const p = products.find(x=>x.id===it.id);
     if(p){ p.stock = Math.max(0, (Number(p.stock)||0) - Number(it.qty||0)); }
   });
-  saveProducts(products);
+  await saveProducts(products);
 
   const subtotal = cartItems.reduce((s,it)=> s + (Number(it.price||0) * Number(it.qty||0)), 0);
   const taxSum = cartItems.reduce((s,it)=> s + ((Number(it.price||0) * Number(it.qty||0)) * Number(it.taxPercent||0)/100), 0);
@@ -512,33 +522,33 @@ window.checkoutCart = function(cartItems, customer='Walk-in', paymentMode='cash'
     subtotal, taxAmount: taxSum, discount: Number(discount||0), total, paymentMode
   };
 
-  const sales = getSales();
+  const sales = await getSales();
   sales.push(sale);
-  saveSales(sales);
+  await saveSales(sales);
  
   pushFullBackupToServerDebounced();
   return sale;
 }
 const checkoutCart = window.checkoutCart;
 
-(function billingEverything(){
+(async function billingEverything(){
   if(!window.location.href.includes('billing_legacy.html')) return;
 
-  let billItems = JSON.parse(localStorage.getItem('bill_items') || '[]');
+  let billItems = await window.dbGet('bill_items', '[]');
   window.cart = billItems;
 
-  const syncToStorage = () => {
-    localStorage.setItem('bill_items', JSON.stringify(billItems));
+  const syncToStorage = async () => {
+    await window.dbSave('bill_items', billItems);
     window.cart = billItems; 
   };
   
-  const loadFromStorage = () => { 
-      billItems = JSON.parse(localStorage.getItem('bill_items') || '[]'); 
+  const loadFromStorage = async () => { 
+      billItems = await window.dbGet('bill_items', '[]'); 
       window.cart = billItems; 
   };
 
-  window.addToBill = function(id){
-    const products = getProducts();
+  window.addToBill = async function(id){
+    const products = await getProducts();
     const product = products.find(p => p.id === id);
     if(!product) return;
 
@@ -555,12 +565,12 @@ const checkoutCart = window.checkoutCart;
         taxPercent: Number(product.taxPercent||0), unit: product.quantity || '' 
       });
     }
-    syncToStorage();
-    renderCart();
+    await syncToStorage();
+    await renderCart();
   };
 
-  function renderCart(){
-    loadFromStorage();
+  async function renderCart(){
+    await loadFromStorage();
     const container = document.getElementById('cartList');
     if(!container) return;
 
@@ -605,28 +615,28 @@ const checkoutCart = window.checkoutCart;
     document.getElementById('grandTotal').innerText= `Total: ₹${grand.toFixed(2)}`;
 
     container.querySelectorAll('.cart-inc').forEach(btn=>{
-      btn.onclick = ()=>{
+      btn.onclick = async ()=>{
         const i = Number(btn.dataset.index);
         if(!billItems[i]) return;
         billItems[i].qty += 1;
-        syncToStorage(); renderCart();
+        await syncToStorage(); await renderCart();
       };
     });
     container.querySelectorAll('.cart-dec').forEach(btn=>{
-      btn.onclick = ()=>{
+      btn.onclick = async ()=>{
         const i = Number(btn.dataset.index);
         if(!billItems[i]) return;
         billItems[i].qty -= 1;
         if(billItems[i].qty <= 0) billItems.splice(i,1);
-        syncToStorage(); renderCart();
+        await syncToStorage(); await renderCart();
       };
     });
     container.querySelectorAll('.cart-remove').forEach(btn=>{
-      btn.onclick = ()=>{
+      btn.onclick = async ()=>{
         const i = Number(btn.dataset.index);
         if(!billItems[i]) return;
         billItems.splice(i,1);
-        syncToStorage(); renderCart();
+        await syncToStorage(); await renderCart();
       };
     });
   }
@@ -635,11 +645,11 @@ const checkoutCart = window.checkoutCart;
   let activeCategory = null;
   let searchQuery = '';
 
-  function renderProductGrid(){
+  async function renderProductGrid(){
     const productList = document.getElementById('productList');
     if(!productList) return;
 
-    let products = getProducts();
+    let products = await getProducts();
     if(activeCategory) products = products.filter(p=>p.category === activeCategory);
     if(searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -665,22 +675,22 @@ const checkoutCart = window.checkoutCart;
   }
   window._renderProductGrid = renderProductGrid;
 
-  window.filterCategory = function(cat){
+  window.filterCategory = async function(cat){
     activeCategory = cat==='All'?null:cat;
-    renderProductGrid();
+    await renderProductGrid();
   };
 
   function debounce(fn, wait){
     let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait); };
   }
 
-  function renderSearchResults(query){
+  async function renderSearchResults(query){
     const resultsBox = document.getElementById('searchResults');
     if(!resultsBox) return;
     const q = (query || '').trim().toLowerCase();
     if(!q){ resultsBox.innerHTML = ''; resultsBox.style.display = 'none'; return; }
 
-    const products = getProducts();
+    const products = await getProducts();
     const matches = products.filter(p => {
       const name = (p.name || '').toLowerCase();
       const barcode = String(p.barcode || '').toLowerCase();
@@ -711,11 +721,11 @@ const checkoutCart = window.checkoutCart;
     resultsBox.style.display = 'block';
 
     resultsBox.querySelectorAll('.search-add-btn').forEach(btn=>{
-      btn.onclick = ()=>{
+      btn.onclick = async ()=>{
         const id = btn.dataset.id;
         if(!id) return;
         if (typeof window.addToBill === 'function') {
-          window.addToBill(id);
+          await window.addToBill(id);
           btn.textContent = 'Added';
           btn.disabled = true;
           setTimeout(()=>{ btn.textContent = 'Add'; btn.disabled = false; }, 600);
@@ -728,17 +738,17 @@ const checkoutCart = window.checkoutCart;
 
   const searchInput = document.getElementById('productSearch');
   if(searchInput){
-    searchInput.addEventListener('input', ()=>{
+    searchInput.addEventListener('input', async ()=>{
       searchQuery = searchInput.value.trim();
-      renderProductGrid(); 
+      await renderProductGrid(); 
       debouncedRenderSearchResults(searchQuery);
     });
 
-    searchInput.addEventListener('keydown', (e)=>{
+    searchInput.addEventListener('keydown', async (e)=>{
       if (e.key === 'Enter') {
         const q = searchInput.value.trim().toLowerCase();
         if (!q) return;
-        const products = getProducts();
+        const products = await getProducts();
         const matches = products.filter(p => {
           const name = (p.name || '').toLowerCase();
           const barcode = String(p.barcode || '').toLowerCase();
@@ -746,7 +756,7 @@ const checkoutCart = window.checkoutCart;
         });
         if (matches && matches.length) {
           if (typeof window.addToBill === 'function') {
-            window.addToBill(matches[0].id);
+            await window.addToBill(matches[0].id);
           } else {
             localStorage.setItem('temp_add_product_id', matches[0].id);
             window.location.href = 'billing.html';
@@ -780,17 +790,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const barcodeInput = document.getElementById('barcodeInput');
   if (!barcodeInput) return;
 
-  barcodeInput.addEventListener('keypress', function (e) {
+  barcodeInput.addEventListener('keypress', async function (e) {
     if (e.key !== 'Enter') return;
     const code = barcodeInput.value.trim();
     if (!code) return;
 
     try {
-      const products = getProducts();
+      const products = await getProducts();
       const found = products.find(p => String(p.barcode) === String(code));
       if (found) {
         if (typeof window.addToBill === 'function') {
-          window.addToBill(found.id);
+          await window.addToBill(found.id);
         } else {
           localStorage.setItem('temp_add_product_id', found.id);
           window.location.href = 'billing.html';
@@ -852,8 +862,8 @@ window.applyTheme = function() {
 }
 document.addEventListener("DOMContentLoaded", window.applyTheme);
 
-window.exportAll = function(){
-  const payload = { settings: window.getSettings(), products: getProducts(), sales: getSales() };
+window.exportAll = async function(){
+  const payload = { settings: await getSettings(), products: await getProducts(), sales: await getSales() };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'BharatPOS_export_'+Date.now()+'.json';
@@ -862,12 +872,12 @@ window.exportAll = function(){
 
 window.importAllFile = function(file, callback){
   const reader = new FileReader();
-  reader.onload = function(e){
+  reader.onload = async function(e){
     try{
       const obj = JSON.parse(e.target.result);
-      if(obj.settings) localStorage.setItem(LS_KEYS.SETTINGS, JSON.stringify(obj.settings));
-      if(obj.products) localStorage.setItem(LS_KEYS.PRODUCTS, JSON.stringify(obj.products));
-      if(obj.sales) localStorage.setItem(LS_KEYS.SALES, JSON.stringify(obj.sales));
+      if(obj.settings) await saveSettings(obj.settings);
+      if(obj.products) await saveProducts(obj.products);
+      if(obj.sales) await saveSales(obj.sales);
       callback && callback(null,'Imported');
 
       try { pushProductsToServer(); } catch(e){}
@@ -886,12 +896,12 @@ window.addEventListener('storage', (e) => {
 });
 
 // ==========================================================
-// ✅ 9. COMPLETE SALE FUNCTION (Legacy Fallback)
+// ✅ 9. COMPLETE SALE FUNCTION
 // ==========================================================
-window.completeSale = function() {
+window.completeSale = async function() {
     let cart = window.cart;
     if (!cart || cart.length === 0) {
-        try { cart = JSON.parse(localStorage.getItem('bill_items') || '[]'); } catch (e) {}
+        try { cart = await window.dbGet('bill_items', '[]'); } catch (e) {}
     }
     if (!cart || cart.length === 0) { alert('Cart empty'); return; }
 
@@ -912,19 +922,19 @@ window.completeSale = function() {
         }
     }
 
-    const sale = checkoutCart(cart, customer || 'Walk-in', paymentMode, discount);
+    const sale = await checkoutCart(cart, customer || 'Walk-in', paymentMode, discount);
 
     if (phone) {
       try {
-        const customers = getCustomers();
+        const customers = await getCustomers();
         const exists = customers.find(c => c.phone === phone);
         if (!exists) {
           const newCust = { id: uid('c'), name: customer || '', phone, lastSeen: new Date().toISOString() };
           customers.push(newCust);
-          saveCustomers(customers); 
+          await saveCustomers(customers); 
         } else {
           exists.lastSeen = new Date().toISOString();
-          saveCustomers(customers);
+          await saveCustomers(customers);
         }
       } catch(e) { console.warn('Customer add failed', e); }
     }
@@ -948,16 +958,16 @@ window.completeSale = function() {
 
     if (paymentMode === 'Udhaar') {
         const ledgerEntry = { ...billForServer, isPaid: false };
-        const ledger = JSON.parse(localStorage.getItem('bharatpos_ledger') || '[]');
+        const ledger = await window.dbGet('bharatpos_ledger', '[]');
         ledger.push(ledgerEntry);
-        localStorage.setItem('bharatpos_ledger', JSON.stringify(ledger));
+        await window.dbSave('bharatpos_ledger', ledger);
     }
 
     window.cart = [];
-    localStorage.setItem('bill_items', '[]');
+    await window.dbSave('bill_items', []);
     
-    if (window.renderCart) window.renderCart();
-    if (typeof window._renderProductGrid === 'function') window._renderProductGrid();
+    if (window.renderCart) await window.renderCart();
+    if (typeof window._renderProductGrid === 'function') await window._renderProductGrid();
 
     const modal = document.getElementById('invoiceModal');
     const content = document.getElementById('invoiceContent');
@@ -992,15 +1002,14 @@ window.completeSale = function() {
 // ==========================================================
 // 🏁 10. SYSTEM INIT
 // ==========================================================
-(function initBharatPOS(){
-  if(!localStorage.getItem(LS_KEYS.SETTINGS)) saveSettings(window.getSettings());
-  if(!localStorage.getItem(LS_KEYS.PRODUCTS)) saveProducts([]);
-  if(!localStorage.getItem(LS_KEYS.SALES)) saveSales([]);
+(async function initBharatPOS(){
+  // Initialize defaults if they do not exist
+  if((await window.dbGet(LS_KEYS.SETTINGS, null)) === null) await saveSettings(await window.getSettings());
+  if((await window.dbGet(LS_KEYS.PRODUCTS, null)) === null) await saveProducts([]);
+  if((await window.dbGet(LS_KEYS.SALES, null)) === null) await saveSales([]);
   window.applyTheme();
 
   // On startup try to push any existing data
   try { setTimeout(()=> { pushProductsToServer(); pushCustomersToServer(); }, 1200); } catch(e){}
   try { setTimeout(()=> { pushFullBackupToServerDebounced(); }, 2000); } catch(e){}
 })();
-
-
