@@ -4,620 +4,527 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Settings - Bharat POS</title>
+  <title>Settings - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="bharatpos.js"></script>
 
-  <<script src="bharatpos.js"></script>
-
-<script type="module" src="bharatpos.js"></script>
   <style>
-    /* --- THEME VARIABLES --- */
+    /* --- SAAS UI VARIABLES --- */
     :root {
-      --bg-body: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.7);
-      --glass: blur(16px);
-      --border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #f59e0b; /* Gold */
-      --success: #10b981; /* Emerald */
-      --danger: #ef4444; /* Red */
-      --primary: #3b82f6; /* Blue */
+      --bg-body: #EAF2FF; --bg-panel: #FFFFFF; --bg-card: #FFFFFF; --bg-input: #F4F8FF;
+      --border: #DBEAFE; --border-hover: #93C5FD;
+      --primary: #1976D2; --primary-dark: #1565C0; --primary-glow: rgba(25,118,210,0.12); --primary-soft: rgba(25,118,210,0.08);
+      --success: #0D9488; --success-soft: rgba(13,148,136,0.1);
+      --danger: #DC2626; --danger-soft: rgba(220,38,38,0.08);
+      --warning: #F59E0B; --warning-soft: rgba(245, 158, 11, 0.1); --purple: #7C3AED;
+      --text-main: #0F172A; --text-muted: #64748B; --text-light: #94A3B8;
+      --shadow-sm: 0 2px 5px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(25,118,210,0.08);
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
     }
 
-    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    body { background: linear-gradient(135deg, #EAF2FF 0%, #C7DDFF 100%); background-attachment: fixed; color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; padding-bottom: 80px;}
+
+    /* --- HAMBURGER MENU --- */
+    .menu-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s; }
+    .menu-btn:hover { background: var(--primary-soft); color: var(--primary); }
+    .side-menu { position: fixed; top: 0; left: -260px; width: 280px; height: 100vh; background: #FFFFFF; z-index: 9999; transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1); padding: 24px 20px; box-shadow: 12px 0 40px rgba(25,118,210,0.12); border-right: 1px solid var(--border); overflow-y: auto; }
+    .side-menu.open { left: 0; }
+    .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.25); z-index: 9998; backdrop-filter: blur(4px); }
+    .side-menu-brand { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .side-menu-brand-text { font-size: 20px; font-weight: 800; color: var(--text-main); }
+    .side-menu-brand-text span { color: var(--primary); }
+    .side-menu-links { display: flex; flex-direction: column; gap: 4px; }
+    .side-menu-links a { padding: 11px 14px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all 0.18s; border: 1px solid transparent; }
+    .side-menu-links a:hover { background: var(--primary-soft); color: var(--primary); transform: translateX(3px); }
+    .side-menu-links a.active-link { background: linear-gradient(135deg, rgba(25,118,210,0.1), rgba(21,101,192,0.06)); color: var(--primary); border-color: var(--border); }
+    .side-menu-links i { width: 18px; text-align: center; font-size: 14px; }
+
+    /* --- NAVBAR --- */
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 62px; background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 rgba(25,118,210,0.06), var(--shadow-sm); }
+    .brand { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: var(--text-main); }
+    .brand-logo-wrap { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #1976D2, #1565C0); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(25,118,210,0.3); }
+    .brand-logo-wrap i { color: #fff; font-size: 15px; }
+
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .shop-switcher { background: #fff; border:1px solid var(--border); color:var(--text-main); padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; outline:none; cursor:pointer; max-width:160px; text-overflow: ellipsis; box-shadow: var(--shadow-sm); transition: 0.2s;}
+    .shop-switcher:focus { border-color: var(--primary); }
+
+    /* --- LAYOUT GRID --- */
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+    .settings-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media(min-width: 768px) { .settings-grid { grid-template-columns: 1.5fr 1fr; align-items: start; } }
+
+    .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-md); position: relative; overflow: hidden; }
+    .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
+    .panel-title { font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0; }
+    .panel-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; background: var(--primary-soft); color: var(--primary); }
+
+    /* --- FORMS --- */
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+    @media(min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
     
-    body {
-      margin: 0; padding: 0;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      padding-bottom: 80px;
-    }
-
-    /* --- NAVIGATION --- */
-    .navbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 15px 24px; background: rgba(15, 23, 42, 0.95); backdrop-filter: var(--glass);
-      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
-    }
-    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #fff; }
-    .global-logo { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); }
+    .form-group { position: relative; }
+    .form-group.full-width { grid-column: 1 / -1; }
     
-    .nav-links { display: flex; gap: 20px; }
-    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
-    .nav-links a:hover, .nav-links a.active { color: #fff; }
-
-    /* --- LAYOUT --- */
-    .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;}
+    .form-input, .form-select { width: 100%; background: var(--bg-input); border: 1.5px solid var(--border); color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; transition: all 0.2s; outline: none; font-family: inherit; }
+    .form-input:focus, .form-select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px var(--primary-glow); }
     
-    .page-title {
-        font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 25px; 
-        display: flex; align-items: center; gap: 12px;
-    }
+    /* READONLY STYLING */
+    .form-input[readonly] { background: #E2E8F0; color: #475569; border-color: #cbd5e1; cursor: not-allowed; opacity: 0.8; }
+    .readonly-badge { position: absolute; right: 12px; top: 38px; font-size: 10px; background: #94a3b8; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 700;}
 
-    .settings-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 25px;
-    }
-
-    /* --- CARDS --- */
-    .card {
-      background: var(--bg-card); backdrop-filter: var(--glass);
-      border: 1px solid var(--border); border-radius: 16px; padding: 24px;
-      display: flex; flex-direction: column; gap: 20px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      position: relative; overflow: hidden;
-    }
-    .card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-
-    .card::after {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--border-color, var(--primary)), transparent);
-        opacity: 0.7;
-    }
-
-    .card-header {
-        display: flex; align-items: center; gap: 12px;
-        font-size: 16px; font-weight: 700; color: #fff;
-        padding-bottom: 15px; border-bottom: 1px dashed var(--border);
-    }
-    .card-icon { 
-        width: 32px; height: 32px; background: rgba(255,255,255,0.05); 
-        border-radius: 8px; display: flex; align-items: center; justify-content: center;
-        color: var(--accent); font-size: 16px;
-    }
-
-    /* --- FORM ELEMENTS --- */
-    .input-group { position: relative; }
-    .form-control {
-      width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border);
-      color: #fff; padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif;
-      transition: 0.2s; font-size: 14px;
-    }
-    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
-    .form-control[readonly] { background: rgba(0,0,0,0.2); color: var(--text-muted); cursor: not-allowed; }
+    /* --- SWITCH TOGGLES --- */
+    .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); }
+    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-info h4 { margin: 0 0 4px 0; font-size: 14px; font-weight: 700; color: var(--text-main); }
+    .setting-info p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 500; line-height: 1.4; max-width: 250px;}
     
-    select.form-control { cursor: pointer; appearance: none; }
-    
-    .form-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 600; }
-
-    /* --- TOGGLE SWITCH --- */
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0;}
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 24px; }
-    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked + .slider { background-color: var(--success); }
-    input:checked + .slider:before { transform: translateX(20px); }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e1; transition: .3s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
+    input:checked + .slider { background: var(--success); }
+    input:checked + .slider:before { transform: translateX(18px); }
 
     /* --- BUTTONS --- */
-    .btn {
-      width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
-      font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: 0.2s; letter-spacing: 0.5px;
-    }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-success { background: var(--success); color: white; }
-    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-    .btn-copy { background: rgba(255,255,255,0.1); color: var(--text-main); font-size: 12px; padding: 8px; width: auto; }
+    .btn { padding: 12px 20px; border-radius: var(--radius-sm); font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; width: 100%;}
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: 0 4px 14px var(--primary-glow); }
+    .btn-primary:hover { box-shadow: 0 6px 20px var(--primary-glow); transform: translateY(-1px); }
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1.5px solid rgba(239, 68, 68, 0.2); }
+    .btn-danger:hover { background: var(--danger); color: white; }
+    .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
+    .btn-outline:hover { background: var(--bg-input); border-color: var(--primary); color: var(--primary); }
 
-    /* --- UPLOAD ZONE --- */
-    .upload-zone {
-        border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
-        text-align: center; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.02);
-    }
-    .upload-input { display: none; }
-    .qr-preview-box { margin-top: 15px; text-align: center; min-height: 120px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; padding: 10px; }
-    .qr-img { max-width: 100%; max-height: 150px; }
+    /* --- FILE UPLOAD --- */
+    .qr-upload-box { border: 2px dashed var(--border-hover); border-radius: var(--radius-md); padding: 30px 20px; text-align: center; background: var(--bg-input); cursor: pointer; transition: 0.2s; position: relative; }
+    .qr-upload-box:hover { border-color: var(--primary); background: #EBF3FF; }
+    .qr-upload-box i { font-size: 32px; color: var(--primary); margin-bottom: 10px; }
+    .qr-upload-box p { margin: 0; font-size: 13px; color: var(--text-muted); font-weight: 600; }
+    #upiQRImg { max-width: 150px; border-radius: 12px; margin-top: 15px; box-shadow: var(--shadow-sm); display: none; margin-left: auto; margin-right: auto;}
+    .qr-file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 
-    /* --- STORAGE METER --- */
-    .storage-bar-bg { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 8px; }
-    .storage-bar-fill { height: 100%; background: var(--success); width: 0%; transition: width 1s; }
-    .storage-text { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: 5px; }
-
-    /* --- MAP MODAL --- */
-    #mapModal {
-        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-        backdrop-filter: blur(5px); z-index: 2000; align-items: center; justify-content: center;
-    }
-    .map-box {
-        background: #0f172a; width: 90%; max-width: 600px; border-radius: 16px;
-        border: 1px solid var(--accent); padding: 20px;
-    }
-    #mapContainer { height: 400px; width: 100%; border-radius: 12px; margin-bottom: 15px; }
-
-    @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+    /* TOAST */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; white-space: nowrap; }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   </style>
 </head>
 <body>
 
-  <nav class="navbar">
-    <div class="brand"><img src="logo.png" class="global-logo">Bharat POS</div>
-    <div class="nav-links">
-      <a href="dashboard.html">Home</a>
-      <a href="products.html">Stock</a>
-      <a href="sales.html">Bikri</a>
-      <a href="settings.html" class="active" style="color:var(--accent)">Settings</a>
-    </div>
-  </nav>
-
-  <div class="container">
-    <div class="page-title"><i class="fa-solid fa-sliders"></i> Dukan Settings</div>
-
-    <div class="settings-grid">
-      
-      <div class="card" style="--border-color: var(--primary);">
-        <div class="card-header">
-            <div class="card-icon" style="color:var(--primary);"><i class="fa-solid fa-globe"></i></div> 
-            Network Identity
-        </div>
-        <div class="input-group">
-            <label class="form-label">Merchant ID (Dukan ID)</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="merchantId" class="form-control" readonly value="LOADING..." style="font-family:'JetBrains Mono'; font-weight:700; color: var(--accent);">
-                <button onclick="window.copyMerchantID()" class="btn btn-copy"><i class="fa-solid fa-copy"></i></button>
-            </div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">Share this ID with your customers for the My Khata App.</div>
-        </div>
-        <div class="input-group" style="margin-top: 10px;">
-            <label class="form-label">Shop Location (GPS)</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <div style="flex:1; font-size:12px; color:var(--text-muted);" id="locationStatus">No Location Set</div>
-                <button onclick="window.openLocationMap()" class="btn btn-primary" style="width:auto; font-size:12px; padding:8px 16px;">
-                    <i class="fa-solid fa-map-pin"></i> Drop Pin
-                </button>
-            </div>
-        </div>
-      </div>
-
-      <div class="card" style="--border-color: var(--accent);">
-        <div class="card-header">
-            <div class="card-icon"><i class="fa-solid fa-store"></i></div> 
-            Store Profile (Dukan Info)
-        </div>
-        <div class="input-group">
-            <label class="form-label">Owner Name</label>
-            <input type="text" id="ownerName" class="form-control" readonly>
-        </div>
-        <div class="input-group">
-            <label class="form-label">Shop Name</label>
-            <input type="text" id="shopName" class="form-control" readonly>
-        </div>
-        <div class="input-group">
-            <label class="form-label">Contact Number (Mobile)</label>
-            <input type="text" id="shopPhone" class="form-control" readonly>
-        </div>
-        <div class="input-group">
-            <label class="form-label">Shop Category</label>
-            <input type="text" id="shopCategory" class="form-control" readonly>
-        </div>
-      </div>
-
-      <div class="card" style="--border-color: #a855f7;">
-        <div class="card-header">
-            <div class="card-icon" style="color:#a855f7;"><i class="fa-solid fa-receipt"></i></div> 
-            Bill & GST Setup
-        </div>
-
-        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:15px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <label class="form-label" style="margin:0; font-size:14px; color:#fff;">GST Mode Enable</label>
-                    <div style="font-size:11px; color:var(--text-muted);">Products page pe Tax option aayega</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="gstToggle" onchange="window.toggleGSTFields()">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            
-            <div id="gstFields" style="display:none; margin-top:15px; padding-top:10px; border-top:1px dashed var(--border);">
-                <label class="form-label" style="color:var(--accent);">GSTIN Number</label>
-                <input type="text" id="gstin" class="form-control" placeholder="e.g. 22AAAAA0000A1Z5" style="border-color:var(--accent);">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label class="form-label">Bill Footer Note</label>
-            <input type="text" id="billFooter" class="form-control" placeholder="e.g. Thank you, Visit Again!">
-        </div>
-
-        <div class="input-group" style="margin-top:10px;">
-            <label class="form-label">Bill Ka Size</label>
-            <select id="billSize" class="form-control">
-                <option value="thermal">Thermal (Choti Parchi)</option>
-                <option value="a4">A4 (Bada Bill)</option>
-            </select>
-        </div>
-        
-        <button onclick="window.saveSettings()" class="btn btn-success" style="margin-top: 15px;">
-            <i class="fa-solid fa-floppy-disk"></i> Save Settings
-        </button>
-
-        <div class="card-header" style="margin-top:20px; border-bottom:none; padding-bottom:0;">
-            <div class="card-icon"><i class="fa-solid fa-qrcode"></i></div> UPI Setup
-        </div>
-        <label class="upload-zone">
-            <input type="file" id="qrUpload" accept="image/*" class="upload-input">
-            <div style="font-size:12px; color:var(--text-main);">Upload UPI QR Code</div>
-        </label>
-        <div class="qr-preview-box" id="qrContainer"><span style="color:#666; font-size:11px;">Preview</span></div>
-      </div>
-
-      <div class="card" style="--border-color: var(--success);">
-        <div class="card-header">
-            <div class="card-icon" style="color:var(--success);"><i class="fa-solid fa-database"></i></div> Data Backup
-        </div>
-        <div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-main);">
-                <span>Local Storage</span><span id="storagePercent">0%</span>
-            </div>
-            <div class="storage-bar-bg"><div class="storage-bar-fill" id="storageFill"></div></div>
-            <div class="storage-text"><span id="storageBytes">0 KB</span><span>5 MB Limit</span></div>
-        </div>
-        <button onclick="window.exportAll()" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); border:1px solid var(--border);"><i class="fa-solid fa-download"></i> Backup Data (JSON)</button>
-        <div style="border-top:1px dashed var(--border); padding-top:15px; margin-top:5px;">
-           <label class="form-label">Restore Data</label>
-            <div style="display:flex; gap:10px;">
-              <label class="btn" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex:1; font-size:12px;">
-                <input type="file" id="importFile" class="upload-input" accept=".json,application/json" onchange="window.doImport(event)">Select File
-              </label>
-              <button class="btn btn-primary" style="width:auto; align-self:center;" onclick="document.getElementById('importFile').click()">Choose & Import</button>
-            </div>
-        </div>
-      </div>
-
-      <div class="card" style="--border-color: var(--danger);">
-        <div class="card-header" style="color:var(--danger); border-color: rgba(239,68,68,0.3);">
-            <div class="card-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div> Account Control
-        </div>
-        
-        <button onclick="window.logout()" class="btn" style="background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted);">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
-        </button>
-        
-        <button onclick="window.deleteAccount()" class="btn btn-danger" style="margin-top: 10px;">
-            <i class="fa-solid fa-trash-can"></i> Delete Account
-        </button>
-      </div>
-
-    </div>
+<div id="menuOverlay" class="menu-overlay"></div>
+<div id="sideMenu" class="side-menu">
+  <button id="btnCloseMenu" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
+  <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:40px; margin-top:10px;">
+      Bharat<span style="color:var(--accent);">POS</span>
   </div>
+  <div class="side-menu-links">
+      <a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> Command Center</a>
+      <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> Bill Banao</a>
+      <a href="products.html"><i class="fa-solid fa-box-open"></i> Inventory / Stock</a>
+      <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
+      <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> Finance HQ</a>
+      <a href="customers.html"><i class="fa-solid fa-users"></i> Bharat CRM</a>
+      <a href="reports.html"><i class="fa-solid fa-file-invoice-dollar"></i> Audit & Reports</a>
+      <a href="forecast.html"><i class="fa-solid fa-brain" style="color:var(--accent);"></i> DemandMitra AI</a>
+      <a href="settings.html" class="active-link"><i class="fa-solid fa-gear"></i> Settings</a>
+  </div>
+</div>
 
-  <div id="mapModal">
-      <div class="map-box">
-          <h3 style="margin-top:0; color:#fff;">📍 Set Shop Location</h3>
-          <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Drag the map or click to drop the pin exactly on your shop.</p>
-          <div id="mapContainer"></div>
-          <div style="display:flex; gap:10px; margin-top: 15px;">
-              <button class="btn btn-success" style="flex:2;" onclick="window.confirmLocation()"><i class="fa-solid fa-check"></i> Save Location</button>
-              <button class="btn" style="flex:1; background:rgba(255,255,255,0.1); color:white;" onclick="document.getElementById('mapModal').style.display='none'">Cancel</button>
+<nav class="navbar">
+  <div style="display:flex; align-items:center; gap:15px;">
+      <button class="menu-btn" id="btnOpenMenu" style="color:var(--text-main);"><i class="fa-solid fa-bars"></i></button>
+      <div class="brand">
+        <div class="brand-logo-wrap" style="background:linear-gradient(135deg, #64748B, #475569);"><i class="fa-solid fa-gear"></i></div>
+        Bharat<span>POS</span>
+      </div>
+  </div>
+  
+  <div class="nav-actions">
+      <select id="shopSwitcher" class="shop-switcher">
+          <option value="" disabled>Loading...</option>
+      </select>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="settings-grid">
+      
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+          
+          <div class="panel">
+              <div class="panel-header">
+                  <div class="panel-icon"><i class="fa-solid fa-store"></i></div>
+                  <h2 class="panel-title">Business Profile</h2>
+              </div>
+              
+              <div class="form-grid">
+                  <div class="form-group full-width">
+                      <label class="form-label">Shop Name</label>
+                      <input type="text" id="shopName" class="form-input" placeholder="Enter Shop Name">
+                  </div>
+                  
+                  <div class="form-group">
+                      <label class="form-label">Registered Mobile</label>
+                      <input type="text" id="shopPhone" class="form-input" readonly>
+                      <div class="readonly-badge"><i class="fa-solid fa-lock"></i> Locked</div>
+                  </div>
+                  
+                  <div class="form-group">
+                      <label class="form-label">Merchant ID</label>
+                      <input type="text" id="merchantId" class="form-input" readonly>
+                      <div class="readonly-badge"><i class="fa-solid fa-lock"></i> Locked</div>
+                  </div>
+
+                  <div class="form-group">
+                      <label class="form-label">Business Category</label>
+                      <select id="shopCat" class="form-select">
+                          <option value="GROCERY">Kirana / Grocery</option>
+                          <option value="MEDICAL">Pharmacy / Medical</option>
+                          <option value="ELECTRONIC">Electronics</option>
+                          <option value="CLOTHING">Apparel / Clothing</option>
+                          <option value="OTHER">Other Retail</option>
+                      </select>
+                  </div>
+                  
+                  <div class="form-group">
+                      <label class="form-label">GSTIN (Optional)</label>
+                      <input type="text" id="shopGstin" class="form-input" placeholder="e.g. 22AAAAA0000A1Z5" style="text-transform: uppercase;">
+                  </div>
+
+                  <div class="form-group full-width">
+                      <label class="form-label">Complete Address</label>
+                      <input type="text" id="shopAddress" class="form-input" placeholder="Shop No, Street, City, Pincode">
+                  </div>
+              </div>
+
+              <button id="btnSaveProfile" class="btn btn-primary" style="margin-top: 20px;">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Save & Sync Profile
+              </button>
+          </div>
+
+          <div class="panel">
+              <div class="panel-header">
+                  <div class="panel-icon" style="background:rgba(239, 68, 68, 0.1); color:var(--danger);"><i class="fa-solid fa-database"></i></div>
+                  <h2 class="panel-title">Data Management</h2>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <button id="btnExport" class="btn btn-outline"><i class="fa-solid fa-download"></i> Export Data (JSON)</button>
+                  <label class="btn btn-outline" style="margin:0; text-align:center;">
+                      <i class="fa-solid fa-upload"></i> Import Data
+                      <input type="file" id="fileImport" style="display:none;" accept=".json">
+                  </label>
+              </div>
+              
+              <button id="btnReset" class="btn btn-danger" style="margin-top: 15px;">
+                  <i class="fa-solid fa-triangle-exclamation"></i> Factory Reset (Clear Local Cache)
+              </button>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">
+                  Resetting clears your offline cache. Ensure you have internet to re-sync from the cloud.
+              </div>
           </div>
       </div>
+
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+          
+          <div class="panel">
+              <div class="panel-header">
+                  <div class="panel-icon" style="background:rgba(16, 185, 129, 0.1); color:var(--success);"><i class="fa-solid fa-toggle-on"></i></div>
+                  <h2 class="panel-title">Global Features</h2>
+              </div>
+
+              <div class="setting-row">
+                  <div class="setting-info">
+                      <h4>Enable GST Billing</h4>
+                      <p>Calculates CGST & SGST on invoices automatically.</p>
+                  </div>
+                  <label class="switch">
+                      <input type="checkbox" id="toggleGst">
+                      <span class="slider"></span>
+                  </label>
+              </div>
+
+              <div class="setting-row">
+                  <div class="setting-info">
+                      <h4>Advanced Product Details</h4>
+                      <p>Turn on fields for Barcode, Expiry Date, and Brands.</p>
+                  </div>
+                  <label class="switch">
+                      <input type="checkbox" id="toggleAdv">
+                      <span class="slider"></span>
+                  </label>
+              </div>
+
+              <div class="setting-row">
+                  <div class="setting-info">
+                      <h4>Sell By Weight (Loose)</h4>
+                      <p>Enables Kg/g/L units and decimal calculations.</p>
+                  </div>
+                  <label class="switch">
+                      <input type="checkbox" id="toggleLoose">
+                      <span class="slider"></span>
+                  </label>
+              </div>
+
+              <div class="setting-row">
+                  <div class="setting-info">
+                      <h4>Batch Tracking</h4>
+                      <p>Useful for Pharmacy or FMCG to track lot numbers.</p>
+                  </div>
+                  <label class="switch">
+                      <input type="checkbox" id="toggleBatch">
+                      <span class="slider"></span>
+                  </label>
+              </div>
+          </div>
+
+          <div class="panel">
+              <div class="panel-header">
+                  <div class="panel-icon" style="background:rgba(124, 58, 237, 0.1); color:var(--purple);"><i class="fa-solid fa-qrcode"></i></div>
+                  <h2 class="panel-title">UPI Payment QR</h2>
+              </div>
+              
+              <div class="qr-upload-box">
+                  <input type="file" id="qrUpload" class="qr-file-input" accept="image/*">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <p>Tap or Drop your Shop's PhonePe/Paytm/GPay QR code here</p>
+                  <img id="upiQRImg" alt="Your UPI QR">
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">
+                  This QR will be displayed to customers when paying online.
+              </div>
+          </div>
+
+      </div>
+
   </div>
+</div>
+
+<div id="toast">✅ Action Successful</div>
 
 <script type="module">
-// 🟢 1. IMPORT FIREBASE SDK
-import { db, auth } from "./bharatpos.js";
-import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { db } from "./bharatpos.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadSettings();
-    window.updateStorageMeter();
+window.db = db;
 
-    const qrUpload = document.getElementById("qrUpload");
-    if (qrUpload) {
-        qrUpload.addEventListener("change", function() {
-            const file = this.files[0];
-            if(file){
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = function() {
-                    localStorage.setItem("upiQR", reader.result); 
-                    renderQR(reader.result);
-                    window.updateStorageMeter();
-                };
-            }
-        });
-    }
-
-    const storedQR = localStorage.getItem("upiQR");
-    if (storedQR) renderQR(storedQR);
+document.addEventListener("DOMContentLoaded", () => {
+    bindEvents();
+    loadProfileData();
+    loadToggles();
+    loadQR();
+    if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); 
 });
 
-function renderQR(dataUrl) {
-    document.getElementById('qrContainer').innerHTML = `<img src="${dataUrl}" class="qr-img">`;
+function bindEvents() {
+    // Menu
+    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
+    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
+    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+    
+    // Shop Switcher
+    document.getElementById('shopSwitcher').addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+
+    // Buttons
+    document.getElementById('btnSaveProfile').addEventListener('click', saveProfile);
+    document.getElementById('btnReset').addEventListener('click', factoryReset);
+    document.getElementById('btnExport').addEventListener('click', exportData);
+    document.getElementById('fileImport').addEventListener('change', importData);
+    document.getElementById('qrUpload').addEventListener('change', handleQRUpload);
+
+    // Toggles
+    const toggles = [
+        { id: 'toggleGst', key: 'bharatpos_gst_mode' },
+        { id: 'toggleAdv', key: 'cfg_adv_fields' },
+        { id: 'toggleLoose', key: 'cfg_loose' },
+        { id: 'toggleBatch', key: 'cfg_batch' }
+    ];
+    toggles.forEach(t => {
+        document.getElementById(t.id).addEventListener('change', (e) => {
+            localStorage.setItem(t.key, e.target.checked);
+            showToast("Settings Updated");
+        });
+    });
 }
 
-function loadSettings() {
+function toggleMenu() {
+    document.getElementById('sideMenu').classList.toggle('open');
+    const overlay = document.getElementById('menuOverlay');
+    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+}
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.innerText = msg; t.style.background = isError ? 'var(--danger)' : 'var(--success)';
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── PROFILE LOGIC ────────────────────────────────────────────────────────────
+function loadProfileData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     
-    // Auto-Populate Identity from Login Info
-    document.getElementById('merchantId').value = user.merchantId || "NOT SET";
-    document.getElementById('ownerName').value = user.ownerName || user.name || "N/A";
-    document.getElementById('shopName').value = user.shopName || "N/A";
-    document.getElementById('shopPhone').value = user.mobile || user.phone || "N/A";
-    document.getElementById('shopCategory').value = user.category || "General Retail";
+    document.getElementById('shopName').value = user.shopName || localStorage.getItem('shopName') || '';
+    document.getElementById('shopPhone').value = user.mobile || user.phone || localStorage.getItem('shopPhone') || '';
+    document.getElementById('merchantId').value = user.merchantId || '';
+    document.getElementById('shopCat').value = user.category || 'GROCERY';
+    document.getElementById('shopAddress').value = user.address || localStorage.getItem('shopAddress') || '';
     
-    // Load Settings
-    document.getElementById('billFooter').value = localStorage.getItem('bharatpos_bill_footer') || "";
-    document.getElementById('billSize').value = localStorage.getItem('bharatpos_bill_size') || "thermal";
-
-    const isGstOn = localStorage.getItem('bharatpos_gst_mode') === 'true';
-    document.getElementById('gstToggle').checked = isGstOn;
-    document.getElementById('gstin').value = localStorage.getItem('bharatpos_gstin') || "";
-    window.toggleGSTFields();
-
-    if (user.lat && user.lng) {
-        document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Pin Dropped (${user.lat.toFixed(4)}, ${user.lng.toFixed(4)})</span>`;
-    }
+    const gstin = localStorage.getItem('cfg_gstin') || user.gstin || '';
+    document.getElementById('shopGstin').value = gstin;
 }
 
-window.copyMerchantID = function() {
-    const val = document.getElementById('merchantId').value;
-    navigator.clipboard.writeText(val);
-    alert("Merchant ID Copied!");
-}
+async function saveProfile() {
+    const btn = document.getElementById('btnSaveProfile');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`; btn.disabled = true;
 
-window.toggleGSTFields = function() {
-    const gstCheckbox = document.getElementById('gstToggle');
-    const gstFields = document.getElementById('gstFields');
-    if (!gstCheckbox || !gstFields) return;
-    const isChecked = !!gstCheckbox.checked;
-    gstFields.style.display = isChecked ? 'block' : 'none';
-    localStorage.setItem('bharatpos_gst_mode', isChecked ? 'true' : 'false');
-}
-
-// 🟢 FIREBASE: SAVE SETTINGS
-window.saveSettings = async function() {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    
-    // Save to LocalStorage
-    localStorage.setItem('bharatpos_bill_footer', document.getElementById('billFooter').value);
-    localStorage.setItem('bharatpos_bill_size', document.getElementById('billSize').value);
-
-    const gstStatus = document.getElementById('gstToggle').checked;
-    localStorage.setItem('bharatpos_gst_mode', gstStatus ? 'true' : 'false');
-    localStorage.setItem('bharatpos_gstin', document.getElementById('gstin').value);
-
-    // Save to Firestore
-    if(user.merchantId) {
-        try {
-            const shopRef = doc(db, "shops", user.merchantId);
-            await updateDoc(shopRef, {
-                "settings.billFooter": document.getElementById('billFooter').value,
-                "settings.billSize": document.getElementById('billSize').value,
-                "settings.gstMode": gstStatus,
-                "settings.gstin": document.getElementById('gstin').value
-            });
-            alert('✅ Settings Saved Successfully!');
-        } catch (e) {
-            console.error(e);
-            alert("Error saving to cloud. Settings saved locally.");
-        }
-    }
-}
-
-// 🟢 LEAFLET MAP LOGIC (Pin Drop)
-let map = null;
-let marker = null;
-let currentSelectedLat = null;
-let currentSelectedLng = null;
-
-window.openLocationMap = function() {
-    document.getElementById('mapModal').style.display = 'flex';
-    
-    // Slight delay to ensure the modal is visible before rendering Leaflet
-    setTimeout(() => {
-        if (!map) {
-            // Default center of India
-            let startLat = 20.5937;
-            let startLng = 78.9629;
-            let zoomLvl = 5;
-
-            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-            if (user.lat && user.lng) {
-                startLat = user.lat;
-                startLng = user.lng;
-                zoomLvl = 16;
-            }
-
-            map = L.map('mapContainer').setView([startLat, startLng], zoomLvl);
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
-                attribution: 'Tiles &copy; Esri' 
-            }).addTo(map);
-
-            const redIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
-
-            marker = L.marker([startLat, startLng], {icon: redIcon, draggable: true}).addTo(map);
-
-            // Update variables on drag
-            marker.on('dragend', function (e) {
-                currentSelectedLat = marker.getLatLng().lat;
-                currentSelectedLng = marker.getLatLng().lng;
-            });
-
-            // Update variables and marker on map click
-            map.on('click', function(e) {
-                marker.setLatLng(e.latlng);
-                currentSelectedLat = e.latlng.lat;
-                currentSelectedLng = e.latlng.lng;
-            });
-            
-            // Auto-locate if no prior location exists
-            if(!user.lat && navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    map.flyTo([lat, lng], 16);
-                    marker.setLatLng([lat, lng]);
-                    currentSelectedLat = lat;
-                    currentSelectedLng = lng;
-                });
-            }
-        } else {
-            map.invalidateSize();
-        }
-    }, 100);
-}
-
-// 🟢 FIREBASE: SAVE LOCATION DIRECTLY TO HEATMAP & PROFILE
-window.confirmLocation = async function() {
-    if (!currentSelectedLat || !currentSelectedLng) {
-        currentSelectedLat = marker.getLatLng().lat;
-        currentSelectedLng = marker.getLatLng().lng;
-    }
-
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    user.lat = currentSelectedLat;
-    user.lng = currentSelectedLng;
-    localStorage.setItem('bharatpos_user', JSON.stringify(user));
-
-    document.getElementById('locationStatus').innerHTML = `<span style="color:var(--success)">✅ Pin Dropped (${user.lat.toFixed(4)}, ${user.lng.toFixed(4)})</span>`;
-    document.getElementById('mapModal').style.display = 'none';
-
-    if (user.merchantId) {
-        try {
-            const shopRef = doc(db, "shops", user.merchantId);
-            // Instantly sync the profile and the heatmap data
-            await updateDoc(shopRef, {
-                "profile.lat": user.lat,
-                "profile.lng": user.lng,
-                "heatmapData.location.lat": user.lat,
-                "heatmapData.location.lng": user.lng
-            });
-            alert("📍 Location saved to global map!");
-        } catch(e) {
-            console.error("Firebase location save failed", e);
-        }
-    }
-}
-
-// 🟢 FIREBASE: LOGOUT
-window.logout = async function() {
-    if(confirm("Are you sure you want to log out? Your data is safely backed up in the cloud.")) {
-        localStorage.clear();
-        await signOut(auth);
-        window.location.href = 'login.html';
-    }
-}
-
-// 🟢 FIREBASE: DELETE ACCOUNT (Strict Warning)
-window.deleteAccount = async function() {
-    if(confirm("🛑 WARNING: This will permanently delete your entire shop profile, stock, and bills. Continue?")) {
-        let userInput = prompt("FINAL WARNING: This cannot be undone. Type 'DELETE' to confirm.");
-        
-        if(userInput === "DELETE") {
-            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-            if(user.merchantId) {
-                try {
-                    await deleteDoc(doc(db, "shops", user.merchantId));
-                } catch(e) {
-                    console.error("Failed to delete from Firestore", e);
-                }
-            }
-            localStorage.clear();
-            await signOut(auth);
-            alert("Account has been permanently deleted.");
-            window.location.href = 'login.html';
-        } else {
-            alert("Deletion cancelled.");
-        }
-    }
-}
-
-// --- LOCAL STORAGE BACKUP / RESTORE ---
-window.gatherAllData = function() {
-    const result = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        const raw = localStorage.getItem(key);
-        try { result[key] = JSON.parse(raw); } catch (e) { result[key] = raw; }
-    }
-    return result;
-}
-
-window.exportAll = function() {
     try {
-        const allData = window.gatherAllData();
-        const jsonData = JSON.stringify(allData, null, 2);
-        const blob = new Blob([jsonData], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'bharatpos_backup.json';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-    } catch (error) { alert('Failed to export data: ' + error.message); }
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        if (!user.merchantId) throw new Error("No active merchant ID found.");
+
+        // Grab values (Notice: Mobile and MerchantID are NOT grabbed from inputs to prevent overwriting with hacks)
+        const newName = document.getElementById('shopName').value.trim();
+        const newCat = document.getElementById('shopCat').value;
+        const newAddress = document.getElementById('shopAddress').value.trim();
+        const newGstin = document.getElementById('shopGstin').value.trim().toUpperCase();
+
+        // Update User Object
+        user.shopName = newName;
+        user.category = newCat;
+        user.address = newAddress;
+        user.gstin = newGstin;
+
+        // Save to Local Storage
+        localStorage.setItem('bharatpos_user', JSON.stringify(user));
+        localStorage.setItem('shopName', newName);
+        localStorage.setItem('shopAddress', newAddress);
+        localStorage.setItem('cfg_gstin', newGstin);
+
+        // 🟢 FIREBASE SYNC: Update Profile Node safely
+        if (window.db) {
+            const shopRef = doc(db, "shops", user.merchantId);
+            await setDoc(shopRef, { 
+                profile: { 
+                    shopName: newName, 
+                    category: newCat, 
+                    address: newAddress, 
+                    gstin: newGstin,
+                    // Preserve locked data
+                    mobile: user.mobile || user.phone,
+                    isBranch: user.isBranch || false,
+                    parentId: user.parentId || null
+                } 
+            }, { merge: true });
+        }
+
+        showToast("Profile Saved Successfully!");
+        if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); // Refresh navbar
+    } catch (e) {
+        console.error(e);
+        showToast("Failed to sync profile to cloud.", true);
+    } finally {
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Save & Sync Profile`; btn.disabled = false;
+    }
 }
 
-window.doImport = function(event) {
-  try {
-    const file = event && event.target && event.target.files && event.target.files[0];
+// ─── TOGGLES & QR ─────────────────────────────────────────────────────────────
+function loadToggles() {
+    document.getElementById('toggleGst').checked = localStorage.getItem('bharatpos_gst_mode') === 'true';
+    document.getElementById('toggleAdv').checked = localStorage.getItem('cfg_adv_fields') === 'true';
+    document.getElementById('toggleLoose').checked = localStorage.getItem('cfg_loose') === 'true';
+    document.getElementById('toggleBatch').checked = localStorage.getItem('cfg_batch') === 'true';
+}
+
+function loadQR() {
+    const qrData = localStorage.getItem('upiQR');
+    if (qrData) {
+        const img = document.getElementById('upiQRImg');
+        img.src = qrData;
+        img.style.display = 'block';
+    }
+}
+
+function handleQRUpload(event) {
+    const file = event.target.files[0];
     if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        localStorage.setItem('upiQR', base64);
+        const img = document.getElementById('upiQRImg');
+        img.src = base64;
+        img.style.display = 'block';
+        showToast("UPI QR Saved!");
+    };
+    reader.readAsDataURL(file);
+}
+
+// ─── DATA MANAGEMENT ──────────────────────────────────────────────────────────
+function exportData() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const payload = {
+        meta: { merchantId: user.merchantId, exportDate: new Date().toISOString() },
+        profile: user,
+        products: JSON.parse(localStorage.getItem('bharatpos_products') || '[]'),
+        sales: JSON.parse(localStorage.getItem('bharatpos_sales') || '[]'),
+        customers: JSON.parse(localStorage.getItem('bharatpos_customers') || '[]')
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); 
+    a.href = url; 
+    a.download = `BharatPOS_Backup_${user.merchantId || 'Offline'}_${Date.now()}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); 
+    URL.revokeObjectURL(url);
+    showToast("Data Exported!");
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!confirm("Importing data will overwrite your current local database. Proceed?")) return;
 
     const reader = new FileReader();
     reader.onload = function(e) {
-      try {
-        const parsed = JSON.parse(e.target.result);
-        if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid backup structure.');
-
-        if (confirm('Press OK to REPLACE your entire local storage with this backup file.')) {
-            const currentUser = localStorage.getItem('bharatpos_user');
-            localStorage.clear();
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.products) localStorage.setItem('bharatpos_products', JSON.stringify(data.products));
+            if (data.sales) localStorage.setItem('bharatpos_sales', JSON.stringify(data.sales));
+            if (data.customers) localStorage.setItem('bharatpos_customers', JSON.stringify(data.customers));
             
-            for (const key in parsed) {
-                const val = parsed[key];
-                if (typeof val === 'object') localStorage.setItem(key, JSON.stringify(val));
-                else localStorage.setItem(key, String(val));
-            }
-            if (currentUser) localStorage.setItem('bharatpos_user', currentUser);
-            alert('✅ Import complete. The app will now reload.');
-            setTimeout(()=> location.reload(), 400);
+            showToast("Data Imported Successfully! Reloading...");
+            setTimeout(() => window.location.reload(), 1500);
+        } catch(err) {
+            showToast("Invalid Backup File.", true);
         }
-      } catch (err) { alert('Failed to import data: ' + err.message); }
     };
-    reader.readAsText(file, 'utf-8');
-  } catch (error) { alert('Import error: ' + error.message); }
+    reader.readAsText(file);
 }
 
-window.updateStorageMeter = function() {
-    let total = 0; for(let x in localStorage) if(localStorage.hasOwnProperty(x)) total += ((localStorage[x].length + x.length) * 2);
-    const pct = Math.min((total / 1024 / 5120) * 100, 100).toFixed(1);
-    document.getElementById('storageBytes').innerText = `${(total/1024).toFixed(0)} KB`;
-    document.getElementById('storagePercent').innerText = `${pct}%`;
-    document.getElementById('storageFill').style.width = `${pct}%`;
+function factoryReset() {
+    const code = prompt("DANGER: This will wipe your local offline cache. Type 'RESET' to confirm:");
+    if (code === 'RESET') {
+        const user = localStorage.getItem('bharatpos_user'); // Preserve login state
+        const shops = localStorage.getItem(`bharatpos_shops_${JSON.parse(user || '{}').mobile}`);
+        
+        localStorage.clear();
+        
+        if(user) localStorage.setItem('bharatpos_user', user);
+        if(shops) localStorage.setItem(`bharatpos_shops_${JSON.parse(user || '{}').mobile}`, shops);
+        
+        alert("Cache Cleared. The app will now reload and attempt to pull fresh data from the cloud.");
+        window.location.href = 'dashboard.html';
+    } else if (code) {
+        showToast("Incorrect code. Cancelled.", true);
+    }
 }
 </script>
 </body>
 </html>
-
