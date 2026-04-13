@@ -691,7 +691,6 @@
 
 <div id="toast">✅ Action Successful</div>
 <div id="globalHintBar">Hint Text Here</div>
-
 <script type="module">
 import { db } from "./bharatpos.js";
 import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -721,6 +720,29 @@ window.targetBarcodeInput = null;
 window.selectedBulkItems = new Set();
 
 const langs = ['en', 'hinglish', 'hi'];
+
+// ─── BULK ACTION ENGINE (FIXED) ──────────────────────────────────────────────
+window.toggleBulkItem = function(id, isChecked) {
+    if (isChecked) {
+        window.selectedBulkItems.add(id);
+    } else {
+        window.selectedBulkItems.delete(id);
+    }
+    
+    const actionBar = document.getElementById('bulkActionBar');
+    const countSpan = document.getElementById('bulkCount');
+    
+    countSpan.innerText = window.selectedBulkItems.size;
+    
+    if (window.selectedBulkItems.size > 0) {
+        actionBar.classList.add('show');
+    } else {
+        actionBar.classList.remove('show');
+        document.getElementById('bulkOperation').value = '';
+        document.getElementById('bulkValue').style.display = 'none';
+        document.getElementById('bulkValue').value = '';
+    }
+};
 
 // ─── LIVE STOCK CALCULATION LOGIC ──────────────────────────────────────────
 window.updateLiveStockCalc = function(box) {
@@ -1698,7 +1720,7 @@ window.openProductDetails = function(id) {
     document.getElementById('dTier').className        = `sku-tier tier-${tier.toLowerCase()}`;
     document.getElementById('dCat').innerText         = base.category || 'General';
 
-    document.getElementById('dHSN').innerText         = base.hsn     || '-';
+    document.getElementById('dHSN').innerText         = base.hsn      || '-';
     document.getElementById('dGST').innerText         = base.gstRate ? `${base.gstRate}%` : '-';
     document.getElementById('dTaxType').innerText     = base.priceType || 'inclusive';
     document.getElementById('dBatch').innerText       = base.batchId || '-';
@@ -2052,10 +2074,20 @@ window.openTransferModal = function() {
     const bSel = document.getElementById('transferTargetBranch');
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mobile = user.mobile || user.phone;
-    const shops = JSON.parse(localStorage.getItem(`bharatpos_shops_${mobile}`) || '[]');
     
-    bSel.innerHTML = shops.filter(s => s.merchantId !== user.merchantId)
-                          .map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
+    // Safely attempt to fetch branches from local storage
+    const storedShopsStr = localStorage.getItem(`bharatpos_shops_${mobile}`);
+    let shops = [];
+    if (storedShopsStr) {
+        try { shops = JSON.parse(storedShopsStr); } catch(e) {}
+    }
+    
+    if(shops.length > 1) {
+        bSel.innerHTML = shops.filter(s => s.merchantId !== user.merchantId)
+                              .map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
+    } else {
+        bSel.innerHTML = '<option value="">No other branches found</option>';
+    }
 
     document.getElementById('transferQty').value = '';
     document.getElementById('transferCalcDisplay').innerText = '';
