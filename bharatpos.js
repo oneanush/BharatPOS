@@ -1,9 +1,8 @@
-
 // ==========================================================
 // 🟢 1. FIREBASE SDK INITIALIZATION
 // ==========================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where, writeBatch, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -107,7 +106,7 @@ const getCustomers = window.getCustomers;
 const saveCustomers = window.saveCustomers;
 
 // ==========================================================
-// ☁️ 4. FIREBASE SYNC ENGINE (Replaces Node.js Fetch)
+// ☁️ 4. FIREBASE SYNC ENGINE
 // ==========================================================
 
 window.pushProductsToServerDebounced = function() {
@@ -123,7 +122,6 @@ window.pushProductsToServer = async function(){
     if(!user.merchantId) return;
     const products = getProducts();
     
-    // Firebase Batch Write
     const batch = writeBatch(db);
     products.forEach(p => {
         const ref = doc(db, "shops", user.merchantId, "products", p.id);
@@ -156,6 +154,7 @@ const pushCustomersToServer = window.pushCustomersToServer;
 window.syncBillToServer = async function(billData) {
     if(window.IS_CUSTOMER_APP || window.IS_ADMIN_APP) return;
     let userSettings = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    
     if (!userSettings.merchantId) {
         userSettings.merchantId = "GUEST-SHOP-" + Math.floor(Math.random() * 1000);
         localStorage.setItem('bharatpos_user', JSON.stringify(userSettings));
@@ -163,11 +162,9 @@ window.syncBillToServer = async function(billData) {
     billData.merchantId = userSettings.merchantId;
 
     try {
-        // Sync Sale
         const billRef = doc(db, "shops", userSettings.merchantId, "sales", billData.id);
         await setDoc(billRef, billData);
         
-        // Deduct Stock in Firestore Atomically
         const batch = writeBatch(db);
         const allProducts = getProducts();
         billData.items.forEach(cartItem => {
@@ -243,7 +240,6 @@ window.pushFullBackupToServer = async function() {
     if (!user.merchantId) return; 
     const payload = window.gatherFullLocalBackup();
     
-    // Store in Firestore as a legacy massive document
     const backupRef = doc(db, "shops", user.merchantId, "legacy_backup", "latest");
     await setDoc(backupRef, { backupData: payload, timestamp: new Date().toISOString() });
     console.log('🔁 Full backup pushed to Firestore for', user.merchantId);
@@ -252,12 +248,12 @@ window.pushFullBackupToServer = async function() {
 const pushFullBackupToServer = window.pushFullBackupToServer;
 
 // ==========================================================
-// 🏢 5. STRICT MULTI-BRANCH ENGINE
+// 🏢 5. STRICT MULTI-BRANCH ENGINE (Hub & Spoke)
 // ==========================================================
 window.loadOwnedShops = async function(mobileNum) {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const searchMobile = mobileNum || user.mobile || user.phone;
-    if (!searchMobile) return [];
+    if (!searchMobile || !db) return [];
 
     try {
         const shopsRef = collection(db, "shops");
@@ -271,8 +267,7 @@ window.loadOwnedShops = async function(mobileNum) {
             isMain: !d.data().profile?.isBranch
         }));
 
-        // 🛟 THE IRONCLAD SAFETY NET
-        // If Firebase missed the main shop due to old data structures, force it back in!
+        // The Ironclad Safety Net: Ensure the main shop is always in the list
         const mainId = user.masterId || user.merchantId;
         const mainExists = shops.find(s => s.merchantId === mainId || s.isMain === true);
         
@@ -290,26 +285,32 @@ window.loadOwnedShops = async function(mobileNum) {
             return shops;
         }
     } catch (e) { 
-        console.warn("Failed to fetch shops from Firestore. Using cache."); 
+        console.warn("Failed to fetch shops from Firestore. Using local cache."); 
     }
     
     return JSON.parse(localStorage.getItem(`bharatpos_shops_${searchMobile}`) || '[]');
 }
+
 window.switchActiveShop = async function(targetMerchantId) {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(user.merchantId === targetMerchantId) return; 
     
     const savedMobile = user.mobile || user.phone;
-    if (typeof pushFullBackupToServer === 'function') { try { await pushFullBackupToServer(); } catch(e){} }
+    
+    // Attempt to push any unsynced data from the current branch before switching
+    if (typeof pushFullBackupToServer === 'function') { 
+        try { await pushFullBackupToServer(); } catch(e){} 
+    }
 
     try {
-        // Wipe local memory for isolation
+        // 1. Wipe local memory for complete data isolation
         localStorage.removeItem('bharatpos_products');
         localStorage.removeItem('bharatpos_sales');
         localStorage.removeItem('bharatpos_customers');
         localStorage.removeItem('bill_items');
+        localStorage.removeItem('bharatpos_ai_cache');
 
-        // Fetch Shop Profile
+        // 2. Fetch Target Shop Profile
         const shopRef = doc(db, "shops", targetMerchantId);
         const shopSnap = await getDoc(shopRef);
         
@@ -320,7 +321,7 @@ window.switchActiveShop = async function(targetMerchantId) {
             localStorage.setItem('bharatpos_user', JSON.stringify(merchantData));
             localStorage.setItem('shopName', merchantData.shopName || '');
 
-            // Fetch Subcollections
+            // 3. Fetch Subcollections for the new branch
             const pSnap = await getDocs(collection(db, "shops", targetMerchantId, "products"));
             const fetchedProducts = pSnap.docs.map(d => d.data());
             if(fetchedProducts.length) localStorage.setItem('bharatpos_products', JSON.stringify(fetchedProducts));
@@ -333,10 +334,10 @@ window.switchActiveShop = async function(targetMerchantId) {
             const fetchedSales = sSnap.docs.map(d => d.data());
             if(fetchedSales.length) localStorage.setItem('bharatpos_sales', JSON.stringify(fetchedSales));
 
-            alert(`✅ Switched to: ${merchantData.shopName}`);
-            window.location.href = 'dashboard.html'; 
+            // Reload the current page to instantly reflect new branch data
+            window.location.reload(); 
         } else {
-            // Empty Branch
+            // Empty Branch Fallback Handling
             const allShops = await window.loadOwnedShops(savedMobile);
             const targetShopInfo = allShops.find(s => s.merchantId === targetMerchantId);
             
@@ -344,22 +345,21 @@ window.switchActiveShop = async function(targetMerchantId) {
                 const newProfile = { ...user, merchantId: targetMerchantId, shopName: targetShopInfo.shopName, category: targetShopInfo.category, mobile: savedMobile };
                 localStorage.setItem('bharatpos_user', JSON.stringify(newProfile));
                 localStorage.setItem('shopName', targetShopInfo.shopName);
-                
-                alert(`✅ Logged into empty branch: ${targetShopInfo.shopName}`);
-                window.location.href = 'dashboard.html';
+                window.location.reload();
             } else {
                 alert("Failed to locate branch info.");
                 window.location.reload();
             }
         }
     } catch(e) {
-        alert("Network error while switching.");
+        console.error("Switching error:", e);
+        alert("Network error while switching branches.");
         window.location.reload();
     }
 }
 
 // ==========================================================
-// 📦 6. PRODUCT / INVENTORY FUNCTIONS
+// 📦 6. PRODUCT / INVENTORY FUNCTIONS (Legacy Support)
 // ==========================================================
 window.addProduct = function() {
   const nameEl = document.getElementById('productName');
@@ -449,7 +449,7 @@ window.deleteProduct = function(pid){
 }
 
 // ==========================================================
-// 🛒 7. CHECKOUT & BILLING LOGIC
+// 🛒 7. CHECKOUT & BILLING LOGIC (Legacy Support)
 // ==========================================================
 window.genInvoiceNo = function(){ return 'INV' + Date.now().toString().slice(-8); }
 window.todayISO = function(){ return new Date().toISOString(); }
@@ -491,7 +491,7 @@ window.checkoutCart = function(cartItems, customer='Walk-in', paymentMode='cash'
 const checkoutCart = window.checkoutCart;
 
 (function billingEverything(){
-  if(!window.location.href.includes('billing.html')) return;
+  if(!window.location.href.includes('billing_legacy.html')) return;
 
   let billItems = JSON.parse(localStorage.getItem('bill_items') || '[]');
   window.cart = billItems;
@@ -855,24 +855,21 @@ window.addEventListener('storage', (e) => {
 });
 
 // ==========================================================
-// ✅ 9. COMPLETE SALE FUNCTION
+// ✅ 9. COMPLETE SALE FUNCTION (Legacy Fallback)
 // ==========================================================
 window.completeSale = function() {
-    // 1. Basic Checks
     let cart = window.cart;
     if (!cart || cart.length === 0) {
         try { cart = JSON.parse(localStorage.getItem('bill_items') || '[]'); } catch (e) {}
     }
     if (!cart || cart.length === 0) { alert('Cart empty'); return; }
 
-    // 2. Get Form Data
     const customer = document.getElementById('custName')?.value.trim();
     const phone = document.getElementById('custPhone')?.value.trim();
     const discount = Number(document.getElementById('discount')?.value || 0);
     const payModeEl = document.querySelector('input[name="payMode"]:checked');
     const paymentMode = payModeEl ? payModeEl.value : 'Cash';
 
-    // 3. Validation for Udhaar
     if (paymentMode === 'Udhaar') {
         if (!customer || customer.length < 3) {
             alert("⚠️ For Udhaar, Customer Name is mandatory!");
@@ -884,10 +881,8 @@ window.completeSale = function() {
         }
     }
 
-    // 4. PROCESS SALE
     const sale = checkoutCart(cart, customer || 'Walk-in', paymentMode, discount);
 
-    // 5. UPDATE CUSTOMERS (Live Sync)
     if (phone) {
       try {
         const customers = getCustomers();
@@ -903,7 +898,6 @@ window.completeSale = function() {
       } catch(e) { console.warn('Customer add failed', e); }
     }
 
-    // 6. PREPARE SERVER DATA
     const billForServer = {
         id: sale.invoiceNo,
         date: sale.date,
@@ -915,16 +909,12 @@ window.completeSale = function() {
         isPaid: paymentMode !== 'Udhaar'
     };
 
-    // 7. SYNC TO SERVER (Firestore)
     if (typeof syncBillToServer === 'function') {
         syncBillToServer(billForServer);
     } else if (typeof window.syncBillToServer === 'function') {
         window.syncBillToServer(billForServer);
-    } else {
-        console.warn("⚠️ syncBillToServer not found. Bill saved locally only.");
     }
 
-    // 8. SAVE TO LOCAL LEDGER (Backup)
     if (paymentMode === 'Udhaar') {
         const ledgerEntry = { ...billForServer, isPaid: false };
         const ledger = JSON.parse(localStorage.getItem('bharatpos_ledger') || '[]');
@@ -932,14 +922,12 @@ window.completeSale = function() {
         localStorage.setItem('bharatpos_ledger', JSON.stringify(ledger));
     }
 
-    // 9. CLEANUP
     window.cart = [];
     localStorage.setItem('bill_items', '[]');
     
     if (window.renderCart) window.renderCart();
     if (typeof window._renderProductGrid === 'function') window._renderProductGrid();
 
-    // 10. SHOW INVOICE MODAL
     const modal = document.getElementById('invoiceModal');
     const content = document.getElementById('invoiceContent');
     if (content) {
@@ -962,7 +950,6 @@ window.completeSale = function() {
     }
     if (modal) modal.classList.remove('hidden');
 
-    // 11. WHATSAPP
     if (paymentMode === 'Udhaar' && phone) {
         if (confirm("Send Udhaar record to customer via WhatsApp?")) {
             const msg = `Hello ${customer}, you have a pending amount of ₹${sale.total.toFixed(2)} at BharatPOS. Invoice: ${sale.invoiceNo}. Please pay soon.`;
@@ -971,6 +958,9 @@ window.completeSale = function() {
     }
 };
 
+// ==========================================================
+// 🏁 10. SYSTEM INIT
+// ==========================================================
 (function initBharatPOS(){
   if(!localStorage.getItem(LS_KEYS.SETTINGS)) saveSettings(window.getSettings());
   if(!localStorage.getItem(LS_KEYS.PRODUCTS)) saveProducts([]);
@@ -981,8 +971,5 @@ window.completeSale = function() {
   try { setTimeout(()=> { pushProductsToServer(); pushCustomersToServer(); }, 1200); } catch(e){}
   try { setTimeout(()=> { pushFullBackupToServerDebounced(); }, 2000); } catch(e){}
 })();
-
-
-
 
 
