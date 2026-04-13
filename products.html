@@ -177,7 +177,7 @@
     .barcode-modal-content { background: #fff; border-radius: var(--radius-md); padding: 15px; width: 90%; max-width: 400px; text-align: center; }
 
     /* --- TOAST & GLOBAL HINT BAR --- */
-    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; max-width: 340px; }
+    #toast { position: fixed; bottom: 28px; right: 28px; background: var(--success); color: white; padding: 13px 22px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; max-width: 340px; }
     #toast.show { transform: translateY(0); opacity: 1; }
 
     #globalHintBar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0F172A; color: #fff; padding: 10px 20px; border-radius: 100px; font-size: 12.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 11000; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;}
@@ -568,6 +568,7 @@
       <div class="form-group">
         <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">Quantity to Transfer</label>
         <input type="number" step="0.001" id="transferQty" class="form-input" placeholder="Enter quantity">
+        <div id="transferCalcDisplay" style="font-size:12px; font-weight:800; color:var(--primary); margin-top:6px; text-align:right; min-height:16px;"></div>
       </div>
       <button id="btnSubmitTransfer" class="btn btn-primary" style="margin-top:10px; background:linear-gradient(135deg, var(--purple), #6D28D9); width:100%;">
         <i class="fa-solid fa-truck-fast"></i> Confirm Transfer
@@ -676,22 +677,68 @@ window.selectedBulkItems = new Set();
 
 const langs = ['en', 'hinglish', 'hi'];
 
-// ─── MATH AUTO-FILL LOGIC ──────────────────────────────────────────────────
-// This function handles the bi-directional sync between brand/variant stocks.
+// ─── LIVE STOCK CALCULATION LOGIC ──────────────────────────────────────────
+window.updateLiveStockCalc = function(box) {
+    const stockInput = box.querySelector('.v-add-stock');
+    const calcDisplay = box.querySelector('.v-calc-stock');
+    if(!stockInput || !calcDisplay) return;
+
+    const stockVal = parseFloat(stockInput.value);
+    if (isNaN(stockVal)) {
+        calcDisplay.innerText = '';
+        return;
+    }
+
+    const isLoose = document.getElementById('pIsLoose').checked;
+
+    if (isLoose) {
+        const baseQty = parseFloat(box.querySelector('.v-base-qty').value) || 1;
+        const baseUnit = box.querySelector('.v-base-unit').value || 'units';
+        const total = stockVal * baseQty;
+        calcDisplay.innerText = `≈ ${total.toFixed(3).replace(/\.?0+$/, '')} ${baseUnit}`;
+    } else {
+        const unitType = box.querySelector('.v-unit').value || 'units';
+        calcDisplay.innerText = `≈ ${stockVal} ${unitType}`;
+    }
+};
+
+window.updateTransferLiveCalc = function() {
+    const qtyInput = document.getElementById('transferQty').value;
+    const display = document.getElementById('transferCalcDisplay');
+    const varId = document.getElementById('transferVariant').value;
+
+    if(!qtyInput || isNaN(qtyInput) || qtyInput <= 0) {
+        display.innerText = '';
+        return;
+    }
+
+    const prod = window.allProducts.find(p => p.id === window.currentDetailId);
+    if(!prod) return;
+    const variant = prod.variants.find(v => v.id === varId);
+    if(!variant) return;
+
+    const stockVal = parseFloat(qtyInput);
+    if(prod.isLoose) {
+        const bq = Number(variant.baseQty) || 1;
+        const bu = variant.baseUnit || 'units';
+        const total = stockVal * bq;
+        display.innerText = `≈ ${total.toFixed(3).replace(/\.?0+$/, '')} ${bu}`;
+    } else {
+        display.innerText = `≈ ${stockVal} ${variant.quantity || 'pcs'}`;
+    }
+};
+
 window.syncVariantMath = function(variantBox, source) {
     const brandStocks = Array.from(variantBox.querySelectorAll('.vb-stock'));
     const totalStockInput = variantBox.querySelector('.v-add-stock');
     
-    // If no brand stocks exist, skip math
     if(brandStocks.length === 0) return;
 
     if (source === 'brand') {
-        // Sum all brand stocks and set the total variant stock
         let sum = 0;
         brandStocks.forEach(input => sum += (parseFloat(input.value) || 0));
         totalStockInput.value = sum;
     } else if (source === 'total') {
-        // If total is typed, try to auto-fill an empty brand stock
         const targetTotal = parseFloat(totalStockInput.value) || 0;
         let filledSum = 0;
         let emptyInputs = [];
@@ -714,11 +761,9 @@ document.addEventListener('DOMContentLoaded', () => {
         bindAllEvents();
         loadSettings();
 
-        // ── LANGUAGE INIT ──
         const savedLang = localStorage.getItem('app_lang') || 'en'; 
         document.body.className = `lang-${savedLang}`;
 
-        // ── MULTI-BRANCH INIT ──
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         if(typeof window.loadOwnedShops === 'function') {
             window.loadOwnedShops(user.mobile || user.phone).then(shops => {
@@ -738,7 +783,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // ── TUTORIAL INIT ──
         if(localStorage.getItem('tutorial_inventory') !== 'true') {
             document.getElementById('welcomeTutorial').style.display = 'flex';
         }
@@ -835,7 +879,6 @@ function bindAllEvents() {
         area.style.display = area.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Global Hint Engine
     const hintBar = document.getElementById('globalHintBar');
     document.addEventListener('mouseover', handleHintEvent);
     document.addEventListener('touchstart', handleHintEvent, {passive: true});
@@ -884,7 +927,6 @@ function bindAllEvents() {
 
     document.getElementById('btnAddVariant').addEventListener('click', () => addVariantUI());
     
-    // Variant Engine Math & Remove Delegation
     document.getElementById('variantEngine').addEventListener('click', (e) => {
         const removeBtn = e.target.closest('.btn-remove-var');
         if (removeBtn) removeBtn.closest('.variant-box').remove();
@@ -911,6 +953,9 @@ function bindAllEvents() {
         if (e.target.classList.contains('v-add-stock')) {
             window.syncVariantMath(e.target.closest('.variant-box'), 'total');
         }
+        if (e.target.classList.contains('v-add-stock') || e.target.classList.contains('v-base-qty') || e.target.classList.contains('v-base-unit') || e.target.classList.contains('v-unit')) {
+            window.updateLiveStockCalc(e.target.closest('.variant-box'));
+        }
     });
 
     document.getElementById('productForm').addEventListener('submit', handleSaveProduct);
@@ -925,6 +970,7 @@ function bindAllEvents() {
     document.getElementById('pIsLoose').addEventListener('change', (e) => {
         const engine = document.getElementById('variantEngineWrapper');
         if(e.target.checked) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
+        document.querySelectorAll('.variant-box').forEach(box => window.updateLiveStockCalc(box));
     });
 
     document.getElementById('btnAutoBatch').addEventListener('click', () => {
@@ -1000,10 +1046,11 @@ function bindAllEvents() {
         if (window.currentDetailId) deleteProduct(window.currentDetailId);
     });
 
-    // MULTI-BRANCH TRANSFER EVENTS
     document.getElementById('btnTransferFromModal').addEventListener('click', openTransferModal);
     document.getElementById('btnCloseTransfer').addEventListener('click', () => document.getElementById('transferStockModal').style.display = 'none');
     document.getElementById('btnSubmitTransfer').addEventListener('click', submitStockTransfer);
+    document.getElementById('transferQty').addEventListener('input', window.updateTransferLiveCalc);
+    document.getElementById('transferVariant').addEventListener('change', window.updateTransferLiveCalc);
 
     document.getElementById('btnStartScan').addEventListener('click', startAIScan);
     document.getElementById('btnStopScan').addEventListener('click',  stopAIScan);
@@ -1018,7 +1065,6 @@ function bindAllEvents() {
 
 function escapeHtml(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; }
 
-// ─── UTILITY ──────────────────────────────────────────────────────────────────
 function toggleMenu() {
     document.getElementById('sideMenu').classList.toggle('open');
     const overlay = document.getElementById('menuOverlay');
@@ -1052,7 +1098,10 @@ function checkDemandMitraRouting() {
             if (tempStock) {
                 setTimeout(() => {
                     const stockInputs = document.querySelectorAll('.v-add-stock');
-                    if (stockInputs.length > 0) stockInputs[0].value = tempStock;
+                    if (stockInputs.length > 0) {
+                        stockInputs[0].value = tempStock;
+                        window.updateLiveStockCalc(stockInputs[0].closest('.variant-box'));
+                    }
                     localStorage.removeItem("temp_add_stock");
                     showToast(`DemandMitra suggests adding ${tempStock} units.`);
                 }, 500);
@@ -1061,7 +1110,6 @@ function checkDemandMitraRouting() {
     }
 }
 
-// ─── EXPORT CSV ──────────────────────────────────────────────────────────────
 function handleExportCSV() {
     if(window.allProducts.length === 0) return showToast("No products to export", true);
     try {
@@ -1088,7 +1136,6 @@ function handleExportCSV() {
     } catch(e) { showToast("Export Failed", true); }
 }
 
-// ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
 window.startBarcodeScan = function(btnEl) {
     window.targetBarcodeInput = btnEl.previousElementSibling;
     const modal = document.getElementById('barcodeScannerModal');
@@ -1119,7 +1166,6 @@ function stopBarcodeScan() {
     window.targetBarcodeInput = null;
 }
 
-// ─── VARIANT ENGINE (Multi-Brand Sub-Engine) ──────────────────────────────────
 window.getBrandRowHTML = function(name = '', stock = '') {
     return `
     <div class="brand-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
@@ -1161,6 +1207,7 @@ function addVariantUI(data = null) {
                 <label for="s_${uid}" class="floating-label" style="color:var(--success);">
                     <span class="lang-en">Total Stock</span><span class="lang-hinglish">Kul Stock</span><span class="lang-hi">कुल स्टॉक</span>
                 </label>
+                <div class="v-calc-stock" style="font-size:11px; font-weight:800; color:var(--primary); margin-top:6px; text-align:right; min-height:14px;"></div>
             </div>
         </div>
         <div class="form-group" style="margin-top:10px;margin-bottom:0;">
@@ -1204,9 +1251,9 @@ function addVariantUI(data = null) {
         <input type="hidden" class="v-added" value="${data?.dateAdded || ''}">
     `;
     container.appendChild(div);
+    window.updateLiveStockCalc(div);
 }
 
-// ─── ATOMIC SAVE ENGINE (SINGULARITY MODEL) ──────────────────────────────────
 async function handleSaveProduct(e) {
     e.preventDefault();
     const btn = document.getElementById('saveBtn');
@@ -1303,7 +1350,6 @@ async function handleSaveProduct(e) {
     }
 }
 
-// ─── FILTER ENGINE & DATALISTS ────────────────────────────────────────────────
 function calculateABCTiers() {
     const freqs = {};
     window.salesHistory.forEach(sale => {
@@ -1440,20 +1486,6 @@ function applyFilters() {
     renderChunk();
 }
 
-// ─── BULK ACTION ENGINE ───────────────────────────────────────────────────────
-window.toggleBulkItem = function(id, isChecked) {
-    if(isChecked) window.selectedBulkItems.add(id);
-    else window.selectedBulkItems.delete(id);
-    
-    const bar = document.getElementById('bulkActionBar');
-    if(window.selectedBulkItems.size > 0) {
-        document.getElementById('bulkCount').innerText = window.selectedBulkItems.size;
-        bar.classList.add('show');
-    } else {
-        bar.classList.remove('show');
-    }
-};
-
 function clearBulkSelection() {
     window.selectedBulkItems.clear();
     document.getElementById('bulkActionBar').classList.remove('show');
@@ -1515,7 +1547,6 @@ async function executeBulkAction() {
     showToast("✨ Bulk Action Applied Successfully");
 }
 
-// ─── VIRTUAL SCROLLING ────────────────────────────────────────────────────────
 function renderChunk() {
     const grid  = document.getElementById('inventoryGrid');
     const start = window.currentPage * window.pageSize;
@@ -1689,7 +1720,6 @@ function loadProductForEdit(id) {
     document.getElementById('pBatchId').value   = base.batchId || '';
     document.getElementById('pIsLoose').checked = base.isLoose || false;
 
-    // Auto-enable UI sections if they contain data
     if (base.batchId) document.getElementById('cfgBatch').checked = true;
     if (base.isLoose) document.getElementById('cfgLoose').checked = true;
     if (base.variants.some(v => (v.brands && v.brands.length>0) || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
@@ -1748,7 +1778,6 @@ async function deleteProduct(id) {
     }
 }
 
-// ─── MASTER CATALOG ───────────────────────────────────────────────────────────
 async function fetchMasterCatalog() {
     const btn = document.getElementById('btnFetchMasterCatalog');
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching…`; btn.disabled = true;
@@ -1806,7 +1835,6 @@ window.importMasterProduct = function(p) {
     showToast(`Imported "${p.name}"`);
 }
 
-// ─── BULK CSV/XLSX IMPORT (Adapted for Singularity Model) ───────────────────
 async function handleBulkImport(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1872,7 +1900,6 @@ async function handleBulkImport(event) {
     reader.readAsArrayBuffer(file);
 }
 
-// ─── CLOUD SYNC (Adapted for Singularity Model) ───────────────────────────────
 async function pullFreshData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if (!user.merchantId || !window.db) { showToast("No active cloud connection", true); return; }
@@ -1884,7 +1911,6 @@ async function pullFreshData() {
         const snap  = await getDocs(collection(db, "shops", user.merchantId, "products"));
         let fresh = snap.docs.map(d => d.data());
         
-        // Backward compatibility migration block
         fresh = fresh.map(p => {
             if(!p.variants) {
                 const brandsArray = p.brand ? [{ name: p.brand, stock: p.stock || 0 }] : [];
@@ -1912,7 +1938,6 @@ async function pullFreshData() {
     }
 }
 
-// ─── LENS AI SCANNER ──────────────────────────────────────────────────────────
 async function startAIScan() {
     const box   = document.getElementById('scannerBox');
     const video = document.getElementById('cameraPreview');
@@ -1972,16 +1997,13 @@ async function captureAndSendToAI() {
     }
 }
 
-// ─── MULTI-BRANCH STOCK TRANSFER ──────────────────────────────────────────────
 window.openTransferModal = function() {
     const base = window.allProducts.find(p => p.id === window.currentDetailId);
     if(!base) return;
 
-    // Populate Variants
     const vSel = document.getElementById('transferVariant');
     vSel.innerHTML = base.variants.map(v => `<option value="${v.id}">${v.quantity} (Avail: ${v.stock})</option>`).join('');
 
-    // Populate Branches
     const bSel = document.getElementById('transferTargetBranch');
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mobile = user.mobile || user.phone;
@@ -1991,6 +2013,7 @@ window.openTransferModal = function() {
                           .map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
 
     document.getElementById('transferQty').value = '';
+    document.getElementById('transferCalcDisplay').innerText = '';
     document.getElementById('productDetailsModal').style.display = 'none';
     document.getElementById('transferStockModal').style.display = 'flex';
 }
@@ -2007,7 +2030,6 @@ window.submitStockTransfer = async function() {
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Transferring...`; btn.disabled = true;
 
     try {
-        // 1. Local Source Deduction
         const pIdx = window.allProducts.findIndex(p => p.id === window.currentDetailId);
         const prod = window.allProducts[pIdx];
         const vIdx = prod.variants.findIndex(v => v.id === variantId);
@@ -2017,7 +2039,6 @@ window.submitStockTransfer = async function() {
 
         variant.stock -= qty;
         
-        // If it has brands, deduct from the first brand as a fallback
         if(variant.brands && variant.brands.length > 0) {
             let remaining = qty;
             for(let b of variant.brands) {
@@ -2028,11 +2049,9 @@ window.submitStockTransfer = async function() {
             }
         }
 
-        // Update Local & Cloud for current shop
         localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
         await setDoc(doc(window.db, "shops", user.merchantId, "products", prod.id), prod);
 
-        // 2. Target Branch Addition
         const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
         const targetSnap = await getDoc(targetRef);
 
@@ -2046,7 +2065,6 @@ window.submitStockTransfer = async function() {
                     targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
                 }
             } else {
-                // Variant doesn't exist in target, copy from source but 0 out other brands
                 let newVar = JSON.parse(JSON.stringify(variant));
                 newVar.stock = qty;
                 if(newVar.brands && newVar.brands.length > 0) {
@@ -2056,7 +2074,6 @@ window.submitStockTransfer = async function() {
             }
             await setDoc(targetRef, targetProd);
         } else {
-            // Product doesn't exist in target branch at all. Clone it.
             let clonedProd = JSON.parse(JSON.stringify(prod));
             clonedProd.variants.forEach(v => {
                 if(v.id === variantId) {
