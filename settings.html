@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -46,7 +45,7 @@
     .side-menu-links i { width: 18px; text-align: center; font-size: 14px; }
 
     /* --- NAVBAR --- */
-    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 62px; background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 rgba(25,118,210,0.06), var(--shadow-sm); }
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 62px; background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 rgba(25,118,210,0.06), var(--shadow-sm); }
     .brand { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 12px; color: var(--text-main); }
     .brand-logo-wrap { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #1976D2, #1565C0); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(25,118,210,0.3); }
     .brand-logo-wrap i { color: #fff; font-size: 15px; }
@@ -102,6 +101,8 @@
     .btn-danger:hover { background: var(--danger); color: white; }
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
     .btn-outline:hover { background: var(--bg-input); border-color: var(--primary); color: var(--primary); }
+    .btn-danger-solid { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2); }
+    .btn-danger-solid:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3); transform: translateY(-1px); }
 
     /* --- FILE UPLOAD --- */
     .qr-upload-box { border: 2px dashed var(--border-hover); border-radius: var(--radius-md); padding: 30px 20px; text-align: center; background: var(--bg-input); cursor: pointer; transition: 0.2s; position: relative; }
@@ -110,6 +111,11 @@
     .qr-upload-box p { margin: 0; font-size: 13px; color: var(--text-muted); font-weight: 600; }
     #upiQRImg { max-width: 150px; border-radius: 12px; margin-top: 15px; box-shadow: var(--shadow-sm); display: none; margin-left: auto; margin-right: auto;}
     .qr-file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+    /* --- MODALS --- */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 15px; }
+    .modal-content { background: #fff; width: 100%; max-width: 400px; border-radius: var(--radius-lg); padding: 25px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.15); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
+    @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
     /* TOAST */
     #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; white-space: nowrap; }
@@ -131,8 +137,7 @@
       <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
       <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> Finance HQ</a>
       <a href="customers.html"><i class="fa-solid fa-users"></i> Bharat CRM</a>
-      <a href="reports.html"><i class="fa-solid fa-file-invoice-dollar"></i> Audit & Reports</a>
-      <a href="forecast.html"><i class="fa-solid fa-brain" style="color:var(--accent);"></i> DemandMitra AI</a>
+      <a href="forecast.html"><i class="fa-solid fa-brain"></i> DemandMitra AI</a>
       <a href="settings.html" class="active-link"><i class="fa-solid fa-gear"></i> Settings</a>
   </div>
 </div>
@@ -216,7 +221,7 @@
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                  <button id="btnExport" class="btn btn-outline"><i class="fa-solid fa-download"></i> Export Data (JSON)</button>
+                  <button id="btnExport" class="btn btn-outline"><i class="fa-solid fa-download"></i> Export Data</button>
                   <label class="btn btn-outline" style="margin:0; text-align:center;">
                       <i class="fa-solid fa-upload"></i> Import Data
                       <input type="file" id="fileImport" style="display:none;" accept=".json">
@@ -230,6 +235,19 @@
                   Resetting clears your offline cache. Ensure you have internet to re-sync from the cloud.
               </div>
           </div>
+
+          <div class="panel" style="border-color: rgba(239, 68, 68, 0.3);">
+              <div class="panel-header">
+                  <div class="panel-icon" style="background:rgba(239, 68, 68, 0.1); color:var(--danger);"><i class="fa-solid fa-shield-halved"></i></div>
+                  <h2 class="panel-title" style="color: var(--danger);">Account Security</h2>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <button id="btnLogout" class="btn btn-outline"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                  <button id="btnDeleteAccountTrigger" class="btn btn-danger-solid"><i class="fa-solid fa-user-xmark"></i> Delete Account</button>
+              </div>
+          </div>
+
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 24px;">
@@ -307,11 +325,30 @@
   </div>
 </div>
 
+<div id="deleteAccountModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px dashed var(--border); padding-bottom:10px;">
+            <h3 style="margin:0; font-size:18px; color:var(--danger); font-weight:800;">⚠️ Delete Account</h3>
+            <button onclick="document.getElementById('deleteAccountModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.5;">
+            This action cannot be undone. All your products, sales, and customer data will be permanently deleted from the cloud.
+        </p>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label class="form-label" style="color:var(--danger);">Type "DELETE" to confirm</label>
+            <input type="text" id="deleteConfirmInput" class="form-input" placeholder="DELETE" autocomplete="off" style="border-color: var(--danger); color: var(--danger);">
+        </div>
+        <button id="btnConfirmDelete" class="btn btn-danger-solid" style="width:100%; padding:14px;" disabled>
+            <i class="fa-solid fa-trash"></i> Permanently Delete My Account
+        </button>
+    </div>
+</div>
+
 <div id="toast">✅ Action Successful</div>
 
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 window.db = db;
 
@@ -338,6 +375,12 @@ function bindEvents() {
     document.getElementById('btnExport').addEventListener('click', exportData);
     document.getElementById('fileImport').addEventListener('change', importData);
     document.getElementById('qrUpload').addEventListener('change', handleQRUpload);
+
+    // Account Security
+    document.getElementById('btnLogout').addEventListener('click', handleLogout);
+    document.getElementById('btnDeleteAccountTrigger').addEventListener('click', openDeleteModal);
+    document.getElementById('deleteConfirmInput').addEventListener('input', handleDeleteValidation);
+    document.getElementById('btnConfirmDelete').addEventListener('click', handleAccountDeletion);
 
     // Toggles
     const toggles = [
@@ -388,7 +431,7 @@ async function saveProfile() {
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         if (!user.merchantId) throw new Error("No active merchant ID found.");
 
-        // Grab values (Notice: Mobile and MerchantID are NOT grabbed from inputs to prevent overwriting with hacks)
+        // Grab values (Mobile and MerchantID are NOT grabbed to prevent overwriting)
         const newName = document.getElementById('shopName').value.trim();
         const newCat = document.getElementById('shopCat').value;
         const newAddress = document.getElementById('shopAddress').value.trim();
@@ -415,7 +458,6 @@ async function saveProfile() {
                     category: newCat, 
                     address: newAddress, 
                     gstin: newGstin,
-                    // Preserve locked data
                     mobile: user.mobile || user.phone,
                     isBranch: user.isBranch || false,
                     parentId: user.parentId || null
@@ -424,7 +466,7 @@ async function saveProfile() {
         }
 
         showToast("Profile Saved Successfully!");
-        if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); // Refresh navbar
+        if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); 
     } catch (e) {
         console.error(e);
         showToast("Failed to sync profile to cloud.", true);
@@ -511,7 +553,7 @@ function importData(event) {
 function factoryReset() {
     const code = prompt("DANGER: This will wipe your local offline cache. Type 'RESET' to confirm:");
     if (code === 'RESET') {
-        const user = localStorage.getItem('bharatpos_user'); // Preserve login state
+        const user = localStorage.getItem('bharatpos_user'); 
         const shops = localStorage.getItem(`bharatpos_shops_${JSON.parse(user || '{}').mobile}`);
         
         localStorage.clear();
@@ -523,6 +565,51 @@ function factoryReset() {
         window.location.href = 'dashboard.html';
     } else if (code) {
         showToast("Incorrect code. Cancelled.", true);
+    }
+}
+
+// ─── ACCOUNT SECURITY ─────────────────────────────────────────────────────────
+function handleLogout() {
+    if(confirm("Are you sure you want to log out? You will need your phone number to log back in.")) {
+        localStorage.removeItem('bharatpos_user');
+        window.location.href = 'index.html'; 
+    }
+}
+
+function openDeleteModal() {
+    document.getElementById('deleteConfirmInput').value = '';
+    document.getElementById('btnConfirmDelete').disabled = true;
+    document.getElementById('deleteAccountModal').style.display = 'flex';
+}
+
+function handleDeleteValidation(e) {
+    document.getElementById('btnConfirmDelete').disabled = e.target.value !== 'DELETE';
+}
+
+async function handleAccountDeletion() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if(!user.merchantId) return;
+
+    const btn = document.getElementById('btnConfirmDelete');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deleting Account...`;
+    btn.disabled = true;
+
+    try {
+        if(window.db) {
+            // Delete the main shop profile document from Firestore
+            await deleteDoc(doc(db, "shops", user.merchantId));
+        }
+        
+        // Wipe everything locally
+        localStorage.clear();
+        
+        alert("Your account and shop data have been permanently deleted.");
+        window.location.href = 'index.html'; 
+    } catch(e) {
+        console.error(e);
+        showToast("Failed to delete account. Please try again.", true);
+        btn.innerHTML = `<i class="fa-solid fa-trash"></i> Permanently Delete My Account`;
+        btn.disabled = false;
     }
 }
 </script>
