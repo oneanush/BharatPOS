@@ -558,6 +558,23 @@ window.partialSplitData = null;
 
 const langs = ['en', 'hinglish', 'hi'];
 
+// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
+function showModal(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.style.display = 'flex';
+        setTimeout(() => m.classList.add('show'), 10);
+    }
+}
+
+function hideModal(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.classList.remove('show');
+        setTimeout(() => m.style.display = 'none', 300);
+    }
+}
+
 // ─── INITIALIZATION ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -566,7 +583,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const savedLang = localStorage.getItem('app_lang') || 'en'; 
         document.body.className = `lang-${savedLang}`;
 
-        // 🟢 ASYNC BRIDGE: Fetch massive datasets from IndexedDB
+        // AWAIT the new Async Bridge
         window.allProducts = await window.dbGet('bharatpos_products', '[]');
         window.customers = await window.dbGet('bharatpos_customers', '[]');
         window.heldCarts = await window.dbGet('bharatpos_held_carts', '[]');
@@ -581,33 +598,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderProductGrid();
         renderCart();
         
-        // Setup Mobile Swipe to close cart
+        // Setup Mobile Swipe safely
         setupMobileCartSwipe();
 
-        // Listen to Online Orders & Branch Selection
+        // Multi-Branch Dropdown logic
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        
         if(typeof window.loadOwnedShops === 'function') {
             window.loadOwnedShops(user.mobile || user.phone).then(shops => {
                 if(shops && shops.length > 1) {
                     const switcher = document.getElementById('shopSwitcher');
-                    switcher.style.display = 'inline-block';
-                    switcher.innerHTML = shops.map(s => 
-                        `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                            ${s.shopName} ${s.isMain ? '⭐' : ''}
-                        </option>`
-                    ).join('');
-                    switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+                    if(switcher) {
+                        switcher.style.display = 'inline-block';
+                        switcher.innerHTML = shops.map(s => 
+                            `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
+                                ${s.shopName} ${s.isMain ? '⭐' : ''}
+                            </option>`
+                        ).join('');
+                        switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+                    }
                 }
             });
         }
-
+        
+        // Listen to Online Orders
         if(user.merchantId && db) {
             onSnapshot(collection(db, "shops", user.merchantId, "onlineOrders"), (snap) => {
                 window.onlineOrders = snap.docs.map(d => ({...d.data(), orderId: d.id}));
-                document.getElementById('onlineBadge').innerText = window.onlineOrders.length;
-                if(window.onlineOrders.length > 0) document.getElementById('btnOnlineOrders').classList.add('active');
-                else document.getElementById('btnOnlineOrders').classList.remove('active');
+                const badge = document.getElementById('onlineBadge');
+                const btn = document.getElementById('btnOnlineOrders');
+                if(badge) badge.innerText = window.onlineOrders.length;
+                if(btn) {
+                    if(window.onlineOrders.length > 0) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
             });
         }
     } catch (err) {
@@ -665,31 +688,35 @@ function getProductTotalStockInfo(p) {
 // ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
 function bindAllEvents() {
     // Nav & Lang
-    document.getElementById('btnLangToggle').addEventListener('click', () => {
-        let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
-        currentIdx = (currentIdx + 1) % langs.length;
-        const nextLang = langs[currentIdx];
-        document.body.className = `lang-${nextLang}`;
-        localStorage.setItem('app_lang', nextLang);
-    });
+    const langToggle = document.getElementById('btnLangToggle');
+    if(langToggle) {
+        langToggle.addEventListener('click', () => {
+            let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
+            currentIdx = (currentIdx + 1) % langs.length;
+            const nextLang = langs[currentIdx];
+            document.body.className = `lang-${nextLang}`;
+            localStorage.setItem('app_lang', nextLang);
+        });
+    }
 
-    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
-    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
-    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+    document.getElementById('btnOpenMenu')?.addEventListener('click', toggleMenu);
+    document.getElementById('btnCloseMenu')?.addEventListener('click', toggleMenu);
+    document.getElementById('menuOverlay')?.addEventListener('click', toggleMenu);
     
     // Mobile Cart FAB
-    document.getElementById('mobileCartFab').addEventListener('click', () => {
+    document.getElementById('mobileCartFab')?.addEventListener('click', () => {
         document.getElementById('rightPane').classList.add('open');
-        document.getElementById('btnCloseMobileCart').style.display = 'block';
+        const closeBtn = document.getElementById('btnCloseMobileCart');
+        if(closeBtn) closeBtn.style.display = 'block';
     });
-    document.getElementById('btnCloseMobileCart').addEventListener('click', () => {
+    document.getElementById('btnCloseMobileCart')?.addEventListener('click', () => {
         document.getElementById('rightPane').classList.remove('open');
         document.getElementById('btnCloseMobileCart').style.display = 'none';
     });
 
     // Catalog Events
-    document.getElementById('prodSearchInput').addEventListener('input', renderProductGrid);
-    document.getElementById('catTabs').addEventListener('click', (e) => {
+    document.getElementById('prodSearchInput')?.addEventListener('input', renderProductGrid);
+    document.getElementById('catTabs')?.addEventListener('click', (e) => {
         if(e.target.classList.contains('cat-chip')) {
             document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
@@ -698,7 +725,7 @@ function bindAllEvents() {
         }
     });
 
-    document.getElementById('productGrid').addEventListener('click', (e) => {
+    document.getElementById('productGrid')?.addEventListener('click', (e) => {
         if(e.target.closest('.pc-info-btn')) return; // handled by info btn click
         const card = e.target.closest('.prod-card');
         if(card) window.openAddToCartWizard(card.getAttribute('data-id'));
@@ -710,77 +737,80 @@ function bindAllEvents() {
     const dName = document.getElementById('custNameDropdown');
     const dPhone = document.getElementById('custPhoneDropdown');
 
-    const handleSearch = (e, drop) => {
-        const val = e.target.value.toLowerCase().trim();
-        window.currentCustomer.name = cName.value;
-        window.currentCustomer.phone = cPhone.value;
-        
-        if(!val) { drop.style.display = 'none'; return; }
-        const matches = window.customers.filter(c => {
-            const phoneVal = c.phone || c.mobile || '';
-            return (c.name||'').toLowerCase().startsWith(val) || phoneVal.startsWith(val);
-        }).slice(0, 5);
-
-        if(matches.length > 0) {
-            drop.innerHTML = matches.map(c => {
+    if(cName && cPhone && dName && dPhone) {
+        const handleSearch = (e, drop) => {
+            const val = e.target.value.toLowerCase().trim();
+            window.currentCustomer.name = cName.value;
+            window.currentCustomer.phone = cPhone.value;
+            
+            if(!val) { drop.style.display = 'none'; return; }
+            const matches = window.customers.filter(c => {
                 const phoneVal = c.phone || c.mobile || '';
-                return `<div class="cust-option" data-name="${c.name}" data-phone="${phoneVal}"><span>${c.name}</span><span style="color:var(--text-muted);">${phoneVal}</span></div>`;
-            }).join('');
-            drop.style.display = 'block';
-        } else {
-            drop.style.display = 'none';
-        }
-    };
-    cName.addEventListener('input', (e) => handleSearch(e, dName));
-    cPhone.addEventListener('input', (e) => handleSearch(e, dPhone));
+                return (c.name||'').toLowerCase().startsWith(val) || phoneVal.startsWith(val);
+            }).slice(0, 5);
 
-    const handleSelect = (e, drop) => {
-        const opt = e.target.closest('.cust-option');
-        if(opt) {
-            window.currentCustomer = { name: opt.getAttribute('data-name'), phone: opt.getAttribute('data-phone') };
-            cName.value = window.currentCustomer.name;
-            cPhone.value = window.currentCustomer.phone;
-            drop.style.display = 'none';
-        }
-    };
-    dName.addEventListener('click', (e) => handleSelect(e, dName));
-    dPhone.addEventListener('click', (e) => handleSelect(e, dPhone));
+            if(matches.length > 0) {
+                drop.innerHTML = matches.map(c => {
+                    const phoneVal = c.phone || c.mobile || '';
+                    return `<div class="cust-option" data-name="${c.name}" data-phone="${phoneVal}"><span>${c.name}</span><span style="color:var(--text-muted);">${phoneVal}</span></div>`;
+                }).join('');
+                drop.style.display = 'block';
+            } else {
+                drop.style.display = 'none';
+            }
+        };
+        cName.addEventListener('input', (e) => handleSearch(e, dName));
+        cPhone.addEventListener('input', (e) => handleSearch(e, dPhone));
 
-    document.addEventListener('click', (e) => { 
-        if(e.target !== cName && e.target !== dName) dName.style.display = 'none'; 
-        if(e.target !== cPhone && e.target !== dPhone) dPhone.style.display = 'none'; 
-    });
+        const handleSelect = (e, drop) => {
+            const opt = e.target.closest('.cust-option');
+            if(opt) {
+                window.currentCustomer = { name: opt.getAttribute('data-name'), phone: opt.getAttribute('data-phone') };
+                cName.value = window.currentCustomer.name;
+                cPhone.value = window.currentCustomer.phone;
+                drop.style.display = 'none';
+            }
+        };
+        dName.addEventListener('click', (e) => handleSelect(e, dName));
+        dPhone.addEventListener('click', (e) => handleSelect(e, dPhone));
+
+        document.addEventListener('click', (e) => { 
+            if(e.target !== cName && e.target !== dName) dName.style.display = 'none'; 
+            if(e.target !== cPhone && e.target !== dPhone) dPhone.style.display = 'none'; 
+        });
+    }
 
     // Wizard Flow Events
-    document.getElementById('btnCloseConf').addEventListener('click', () => document.getElementById('addToCartModal').style.display='none');
-    document.getElementById('btnConfBack').addEventListener('click', window.wizardBack);
-    document.getElementById('confVariantGrid').addEventListener('click', (e) => {
+    document.getElementById('btnCloseConf')?.addEventListener('click', () => hideModal('addToCartModal'));
+    document.getElementById('btnConfBack')?.addEventListener('click', window.wizardBack);
+    document.getElementById('confVariantGrid')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-step');
         if(btn) window.wizardSelectVariant(btn.getAttribute('data-vid'));
     });
-    document.getElementById('confBrandGrid').addEventListener('click', (e) => {
+    document.getElementById('confBrandGrid')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-step');
         if(btn) window.wizardSelectBrand(btn.getAttribute('data-bname'));
     });
     
     // Qty Presets
-    document.getElementById('confPresetContainer').addEventListener('click', (e) => {
+    document.getElementById('confPresetContainer')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-preset');
         if(btn) {
             document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('confCustomQty').value = btn.getAttribute('data-val');
+            const customQty = document.getElementById('confCustomQty');
+            if(customQty) customQty.value = btn.getAttribute('data-val');
             window.recalcConfigTotal();
         }
     });
-    document.getElementById('confCustomQty').addEventListener('input', () => {
+    document.getElementById('confCustomQty')?.addEventListener('input', () => {
         document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
         window.recalcConfigTotal();
     });
-    document.getElementById('btnConfirmAddToCart').addEventListener('click', window.confirmAddToCart);
+    document.getElementById('btnConfirmAddToCart')?.addEventListener('click', window.confirmAddToCart);
 
     // Cart Controls
-    document.getElementById('cartItemsList').addEventListener('click', (e) => {
+    document.getElementById('cartItemsList')?.addEventListener('click', (e) => {
         const idx = e.target.closest('[data-idx]')?.getAttribute('data-idx');
         if(idx === undefined) return;
         
@@ -793,7 +823,6 @@ function bindAllEvents() {
             const v = p.variants.find(vx => vx.id === cartItem.id);
             const stockInfo = getVariantStockInfo(p, v);
             
-            // Check inventory limit before adding
             let maxAvail = stockInfo.available;
             if (cartItem.brand && v.brands) {
                 const b = v.brands.find(bx => bx.name === cartItem.brand);
@@ -819,6 +848,8 @@ function bindAllEvents() {
         }
     });
 
+    document.getElementById('cartDiscountInput')?.addEventListener('input', renderCart);
+
     // Payment Flow
     document.querySelectorAll('.btn-mode').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -832,7 +863,7 @@ function bindAllEvents() {
         });
     });
 
-    document.getElementById('btnGenerateBill').addEventListener('click', () => {
+    document.getElementById('btnGenerateBill')?.addEventListener('click', () => {
         if(window.cart.length === 0) return showToast("Cart is empty", true);
         if(window.currentPaymentMode === 'Udhaar' && !window.currentCustomer.name) {
             return showToast("Customer name required for Udhaar", true);
@@ -848,36 +879,43 @@ function bindAllEvents() {
     });
     
     // Partial Math
-    document.getElementById('btnClosePartial').addEventListener('click', () => document.getElementById('partialPayModal').style.display='none');
+    document.getElementById('btnClosePartial')?.addEventListener('click', () => hideModal('partialPayModal'));
     const pcCash = document.getElementById('payCash'), pcOnline = document.getElementById('payOnline'), pcUdhaar = document.getElementById('payUdhaar');
+    
     const recalcPartial = (source) => {
         const grand = parseFloat(document.getElementById('cartGrandTotal').innerText) || 0;
-        let c = parseFloat(pcCash.value) || 0;
-        let o = parseFloat(pcOnline.value) || 0;
-        let u = parseFloat(pcUdhaar.value) || 0;
+        let c = parseFloat(pcCash?.value) || 0;
+        let o = parseFloat(pcOnline?.value) || 0;
+        let u = parseFloat(pcUdhaar?.value) || 0;
 
         if (source === 'cash') {
             o = Math.max(0, grand - c);
             u = 0;
-            pcOnline.value = o > 0 ? o : '';
-            pcUdhaar.value = '';
+            if(pcOnline) pcOnline.value = o > 0 ? o : '';
+            if(pcUdhaar) pcUdhaar.value = '';
         } 
         else if (source === 'online') {
             u = Math.max(0, grand - c - o);
-            pcUdhaar.value = u > 0 ? u : '';
-            if (c + o > grand) { pcOnline.value = Math.max(0, grand - c); pcUdhaar.value = ''; }
+            if(pcUdhaar) pcUdhaar.value = u > 0 ? u : '';
+            if (c + o > grand) { 
+                if(pcOnline) pcOnline.value = Math.max(0, grand - c); 
+                if(pcUdhaar) pcUdhaar.value = ''; 
+            }
         } 
         else if (source === 'udhaar') {
             o = Math.max(0, grand - c - u);
-            pcOnline.value = o > 0 ? o : '';
-            if (c + u > grand) { pcUdhaar.value = Math.max(0, grand - c); pcOnline.value = ''; }
+            if(pcOnline) pcOnline.value = o > 0 ? o : '';
+            if (c + u > grand) { 
+                if(pcUdhaar) pcUdhaar.value = Math.max(0, grand - c); 
+                if(pcOnline) pcOnline.value = ''; 
+            }
         }
     };
-    pcCash.addEventListener('input', () => recalcPartial('cash'));
-    pcOnline.addEventListener('input', () => recalcPartial('online'));
-    pcUdhaar.addEventListener('input', () => recalcPartial('udhaar'));
+    if(pcCash) pcCash.addEventListener('input', () => recalcPartial('cash'));
+    if(pcOnline) pcOnline.addEventListener('input', () => recalcPartial('online'));
+    if(pcUdhaar) pcUdhaar.addEventListener('input', () => recalcPartial('udhaar'));
 
-    document.getElementById('btnConfirmPartial').addEventListener('click', () => {
+    document.getElementById('btnConfirmPartial')?.addEventListener('click', () => {
         const c = Number(pcCash.value) || 0;
         const o = Number(pcOnline.value) || 0;
         const u = Number(pcUdhaar.value) || 0;
@@ -887,49 +925,52 @@ function bindAllEvents() {
         if(u > 0 && !window.currentCustomer.name) return showToast("Customer required for Partial Udhaar", true);
 
         window.partialSplitData = { cash: c, online: o, udhaar: u, total: grand };
-        document.getElementById('partialPayModal').style.display = 'none';
+        hideModal('partialPayModal');
         showToast("Mix Payment Saved");
     });
 
     // Held Carts
-    document.getElementById('btnHoldCart').addEventListener('click', window.holdCurrentCart);
-    document.getElementById('btnViewHeld').addEventListener('click', window.showHeldCarts);
-    document.getElementById('btnCloseHeld').addEventListener('click', () => document.getElementById('heldCartsModal').style.display='none');
-    document.getElementById('heldCartsList').addEventListener('click', (e) => {
+    document.getElementById('btnHoldCart')?.addEventListener('click', window.holdCurrentCart);
+    document.getElementById('btnViewHeld')?.addEventListener('click', window.showHeldCarts);
+    document.getElementById('btnCloseHeld')?.addEventListener('click', () => hideModal('heldCartsModal'));
+    document.getElementById('heldCartsList')?.addEventListener('click', (e) => {
         const idx = e.target.closest('[data-hidx]')?.getAttribute('data-hidx');
         if(idx !== undefined && e.target.tagName === 'BUTTON') window.restoreHeldCart(idx);
     });
 
     // Online Orders
-    document.getElementById('btnOnlineOrders').addEventListener('click', window.showOnlineOrders);
-    document.getElementById('btnCloseOnline').addEventListener('click', () => document.getElementById('onlineOrdersModal').style.display='none');
-    document.getElementById('onlineOrdersList').addEventListener('click', (e) => {
+    document.getElementById('btnOnlineOrders')?.addEventListener('click', window.showOnlineOrders);
+    document.getElementById('btnCloseOnline')?.addEventListener('click', () => hideModal('onlineOrdersModal'));
+    document.getElementById('onlineOrdersList')?.addEventListener('click', (e) => {
         const id = e.target.closest('[data-oid]')?.getAttribute('data-oid');
         if(id && e.target.tagName === 'BUTTON') window.loadOnlineOrderToCart(id);
     });
 
     // Invoice
-    document.getElementById('btnCloseInvoice').addEventListener('click', () => {
-        document.getElementById('invoiceModal').style.display='none';
+    document.getElementById('btnCloseInvoice')?.addEventListener('click', () => {
+        hideModal('invoiceModal');
         window.cart = []; window.currentCustomer = {name:'', phone:''}; 
-        document.getElementById('custNameInput').value = ''; document.getElementById('custPhoneInput').value = '';
-        document.getElementById('cartDiscountInput').value = '';
+        const cn = document.getElementById('custNameInput'); if(cn) cn.value = ''; 
+        const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = '';
+        const dis = document.getElementById('cartDiscountInput'); if(dis) dis.value = '';
         
         // Reset Payment Mode to Cash
         window.currentPaymentMode = 'Cash'; window.partialSplitData = null;
         document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
-        document.getElementById('modeCash').classList.add('active');
+        const mCash = document.getElementById('modeCash');
+        if(mCash) mCash.classList.add('active');
 
         renderCart();
     });
-    document.getElementById('btnPrintInvoice').addEventListener('click', () => {
+    
+    document.getElementById('btnPrintInvoice')?.addEventListener('click', () => {
         const invoiceContent = document.getElementById('invoicePaper');
         html2canvas(invoiceContent, { scale: 2 }).then(canvas => {
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             const pdf = new jspdf.jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
-                format: [canvas.width * 0.264583, canvas.height * 0.264583] // Convert px to mm
+                format: [canvas.width * 0.264583, canvas.height * 0.264583]
             });
             pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width * 0.264583, canvas.height * 0.264583);
             pdf.autoPrint();
@@ -938,28 +979,32 @@ function bindAllEvents() {
     });
 
     // Product Info Modal
-    document.getElementById('btnCloseInfo').addEventListener('click', () => document.getElementById('productInfoModal').style.display='none');
+    document.getElementById('btnCloseInfo')?.addEventListener('click', () => hideModal('productInfoModal'));
 
     // Scanner
-    document.getElementById('btnOpenBarcode').addEventListener('click', window.startBarcodeScan);
-    document.getElementById('btnCancelBarcode').addEventListener('click', window.stopBarcodeScan);
+    document.getElementById('btnOpenBarcode')?.addEventListener('click', window.startBarcodeScan);
+    document.getElementById('btnCancelBarcode')?.addEventListener('click', window.stopBarcodeScan);
 
     // Modals Background Clicks
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay && e.target.id !== 'barcodeScannerModal' && e.target.id !== 'invoiceModal') overlay.style.display = 'none';
+            if (e.target === overlay && e.target.id !== 'barcodeScannerModal' && e.target.id !== 'invoiceModal') hideModal(overlay.id);
         });
     });
 }
 
 function setupMobileCartSwipe() {
     const rightPane = document.getElementById('rightPane');
-    const cartHeader = document.getElementById('cartHeader');
+    // Instead of failing if cartHeader ID is missing, we use a querySelector
+    const cartHeader = document.querySelector('.cart-header');
     const dragHandle = document.getElementById('mobileDragHandle');
     
-    if (window.innerWidth <= 900) {
+    if (dragHandle && window.innerWidth <= 900) {
         dragHandle.style.display = 'block';
     }
+
+    // Safety check - if HTML structure is missing, abort safely without crashing
+    if (!rightPane || !cartHeader) return;
 
     let startY = 0;
     let currentY = 0;
@@ -985,7 +1030,8 @@ function setupMobileCartSwipe() {
         if (diff > 100) {
             rightPane.classList.remove('open');
             rightPane.style.transform = ''; 
-            document.getElementById('btnCloseMobileCart').style.display = 'none';
+            const closeBtn = document.getElementById('btnCloseMobileCart');
+            if(closeBtn) closeBtn.style.display = 'none';
         } else {
             rightPane.style.transform = 'translateY(0)';
         }
@@ -1011,11 +1057,13 @@ function renderCategories() {
     window.allProducts.forEach(p => { if(p.category) cats.add(p.category); });
     let html = `<button class="cat-chip active" data-cat="ALL">All Items</button>`;
     Array.from(cats).forEach(c => { html += `<button class="cat-chip" data-cat="${c}">${c}</button>`; });
-    document.getElementById('catTabs').innerHTML = html;
+    const catTabs = document.getElementById('catTabs');
+    if(catTabs) catTabs.innerHTML = html;
 }
 
 function renderProductGrid() {
-    const q = document.getElementById('prodSearchInput').value.toLowerCase().trim();
+    const searchInput = document.getElementById('prodSearchInput');
+    const q = searchInput ? searchInput.value.toLowerCase().trim() : '';
     let filtered = window.allProducts;
 
     if(window.activeCategory !== 'ALL') {
@@ -1029,8 +1077,10 @@ function renderProductGrid() {
     }
 
     const grid = document.getElementById('productGrid');
+    if(!grid) return;
+
     if(filtered.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">No products found.</div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--slate-400);">No products found.</div>`;
         return;
     }
 
@@ -1043,7 +1093,7 @@ function renderProductGrid() {
         if(vCount > 1) badges += `<div class="pc-badge">${vCount} Types</div>`;
         if(p.isLoose) badges += `<div class="pc-badge-loose" style="right:${vCount>1?'55px':'0'};">Loose / Wt</div>`;
         
-        const varPrices = p.variants.map(v => {
+        const varPrices = (p.variants||[]).map(v => {
             const uPrice = getUnitPrice(p, v);
             const uLabel = getUnitLabel(p, v);
             return `<span class="pc-variant-item">${v.quantity}: ₹${uPrice.toFixed(2)}/${uLabel}</span>`;
@@ -1067,20 +1117,26 @@ function renderProductGrid() {
 function renderCart() {
     const list = document.getElementById('cartItemsList');
     const badge = document.getElementById('mobileCartBadge');
-    badge.innerText = window.cart.length;
+    if(badge) badge.innerText = window.cart.length;
+
+    if(!list) return;
 
     if(window.cart.length === 0) {
         list.innerHTML = `
-            <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+            <div style="text-align:center; padding:40px 20px; color:var(--slate-400);">
                 <i class="fa-solid fa-cart-arrow-down" style="font-size:30px; opacity:0.3; margin-bottom:10px;"></i>
-                <div style="font-weight:600; font-size:14px;"><span class="lang-en">Cart is empty</span><span class="lang-hinglish">Cart khali hai</span><span class="lang-hi">कार्ट खाली है</span></div>
+                <div style="font-weight:700; font-size:14px; font-family: var(--font-body);"><span class="lang-en">Cart is empty</span><span class="lang-hinglish">Cart khali hai</span><span class="lang-hi">कार्ट खाली है</span></div>
+                <div style="font-size:11px; margin-top:6px; font-weight:600;">Tap products to add them here.</div>
             </div>`;
-        document.getElementById('cartTotalItems').innerText = '0';
-        document.getElementById('cartSubtotal').innerText = '0.00';
-        document.getElementById('cartGrandTotal').innerText = '0.00';
-        document.getElementById('cartGstRow').style.display = 'none';
+        const cTotal = document.getElementById('cartTotalItems'); if(cTotal) cTotal.innerText = '0';
+        const cSub = document.getElementById('cartSubtotal'); if(cSub) cSub.innerText = '0.00';
+        const cGrand = document.getElementById('cartGrandTotal'); if(cGrand) cGrand.innerText = '0.00';
+        const cGst = document.getElementById('cartGstRow'); if(cGst) cGst.style.display = 'none';
         
-        if(window.partialSplitData) { window.partialSplitData.total = 0; document.getElementById('payCash').value = ''; }
+        if(window.partialSplitData) { 
+            window.partialSplitData.total = 0; 
+            const pCash = document.getElementById('payCash'); if(pCash) pCash.value = ''; 
+        }
         return;
     }
 
@@ -1124,18 +1180,22 @@ function renderCart() {
         </div>`;
     }).join('');
 
-    const discount = parseFloat(document.getElementById('cartDiscountInput').value) || 0;
+    const discInput = document.getElementById('cartDiscountInput');
+    const discount = parseFloat(discInput ? discInput.value : 0) || 0;
     const grand = Math.max(0, subtotal + totalGst - discount);
 
-    document.getElementById('cartTotalItems').innerText = window.cart.length;
-    document.getElementById('cartSubtotal').innerText = subtotal.toFixed(2);
-    document.getElementById('cartGrandTotal').innerText = grand.toFixed(2);
+    const cTotal = document.getElementById('cartTotalItems'); if(cTotal) cTotal.innerText = window.cart.length;
+    const cSub = document.getElementById('cartSubtotal'); if(cSub) cSub.innerText = subtotal.toFixed(2);
+    const cGrand = document.getElementById('cartGrandTotal'); if(cGrand) cGrand.innerText = grand.toFixed(2);
 
+    const cGst = document.getElementById('cartGstRow');
     if(hasGst) {
-        document.getElementById('cartGstRow').style.display = 'flex';
-        document.getElementById('cartTotalGst').innerText = totalGst.toFixed(2);
+        if(cGst) {
+            cGst.style.display = 'flex';
+            document.getElementById('cartTotalGst').innerText = totalGst.toFixed(2);
+        }
     } else {
-        document.getElementById('cartGstRow').style.display = 'none';
+        if(cGst) cGst.style.display = 'none';
     }
 }
 
@@ -1144,41 +1204,47 @@ window.openProductInfo = function(prodId) {
     const prod = window.allProducts.find(p => p.id === prodId);
     if(!prod) return;
     
-    document.getElementById('infoName').innerText = prod.name;
-    document.getElementById('infoCat').innerText = prod.category || 'General';
-    document.getElementById('infoLoose').style.display = prod.isLoose ? 'inline-block' : 'none';
+    const infoName = document.getElementById('infoName'); if(infoName) infoName.innerText = prod.name;
+    const infoCat = document.getElementById('infoCat'); if(infoCat) infoCat.innerText = prod.category || 'General';
+    const infoLoose = document.getElementById('infoLoose'); if(infoLoose) infoLoose.style.display = prod.isLoose ? 'inline-block' : 'none';
     
-    document.getElementById('infoHSN').innerText = prod.hsn || '-';
-    document.getElementById('infoGST').innerText = prod.gstRate ? `${prod.gstRate}%` : '-';
-    document.getElementById('infoBatch').innerText = prod.batchId || '-';
+    const infoHsn = document.getElementById('infoHSN'); if(infoHsn) infoHsn.innerText = prod.hsn || '-';
+    const infoGst = document.getElementById('infoGST'); if(infoGst) infoGst.innerText = prod.gstRate ? `${prod.gstRate}%` : '-';
+    
+    // Some versions of HTML had infoBatch, some didn't. Safe assignment:
+    const infoBatch = document.getElementById('infoBatch'); if(infoBatch) infoBatch.innerText = prod.batchId || '-';
+    const infoTaxType = document.getElementById('infoTaxType'); if(infoTaxType) infoTaxType.innerText = prod.priceType || '-';
 
-    document.getElementById('infoVariantsList').innerHTML = prod.variants.map(v => {
-        const uPrice = getUnitPrice(prod, v);
-        const uLabel = getUnitLabel(prod, v);
-        const sInfo = getVariantStockInfo(prod, v);
-        
-        let brandsStr = '';
-        if(v.brands && v.brands.length > 0) {
-            brandsStr = `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name}(${b.stock})`).join(', ') + `</div>`;
-        }
-        
-        return `
-        <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px; box-shadow:var(--shadow-sm);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <span style="font-weight:700; color:var(--text-main); font-size:13px;">${v.quantity}</span>
-                    <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">₹${uPrice.toFixed(2)} per ${uLabel}</div>
-                    ${brandsStr}
+    const infoVarList = document.getElementById('infoVariantsList');
+    if(infoVarList) {
+        infoVarList.innerHTML = prod.variants.map(v => {
+            const uPrice = getUnitPrice(prod, v);
+            const uLabel = getUnitLabel(prod, v);
+            const sInfo = getVariantStockInfo(prod, v);
+            
+            let brandsStr = '';
+            if(v.brands && v.brands.length > 0) {
+                brandsStr = `<div style="font-size:10px; color:var(--slate-500); margin-top:2px;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name}(${b.stock})`).join(', ') + `</div>`;
+            }
+            
+            return `
+            <div style="background:#fff; border:1.5px solid var(--blue-100); border-radius:12px; padding:14px; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span style="font-weight:800; color:var(--slate-900); font-size:14px; font-family: var(--font-body);">${v.quantity}</span>
+                        <div style="font-size:11px; color:var(--blue-600); font-weight:800; margin-top:4px;">₹${uPrice.toFixed(2)} per ${uLabel}</div>
+                        ${brandsStr}
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:var(--success); font-weight:800; font-size:15px; font-family:'JetBrains Mono';">Total ₹${v.price}</div>
+                        <div style="font-size:11px; color:var(--slate-500); font-weight:700; margin-top:4px;">Avail: ${formatStock(sInfo.available, sInfo.label)} ${sInfo.label}</div>
+                    </div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="color:var(--success); font-weight:800; font-size:14px;">Total ₹${v.price}</div>
-                    <div style="font-size:10px; color:var(--text-muted); font-weight:600;">Avail: ${formatStock(sInfo.available, sInfo.label)} ${sInfo.label}</div>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
+            </div>`;
+        }).join('');
+    }
 
-    document.getElementById('productInfoModal').style.display = 'flex';
+    showModal('productInfoModal');
 }
 
 // ─── HIGH-SPEED WIZARD & MATH ─────────────────────────────────────────────────
@@ -1187,7 +1253,7 @@ window.openAddToCartWizard = function(prodId) {
     if(!prod || !prod.variants || prod.variants.length === 0) return;
 
     window.configState = { prod: prod, step: 'variant', selectedVariant: null, selectedBrand: null };
-    document.getElementById('confProdName').innerText = prod.name;
+    const pName = document.getElementById('confProdName'); if(pName) pName.innerText = prod.name;
     
     if(prod.variants.length > 1) {
         window.wizardRenderVariants();
@@ -1195,7 +1261,7 @@ window.openAddToCartWizard = function(prodId) {
         window.configState.selectedVariant = prod.variants[0];
         window.checkBrandStep();
     }
-    document.getElementById('addToCartModal').style.display = 'flex';
+    showModal('addToCartModal');
 }
 
 window.wizardRenderVariants = function() {
@@ -1203,10 +1269,12 @@ window.wizardRenderVariants = function() {
     document.getElementById('stepVariant').style.display = 'block';
     document.getElementById('stepBrand').style.display = 'none';
     document.getElementById('stepQty').style.display = 'none';
-    document.getElementById('btnConfBack').style.display = 'none';
-    document.getElementById('confStepTitle').innerText = "Select Type/Size";
+    const b = document.getElementById('btnConfBack'); if(b) b.style.display = 'none';
+    const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Type/Size";
 
     const grid = document.getElementById('confVariantGrid');
+    if(!grid) return;
+
     grid.innerHTML = window.configState.prod.variants.map(v => {
         const sInfo = getVariantStockInfo(window.configState.prod, v);
         return `
@@ -1215,7 +1283,7 @@ window.wizardRenderVariants = function() {
                 <span>${v.quantity}</span>
                 <span class="btn-step-sub">Avail: ${formatStock(sInfo.available, sInfo.label)} ${sInfo.label}</span>
             </div>
-            <span style="color:var(--success); font-weight:800;">₹${getUnitPrice(window.configState.prod, v).toFixed(2)}/${getUnitLabel(window.configState.prod, v)}</span>
+            <span style="color:var(--success); font-weight:800; font-family:'JetBrains Mono';">₹${getUnitPrice(window.configState.prod, v).toFixed(2)}/${getUnitLabel(window.configState.prod, v)}</span>
         </button>`;
     }).join('');
 }
@@ -1240,12 +1308,13 @@ window.wizardRenderBrands = function() {
     document.getElementById('stepVariant').style.display = 'none';
     document.getElementById('stepBrand').style.display = 'block';
     document.getElementById('stepQty').style.display = 'none';
-    document.getElementById('btnConfBack').style.display = window.configState.prod.variants.length > 1 ? 'block' : 'none';
-    document.getElementById('confStepTitle').innerText = "Select Brand";
+    const b = document.getElementById('btnConfBack'); if(b) b.style.display = window.configState.prod.variants.length > 1 ? 'block' : 'none';
+    const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Brand";
 
     const p = window.configState.prod;
     const v = window.configState.selectedVariant;
     const grid = document.getElementById('confBrandGrid');
+    if(!grid) return;
     
     grid.innerHTML = v.brands.map(b => {
         let avail = Number(b.stock) || 0;
@@ -1257,7 +1326,7 @@ window.wizardRenderBrands = function() {
         return `
         <button class="btn-step" data-bname="${b.name}">
             <span>${b.name}</span>
-            <span style="color:var(--text-muted); font-size:12px;">Avail: ${formatStock(avail, label)} ${label}</span>
+            <span style="color:var(--slate-500); font-size:12px; font-weight:700;">Avail: ${formatStock(avail, label)} ${label}</span>
         </button>`;
     }).join('');
 }
@@ -1279,15 +1348,16 @@ window.wizardRenderQty = function() {
     let backShows = false;
     if(v.brands && v.brands.length > 0) backShows = true;
     else if(p.variants.length > 1) backShows = true;
-    document.getElementById('btnConfBack').style.display = backShows ? 'block' : 'none';
+    const b = document.getElementById('btnConfBack'); if(b) b.style.display = backShows ? 'block' : 'none';
     
-    document.getElementById('confStepTitle').innerText = "Select Quantity";
+    const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Quantity";
 
     const uPrice = getUnitPrice(p, v);
     const uLabel = getUnitLabel(p, v);
-    document.getElementById('confUnitPriceDisplay').innerText = `₹${uPrice.toFixed(2)} / ${uLabel}`;
+    const uDisp = document.getElementById('confUnitPriceDisplay'); if(uDisp) uDisp.innerText = `₹${uPrice.toFixed(2)} / ${uLabel}`;
     
     const container = document.getElementById('confPresetContainer');
+    if(!container) return;
     
     const lblLower = uLabel.toLowerCase();
     const isWeight = ['kg', 'g', 'l', 'ml'].includes(lblLower);
@@ -1318,7 +1388,7 @@ window.wizardRenderQty = function() {
         </div>`;
     }
 
-    document.getElementById('confCustomQty').value = '1';
+    const cQty = document.getElementById('confCustomQty'); if(cQty) cQty.value = '1';
     window.recalcConfigTotal();
 }
 
@@ -1339,15 +1409,18 @@ window.recalcConfigTotal = function() {
     const p = window.configState.prod;
     const v = window.configState.selectedVariant;
     const uPrice = getUnitPrice(p, v);
-    const qty = parseFloat(document.getElementById('confCustomQty').value) || 0;
+    const qtyEl = document.getElementById('confCustomQty');
+    const qty = parseFloat(qtyEl ? qtyEl.value : 0) || 0;
     const tot = uPrice * qty;
-    document.getElementById('confItemTotal').innerText = `₹${tot.toFixed(2)}`;
+    const totEl = document.getElementById('confItemTotal');
+    if(totEl) totEl.innerText = `₹${tot.toFixed(2)}`;
 }
 
 window.confirmAddToCart = function() {
     const p = window.configState.prod;
     const v = window.configState.selectedVariant;
-    const qty = parseFloat(document.getElementById('confCustomQty').value) || 0;
+    const qtyEl = document.getElementById('confCustomQty');
+    const qty = parseFloat(qtyEl ? qtyEl.value : 0) || 0;
     
     if(qty <= 0) return showToast("Enter valid quantity", true);
 
@@ -1393,12 +1466,14 @@ window.confirmAddToCart = function() {
         });
     }
 
-    document.getElementById('addToCartModal').style.display = 'none';
+    hideModal('addToCartModal');
     renderCart();
     
     if(window.innerWidth <= 900) {
-        document.getElementById('rightPane').classList.add('open');
-        document.getElementById('btnCloseMobileCart').style.display = 'block';
+        const rightPane = document.getElementById('rightPane');
+        const btnCloseMobile = document.getElementById('btnCloseMobileCart');
+        if(rightPane) rightPane.classList.add('open');
+        if(btnCloseMobile) btnCloseMobile.style.display = 'block';
     }
 }
 
@@ -1406,11 +1481,11 @@ window.confirmAddToCart = function() {
 function openPartialPayment() {
     if(window.cart.length === 0) return showToast("Cart is empty", true);
     const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
-    document.getElementById('partialGrandTotal').innerText = `₹${grand.toFixed(2)}`;
-    document.getElementById('payCash').value = grand.toFixed(2);
-    document.getElementById('payOnline').value = '';
-    document.getElementById('payUdhaar').value = '';
-    document.getElementById('partialPayModal').style.display = 'flex';
+    const pGrand = document.getElementById('partialGrandTotal'); if(pGrand) pGrand.innerText = `₹${grand.toFixed(2)}`;
+    const pCash = document.getElementById('payCash'); if(pCash) pCash.value = grand.toFixed(2);
+    const pOnl = document.getElementById('payOnline'); if(pOnl) pOnl.value = '';
+    const pUdh = document.getElementById('payUdhaar'); if(pUdh) pUdh.value = '';
+    showModal('partialPayModal');
 }
 
 async function processCheckout(method, split = null) {
@@ -1423,7 +1498,8 @@ async function processCheckout(method, split = null) {
 
     try {
         const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
-        const discount = parseFloat(document.getElementById('cartDiscountInput').value) || 0;
+        const discInput = document.getElementById('cartDiscountInput');
+        const discount = parseFloat(discInput ? discInput.value : 0) || 0;
         let cashAmt = 0, onlineAmt = 0, udhaarAmt = 0;
 
         if(method === 'Cash') cashAmt = grand;
@@ -1496,7 +1572,7 @@ async function processCheckout(method, split = null) {
 
         await batch.commit();
 
-        document.getElementById('partialPayModal').style.display = 'none';
+        hideModal('partialPayModal');
         generateInvoice(saleDoc); 
         renderProductGrid();
 
@@ -1583,8 +1659,9 @@ function generateInvoice(sale) {
         <div style="text-align:center; margin-top:20px; font-size:10px;">Thank you for visiting!</div>
     `;
 
-    document.getElementById('invoicePaper').innerHTML = html;
-    document.getElementById('invoiceModal').style.display = 'flex';
+    const invPaper = document.getElementById('invoicePaper');
+    if(invPaper) invPaper.innerHTML = html;
+    showModal('invoiceModal');
 }
 
 // ─── HELD CARTS & ONLINE ORDERS ───────────────────────────────────────────────
@@ -1601,14 +1678,16 @@ window.holdCurrentCart = async function() {
     await window.dbSave('bharatpos_held_carts', window.heldCarts);
     
     window.cart = []; window.currentCustomer = {name:'', phone:''}; 
-    document.getElementById('custNameInput').value = ''; document.getElementById('custPhoneInput').value = '';
-    document.getElementById('cartDiscountInput').value = '';
+    const cn = document.getElementById('custNameInput'); if(cn) cn.value = ''; 
+    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = '';
+    const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = '';
     renderCart();
     showToast("Cart held securely.");
 }
 
 window.showHeldCarts = function() {
     const list = document.getElementById('heldCartsList');
+    if(!list) return;
     if(window.heldCarts.length === 0) {
         list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No held carts.</div>";
     } else {
@@ -1622,25 +1701,26 @@ window.showHeldCarts = function() {
             </div>
         `).join('');
     }
-    document.getElementById('heldCartsModal').style.display = 'flex';
+    showModal('heldCartsModal');
 }
 
 window.restoreHeldCart = async function(idx) {
     const h = window.heldCarts[idx];
     window.cart = [...h.items];
     window.currentCustomer = {...h.cust};
-    document.getElementById('custNameInput').value = window.currentCustomer.name;
-    document.getElementById('custPhoneInput').value = window.currentCustomer.phone;
-    document.getElementById('cartDiscountInput').value = h.discount || '';
+    const cn = document.getElementById('custNameInput'); if(cn) cn.value = window.currentCustomer.name;
+    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = window.currentCustomer.phone;
+    const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = h.discount || '';
     
     window.heldCarts.splice(idx, 1);
     await window.dbSave('bharatpos_held_carts', window.heldCarts);
-    document.getElementById('heldCartsModal').style.display = 'none';
+    hideModal('heldCartsModal');
     renderCart();
 }
 
 window.showOnlineOrders = function() {
     const list = document.getElementById('onlineOrdersList');
+    if(!list) return;
     if(window.onlineOrders.length === 0) {
         list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No active online orders.</div>";
     } else {
@@ -1657,7 +1737,7 @@ window.showOnlineOrders = function() {
             </div>
         `).join('');
     }
-    document.getElementById('onlineOrdersModal').style.display = 'flex';
+    showModal('onlineOrdersModal');
 }
 
 window.loadOnlineOrderToCart = async function(orderId) {
@@ -1677,10 +1757,10 @@ window.loadOnlineOrderToCart = async function(orderId) {
     });
     
     window.currentCustomer = { name: order.customerName, phone: order.customerMobile || '' };
-    document.getElementById('custNameInput').value = order.customerName;
-    document.getElementById('custPhoneInput').value = order.customerMobile || '';
+    const cn = document.getElementById('custNameInput'); if(cn) cn.value = order.customerName;
+    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = order.customerMobile || '';
     
-    document.getElementById('onlineOrdersModal').style.display = 'none';
+    hideModal('onlineOrdersModal');
     renderCart();
     
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
@@ -1691,7 +1771,7 @@ window.loadOnlineOrderToCart = async function(orderId) {
 
 // ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
 window.startBarcodeScan = function() {
-    document.getElementById('barcodeScannerModal').style.display = 'flex';
+    showModal('barcodeScannerModal');
     
     Quagga.init({
         inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
@@ -1730,9 +1810,8 @@ window.startBarcodeScan = function() {
 
 window.stopBarcodeScan = function() {
     Quagga.stop();
-    document.getElementById('barcodeScannerModal').style.display = 'none';
+    hideModal('barcodeScannerModal');
 }
-</script>
 </script>
 </body>
 </html>
