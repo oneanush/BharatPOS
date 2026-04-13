@@ -380,21 +380,32 @@ function bindEvents() {
     document.getElementById('searchBar').addEventListener('input', window.renderSales);
     document.getElementById('filterDate').addEventListener('change', window.renderSales);
     document.getElementById('filterMode').addEventListener('change', window.renderSales);
-
-    document.getElementById('btnOpenReport').addEventListener('click', () => document.getElementById('reportModal').style.display='flex');
-    document.getElementById('btnCloseReport').addEventListener('click', () => document.getElementById('reportModal').style.display='none');
-    document.getElementById('btnCloseInvoice').addEventListener('click', () => document.getElementById('invoiceModal').style.display='none');
-    document.getElementById('btnPrintInvoice').addEventListener('click', () => window.print());
+  
+document.getElementById('btnOpenReport').addEventListener('click', () => { 
+      const m = document.getElementById('reportModal'); m.style.display='flex'; setTimeout(()=> m.classList.add('show'), 10); 
+  });
+  document.getElementById('btnCloseReport').addEventListener('click', () => { 
+      const m = document.getElementById('reportModal'); m.classList.remove('show'); setTimeout(()=> m.style.display='none', 300); 
+  });
+  document.getElementById('btnCloseInvoice').addEventListener('click', () => { 
+      const m = document.getElementById('invoiceModal'); m.classList.remove('show'); setTimeout(()=> m.style.display='none', 300); 
+  });
+  
+  
+  document.getElementById('btnPrintInvoice').addEventListener('click', () => window.print());
 
     document.getElementById('btnExportExcel').addEventListener('click', window.exportExcel);
     document.getElementById('btnExportPDF').addEventListener('click', window.exportPDF);
     document.getElementById('btnSendCA').addEventListener('click', window.sendToCA);
 
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay && e.target.id !== 'invoiceModal') overlay.style.display = 'none';
-        });
-    });
+   document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+          if (e.target === overlay && e.target.id !== 'invoiceModal') {
+              overlay.classList.remove('show'); 
+              setTimeout(()=> overlay.style.display='none', 300);
+          }
+      });
+  });
 }
 
 function toggleMenu() {
