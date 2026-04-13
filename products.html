@@ -691,7 +691,8 @@
 
 <div id="toast">✅ Action Successful</div>
 <div id="globalHintBar">Hint Text Here</div>
-<script type="module">
+
+ <script type="module">
 import { db } from "./bharatpos.js";
 import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -721,7 +722,24 @@ window.selectedBulkItems = new Set();
 
 const langs = ['en', 'hinglish', 'hi'];
 
-// ─── BULK ACTION ENGINE (FIXED) ──────────────────────────────────────────────
+// ─── MODAL ANIMATION HELPERS (FIXED) ────────────────────────────────────────
+function showModal(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.style.display = 'flex';
+        setTimeout(() => m.classList.add('show'), 10);
+    }
+}
+
+function hideModal(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.classList.remove('show');
+        setTimeout(() => m.style.display = 'none', 300);
+    }
+}
+
+// ─── BULK ACTION ENGINE ──────────────────────────────────────────────
 window.toggleBulkItem = function(id, isChecked) {
     if (isChecked) {
         window.selectedBulkItems.add(id);
@@ -851,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if(localStorage.getItem('tutorial_inventory') !== 'true') {
-            document.getElementById('welcomeTutorial').style.display = 'flex';
+            showModal('welcomeTutorial');
         }
 
         window.allProducts = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
@@ -868,7 +886,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const gstBtn = document.getElementById('btnToggleGst');
             const chevron = gstBtn.querySelector('.chevron');
             if (chevron) chevron.style.transform = 'rotate(180deg)';
-            gstBtn.style.background = '#EAF2FF';
+            gstBtn.style.background = 'var(--blue-50)';
             gstBtn.style.borderColor = 'var(--primary)';
             gstBtn.style.color = 'var(--primary)';
         }
@@ -934,11 +952,11 @@ function bindAllEvents() {
 
     document.getElementById('btnCloseTutorial').addEventListener('click', () => {
         localStorage.setItem('tutorial_inventory', 'true');
-        document.getElementById('welcomeTutorial').style.display = 'none';
+        hideModal('welcomeTutorial');
     });
     document.getElementById('btnRestartTutorial').addEventListener('click', () => {
-        document.getElementById('settingsModal').style.display = 'none';
-        document.getElementById('welcomeTutorial').style.display = 'flex';
+        hideModal('settingsModal');
+        showModal('welcomeTutorial');
     });
 
     document.getElementById('btnToggleFilters').addEventListener('click', () => {
@@ -981,7 +999,7 @@ function bindAllEvents() {
         content.classList.toggle('active');
         if (content.classList.contains('active')) {
             chevron.style.transform = 'rotate(180deg)';
-            this.style.background   = '#EAF2FF';
+            this.style.background   = 'var(--blue-50)';
             this.style.borderColor  = 'var(--primary)';
             this.style.color        = 'var(--primary)';
         } else {
@@ -1026,8 +1044,8 @@ function bindAllEvents() {
     });
 
     document.getElementById('productForm').addEventListener('submit', handleSaveProduct);
-    document.getElementById('btnOpenSettings').addEventListener('click',  () => document.getElementById('settingsModal').style.display = 'flex');
-    document.getElementById('btnCloseSettings').addEventListener('click', () => document.getElementById('settingsModal').style.display = 'none');
+    document.getElementById('btnOpenSettings').addEventListener('click',  () => showModal('settingsModal'));
+    document.getElementById('btnCloseSettings').addEventListener('click', () => hideModal('settingsModal'));
     
     document.getElementById('cfgAdvFields').addEventListener('change', saveConfig);
     document.getElementById('cfgBatch').addEventListener('change',     saveConfig);
@@ -1045,8 +1063,8 @@ function bindAllEvents() {
         document.getElementById('pBatchId').value = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
     });
 
-    document.getElementById('btnOpenMasterCatalog').addEventListener('click',  () => document.getElementById('masterCatalogModal').style.display = 'flex');
-    document.getElementById('btnCloseMasterCatalog').addEventListener('click', () => document.getElementById('masterCatalogModal').style.display = 'none');
+    document.getElementById('btnOpenMasterCatalog').addEventListener('click',  () => showModal('masterCatalogModal'));
+    document.getElementById('btnCloseMasterCatalog').addEventListener('click', () => hideModal('masterCatalogModal'));
     document.getElementById('btnFetchMasterCatalog').addEventListener('click', fetchMasterCatalog);
     document.getElementById('masterSearchInput').addEventListener('input', searchMasterDB);
     document.getElementById('masterDbList').addEventListener('click', (e) => {
@@ -1103,18 +1121,18 @@ function bindAllEvents() {
     document.getElementById('btnApplyBulk').addEventListener('click', executeBulkAction);
     document.getElementById('btnCancelBulk').addEventListener('click', clearBulkSelection);
 
-    document.getElementById('btnCloseDetails').addEventListener('click',     () => document.getElementById('productDetailsModal').style.display = 'none');
+    document.getElementById('btnCloseDetails').addEventListener('click',     () => hideModal('productDetailsModal'));
     document.getElementById('btnEditFromModal').addEventListener('click',    () => {
-        document.getElementById('productDetailsModal').style.display = 'none';
+        hideModal('productDetailsModal');
         if (window.currentDetailId) loadProductForEdit(window.currentDetailId);
     });
     document.getElementById('btnDeleteFromModal').addEventListener('click',  () => {
-        document.getElementById('productDetailsModal').style.display = 'none';
+        hideModal('productDetailsModal');
         if (window.currentDetailId) deleteProduct(window.currentDetailId);
     });
 
     document.getElementById('btnTransferFromModal').addEventListener('click', openTransferModal);
-    document.getElementById('btnCloseTransfer').addEventListener('click', () => document.getElementById('transferStockModal').style.display = 'none');
+    document.getElementById('btnCloseTransfer').addEventListener('click', () => hideModal('transferStockModal'));
     document.getElementById('btnSubmitTransfer').addEventListener('click', submitStockTransfer);
     document.getElementById('transferQty').addEventListener('input', window.updateTransferLiveCalc);
     document.getElementById('transferVariant').addEventListener('change', window.updateTransferLiveCalc);
@@ -1123,9 +1141,10 @@ function bindAllEvents() {
     document.getElementById('btnStopScan').addEventListener('click',  stopAIScan);
     document.getElementById('btnCancelBarcode').addEventListener('click', stopBarcodeScan);
 
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    // Apply safe closing to ALL modals
+    document.querySelectorAll('.modal-overlay, #barcodeScannerModal').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay && e.target.id !== 'barcodeScannerModal') overlay.style.display = 'none';
+            if (e.target === overlay) hideModal(overlay.id);
         });
     });
 }
@@ -1205,8 +1224,7 @@ function handleExportCSV() {
 
 window.startBarcodeScan = function(btnEl) {
     window.targetBarcodeInput = btnEl.previousElementSibling;
-    const modal = document.getElementById('barcodeScannerModal');
-    modal.style.display = 'flex';
+    showModal('barcodeScannerModal');
     
     Quagga.init({
         inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
@@ -1229,7 +1247,7 @@ window.startBarcodeScan = function(btnEl) {
 
 function stopBarcodeScan() {
     Quagga.stop();
-    document.getElementById('barcodeScannerModal').style.display = 'none';
+    hideModal('barcodeScannerModal');
     window.targetBarcodeInput = null;
 }
 
@@ -1624,7 +1642,7 @@ function renderChunk() {
     if (window.currentFilteredData.length === 0 && window.currentPage === 0) {
         grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;padding:52px 20px;">
-          <div style="width:56px;height:56px;border-radius:16px;background:var(--primary-soft);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <div style="width:56px;height:56px;border-radius:16px;background:var(--blue-50);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
             <i class="fa-solid fa-box-open" style="color:var(--primary);font-size:22px;"></i>
           </div>
           <div style="font-weight:700;font-size:14px;color:var(--text-main);">
@@ -1748,10 +1766,10 @@ window.openProductDetails = function(id) {
         if(v.costPrice) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
         if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||'pcs'}</span>`);
         
-        let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11px;">${details.join('')}</div>` : '';
+        let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--blue-100); font-size:11px;">${details.join('')}</div>` : '';
 
         return `
-        <div style="background:#FFFFFF;padding:12px;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow-sm);">
+        <div style="background:#FFFFFF;padding:12px;border-radius:10px;border:1.5px solid var(--blue-100);box-shadow:var(--shadow-sm);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                     <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
@@ -1767,7 +1785,7 @@ window.openProductDetails = function(id) {
         `;
     }).join('');
 
-    document.getElementById('productDetailsModal').style.display = 'flex';
+    showModal('productDetailsModal');
 }
 
 function loadProductForEdit(id) {
@@ -1806,7 +1824,7 @@ function loadProductForEdit(id) {
             const gstBtn = document.getElementById('btnToggleGst');
             const chevron = gstBtn.querySelector('.chevron');
             if (chevron) chevron.style.transform = 'rotate(180deg)';
-            gstBtn.style.background  = '#EAF2FF';
+            gstBtn.style.background  = 'var(--blue-50)';
             gstBtn.style.borderColor = 'var(--primary)';
             gstBtn.style.color       = 'var(--primary)';
         }
@@ -1882,7 +1900,7 @@ function searchMasterDB() {
 }
 
 window.importMasterProduct = function(p) {
-    document.getElementById('masterCatalogModal').style.display = 'none';
+    hideModal('masterCatalogModal');
     document.getElementById('pName').value     = p.name     || '';
     document.getElementById('pCategory').value = p.category || '';
     document.getElementById('pHSN').value      = p.hsn      || '';
@@ -2075,7 +2093,6 @@ window.openTransferModal = function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mobile = user.mobile || user.phone;
     
-    // Safely attempt to fetch branches from local storage
     const storedShopsStr = localStorage.getItem(`bharatpos_shops_${mobile}`);
     let shops = [];
     if (storedShopsStr) {
@@ -2091,8 +2108,8 @@ window.openTransferModal = function() {
 
     document.getElementById('transferQty').value = '';
     document.getElementById('transferCalcDisplay').innerText = '';
-    document.getElementById('productDetailsModal').style.display = 'none';
-    document.getElementById('transferStockModal').style.display = 'flex';
+    hideModal('productDetailsModal');
+    showModal('transferStockModal');
 }
 
 window.submitStockTransfer = async function() {
@@ -2167,7 +2184,7 @@ window.submitStockTransfer = async function() {
         }
 
         showToast("📦 Stock Transferred Successfully!");
-        document.getElementById('transferStockModal').style.display = 'none';
+        hideModal('transferStockModal');
         applyFilters(); 
 
     } catch (e) {
