@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
   <script type="module" src="bharatpos.js"></script>
   
   <style>
@@ -43,35 +45,23 @@
     .brand span { color: var(--accent); }
     .nav-btn-bill { background: var(--success); color: #000; font-weight: 800; padding: 8px 16px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: 0.2s; display: flex; align-items: center; gap: 6px; }
     .nav-btn-bill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
-    .profile-pill { font-size: 13px; font-weight: 600; background: rgba(245, 158, 11, 0.15); color: var(--accent); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.3); display: none;}
-    @media(min-width: 600px) { .profile-pill { display: block; } .mobile-hide { display: inline-block; } }
-    @media(max-width: 599px) { .mobile-hide { display: none; } }
+    
+    .branch-controls { display: flex; align-items: center; gap: 10px; }
+    .shop-switcher { background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; outline:none; cursor:pointer; max-width:160px; text-overflow: ellipsis; appearance: none; }
+    .shop-switcher:focus { border-color: var(--primary); }
+    .btn-add-branch { background: var(--primary); border: none; color: white; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(59,130,246,0.3); transition: 0.2s; }
+    .btn-add-branch:hover { transform: translateY(-2px); }
 
     /* --- LAYOUT GRID --- */
     .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
     .welcome-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; animation: fadeUp 0.6s var(--ease); flex-wrap: wrap; gap: 15px;}
     .welcome-sub { color: var(--text-muted); font-size: 14px; font-weight: 600; }
     .welcome-title { font-size: 28px; font-weight: 800; margin: 4px 0 0; }
-    
-    /* PRO TOGGLE */
-    .pro-toggle-wrap { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; }
-    .pro-toggle-wrap span { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
-    .pro-toggle-wrap i { color: var(--accent); }
-    .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background: #334155; transition: .3s; border-radius: 20px; }
-    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
-    input:checked + .slider { background: var(--primary); box-shadow: 0 0 10px var(--primary-glow);}
-    input:checked + .slider:before { transform: translateX(16px); }
-
-    /* ENTERPRISE HIDING LOGIC */
-    .pro-feature { display: none !important; }
-    body.pro-mode .pro-feature { display: flex !important; animation: fadeIn 0.4s ease; }
 
     .grid-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(160px, auto); gap: 20px; }
     .card { background: var(--bg-card); backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); animation: fadeUp 0.8s var(--ease) backwards; cursor: pointer; }
     .card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.2); }
-    .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 0 0 10px 0; font-weight: 700; }
+    .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 0 0 10px 0; font-weight: 700; display:flex; justify-content:space-between; align-items:center; }
     .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .stat-sub { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
     
@@ -82,31 +72,21 @@
     @media (max-width: 1024px) { .grid-dashboard { grid-template-columns: repeat(2, 1fr); } .span-2, .span-3, .span-4 { grid-column: span 2; } }
     @media (max-width: 600px) { .grid-dashboard { display: flex; flex-direction: column; } }
 
-    /* Pro Analytics Charts */
-    .mini-bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 40px; margin-top: 10px;}
-    .m-bar { flex: 1; background: #334155; border-radius: 2px 2px 0 0; min-height: 4px; transition: 0.5s ease; position: relative;}
-    .m-bar:hover { background: var(--primary); }
-    
-    .list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
-    .list-row:last-child { border-bottom: none; }
-
+    /* Charts */
     .chart-box { height: 180px; display: flex; align-items: flex-end; justify-content: space-between; padding-top: 20px; padding-left: 10px; padding-bottom: 5px; border-left: 2px solid rgba(255,255,255,0.1); border-bottom: 2px solid rgba(255,255,255,0.1); background: linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 100% 25%; }
     .bar-group { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 12%; height: 100%; }
     .bar { width: 40%; background: #334155; border-radius: 4px 4px 0 0; transition: height 1s var(--ease); position: relative; min-height: 4px; }
     .bar.active { background: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     .bar-label { font-size: 10px; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
 
-    /* Stock Alerts */
+    /* MAP & Alerts */
+    #shopMap { width: 100%; height: 100%; border-radius: 12px; z-index: 1; background: #cbd5e1; }
     .stock-alert-item { background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--danger); padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; }
     .stock-alert-item:hover { transform: translateX(3px); background: rgba(239, 68, 68, 0.15); }
     .stock-name { font-weight: 600; font-size: 13px; color: #f8fafc; display: block; line-height: 1.2;}
     .stock-qty { color: var(--danger); font-size: 11px; margin-top:4px; display: block; font-weight: 700;}
-    .btn-action { background: var(--text-main); color: var(--bg-body); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; display: inline-block; transition: 0.2s;}
-    .btn-action:hover { opacity: 0.9; }
     
     .text-good { color: var(--success); } .text-bad { color: var(--danger); } .text-warn { color: var(--accent); }
-    .card-crm { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(99, 102, 241, 0.3); }
-    .card-crm:hover { border-color: #6366f1; }
 
     /* UDHAAR VIEW */
     #udhaarView { display: none; animation: fadeIn 0.4s ease; }
@@ -129,7 +109,9 @@
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     .modal-box { background: #1e293b; width: 95%; max-width: 480px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-height: 90vh; display: flex; flex-direction: column; }
     .modal-header { padding: 15px 20px; background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .modal-body { padding: 0; overflow-y: auto; }
+    .modal-body { padding: 20px; overflow-y: auto; }
+    
+    /* CUSTOMER INVOICE LIST */
     .inv-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border); }
     .inv-info h4 { margin: 0 0 4px 0; font-size: 14px; color: #fff; }
     .inv-info p { margin: 0; font-size: 11px; color: var(--text-muted); }
@@ -138,7 +120,15 @@
     .btn-view { background: rgba(59, 130, 246, 0.2); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s;}
     .btn-view:hover { background: var(--primary); color: white; }
 
-    /* REAL-WORLD INVOICE STYLES */
+    /* ADD BRANCH MODAL */
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-muted); font-weight: bold; margin-bottom: 6px; }
+    .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; color: #fff; outline: none; font-family: inherit; font-size: 14px; }
+    .form-input:focus { border-color: var(--primary); }
+    .btn-primary { width: 100%; padding: 14px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; }
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    /* RECEIPT */
     .receipt-content { padding: 20px; background: #fff; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.4;}
     .rec-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top:10px; margin-bottom:10px; }
     .rec-table th { text-align: left; border-bottom: 1px dashed #000; padding-bottom: 5px; }
@@ -146,14 +136,17 @@
     .rec-table tr:last-child td { border-bottom: none; }
     .rec-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right; font-weight: 800; font-size: 16px; }
     .btn-settle { width: 100%; padding: 15px; background: var(--success); color: #000; border: none; font-size: 14px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-settle:hover { opacity: 0.9; }
 
+    /* UTILS */
     .footer-zone { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid var(--border); }
     .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600;}
     .btn-danger:hover { background: var(--danger); color: white; }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 12000; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1);}
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   </style>
 </head>
 <body>
@@ -185,12 +178,12 @@
       </div>
   </div>
   
-  <div style="display:flex; align-items:center; gap:12px;">
+  <div class="branch-controls">
       <a href="billing.html" class="nav-btn-bill"><i class="fa-solid fa-file-invoice"></i> <span class="mobile-hide">Bill Banao</span></a>
-      <select id="shopSwitcher" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff; padding:8px 10px; border-radius:8px; font-size:12px; font-weight:600; outline:none; cursor:pointer; max-width:140px; text-overflow: ellipsis;">
+      <select id="shopSwitcher" class="shop-switcher">
           <option value="" disabled>Loading...</option>
       </select>
-      <div id="profileName" class="profile-pill">Guest</div>
+      <button id="btnOpenAddBranch" class="btn-add-branch" title="Add Branch Shop"><i class="fa-solid fa-plus"></i></button>
   </div>
 </nav>
 
@@ -201,15 +194,6 @@
         <div>
             <div class="welcome-sub" id="dateDisplay">Loading...</div>
             <h1 class="welcome-title" id="greetingDisplay">Namaste</h1>
-        </div>
-        
-        <div class="pro-toggle-wrap">
-            <i class="fa-solid fa-gear"></i>
-            <span>Pro Analytics</span>
-            <label class="switch">
-              <input type="checkbox" id="proToggle">
-              <span class="slider"></span>
-            </label>
         </div>
       </div>
 
@@ -244,30 +228,12 @@
           <div class="stat-sub" id="udhaarCount">Sab clear hai</div>
         </div>
 
-        <div class="card pro-feature span-2" style="border-top: 2px solid var(--purple);">
-          <div style="display:flex; justify-content:space-between;">
-            <h3>Est. Gross Profit (Today)</h3>
-            <i class="fa-solid fa-chart-line" style="color:var(--purple);"></i>
-          </div>
-          <div>
-            <div id="proProfit" class="stat-value" style="color:var(--purple);">₹0</div>
-            <div class="stat-sub">Based on Variant Cost Prices</div>
-          </div>
-        </div>
-
-        <div class="card pro-feature span-2">
-            <h3>Top Categories (Volume)</h3>
-            <div id="proCatList" style="margin-top:10px;">
-                <div style="color:var(--text-muted); font-size:12px;">Waiting for sales data...</div>
-            </div>
-        </div>
-
         <div class="card span-2">
           <h3>Pichle 7 Din Ki Bikri</h3>
           <div id="salesChart" class="chart-box"></div>
         </div>
 
-        <div class="card span-2">
+        <div class="card">
           <h3>⚠️ Maal Khatam (Low Stock)</h3>
           <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
             <div id="lowStockCount" style="font-size:24px; font-weight:800;">0</div>
@@ -275,21 +241,19 @@
           <div id="lowstock" style="margin-top:10px; max-height:100px; overflow-y:auto; padding-right:5px;"></div>
         </div>
 
-        <div class="card pro-feature span-4">
-            <h3>Peak Business Hours (Today)</h3>
-            <div id="proHeatmap" class="mini-bar-chart">
-                <div style="color:var(--text-muted); font-size:12px; align-self:center;">No data yet</div>
+        <div class="card" style="padding: 10px; display:flex; flex-direction:column;">
+            <h3 style="margin: 10px 10px 15px;">📍 Shop Location / GPS</h3>
+            <div style="flex:1; position:relative; border-radius:12px; overflow:hidden; min-height: 150px;">
+                <div id="shopLocationMap" style="width: 100%; height: 100%; z-index: 1;"></div>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:9px; color:var(--text-muted); margin-top:5px; font-weight:700;">
-                <span>9 AM</span><span>1 PM</span><span>5 PM</span><span>9 PM</span>
-            </div>
+            <div style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 8px;">Click map to update pin</div>
         </div>
 
       </div>
 
       <div class="footer-zone">
-        <button id="btnResetData" class="btn-danger">⚠ Reset All Local Data</button>
-        <div style="margin-top:10px; font-size:11px; color:#475569; font-weight:600;">BharatPOS Enterprise v3.0</div>
+        <button id="btnResetData" class="btn-danger">⚠ Reset Local Cache</button>
+        <div style="margin-top:10px; font-size:11px; color:#475569; font-weight:600;">BharatPOS HQ Engine</div>
       </div>
   </div>
 
@@ -314,8 +278,36 @@
 
 </div>
 
+<div id="addBranchModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3 style="margin:0; color:#fff; font-size:18px;">🏪 Add New Branch</h3>
+            <button id="btnCloseBranchModal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Branch Name / Location</label>
+                <input type="text" id="newBranchName" class="form-input" placeholder="e.g. South Extension Store">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="newBranchCat" class="form-input">
+                    <option value="GROCERY">Kirana / Grocery</option>
+                    <option value="MEDICAL">Pharmacy / Medical</option>
+                    <option value="ELECTRONIC">Electronics</option>
+                    <option value="OTHER">Other Retail</option>
+                </select>
+            </div>
+            <button id="btnSubmitBranch" class="btn-primary" style="margin-top: 10px;">Create Branch Shop</button>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 15px; text-align: center;">
+                This branch will be linked to your master mobile number. You can instantly switch between branches from the top menu.
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="customerModal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width:480px;">
       <div class="modal-header">
         <div>
           <h3 style="margin:0; font-size:16px; color:#fff; font-weight:800;" id="custModalName">Customer</h3>
@@ -347,8 +339,7 @@
             <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#555;">
                 <span>Total Bill Value:</span><span id="rec-full-total">₹0</span>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#555;" id="rec-split-info">
-                </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#555;" id="rec-split-info"></div>
             <div class="rec-total" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #000; padding-top:10px;">
                 <span style="font-size:12px; color:var(--danger);">PENDING UDHAAR:</span>
                 <span id="rec-due" style="color:var(--danger);">₹0</span>
@@ -362,11 +353,13 @@
     </div>
 </div>
 
-<div id="toast" style="position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px); background:#0F172A; color:white; padding:12px 24px; border-radius:100px; font-weight:600; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,0.2); opacity:0; transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index:10000; white-space:nowrap;">✅ Action Successful</div>
+<div id="toast">✅ Action Successful</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, updateDoc, setDoc, collection, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 window.db = db;
 
@@ -374,16 +367,8 @@ window.db = db;
 document.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     setGreeting();
-    loadUser();
-    
-    // Load Shop Switcher
-    if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); 
-    
-    // Pro Toggle memory
-    const isPro = localStorage.getItem('cfg_pro_dash') === 'true';
-    document.getElementById('proToggle').checked = isPro;
-    if(isPro) document.body.classList.add('pro-mode');
-
+    initShopSwitcher(); 
+    initMap();
     setTimeout(window.renderDashboard, 100);
 });
 
@@ -398,13 +383,11 @@ function bindEvents() {
     document.getElementById('btnCloseReceipt').addEventListener('click', () => document.getElementById('receiptModal').style.display='none');
     
     document.getElementById('btnResetData').addEventListener('click', window.resetSales);
-
-    document.getElementById('proToggle').addEventListener('change', (e) => {
-        const isPro = e.target.checked;
-        localStorage.setItem('cfg_pro_dash', isPro);
-        if(isPro) document.body.classList.add('pro-mode');
-        else document.body.classList.remove('pro-mode');
-    });
+    document.getElementById('shopSwitcher').addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+    
+    document.getElementById('btnOpenAddBranch').addEventListener('click', () => document.getElementById('addBranchModal').style.display='flex');
+    document.getElementById('btnCloseBranchModal').addEventListener('click', () => document.getElementById('addBranchModal').style.display='none');
+    document.getElementById('btnSubmitBranch').addEventListener('click', submitNewBranch);
 
     document.addEventListener("visibilitychange", () => { if (!document.hidden) window.renderDashboard(); });
 }
@@ -412,6 +395,7 @@ function bindEvents() {
 function formatCurrency(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
 function escapeHtml(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; }
 function safeParse(key) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : []; } catch(e){ return []; } }
+
 function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
     t.innerText = msg; t.style.background = isError ? 'var(--danger)' : 'var(--success)';
@@ -437,16 +421,225 @@ function setGreeting() {
     document.getElementById('greetingDisplay').textContent = (hour < 12 ? "Good Morning" : (hour < 18 ? "Good Afternoon" : "Good Evening")) + ", Seth Ji";
 }
 
-function loadUser() {
-    const u = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const el = document.getElementById('profileName');
-    if(el) el.textContent = u.name ? u.name.split(' ')[0] : 'Merchant';
-}
-
 function toggleMenu() {
     document.getElementById('sideMenu').classList.toggle('open');
     const overlay = document.getElementById('menuOverlay');
     overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+}
+
+// ─── LEAFLET MAP & GPS ───────────────────────────────────────────────────────
+let shopMap, shopMarker;
+function initMap() {
+    const mapEl = document.getElementById('shopLocationMap');
+    if(!mapEl) return;
+
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const defaultLat = user.lat || 20.5937; // India center fallback
+    const defaultLng = user.lng || 78.9629;
+    const zoom = user.lat ? 15 : 4;
+
+    shopMap = L.map('shopLocationMap', { zoomControl: false }).setView([defaultLat, defaultLng], zoom);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(shopMap);
+
+    if (user.lat && user.lng) {
+        shopMarker = L.marker([user.lat, user.lng]).addTo(shopMap)
+            .bindPopup('<b>Current Shop Location</b>').openPopup();
+    }
+
+    // Custom GPS Button
+    const locateBtn = L.control({position: 'topright'});
+    locateBtn.onAdd = function() {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        div.innerHTML = '<button style="width:34px;height:34px;background:white;border:none;cursor:pointer;border-radius:4px;color:var(--primary);font-size:16px;box-shadow:0 2px 5px rgba(0,0,0,0.2);" title="Find My Location"><i class="fa-solid fa-crosshairs"></i></button>';
+        div.onclick = function(e){
+            e.stopPropagation();
+            shopMap.locate({setView: true, maxZoom: 16});
+            showToast("Acquiring GPS Signal...");
+        };
+        return div;
+    };
+    locateBtn.addTo(shopMap);
+
+    shopMap.on('locationfound', function(e) {
+        updatePin(e.latlng.lat, e.latlng.lng, "GPS Location found. Update shop location here?");
+    });
+
+    shopMap.on('click', function(e) {
+        updatePin(e.latlng.lat, e.latlng.lng, "Move shop pin to this location?");
+    });
+}
+
+async function updatePin(lat, lng, msg) {
+    if(shopMarker) shopMap.removeLayer(shopMarker);
+    shopMarker = L.marker([lat, lng]).addTo(shopMap);
+    
+    if(confirm(msg)) {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        if(user.merchantId && window.db) {
+            try {
+                const shopRef = doc(window.db, "shops", user.merchantId);
+                await setDoc(shopRef, { profile: { lat: lat, lng: lng } }, { merge: true });
+                
+                user.lat = lat;
+                user.lng = lng;
+                localStorage.setItem('bharatpos_user', JSON.stringify(user));
+                showToast("Location updated successfully!");
+                shopMarker.bindPopup('<b>Shop Location Saved</b>').openPopup();
+            } catch(e) {
+                console.error("Location update failed", e);
+                showToast("Failed to update location", true);
+            }
+        }
+    }
+}
+
+// ─── BRANCH MANAGEMENT ENGINE ────────────────────────────────────────────────
+async function initShopSwitcher() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const switcher = document.getElementById('shopSwitcher');
+    const searchMobile = user.mobile || user.phone;
+
+    if(!searchMobile || !window.db) {
+        switcher.innerHTML = `<option value="${user.merchantId}">${user.shopName || 'Main Shop'}</option>`;
+        return;
+    }
+
+    try {
+        const shopsRef = collection(db, "shops");
+        const q = query(shopsRef, where("profile.mobile", "==", searchMobile));
+        const snap = await getDocs(q);
+        
+        let shops = snap.docs.map(d => ({
+            merchantId: d.data().merchantId || d.id,
+            shopName: d.data().profile?.shopName || d.id,
+            category: d.data().profile?.category || "Retail",
+            isMain: !d.data().profile?.isBranch
+        }));
+
+        // Safety Net: Ensure active shop is in list
+        const activeExists = shops.find(s => s.merchantId === user.merchantId);
+        if (!activeExists && user.merchantId) {
+            shops.unshift({
+                merchantId: user.merchantId,
+                shopName: user.shopName || "Main Shop",
+                category: user.category || "Retail",
+                isMain: true
+            });
+        }
+
+        if (shops.length > 0) {
+            switcher.innerHTML = shops.map(s => 
+                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
+                    ${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
+                </option>`
+            ).join('');
+        }
+    } catch (e) { 
+        console.warn("Branch fetch failed. Using cache.", e); 
+        switcher.innerHTML = `<option value="${user.merchantId}">${user.shopName || 'Main Shop'}</option>`;
+    }
+}
+
+window.switchActiveShop = async function(targetMerchantId) {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if(user.merchantId === targetMerchantId) return; 
+    
+    if(!confirm("Switching branches will reload your dashboard data. Continue?")) {
+        document.getElementById('shopSwitcher').value = user.merchantId;
+        return;
+    }
+
+    showToast("Switching Branches... Please wait.", false);
+    document.body.style.opacity = '0.5';
+
+    try {
+        // Wipe local memory for isolation
+        localStorage.removeItem('bharatpos_products');
+        localStorage.removeItem('bharatpos_sales');
+        localStorage.removeItem('bharatpos_customers');
+        localStorage.removeItem('bill_items');
+
+        // Fetch Target Shop Profile
+        const shopRef = doc(db, "shops", targetMerchantId);
+        const shopSnap = await getDoc(shopRef);
+        
+        if (shopSnap.exists()) {
+            let merchantData = shopSnap.data().profile || {};
+            merchantData.merchantId = targetMerchantId;
+            merchantData.mobile = user.mobile || user.phone; // Keep mobile persistent
+            
+            localStorage.setItem('bharatpos_user', JSON.stringify(merchantData));
+            localStorage.setItem('shopName', merchantData.shopName || '');
+
+            // Fetch Data Subcollections for the new branch
+            const pSnap = await getDocs(collection(db, "shops", targetMerchantId, "products"));
+            const fetchedProducts = pSnap.docs.map(d => d.data());
+            if(fetchedProducts.length) localStorage.setItem('bharatpos_products', JSON.stringify(fetchedProducts));
+
+            const cSnap = await getDocs(collection(db, "shops", targetMerchantId, "customers"));
+            const fetchedCustomers = cSnap.docs.map(d => d.data());
+            if(fetchedCustomers.length) localStorage.setItem('bharatpos_customers', JSON.stringify(fetchedCustomers));
+
+            const sSnap = await getDocs(collection(db, "shops", targetMerchantId, "sales"));
+            const fetchedSales = sSnap.docs.map(d => d.data());
+            if(fetchedSales.length) localStorage.setItem('bharatpos_sales', JSON.stringify(fetchedSales));
+
+            window.location.reload(); 
+        } else {
+            showToast("Branch profile missing. Reloading...", true);
+            window.location.reload();
+        }
+    } catch(e) {
+        showToast("Network error while switching.", true);
+        document.body.style.opacity = '1';
+    }
+}
+
+async function submitNewBranch() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const shopName = document.getElementById('newBranchName').value.trim();
+    const category = document.getElementById('newBranchCat').value;
+    
+    if(!shopName) return showToast("Enter Branch Name", true);
+    
+    let mobileNum = user.mobile || user.phone;
+    if(!mobileNum) {
+        mobileNum = prompt("Link branch to your 10-digit Mobile Number:");
+        if(!mobileNum || mobileNum.trim().length !== 10) return showToast("Valid mobile number required.", true);
+        user.mobile = mobileNum.trim();
+        localStorage.setItem('bharatpos_user', JSON.stringify(user));
+    }
+
+    if(!user.merchantId || !window.db) return showToast("Network Error: Cannot connect to cloud.", true);
+
+    try {
+        const btn = document.getElementById('btnSubmitBranch');
+        btn.innerText = "Creating..."; btn.disabled = true;
+        
+        // Generate Branch ID
+        const branchId = `${user.merchantId}-B${Math.floor(1000 + Math.random() * 9000)}`;
+        const shopRef = doc(db, "shops", branchId);
+        
+        await setDoc(shopRef, {
+            merchantId: branchId,
+            profile: { mobile: mobileNum, shopName, category, isBranch: true, parentId: user.merchantId }
+        });
+        
+        showToast(`Branch '${shopName}' created successfully!`);
+        document.getElementById('addBranchModal').style.display='none';
+        document.getElementById('newBranchName').value = '';
+        btn.innerText = "Create Branch Shop"; btn.disabled = false;
+        
+        initShopSwitcher(); // Refresh dropdown
+    } catch(e) { 
+        showToast("Firebase Error: Could not create branch.", true);
+        console.error(e);
+        document.getElementById('btnSubmitBranch').innerText = "Create Branch Shop";
+        document.getElementById('btnSubmitBranch').disabled = false;
+    }
 }
 
 // ─── CORE DASHBOARD MATH (Singularity & Splits) ───────────────────────────────
@@ -458,18 +651,13 @@ window.renderDashboard = function() {
         const todayStr = new Date().toISOString().split('T')[0];
         const yesterStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
         
-        let totalRev = 0, todayRev = 0, yesterdayRev = 0;
-        let todayBills = 0, todayProfit = 0;
-        
-        // Pro Analytics Data
-        const catSales = {};
-        const hourSales = new Array(24).fill(0);
+        let todayRev = 0, yesterdayRev = 0, todayBills = 0;
 
         sales.forEach(s => {
             const dObj = new Date(s.date);
             const dStr = dObj.toISOString().split('T')[0];
             
-            // 1. Calculate Real Cash/Online Collection
+            // Calculate Real Cash/Online Collection (Exclude Udhaar)
             let collected = 0;
             const pMode = s.paymentMethod || s.paymentMode || 'Cash';
             
@@ -481,46 +669,18 @@ window.renderDashboard = function() {
 
             if(dStr === todayStr) { todayRev += collected; todayBills++; }
             if(dStr === yesterStr) yesterdayRev += collected;
-            totalRev += collected;
 
-            // 2. Check if a previous Udhaar was settled TODAY
+            // Check if a previous Udhaar was settled TODAY
             if(s.isPaid && s.settledDate) {
                 const setStr = new Date(s.settledDate).toISOString().split('T')[0];
                 if(setStr === todayStr && dStr !== todayStr) {
-                    // It was settled today. Add the pending amount to today's revenue.
-                    const settledAmt = getPendingUdhaarAmount(s, true); // true forces original pending amt
+                    const settledAmt = getPendingUdhaarAmount(s, true); 
                     todayRev += settledAmt;
-                    totalRev += settledAmt;
                 }
-            }
-
-            // PRO ANALYTICS (Only for today's valid sales)
-            if(dStr === todayStr && pMode !== 'Udhaar') {
-                hourSales[dObj.getHours()] += collected;
-                
-                (s.items || []).forEach(i => {
-                    // Profit calculation
-                    const pInfo = products.find(px => px.id === i.prodId);
-                    let cost = 0;
-                    if(pInfo && pInfo.variants) {
-                        const vInfo = pInfo.variants.find(vx => vx.id === (i.variantId || i.id));
-                        if(vInfo) {
-                            const bq = pInfo.isLoose ? (Number(vInfo.baseQty)||1) : 1;
-                            cost = (Number(vInfo.costPrice)||0) / bq;
-                        }
-                    }
-                    const itemRevenue = Number(i.total || (i.price * i.qty) || 0);
-                    const itemCost = cost * Number(i.qty || 0);
-                    todayProfit += Math.max(0, itemRevenue - itemCost); 
-
-                    // Category Tracking
-                    const cat = pInfo?.category || 'General';
-                    catSales[cat] = (catSales[cat] || 0) + Number(i.qty || 1);
-                });
             }
         });
 
-        // Render Basic KPIs
+        // Render KPIs
         animateValue(document.getElementById('todayRevenue'), 0, todayRev, 1000);
         document.getElementById('totalBills').textContent = todayBills;
         document.getElementById('avgBill').textContent = 'Avg Bill: ' + formatCurrency(todayBills ? Math.round(todayRev/todayBills) : 0);
@@ -536,16 +696,11 @@ window.renderDashboard = function() {
             }
         }
 
-        // Isolated render calls to prevent global crash
+        // Isolated render calls
         try { renderChart(sales); } catch(e) { console.error("Chart Error", e); }
         try { renderLowStock(products); } catch(e) { console.error("Low Stock Error", e); }
         try { window.renderUdhaarGroups(); } catch(e) { console.error("Udhaar Error", e); }
         
-        // PRO features
-        document.getElementById('proProfit').innerText = formatCurrency(todayProfit);
-        try { renderProCategories(catSales); } catch(e) { console.error("Pro Cat Error", e); }
-        try { renderProHeatmap(hourSales); } catch(e) { console.error("Pro Heatmap Error", e); }
-
     } catch (err) {
         console.error("Dashboard Render Error:", err);
     }
@@ -555,9 +710,7 @@ window.renderDashboard = function() {
 function renderLowStock(products) {
     const lowStock = [];
     products.forEach(p => {
-        // Fallback for older legacy products missing the array
         const variants = p.variants || [{ stock: p.stock||0, baseQty: p.baseQty||1, baseUnit: p.baseUnit||'pcs' }];
-        
         let totalBase = 0;
         let unit = variants[0]?.baseUnit || 'unit';
         
@@ -588,44 +741,6 @@ function renderLowStock(products) {
     }
 }
 
-// ─── PRO ANALYTICS RENDERING ──────────────────────────────────────────────────
-function renderProCategories(catSales) {
-    const listEl = document.getElementById('proCatList');
-    const sorted = Object.entries(catSales).sort((a,b) => b[1] - a[1]).slice(0, 4);
-    
-    if(sorted.length === 0) {
-        listEl.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">No sales today yet.</div>';
-        return;
-    }
-    
-    const maxQty = sorted[0][1];
-    listEl.innerHTML = sorted.map(c => {
-        const pct = Math.max(10, (c[1]/maxQty)*100);
-        return `
-        <div class="list-row">
-            <span style="font-weight:600; color:var(--text-main);">${c[0]}</span>
-            <div style="display:flex; align-items:center; gap:10px; width:50%;">
-                <div style="flex:1; height:6px; background:#334155; border-radius:3px; overflow:hidden;">
-                    <div style="height:100%; width:${pct}%; background:var(--primary);"></div>
-                </div>
-                <span style="font-size:11px; color:var(--text-muted); font-weight:700; width:30px; text-align:right;">${c[1]}</span>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function renderProHeatmap(hourSales) {
-    const mapEl = document.getElementById('proHeatmap');
-    // Only care about 9 AM (9) to 9 PM (21) = 13 slots
-    const activeHours = hourSales.slice(9, 22);
-    const maxSale = Math.max(...activeHours, 1); // prevent div by 0
-    
-    mapEl.innerHTML = activeHours.map(h => {
-        const pct = (h / maxSale) * 100;
-        return `<div class="m-bar" style="height:${Math.max(5, pct)}%;" title="₹${h.toFixed(0)}"></div>`;
-    }).join('');
-}
-
 // ─── CHARTS ───────────────────────────────────────────────────────────────────
 function renderChart(sales) {
     const ctx = document.getElementById('salesChart');
@@ -646,11 +761,8 @@ function renderChart(sales) {
                 if (pMode === 'Partial' && s.split) dayTotal += (Number(s.split.cash) + Number(s.split.online));
                 else if (pMode !== 'Udhaar') dayTotal += Number(s.total || s.amount || 0);
             }
-            
-            // Settled Udhaars added to the day they were settled
             if(s.isPaid && s.settledDate) {
-                const setStr = new Date(s.settledDate).toISOString().split('T')[0];
-                if(setStr === dStr && sDate !== dStr) {
+                if(new Date(s.settledDate).toISOString().split('T')[0] === dStr && sDate !== dStr) {
                     dayTotal += getPendingUdhaarAmount(s, true);
                 }
             }
@@ -685,7 +797,6 @@ function getPendingUdhaarAmount(sale, forceOriginal = false) {
     const pMode = sale.paymentMethod || sale.paymentMode;
     if(pMode === 'Udhaar') return Number(sale.total || sale.amount || 0);
     if(pMode === 'Partial' && sale.split) return Number(sale.split.udhaar || 0);
-    // Backward compatibility for newly settled partials 
     if(forceOriginal && pMode === 'Partial (Settled)' && sale.split) return Number(sale.split.udhaar || 0);
     return 0;
 }
@@ -699,7 +810,6 @@ window.renderUdhaarGroups = function() {
     const totalPending = pending.reduce((acc, s) => acc + getPendingUdhaarAmount(s), 0);
     document.getElementById('udhaarPendingTotal').innerText = formatCurrency(totalPending);
     
-    // Update Dashboard Mini-Card
     document.getElementById('totalUdhaar').textContent = formatCurrency(totalPending);
     document.getElementById('udhaarCount').textContent = pending.length ? `${pending.length} Pending Bills` : 'Sab clear hai';
 
@@ -821,15 +931,11 @@ window.settleDebt = async function(id) {
         const s = allSales[index];
         const pendingAmt = getPendingUdhaarAmount(s);
         
-        // Update Locally for instant UI refresh
         s.isPaid = true;
         s.settledDate = new Date().toISOString();
         
-        // Shift pending amount to cash mathematically
         if(s.paymentMethod === 'Partial' && s.split) {
             s.split.cash = Number(s.split.cash || 0) + pendingAmt;
-            // Ensure we keep the original udhaar amount saved for backward references
-            // we will set a flag or just leave it, since `isPaid` overrides it.
             s.paymentMethod = "Partial (Settled)";
         } else {
             s.paymentMode = "Cash (Settled)"; 
@@ -843,15 +949,10 @@ window.settleDebt = async function(id) {
         document.getElementById('customerModal').style.display='none';
         window.renderUdhaarGroups(); 
         
-        // Update specific document in Firestore Sub-collection silently
         if(user.merchantId && window.db) {
             try {
                 const saleRef = doc(db, "shops", user.merchantId, "sales", id);
-                
-                let updateData = { 
-                    isPaid: true, 
-                    settledDate: s.settledDate 
-                };
+                let updateData = { isPaid: true, settledDate: s.settledDate };
 
                 if(s.split) {
                     updateData.paymentMethod = "Partial (Settled)";
@@ -860,11 +961,8 @@ window.settleDebt = async function(id) {
                     updateData.paymentMode = "Cash (Settled)";
                     updateData.paymentMethod = "Cash (Settled)";
                 }
-
                 await updateDoc(saleRef, updateData);
-            } catch(e) {
-                console.error("Firebase Udhaar Update Failed:", e);
-            }
+            } catch(e) { console.error("Firebase Udhaar Update Failed:", e); }
         }
     } else {
         alert("Error: Invoice not found.");
