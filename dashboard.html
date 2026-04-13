@@ -34,30 +34,26 @@
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
     body { background: var(--bg-gradient); background-attachment: fixed; color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 80px; min-height: 100vh; overflow-x: hidden; }
 
-    /* --- GLASS COMPONENT UTILS --- */
     .glass-panel {
-        background: var(--glass-bg);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--glass-shadow);
-        border-radius: var(--radius-lg);
+        background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); border-radius: var(--radius-lg);
     }
 
     /* --- NAVBAR --- */
-    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; position: sticky; top: 0; z-index: 100; border-radius: 0 0 24px 24px; margin-bottom: 20px; }
-    .brand { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; position: sticky; top: 0; z-index: 100; border-radius: 0 0 24px 24px; margin-bottom: 20px; gap: 10px;}
+    .brand { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--text-main); white-space: nowrap;}
     .brand-icon { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.3); }
-    .menu-btn { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); color: var(--text-main); width: 36px; height: 36px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;}
+    .menu-btn { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); color: var(--text-main); width: 36px; height: 36px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
     .menu-btn:hover { background: #fff; color: var(--primary); }
     
-    .nav-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;}
-    .shop-switcher { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: 700; outline: none; cursor: pointer; max-width: 180px; backdrop-filter: blur(10px); transition: 0.2s; text-overflow: ellipsis;}
+    .nav-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;}
+    .shop-switcher { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; outline: none; cursor: pointer; max-width: 140px; backdrop-filter: blur(10px); transition: 0.2s; text-overflow: ellipsis;}
     .shop-switcher:focus { border-color: var(--primary); }
-    .btn-nav { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-main); cursor: pointer; transition: 0.2s; backdrop-filter: blur(10px); }
+    
+    .btn-nav { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-main); cursor: pointer; transition: 0.2s; backdrop-filter: blur(10px); flex-shrink: 0;}
     .btn-nav:hover { background: #fff; color: var(--primary); transform: translateY(-2px); }
     .btn-nav.primary { background: var(--primary); color: white; border: none; box-shadow: 0 4px 10px rgba(37,99,235,0.3); }
-    .btn-bill { background: var(--success); color: white; padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 13px; border: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(5,150,105,0.3); cursor: pointer; transition: 0.2s;}
+    .btn-bill { background: var(--success); color: white; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; border: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(5,150,105,0.3); cursor: pointer; transition: 0.2s; white-space: nowrap;}
     .btn-bill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,150,105,0.4); }
 
     /* --- SIDE MENU --- */
@@ -74,22 +70,28 @@
     .side-menu-links i { width: 18px; text-align: center; font-size: 14px; }
 
     /* --- LAYOUT --- */
-    .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 15px; display: flex; flex-direction: column; gap: 20px; }
-    .header-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; margin-bottom: 10px; }
-    .welcome-title { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.5px;}
-    .welcome-sub { color: var(--text-muted); font-size: 13px; font-weight: 600; margin-top: 4px;}
+    .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 10px; display: flex; flex-direction: column; gap: 20px; }
+    @media(min-width: 600px) { .container { padding: 0 15px; } }
+    .header-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 5px; padding: 0 5px;}
+    .welcome-title { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.5px;}
+    @media(min-width: 600px) { .welcome-title { font-size: 26px; } }
+    .welcome-sub { color: var(--text-muted); font-size: 12px; font-weight: 600; margin-top: 4px;}
 
-    /* --- TOP KPIs --- */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-    @media(max-width: 480px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+    /* --- ULTRA-FLUID KPIs --- */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+    @media(min-width: 600px) { .kpi-grid { gap: 15px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
     
-    .kpi-card { padding: 20px; display: flex; align-items: center; gap: 15px; transition: transform 0.2s; position: relative; overflow: hidden;}
+    .kpi-card { padding: 15px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; transition: transform 0.2s; position: relative; overflow: hidden;}
+    @media(min-width: 600px) { .kpi-card { flex-direction: row; align-items: center; padding: 20px; } }
     .kpi-card:hover { transform: translateY(-3px); }
     .kpi-card.clickable { cursor: pointer; }
     .kpi-card.clickable:hover { border-color: var(--danger); box-shadow: 0 10px 30px rgba(220,38,38,0.15);}
-    .kpi-icon { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .kpi-details h4 { margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
-    .kpi-details .value { margin: 4px 0 0; font-size: 22px; font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; letter-spacing: -1px;}
+    .kpi-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    @media(min-width: 600px) { .kpi-icon { width: 46px; height: 46px; border-radius: 14px; font-size: 18px; } }
+    
+    .kpi-details h4 { margin: 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
+    .kpi-details .value { margin: 4px 0 0; font-size: 18px; font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; word-break: break-word;}
+    @media(min-width: 600px) { .kpi-details .value { font-size: 22px; } }
     
     .c-blue { background: linear-gradient(135deg, #EFF6FF, #DBEAFE); color: var(--primary); border: 1px solid #BFDBFE;}
     .c-green { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); color: var(--success); border: 1px solid #A7F3D0;}
@@ -97,117 +99,117 @@
     .c-purple { background: linear-gradient(135deg, #F5F3FF, #EDE9FE); color: var(--purple); border: 1px solid #DDD6FE;}
 
     /* --- WIDGET GRID (DRAG & DROP) --- */
-    .widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; padding-bottom: 40px;}
-    @media(max-width: 360px) { .widget-grid { grid-template-columns: 1fr; } }
+    .widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; align-items: start; padding-bottom: 40px;}
+    @media(min-width: 768px) { .widget-grid { gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); } }
     
-    .widget { padding: 20px; cursor: grab; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; min-height: 280px;}
+    .widget { padding: 15px; cursor: grab; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; min-height: 260px;}
+    @media(min-width: 600px) { .widget { padding: 20px; min-height: 280px; } }
     .widget:active { cursor: grabbing; transform: scale(0.98); }
     .widget.dragging { opacity: 0.5; box-shadow: 0 15px 40px rgba(0,0,0,0.1); border: 2px dashed var(--primary); }
     .widget-over { border: 2px dashed var(--primary); background: rgba(255,255,255,0.8); }
     
-    .w-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; }
-    .w-title { font-size: 14px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;}
+    .w-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
+    .w-title { font-size: 13px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;}
     .w-drag-handle { color: var(--text-light); cursor: grab; font-size: 14px; padding: 5px;}
     .w-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; max-height: 300px; padding-right: 5px;}
     .w-content::-webkit-scrollbar { width: 4px; }
     .w-content::-webkit-scrollbar-thumb { background: var(--text-light); border-radius: 4px; }
 
     /* --- WIDGET SPECIFICS --- */
-    /* Bar Charts (Sales & Peak Hours) */
     .bar-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 160px; padding-top: 10px; border-bottom: 1px solid var(--glass-border); }
     .bar-group { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; height: 100%; position: relative; }
     .bar { width: 60%; background: var(--primary); border-radius: 4px 4px 0 0; transition: height 1s cubic-bezier(0.16, 1, 0.3, 1); min-height: 4px; position: relative; }
-    .bar:hover::after { content: attr(data-val); position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: var(--text-main); color: white; font-size: 10px; padding: 3px 6px; border-radius: 4px; font-weight: 800; z-index: 10;}
+    .bar:hover::after { content: attr(data-val); position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: var(--text-main); color: white; font-size: 9px; padding: 3px 6px; border-radius: 4px; font-weight: 800; z-index: 10; white-space: nowrap;}
     .bar-label { font-size: 9px; color: var(--text-muted); margin-top: 8px; font-weight: 700; text-align: center; }
-    .bar-heat { background: var(--warning); } /* For peak hours */
+    .bar-heat { background: var(--warning); }
 
-    /* List Items (POs, Expiry, Audit) */
-    .list-item { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;}
+    .list-item { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;}
+    @media(min-width: 600px) { .list-item { padding: 12px; border-radius: 12px; } }
     .list-item:hover { background: #fff; transform: translateX(3px); box-shadow: var(--shadow-sm); }
-    .li-title { font-size: 13px; font-weight: 700; color: var(--text-main); line-height: 1.3; margin-bottom: 2px; }
+    .li-title { font-size: 12px; font-weight: 700; color: var(--text-main); line-height: 1.3; margin-bottom: 2px; }
     .li-sub { font-size: 10px; color: var(--text-muted); font-weight: 600; }
-    .li-badge { font-size: 11px; font-weight: 800; padding: 6px 10px; border-radius: 8px; font-family: 'JetBrains Mono', monospace;}
+    .li-badge { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;}
     
     .badge-danger { background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(220,38,38,0.2); }
     .badge-warning { background: var(--warning-soft); color: var(--warning); border: 1px solid rgba(217,119,6,0.2); }
-    .badge-purple { background: var(--purple-soft); color: var(--purple); border: 1px solid rgba(124,58,237,0.2); }
     
     .btn-order-action { cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
     .btn-order-action:hover { background: var(--danger); color: white; transform: scale(1.05); }
 
-    /* Audit Log Specifics */
-    .audit-log { position: relative; padding-left: 15px; border-left: 2px solid var(--border-hover); margin-left: 5px; }
-    .audit-item { position: relative; margin-bottom: 15px; }
-    .audit-item::before { content: ''; position: absolute; left: -21px; top: 2px; width: 10px; height: 10px; background: var(--primary); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 5px var(--primary); }
+    .audit-log { position: relative; padding-left: 12px; border-left: 2px solid var(--border-hover); margin-left: 5px; }
+    .audit-item { position: relative; margin-bottom: 12px; }
+    .audit-item::before { content: ''; position: absolute; left: -17px; top: 2px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 5px var(--primary); }
     .audit-time { font-size: 9px; color: var(--primary); font-weight: 800; margin-bottom: 2px; }
-    .audit-text { font-size: 12px; color: var(--text-main); font-weight: 600; line-height: 1.4; }
-    .audit-user { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .audit-text { font-size: 11px; color: var(--text-main); font-weight: 600; line-height: 1.4; }
+    .audit-user { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
 
     /* --- UDHAAR KHATA VIEW --- */
     #udhaarView { display: none; animation: fadeIn 0.4s ease; }
-    .udhaar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
-    .btn-back { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 700; transition: 0.2s; backdrop-filter: blur(10px);}
+    .udhaar-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
+    .btn-back { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.2s; backdrop-filter: blur(10px);}
     .btn-back:hover { background: #fff; color: var(--primary); }
-    .total-dues-card { background: linear-gradient(135deg, #FEF2F2, #FEE2E2); border: 1px solid #FECACA; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; box-shadow: 0 8px 24px rgba(220,38,38,0.1); }
-    .dues-label { font-size: 12px; color: var(--danger); text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
-    .dues-amount { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 800; color: var(--danger); margin-top: 5px; letter-spacing: -1px;}
+    .total-dues-card { background: linear-gradient(135deg, #FEF2F2, #FEE2E2); border: 1px solid #FECACA; border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(220,38,38,0.1); }
+    .dues-label { font-size: 11px; color: var(--danger); text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+    .dues-amount { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 800; color: var(--danger); margin-top: 4px; letter-spacing: -1px;}
+    @media(min-width:600px) { .dues-amount { font-size: 32px; } }
     
-    .group-card { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; box-shadow: var(--glass-shadow);}
+    .group-card { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; box-shadow: var(--glass-shadow);}
     .group-card:hover { transform: translateY(-2px); border-color: var(--primary); background: #fff;}
     .group-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--danger); }
-    .cust-name { font-size: 15px; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
-    .cust-phone { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; font-weight: 600;}
-    .debt-amt { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--danger); }
-    .debt-count { font-size: 10px; background: rgba(220,38,38,0.1); padding: 4px 8px; border-radius: 6px; margin-left: 10px; color: var(--danger); font-weight: 700; display: inline-block; margin-top: 4px;}
+    .cust-name { font-size: 14px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; }
+    .cust-phone { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; font-weight: 600;}
+    .debt-amt { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--danger); }
+    .debt-count { font-size: 9px; background: rgba(220,38,38,0.1); padding: 3px 6px; border-radius: 6px; margin-left: 8px; color: var(--danger); font-weight: 700; display: inline-block; margin-top: 2px;}
 
     /* --- MODALS --- */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 5000; align-items: center; justify-content: center; padding: 15px; opacity: 0; transition: opacity 0.3s;}
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 10px; opacity: 0; transition: opacity 0.3s;}
     .modal-overlay.show { display: flex; opacity: 1; }
-    .modal-content { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); width: 100%; max-width: 500px; border-radius: var(--radius-lg); padding: 25px; box-shadow: var(--shadow-lg); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
+    .modal-content { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); width: 100%; max-width: 500px; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-lg); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
+    @media(min-width: 600px) { .modal-content { padding: 25px; } }
     .modal-overlay.show .modal-content { transform: scale(1); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; }
-    .modal-title { font-size: 18px; font-weight: 800; color: var(--text-main); margin: 0; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; }
+    .modal-title { font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0; }
     .btn-close { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; transition: 0.2s;}
     .btn-close:hover { color: var(--danger); }
     
-    /* Map Specifics */
-    #shopMap { width: 100%; height: 300px; border-radius: 12px; background: #e2e8f0; z-index: 1; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);}
+    #shopMap { width: 100%; height: 250px; border-radius: 12px; background: #e2e8f0; z-index: 1; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);}
+    @media(min-width: 600px) { #shopMap { height: 300px; } }
     
     /* Forms in Modals */
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
-    .form-input, .form-select { width: 100%; background: rgba(255,255,255,0.8); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; outline: none; font-family: inherit; transition: 0.2s;}
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+    .form-input, .form-select { width: 100%; background: rgba(255,255,255,0.8); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; outline: none; font-family: inherit; transition: 0.2s;}
     .form-input:focus, .form-select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px var(--primary-glow); }
-    .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px var(--primary-glow); transition: 0.2s; margin-top: 10px;}
+    .btn-submit { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px var(--primary-glow); transition: 0.2s; margin-top: 10px;}
     .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--primary-glow); }
 
     /* Customer Invoice List Modal */
-    .inv-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); border-radius: 12px; margin-bottom: 8px; transition: 0.2s;}
+    .inv-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); border-radius: 10px; margin-bottom: 8px; transition: 0.2s;}
     .inv-item:hover { background: #fff; transform: translateY(-1px); box-shadow: var(--shadow-sm);}
-    .inv-info h4 { margin: 0 0 4px 0; font-size: 14px; color: var(--text-main); font-weight: 800;}
-    .inv-info p { margin: 0; font-size: 11px; color: var(--text-muted); font-weight: 600;}
+    .inv-info h4 { margin: 0 0 4px 0; font-size: 13px; color: var(--text-main); font-weight: 800;}
+    .inv-info p { margin: 0; font-size: 10px; color: var(--text-muted); font-weight: 600;}
     .inv-action { text-align: right; }
-    .inv-price { font-weight: 800; color: var(--danger); font-size: 15px; margin-bottom: 5px; font-family:'JetBrains Mono';}
-    .btn-view { background: var(--primary-soft); color: var(--primary); border: 1px solid rgba(37,99,235,0.2); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase;}
+    .inv-price { font-weight: 800; color: var(--danger); font-size: 14px; margin-bottom: 4px; font-family:'JetBrains Mono';}
+    .btn-view { background: var(--primary-soft); color: var(--primary); border: 1px solid rgba(37,99,235,0.2); padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase;}
     .btn-view:hover { background: var(--primary); color: white; }
 
     /* Receipt Details Modal */
-    .receipt-content { padding: 20px; background: #fff; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.4; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;}
-    .rec-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top:10px; margin-bottom:10px; }
-    .rec-table th { text-align: left; border-bottom: 1px dashed #000; padding-bottom: 5px; }
-    .rec-table td { padding: 6px 0; vertical-align: top; border-bottom: 1px dotted #ccc;}
+    .receipt-content { padding: 15px; background: #fff; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.4; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 12px;}
+    @media(min-width: 600px) { .receipt-content { padding: 20px; font-size: 12px; } }
+    .rec-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top:8px; margin-bottom:8px; }
+    .rec-table th { text-align: left; border-bottom: 1px dashed #000; padding-bottom: 4px; }
+    .rec-table td { padding: 4px 0; vertical-align: top; border-bottom: 1px dotted #ccc;}
     .rec-table tr:last-child td { border-bottom: none; }
-    .rec-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right; font-weight: 800; font-size: 16px; }
-    .btn-settle { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(5,150,105,0.3); transition: 0.2s;}
+    .rec-total { border-top: 1px dashed #000; margin-top: 8px; padding-top: 8px; text-align: right; font-weight: 800; font-size: 14px; }
+    .btn-settle { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(5,150,105,0.3); transition: 0.2s;}
     .btn-settle:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,150,105,0.4); }
 
-    /* Empty States */
-    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 10px; text-align: center; color: var(--text-muted); opacity: 0.7;}
-    .empty-state i { font-size: 24px; margin-bottom: 10px; color: var(--text-light); }
-    .empty-state p { font-size: 12px; font-weight: 600; margin: 0;}
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 10px; text-align: center; color: var(--text-muted); opacity: 0.7;}
+    .empty-state i { font-size: 20px; margin-bottom: 8px; color: var(--text-light); }
+    .empty-state p { font-size: 11px; font-weight: 600; margin: 0;}
     
     /* TOAST */
-    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 12000; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1);}
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 10px 20px; border-radius: 100px; font-weight: 600; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 12000; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1);}
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   </style>
 </head>
@@ -231,11 +233,11 @@
   </div>
 </div>
 
-<nav class="navbar glass-panel">
+<nav class="navbar glass-panel" style="border-radius: 0 0 24px 24px; border-top: none; margin: 0 auto 20px auto; max-width:1400px; width: calc(100% - 20px);">
   <div class="brand">
     <button class="menu-btn" id="btnOpenMenu"><i class="fa-solid fa-bars"></i></button>
-    <img src="logo.png" class="brand-icon" alt="Logo">
-    Enterprise HQ
+    <img src="logo.png" class="brand-icon" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%231976D2\'/><text x=\'50\' y=\'65\' font-family=\'Arial\' font-size=\'40\' fill=\'white\' text-anchor=\'middle\'>B</text></svg>'">
+    <span style="display:none; @media(min-width:480px){display:inline;}">Enterprise HQ</span>
   </div>
   
   <div class="nav-actions">
@@ -244,6 +246,7 @@
     </select>
     <button id="btnAddBranch" class="btn-nav primary" title="Add New Branch"><i class="fa-solid fa-plus"></i></button>
     <button id="btnViewMap" class="btn-nav" title="View Map" style="display:none;"><i class="fa-solid fa-map-location-dot"></i></button>
+    <button class="btn-bill" onclick="window.location.href='billing.html'"><i class="fa-solid fa-cash-register"></i> POS</button>
   </div>
 </nav>
 
@@ -254,7 +257,7 @@
             <h1 class="welcome-title" id="greetingDisplay">Command Center</h1>
             <div class="welcome-sub" id="dateDisplay">Loading...</div>
         </div>
-        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; background: rgba(255,255,255,0.5); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--glass-border);">
+        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; background: rgba(255,255,255,0.5); padding: 5px 10px; border-radius: 20px; border: 1px solid var(--glass-border);">
             <i class="fa-solid fa-grip-vertical"></i> Drag widgets to customize
         </div>
     </div>
@@ -312,7 +315,7 @@
             </div>
             <div class="w-content" style="overflow:hidden;">
                 <div class="bar-chart-container" id="peakHoursBox"></div>
-                <div style="text-align:center; font-size:10px; font-weight:700; color:var(--text-muted); margin-top:5px;">Business Hours (9 AM - 9 PM)</div>
+                <div style="text-align:center; font-size:9px; font-weight:700; color:var(--text-muted); margin-top:5px;">Business Hours (9 AM - 9 PM)</div>
             </div>
         </div>
 
@@ -350,10 +353,10 @@
                 <h3 class="w-title"><i class="fa-solid fa-bolt" style="color:var(--warning);"></i> Quick Actions</h3>
                 <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
             </div>
-            <div class="w-content" style="gap:12px; justify-content:center;">
-                <button id="btnQuickBranch" class="shop-switcher" style="width:100%; max-width:100%; padding:15px; border-color:var(--primary); color:var(--primary); font-size:14px;"><i class="fa-solid fa-code-branch"></i> Create New Branch</button>
-                <button onclick="window.location.href='products.html'" class="shop-switcher" style="width:100%; max-width:100%; padding:15px; border-color:var(--success); color:var(--success); font-size:14px;"><i class="fa-solid fa-box-open"></i> Manage Inventory</button>
-                <button onclick="window.location.href='customers.html'" class="shop-switcher" style="width:100%; max-width:100%; padding:15px; border-color:var(--purple); color:var(--purple); font-size:14px;"><i class="fa-solid fa-users"></i> CRM & Khata</button>
+            <div class="w-content" style="gap:10px; justify-content:center;">
+                <button id="btnQuickBranch" class="shop-switcher" style="width:100%; max-width:100%; padding:12px; border-color:var(--primary); color:var(--primary); font-size:13px;"><i class="fa-solid fa-code-branch"></i> Create New Branch</button>
+                <button onclick="window.location.href='products.html'" class="shop-switcher" style="width:100%; max-width:100%; padding:12px; border-color:var(--success); color:var(--success); font-size:13px;"><i class="fa-solid fa-box-open"></i> Manage Inventory</button>
+                <button onclick="window.location.href='customers.html'" class="shop-switcher" style="width:100%; max-width:100%; padding:12px; border-color:var(--purple); color:var(--purple); font-size:13px;"><i class="fa-solid fa-users"></i> CRM & Khata</button>
             </div>
         </div>
 
@@ -363,7 +366,7 @@
 <div class="container" id="udhaarView">
     <div class="udhaar-header">
         <button class="btn-back" id="btnCloseUdhaar"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
-        <h2 style="font-size:22px; font-weight:800; color:var(--text-main); margin:0;"><i class="fa-solid fa-book-open" style="color:var(--danger);"></i> Udhaar Khata</h2>
+        <h2 style="font-size:20px; font-weight:800; color:var(--text-main); margin:0;"><i class="fa-solid fa-book-open" style="color:var(--danger);"></i> Udhaar Khata</h2>
     </div>
 
     <div class="total-dues-card">
@@ -371,7 +374,7 @@
         <div class="dues-label">Total Pending Collection</div>
         <div class="dues-amount" id="udhaarPendingTotal">₹0</div>
       </div>
-      <i class="fa-solid fa-hand-holding-dollar" style="font-size:40px; color:var(--danger); opacity:0.8;"></i>
+      <i class="fa-solid fa-hand-holding-dollar" style="font-size:36px; color:var(--danger); opacity:0.8;"></i>
     </div>
 
     <div id="udhaarGroupList" style="padding-bottom:40px;">
@@ -399,8 +402,8 @@
             </select>
         </div>
         <button id="btnSubmitBranch" class="btn-submit">Create Branch Shop</button>
-        <div style="font-size: 11px; color: var(--text-muted); margin-top: 15px; text-align: center; line-height:1.4;">
-            This branch will be linked to your master mobile number. You can instantly switch between branches from the top menu.
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 15px; text-align: center; line-height:1.4;">
+            This branch will be linked to your master mobile number. You can switch between branches globally using the top menu.
         </div>
     </div>
 </div>
@@ -412,7 +415,7 @@
             <button class="btn-close" onclick="closeMap()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div id="shopMap"></div>
-        <div style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 15px; font-weight:600;">
+        <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 12px; font-weight:600;">
             Click anywhere on the map to drop a pin. Coordinates sync automatically.
         </div>
     </div>
@@ -422,8 +425,8 @@
     <div class="modal-content" style="max-width:480px;">
       <div class="modal-header">
         <div>
-          <h3 style="margin:0; font-size:18px; color:var(--text-main); font-weight:800;" id="custModalName">Customer</h3>
-          <div style="color:var(--text-muted); font-size:12px; margin-top:4px; font-weight:600;" id="custModalPhone">Phone</div>
+          <h3 style="margin:0; font-size:16px; color:var(--text-main); font-weight:800;" id="custModalName">Customer</h3>
+          <div style="color:var(--text-muted); font-size:11px; margin-top:4px; font-weight:600;" id="custModalPhone">Phone</div>
         </div>
         <button id="btnCloseCustomerModal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -432,14 +435,14 @@
 </div>
 
 <div id="receiptModal" class="modal-overlay" style="z-index: 6000;">
-    <div class="modal-content" style="max-width:380px; background:#f8fafc; padding:20px;">
+    <div class="modal-content" style="max-width:360px; background:#f8fafc; padding:15px;">
       <div class="receipt-content">
-        <div style="text-align:center; margin-bottom:15px; border-bottom:1px dashed #000; padding-bottom:10px;">
-          <h3 style="margin:0; font-size:16px; font-family:'Inter', sans-serif; font-weight:800;" id="rec-shop">BHARAT POS</h3>
-          <div style="font-size:11px; margin-top:4px;" id="rec-id"></div>
-          <div style="font-size:11px;" id="rec-date"></div>
+        <div style="text-align:center; margin-bottom:12px; border-bottom:1px dashed #000; padding-bottom:10px;">
+          <h3 style="margin:0; font-size:14px; font-family:'Inter', sans-serif; font-weight:800;" id="rec-shop">BHARAT POS</h3>
+          <div style="font-size:10px; margin-top:4px;" id="rec-id"></div>
+          <div style="font-size:10px;" id="rec-date"></div>
         </div>
-        <div style="font-size:12px; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:10px;">
+        <div style="font-size:11px; margin-bottom:12px; border-bottom:1px solid #ccc; padding-bottom:8px;">
           <strong>Bill To:</strong> <span id="rec-name"></span> <span id="rec-phone" style="color:#555;"></span>
         </div>
         <table class="rec-table">
@@ -447,20 +450,20 @@
           <tbody id="rec-items"></tbody>
         </table>
         
-        <div style="border-top:1px dashed #000; padding-top:10px; margin-top:10px;">
-            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#555;">
+        <div style="border-top:1px dashed #000; padding-top:8px; margin-top:8px;">
+            <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#555;">
                 <span>Total Bill Value:</span><span id="rec-full-total">₹0</span>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#555;" id="rec-split-info"></div>
-            <div class="rec-total" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #000; padding-top:10px;">
-                <span style="font-size:12px; color:var(--danger);">PENDING UDHAAR:</span>
-                <span id="rec-due" style="color:var(--danger);">₹0</span>
+            <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#555;" id="rec-split-info"></div>
+            <div class="rec-total" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px solid #000; padding-top:8px;">
+                <span style="font-size:11px; color:var(--danger);">PENDING UDHAAR:</span>
+                <span id="rec-due" style="color:var(--danger); font-size:14px;">₹0</span>
             </div>
         </div>
       </div>
-      <div style="display:flex; gap:10px; margin-top:15px;">
-          <button id="btnSettle" class="btn-settle">✅ Receive Cash</button>
-          <button id="btnCloseReceipt" class="btn-settle" style="background:#e2e8f0; color:#333; box-shadow:none;">Close</button>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+          <button id="btnSettle" class="btn-settle" style="padding:10px; font-size:12px;">✅ Receive Cash</button>
+          <button id="btnCloseReceipt" class="btn-settle" style="background:#e2e8f0; color:#333; box-shadow:none; padding:10px; font-size:12px;">Close</button>
       </div>
     </div>
 </div>
@@ -478,7 +481,7 @@ window.db = db;
 // --- STATE ---
 let enterpriseSales = [];
 let enterpriseProducts = [];
-let currentBranch = 'all';
+let currentBranch = 'all'; // UI Filter state
 let mapInstance = null;
 let mapMarker = null;
 
@@ -487,11 +490,25 @@ document.addEventListener('DOMContentLoaded', () => {
     initDragAndDrop();
     logAudit("System Boot", "Command Center initialized.");
     
-    // Setup Switcher & Modals
+    // Global Shop Switcher - Safely integrated
     document.getElementById('shopSwitcher').addEventListener('change', (e) => {
-        currentBranch = e.target.value;
-        logAudit("Branch Switched", `View changed to ${e.target.options[e.target.selectedIndex].text}`);
-        renderAllWidgets();
+        const val = e.target.value;
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        
+        if (val === 'all') {
+            currentBranch = 'all';
+            showToast("Showing Enterprise Overview");
+            renderAllWidgets();
+        } else if (val !== user.merchantId) {
+            // If they select a specific branch and it's NOT their current active one, global switch.
+            if(window.switchActiveShop) {
+                window.switchActiveShop(val);
+            }
+        } else {
+            // They selected their current active branch. Just filter view.
+            currentBranch = val;
+            renderAllWidgets();
+        }
     });
 
     document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
@@ -525,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── UTILS ───
 function setGreeting() {
     const d = new Date();
-    document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function showToast(msg, isError = false) {
@@ -542,14 +559,8 @@ function toggleMenu() {
     overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
 }
 
-function showModal(id) {
-    const m = document.getElementById(id);
-    m.classList.add('show');
-}
-function hideModal(id) {
-    const m = document.getElementById(id);
-    m.classList.remove('show');
-}
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
 
 function formatCurrency(n) { return Number(n || 0).toLocaleString('en-IN'); }
 
@@ -562,7 +573,7 @@ function logAudit(action, details) {
         details: details,
         user: "Admin"
     });
-    if(logs.length > 20) logs = logs.slice(0, 20); // Keep last 20
+    if(logs.length > 20) logs = logs.slice(0, 20); 
     localStorage.setItem('bharatpos_audit', JSON.stringify(logs));
     if(document.getElementById('auditListBox')) renderAuditTrail();
 }
@@ -580,9 +591,12 @@ async function loadEnterpriseData() {
             shops = fetchedShops;
             
             const switcher = document.getElementById('shopSwitcher');
-            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
+            // By default, set the switcher to the ACTIVE shop context
+            switcher.innerHTML = '<option value="all">🌍 Enterprise Overview</option>' + 
                 shops.map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
-            switcher.value = 'all';
+            
+            switcher.value = user.merchantId;
+            currentBranch = user.merchantId; // Start by showing current branch data
         }
     }
 
@@ -628,8 +642,8 @@ async function loadEnterpriseData() {
 
 // ─── MASTER RENDERER ───
 function renderAllWidgets() {
-    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch);
-    const fProds = currentBranch === 'all' ? enterpriseProducts : enterpriseProducts.filter(p => p._branchId === currentBranch);
+    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
+    const fProds = currentBranch === 'all' ? enterpriseProducts : enterpriseProducts.filter(p => p._branchId === currentBranch || p.merchantId === currentBranch);
 
     const mapBtn = document.getElementById('btnViewMap');
     if(currentBranch === 'all') mapBtn.style.display = 'none';
@@ -646,29 +660,40 @@ function renderAllWidgets() {
 // ─── COMPONENT RENDERERS ───
 function renderKPIs(sales) {
     const today = new Date(); today.setHours(0,0,0,0);
+    const todayStr = new Date().toISOString().split('T')[0];
     let tRev = 0, tBills = 0, tItems = 0, udhaar = 0;
 
     sales.forEach(s => {
-        const d = new Date(s.date);
+        const dStr = new Date(s.date).toISOString().split('T')[0];
+        const isToday = (dStr === todayStr);
         const total = Number(s.total || s.amount || 0);
+        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
 
-        if(d >= today) {
-            tRev += total;
+        if(isToday) {
             tBills++;
-            // Practical Item count calculation
-            (s.items||[]).forEach(i => {
-                const q = Number(i.qty || 1);
-                tItems += q;
-            });
+            (s.items||[]).forEach(i => tItems += Number(i.qty || 1));
+            
+            if (pMode === 'Partial' && s.split) {
+                tRev += Number(s.split.cash || 0) + Number(s.split.online || 0);
+            } else if (pMode !== 'Udhaar') {
+                tRev += total;
+            }
         }
-        
-        if(s.split && Number(s.split.udhaar) > 0) udhaar += Number(s.split.udhaar);
-        else if(s.paymentMethod === 'Udhaar' || s.paymentMode === 'Udhaar') udhaar += total;
+
+        // Udhaar settled today
+        if(s.isPaid && s.settledDate) {
+            const setStr = new Date(s.settledDate).toISOString().split('T')[0];
+            if(setStr === todayStr && dStr !== todayStr) {
+                tRev += (pMode === 'Partial (Settled)' && s.split) ? Number(s.split.udhaar || 0) : total;
+            }
+        }
+
+        // Pending udhaar
+        if(s.split && Number(s.split.udhaar) > 0 && !s.isPaid) udhaar += Number(s.split.udhaar);
+        else if((pMode === 'Udhaar' || s.paymentMode === 'Udhaar') && !s.isPaid) udhaar += total;
     });
 
-    // Formatting Items Sold to avoid long decimals if loose items are sold
-    let formattedItems = tItems;
-    if(tItems % 1 !== 0) formattedItems = tItems.toFixed(2).replace(/\.?0+$/, '');
+    let formattedItems = tItems % 1 !== 0 ? tItems.toFixed(2).replace(/\.?0+$/, '') : tItems;
 
     document.getElementById('kpiRev').innerText = `₹${formatCurrency(tRev)}`;
     document.getElementById('kpiBills').innerText = formatCurrency(tBills);
@@ -688,7 +713,8 @@ function renderSalesChart(sales) {
         
         let dayTotal = 0;
         sales.forEach(s => {
-            if(new Date(s.date).toISOString().split('T')[0] === dStr) dayTotal += Number(s.total || 0);
+            const sDateStr = new Date(s.date).toISOString().split('T')[0];
+            if(sDateStr === dStr) dayTotal += Number(s.total || 0);
         });
         if(dayTotal > maxVal) maxVal = dayTotal;
         daysData.push({ date: d, val: dayTotal });
@@ -743,7 +769,6 @@ function renderPeakHours(sales) {
     }).join('');
 }
 
-// Global scope for HTML onclick access
 window.goToRestock = function(prodName, qty) {
     localStorage.setItem("temp_add_stock", qty);
     window.location.href = `products.html?restock=${encodeURIComponent(prodName)}`;
@@ -881,8 +906,9 @@ async function submitNewBranch() {
         
         logAudit("Branch Created", `New branch '${shopName}' added to network.`);
         
-        if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); // Refresh dropdown
-        setTimeout(()=> window.location.reload(), 1000);
+        // Let them switch manually or reload
+        alert("Branch Created! Select it from the dropdown to start managing it.");
+        window.location.reload();
     } catch(e) { 
         showToast("Firebase Error: Could not create branch.", true);
         document.getElementById('btnSubmitBranch').innerText = "Create Branch Shop";
@@ -918,11 +944,10 @@ window.openMap = async function() {
             mapMarker = L.marker([lat, lng]).addTo(mapInstance).bindPopup('<b>Branch Location</b>').openPopup();
         }
 
-        // Custom GPS Button
         const locateBtn = L.control({position: 'topright'});
         locateBtn.onAdd = function() {
             const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-            div.innerHTML = '<button style="width:34px;height:34px;background:white;border:none;cursor:pointer;border-radius:4px;color:var(--primary);font-size:16px;box-shadow:0 2px 5px rgba(0,0,0,0.2);" title="Find My Location"><i class="fa-solid fa-crosshairs"></i></button>';
+            div.innerHTML = '<button style="width:30px;height:30px;background:white;border:none;cursor:pointer;border-radius:4px;color:var(--primary);font-size:14px;box-shadow:0 2px 5px rgba(0,0,0,0.2);" title="Find My Location"><i class="fa-solid fa-crosshairs"></i></button>';
             div.onclick = function(e){
                 e.stopPropagation();
                 mapInstance.locate({setView: true, maxZoom: 16});
@@ -942,9 +967,7 @@ window.openMap = async function() {
     }, 100);
 }
 
-window.closeMap = function() {
-    hideModal('mapModal');
-}
+window.closeMap = function() { hideModal('mapModal'); }
 
 async function updatePin(lat, lng, msg) {
     if(mapMarker) mapInstance.removeLayer(mapMarker);
@@ -956,7 +979,6 @@ async function updatePin(lat, lng, msg) {
                 const shopRef = doc(window.db, "shops", currentBranch);
                 await updateDoc(shopRef, { "profile.lat": lat, "profile.lng": lng });
                 
-                // If it's the main shop, also update local storage
                 const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
                 if(user.merchantId === currentBranch) {
                     user.lat = lat; user.lng = lng;
@@ -965,7 +987,7 @@ async function updatePin(lat, lng, msg) {
 
                 showToast("Location updated successfully!");
                 mapMarker.bindPopup('<b>Shop Location Saved</b>').openPopup();
-                logAudit("Location Updated", `GPS Coordinates updated for branch ${currentBranch}`);
+                logAudit("Location Updated", `GPS Coordinates updated for branch.`);
             } catch(e) {
                 console.error("Location update failed", e);
                 showToast("Failed to update location", true);
@@ -991,12 +1013,12 @@ window.openUdhaarSection = function() {
 
 window.closeUdhaarSection = function() {
     document.getElementById('udhaarView').style.display = 'none';
-    document.getElementById('mainDashboard').style.display = 'flex'; // Uses flex from container class
+    document.getElementById('mainDashboard').style.display = 'flex'; 
     renderAllWidgets(); 
 }
 
 window.renderUdhaarGroups = function() {
-    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch);
+    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
     const container = document.getElementById('udhaarGroupList');
     const pending = fSales.filter(s => getPendingUdhaarAmount(s) > 0);
 
@@ -1038,7 +1060,7 @@ window.renderUdhaarGroups = function() {
 }
 
 window.openCustomerModal = function(phone) {
-    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch);
+    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
     const invoices = fSales.filter(s => 
         (s.customerPhone === phone || s.phone === phone || (phone === "Unknown" && !s.customerPhone && !s.phone)) && 
         getPendingUdhaarAmount(s) > 0
@@ -1063,7 +1085,7 @@ window.openCustomerModal = function(phone) {
             <div class="inv-info">
                 <h4>#${invId.slice(-8)}</h4>
                 <p>${new Date(inv.date).toLocaleDateString()} • <span style="color:var(--warning);">${pMode}</span></p>
-                ${currentBranch === 'all' ? `<p style="margin-top:2px; color:var(--primary); font-weight:700;">Branch: ${inv._branchName}</p>` : ''}
+                ${currentBranch === 'all' ? `<p style="margin-top:2px; color:var(--primary); font-weight:700;">Branch: ${inv._branchName || 'Main'}</p>` : ''}
             </div>
             <div class="inv-action">
                 <div class="inv-price">₹${formatCurrency(amt)}</div>
@@ -1105,7 +1127,8 @@ window.openReceipt = function(dataStr) {
     document.getElementById('rec-due').innerText = `₹${formatCurrency(pendingAmt)}`;
 
     const payBtn = document.getElementById('btnSettle');
-    payBtn.onclick = () => window.settleDebt(invId, inv._branchId);
+    // Ensure we know EXACTLY which branch this sale belongs to, so we update the correct DB!
+    payBtn.onclick = () => window.settleDebt(invId, inv._branchId || inv.merchantId);
 
     showModal('receiptModal');
 }
@@ -1134,6 +1157,24 @@ window.settleDebt = async function(id, saleBranchId) {
         }
         
         localStorage.setItem('bharatpos_enterprise_sales', JSON.stringify(enterpriseSales));
+
+        // IF the settled sale belongs to the CURRENT active local shop, update it there too!
+        if (targetBranch === user.merchantId) {
+            const localSales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+            const lIndex = localSales.findIndex(ls => (ls.id === id || ls.invoiceNo === id));
+            if (lIndex > -1) {
+                localSales[lIndex].isPaid = true;
+                localSales[lIndex].settledDate = s.settledDate;
+                if(localSales[lIndex].paymentMethod === 'Partial' && localSales[lIndex].split) {
+                    localSales[lIndex].split.cash += pendingAmt;
+                    localSales[lIndex].paymentMethod = "Partial (Settled)";
+                } else {
+                    localSales[lIndex].paymentMode = "Cash (Settled)";
+                    localSales[lIndex].paymentMethod = "Cash (Settled)";
+                }
+                localStorage.setItem('bharatpos_sales', JSON.stringify(localSales));
+            }
+        }
 
         showToast("✅ Payment Recorded Successfully!");
         hideModal('receiptModal');
@@ -1194,6 +1235,7 @@ function initDragAndDrop() {
         
         const currentOrder = [...container.querySelectorAll('.widget')].map(w => w.id);
         localStorage.setItem('dashboard_layout', JSON.stringify(currentOrder));
+        logAudit("Layout Changed", "User rearranged dashboard widgets.");
     });
 
     container.addEventListener('dragover', (e) => {
