@@ -234,6 +234,8 @@
     </div>
   </div>
   <div class="nav-actions">
+    <select id="shopSwitcher" class="shop-switcher" style="background:#fff; border:1px solid var(--border); color:var(--text-main); padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; outline:none; cursor:pointer; max-width:160px; text-overflow: ellipsis; display:none;"></select>
+    
     <button id="btnLangToggle" class="btn btn-outline btn-icon-only" title="Change Language" style="font-weight:800;">A/अ</button>
     <button id="btnNavPos" class="btn btn-success" style="padding:8px 16px;font-size:13px;width:auto;">
       <i class="fa-solid fa-cash-register"></i> <span class="lang-en">Open POS</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span>
@@ -537,10 +539,39 @@
         <button id="btnEditFromModal" class="btn btn-outline" style="color:var(--primary);border-color:var(--primary);">
           <i class="fa-solid fa-pen"></i> <span class="lang-en">Edit</span><span class="lang-hinglish">Badlein</span><span class="lang-hi">बदलें</span>
         </button>
+        <button id="btnTransferFromModal" class="btn btn-outline" style="color:var(--purple);border-color:var(--purple); display:none;">
+          <i class="fa-solid fa-truck-fast"></i> <span class="lang-en">Transfer</span><span class="lang-hinglish">Bhejein</span><span class="lang-hi">भेजें</span>
+        </button>
         <button id="btnDeleteFromModal" class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);">
           <i class="fa-solid fa-trash"></i> <span class="lang-en">Delete</span><span class="lang-hinglish">Hataein</span><span class="lang-hi">हटाएं</span>
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="transferStockModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 style="margin:0;font-size:16px;"><i class="fa-solid fa-truck-fast" style="color:var(--purple);"></i> Stock Transfer</h3>
+      <button id="btnCloseTransfer" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">To Branch</label>
+        <select id="transferTargetBranch" class="form-select"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">Variant / Type</label>
+        <select id="transferVariant" class="form-select"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">Quantity to Transfer</label>
+        <input type="number" step="0.001" id="transferQty" class="form-input" placeholder="Enter quantity">
+      </div>
+      <button id="btnSubmitTransfer" class="btn btn-primary" style="margin-top:10px; background:linear-gradient(135deg, var(--purple), #6D28D9); width:100%;">
+        <i class="fa-solid fa-truck-fast"></i> Confirm Transfer
+      </button>
     </div>
   </div>
 </div>
@@ -617,7 +648,7 @@
 
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 window.db = db;
 
@@ -686,6 +717,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // ── LANGUAGE INIT ──
         const savedLang = localStorage.getItem('app_lang') || 'en'; 
         document.body.className = `lang-${savedLang}`;
+
+        // ── MULTI-BRANCH INIT ──
+        if(typeof window.initShopSwitcher === 'function') {
+            window.initShopSwitcher().then(shops => {
+                if(shops && shops.length > 1) {
+                    const switcher = document.getElementById('shopSwitcher');
+                    switcher.style.display = 'inline-block';
+                    document.getElementById('btnTransferFromModal').style.display = 'inline-flex'; // Show transfer option
+                    
+                    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+                    switcher.value = user.merchantId;
+                }
+            });
+            document.getElementById('shopSwitcher').addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+        }
 
         // ── TUTORIAL INIT ──
         if(localStorage.getItem('tutorial_inventory') !== 'true') {
@@ -784,7 +830,7 @@ function bindAllEvents() {
         area.style.display = area.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Global Hint Engine (Desktop Hover & Mobile Touch)
+    // Global Hint Engine
     const hintBar = document.getElementById('globalHintBar');
     document.addEventListener('mouseover', handleHintEvent);
     document.addEventListener('touchstart', handleHintEvent, {passive: true});
@@ -835,28 +881,24 @@ function bindAllEvents() {
     
     // Variant Engine Math & Remove Delegation
     document.getElementById('variantEngine').addEventListener('click', (e) => {
-        // Remove Variant
         const removeBtn = e.target.closest('.btn-remove-var');
         if (removeBtn) removeBtn.closest('.variant-box').remove();
         
-        // Add Sub-Brand Row
         const addBrandBtn = e.target.closest('.btn-add-brand');
         if (addBrandBtn) {
             const container = e.target.closest('.variant-brands-container').querySelector('.brand-list');
             container.insertAdjacentHTML('beforeend', window.getBrandRowHTML());
         }
         
-        // Remove Sub-Brand Row
         const removeBrandBtn = e.target.closest('.btn-remove-brand');
         if (removeBrandBtn) {
             const row = e.target.closest('.brand-row');
             const variantBox = row.closest('.variant-box');
             row.remove();
-            window.syncVariantMath(variantBox, 'brand'); // Re-calc total variant stock
+            window.syncVariantMath(variantBox, 'brand'); 
         }
     });
 
-    // Auto-math Listeners
     document.getElementById('variantEngine').addEventListener('input', (e) => {
         if (e.target.classList.contains('vb-stock')) {
             window.syncVariantMath(e.target.closest('.variant-box'), 'brand');
@@ -953,6 +995,11 @@ function bindAllEvents() {
         if (window.currentDetailId) deleteProduct(window.currentDetailId);
     });
 
+    // MULTI-BRANCH TRANSFER EVENTS
+    document.getElementById('btnTransferFromModal').addEventListener('click', openTransferModal);
+    document.getElementById('btnCloseTransfer').addEventListener('click', () => document.getElementById('transferStockModal').style.display = 'none');
+    document.getElementById('btnSubmitTransfer').addEventListener('click', submitStockTransfer);
+
     document.getElementById('btnStartScan').addEventListener('click', startAIScan);
     document.getElementById('btnStopScan').addEventListener('click',  stopAIScan);
     document.getElementById('btnCancelBarcode').addEventListener('click', stopBarcodeScan);
@@ -991,7 +1038,6 @@ function checkDemandMitraRouting() {
     const urlParams = new URLSearchParams(window.location.search);
     const restockName = urlParams.get('restock');
     if (restockName) {
-        // Fallback for legacy DemandMitra name-based routing
         const targetProd = window.allProducts.find(p => p.name === restockName);
         if(targetProd) {
             loadProductForEdit(targetProd.id);
@@ -1015,7 +1061,6 @@ function handleExportCSV() {
         const flattened = [];
         window.allProducts.forEach(p => {
             p.variants.forEach(v => {
-                // Flatten brands if multiple exist
                 let brandsStr = '';
                 if(v.brands && v.brands.length > 0) {
                     brandsStr = v.brands.map(b => `${b.name}(${b.stock})`).join(', ');
@@ -1087,13 +1132,12 @@ function addVariantUI(data = null) {
     div.className = 'variant-box';
     const uid = Math.floor(Math.random() * 10000);
 
-    // Build the sub-brands HTML
     let brandsHtml = '';
     const brandsArray = data?.brands || (data?.brand ? [{name: data.brand, stock: data.stock || 0}] : []);
     if (brandsArray.length > 0) {
         brandsArray.forEach(b => { brandsHtml += window.getBrandRowHTML(b.name, b.stock); });
     } else {
-        brandsHtml = window.getBrandRowHTML('', ''); // 1 empty row by default
+        brandsHtml = window.getBrandRowHTML('', ''); 
     }
 
     div.innerHTML = `
@@ -1203,7 +1247,6 @@ async function handleSaveProduct(e) {
             let vBaseQty   = isLoose ? box.querySelector('.v-base-qty').value : "";
             let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "pcs";
 
-            // Extract sub-brands
             let vBrands = [];
             if(isAdv) {
                 const brandRows = box.querySelectorAll('.brand-row');
@@ -1919,6 +1962,120 @@ async function captureAndSendToAI() {
         }
     } catch (e) {
         showToast("AI Lens failed", true);
+    }
+}
+
+// ─── MULTI-BRANCH STOCK TRANSFER ──────────────────────────────────────────────
+import { getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+function openTransferModal() {
+    const base = window.allProducts.find(p => p.id === window.currentDetailId);
+    if(!base) return;
+
+    // Populate Variants
+    const vSel = document.getElementById('transferVariant');
+    vSel.innerHTML = base.variants.map(v => `<option value="${v.id}">${v.quantity} (Avail: ${v.stock})</option>`).join('');
+
+    // Populate Branches
+    const bSel = document.getElementById('transferTargetBranch');
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const mobile = user.mobile || user.phone;
+    const shops = JSON.parse(localStorage.getItem(`bharatpos_shops_${mobile}`) || '[]');
+    
+    bSel.innerHTML = shops.filter(s => s.merchantId !== user.merchantId)
+                          .map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
+
+    document.getElementById('transferQty').value = '';
+    document.getElementById('productDetailsModal').style.display = 'none';
+    document.getElementById('transferStockModal').style.display = 'flex';
+}
+
+async function submitStockTransfer() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const targetBranch = document.getElementById('transferTargetBranch').value;
+    const variantId = document.getElementById('transferVariant').value;
+    const qty = parseFloat(document.getElementById('transferQty').value);
+
+    if(!targetBranch || !variantId || isNaN(qty) || qty <= 0) return showToast("Invalid transfer details", true);
+
+    const btn = document.getElementById('btnSubmitTransfer');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Transferring...`; btn.disabled = true;
+
+    try {
+        // 1. Local Source Deduction
+        const pIdx = window.allProducts.findIndex(p => p.id === window.currentDetailId);
+        const prod = window.allProducts[pIdx];
+        const vIdx = prod.variants.findIndex(v => v.id === variantId);
+        const variant = prod.variants[vIdx];
+
+        if(variant.stock < qty) throw new Error("Not enough stock available.");
+
+        variant.stock -= qty;
+        
+        // If it has brands, deduct from the first brand as a fallback
+        if(variant.brands && variant.brands.length > 0) {
+            let remaining = qty;
+            for(let b of variant.brands) {
+                if(remaining <= 0) break;
+                let deduct = Math.min(b.stock, remaining);
+                b.stock -= deduct;
+                remaining -= deduct;
+            }
+        }
+
+        // Update Local & Cloud for current shop
+        localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+        await setDoc(doc(window.db, "shops", user.merchantId, "products", prod.id), prod);
+
+        // 2. Target Branch Addition
+        const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
+        const targetSnap = await getDoc(targetRef);
+
+        if(targetSnap.exists()) {
+            let targetProd = targetSnap.data();
+            let targetVar = targetProd.variants.find(v => v.id === variantId);
+            
+            if(targetVar) {
+                targetVar.stock = (Number(targetVar.stock) || 0) + qty;
+                if(targetVar.brands && targetVar.brands.length > 0) {
+                    targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
+                }
+            } else {
+                // Variant doesn't exist in target, copy from source but 0 out other brands
+                let newVar = JSON.parse(JSON.stringify(variant));
+                newVar.stock = qty;
+                if(newVar.brands && newVar.brands.length > 0) {
+                   newVar.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
+                }
+                targetProd.variants.push(newVar);
+            }
+            await setDoc(targetRef, targetProd);
+        } else {
+            // Product doesn't exist in target branch at all. Clone it.
+            let clonedProd = JSON.parse(JSON.stringify(prod));
+            clonedProd.variants.forEach(v => {
+                if(v.id === variantId) {
+                    v.stock = qty;
+                    if(v.brands && v.brands.length > 0) {
+                       v.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
+                    }
+                } else {
+                    v.stock = 0;
+                    if(v.brands) v.brands.forEach(b => b.stock = 0);
+                }
+            });
+            await setDoc(targetRef, clonedProd);
+        }
+
+        showToast("📦 Stock Transferred Successfully!");
+        document.getElementById('transferStockModal').style.display = 'none';
+        applyFilters(); 
+
+    } catch (e) {
+        console.error(e);
+        showToast("Transfer failed: " + e.message, true);
+    } finally {
+        btn.innerHTML = `<i class="fa-solid fa-truck-fast"></i> Confirm Transfer`; btn.disabled = false;
     }
 }
 </script>
