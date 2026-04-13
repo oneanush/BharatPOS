@@ -387,18 +387,20 @@
 
         <div id="aiOutput" class="ai-output-area"></div>
 
-      </div></div></div><script>
-
-  // --- 1. DATA GATHERING (Updated to support Singularity Variants) ---
-  window.getStoredSnapshot = function() {
+      </div></div></div>
+  <script>
+  // --- 1. DATA GATHERING (Updated to support Async IndexedDB) ---
+  window.getStoredSnapshot = async function() {
     try {
-      const products = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
-      const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+      // Swapped localStorage for the new async bridge
+      const products = await window.dbGet('bharatpos_products', '[]');
+      const sales = await window.dbGet('bharatpos_sales', '[]');
       
       let revenue = 0;
       sales.forEach(s => revenue += Number(s.total || s.amount || 0));
 
-      const lowStockItems = products.filter(p => {
+      let lowStockItems = [];
+      products.forEach(p => {
           let totalStock = 0;
           if (p.variants && Array.isArray(p.variants)) {
               p.variants.forEach(v => {
@@ -409,8 +411,10 @@
               totalStock = Number(p.stock || 0);
           }
           const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
-          return totalStock <= threshold;
-      }).map(p => p.name || 'Unknown');
+          if (totalStock <= threshold) {
+              lowStockItems.push(p.name || 'Unknown');
+          }
+      });
 
       // Ensure we always return a valid object even if data is empty
       return {
@@ -452,7 +456,9 @@
     try {
         // 2. Build Data
         const prompt = promptBox ? promptBox.value.trim() : '';
-        const snapshot = window.getStoredSnapshot();
+        
+        // AWAIT added here because getStoredSnapshot is now asynchronous
+        const snapshot = await window.getStoredSnapshot(); 
         
         if (typeof window.buildUrl !== 'function') {
             throw new Error("Core library not loaded yet.");
