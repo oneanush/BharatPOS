@@ -8,9 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <<script src="bharatpos.js"></script>
-
-<script type="module" src="bharatpos.js"></script>
+  <script type="module" src="bharatpos.js"></script>
   <style>
     /* --- THEME --- */
     :root { --primary: #4f46e5; --bg: #f8fafc; --success: #10b981; --danger: #ef4444; }
@@ -170,7 +168,7 @@
     updateLastTime();
   });
 
-  // 🟢 2. FETCH REAL-TIME DATA FROM FIREBASE
+  // 🟢 2. FETCH REAL-TIME DATA FROM FIREBASE (Singularity Model Compatible)
   async function loadCloudData() {
       const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
       if(!user.merchantId) {
@@ -194,7 +192,14 @@
           if(cachedKeys.length > 0) {
               const firstProdName = cachedKeys[0];
               const pObj = cloudProducts.find(p => p.name === firstProdName);
-              if(pObj) window.analyzeProduct(firstProdName, pObj.stock || 0);
+              if(pObj) {
+                  let totalStock = 0;
+                  (pObj.variants||[]).forEach(v => {
+                      const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
+                      totalStock += (Number(v.stock)||0) * bq;
+                  });
+                  window.analyzeProduct(firstProdName, totalStock);
+              }
           }
 
       } catch (e) {
@@ -210,12 +215,19 @@
     }
 
     const container = document.getElementById('productChips');
-    // Filter to unique product names to avoid clutter if there are multiple variants
+    // Filter to unique product names to avoid clutter
     const uniqueNames = [...new Set(cloudProducts.map(p => p.name))];
     
     container.innerHTML = uniqueNames.map(name => {
-        // Calculate total stock across all variants of this product
-        const totalStock = cloudProducts.filter(p => p.name === name).reduce((sum, p) => sum + Number(p.stock || 0), 0);
+        // Calculate total stock across all variants
+        const pObj = cloudProducts.find(p => p.name === name);
+        let totalStock = 0;
+        if (pObj && pObj.variants) {
+            pObj.variants.forEach(v => {
+                const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
+                totalStock += (Number(v.stock)||0) * bq;
+            });
+        }
         return `<div class="chip" onclick="window.analyzeProduct('${name.replace(/'/g, "\\'")}', ${totalStock})">${name}</div>`;
     }).join('');
 
@@ -252,7 +264,14 @@
     document.getElementById('loadingText').innerText = `⚡ AI is processing ${uniqueNames.length} products...`;
 
     const bulkPayload = uniqueNames.map(name => {
-      const totalStock = cloudProducts.filter(p => p.name === name).reduce((sum, p) => sum + Number(p.stock || 0), 0);
+      const pObj = cloudProducts.find(p => p.name === name);
+      let totalStock = 0;
+      if (pObj && pObj.variants) {
+          pObj.variants.forEach(v => {
+              const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
+              totalStock += (Number(v.stock)||0) * bq;
+          });
+      }
       return {
         productName: name,
         currentStock: totalStock,
@@ -280,10 +299,24 @@
         alert("✅ Analysis Complete & Saved!");
         
         if(currentProduct) {
-             const totalStock = cloudProducts.filter(p => p.name === currentProduct).reduce((sum, p) => sum + Number(p.stock || 0), 0);
+             const pObj = cloudProducts.find(p => p.name === currentProduct);
+             let totalStock = 0;
+             if (pObj && pObj.variants) {
+                 pObj.variants.forEach(v => {
+                     const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
+                     totalStock += (Number(v.stock)||0) * bq;
+                 });
+             }
              window.analyzeProduct(currentProduct, totalStock);
         } else if(uniqueNames.length > 0) {
-             const totalStock = cloudProducts.filter(p => p.name === uniqueNames[0]).reduce((sum, p) => sum + Number(p.stock || 0), 0);
+             const pObj = cloudProducts.find(p => p.name === uniqueNames[0]);
+             let totalStock = 0;
+             if (pObj && pObj.variants) {
+                 pObj.variants.forEach(v => {
+                     const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
+                     totalStock += (Number(v.stock)||0) * bq;
+                 });
+             }
              window.analyzeProduct(uniqueNames[0], totalStock);
         }
 
@@ -351,7 +384,7 @@
     }
   }
 
-  // --- SALES HISTORY CALCULATION (From Cloud Sales) ---
+  // --- SALES HISTORY CALCULATION (From Cloud Sales - Singularity Model Compatible) ---
   function calculateSalesHistory(productName) {
     const dailyCounts = Array(14).fill(0); 
     const today = new Date();
@@ -366,7 +399,7 @@
 
       if(diffDays < 14) {
         // Find if this product was sold in this bill
-        const items = bill.items.filter(i => i.name === productName || i.printName === productName || (i.name && i.name.includes(productName)));
+        const items = bill.items.filter(i => i.name === productName || (i.name && i.name.includes(productName)));
         items.forEach(item => {
             const index = 13 - diffDays; 
             if(index >= 0 && index < 14) {
@@ -453,9 +486,11 @@
       document.getElementById('aiQuantityBadge').innerText = `Target Restock: ${needed} Units Minimum`;
       document.getElementById('aiQuantityBadge').style.display = 'inline-block';
       
+      // 🟢 SYNCHRONIZED FIX: 
+      // The AI calculated 'needed' amount refers to the base quantity if it's loose, 
+      // or pcs if it's normal. 
+      // We pass this directly to products.html, which will apply it to the first variant.
       btn.innerHTML = `<i class="fa-solid fa-box-open"></i> AUTO-FILL INVENTORY (+${needed})`;
-      
-      // 🟢 NEW FIX: Pass the exact needed stock amount via localStorage so products.html can pick it up
       btn.onclick = () => {
           localStorage.setItem("temp_add_stock", needed);
           window.location.href = `products.html?restock=${encodeURIComponent(currentProduct)}`;
