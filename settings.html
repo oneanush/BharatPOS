@@ -345,12 +345,28 @@
 </div>
 
 <div id="toast">✅ Action Successful</div>
-
 <script type="module">
 import { db } from "./bharatpos.js";
 import { doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 window.db = db;
+
+// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
+function showModal(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.style.display = 'flex';
+        setTimeout(() => m.classList.add('show'), 10);
+    }
+}
+
+function hideModal(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.classList.remove('show');
+        setTimeout(() => m.style.display = 'none', 300);
+    }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     bindEvents();
@@ -381,6 +397,20 @@ function bindEvents() {
     document.getElementById('btnDeleteAccountTrigger').addEventListener('click', openDeleteModal);
     document.getElementById('deleteConfirmInput').addEventListener('input', handleDeleteValidation);
     document.getElementById('btnConfirmDelete').addEventListener('click', handleAccountDeletion);
+    
+    // Fix inline HTML close button for Delete Modal securely
+    const closeDeleteBtn = document.querySelector('#deleteAccountModal .modal-content > div > button');
+    if(closeDeleteBtn) {
+        closeDeleteBtn.removeAttribute('onclick');
+        closeDeleteBtn.addEventListener('click', () => hideModal('deleteAccountModal'));
+    }
+    
+    // Safe Modal Overlay closing
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) hideModal(overlay.id);
+        });
+    });
 
     // Toggles
     const toggles = [
@@ -579,7 +609,7 @@ function handleLogout() {
 function openDeleteModal() {
     document.getElementById('deleteConfirmInput').value = '';
     document.getElementById('btnConfirmDelete').disabled = true;
-    document.getElementById('deleteAccountModal').style.display = 'flex';
+    showModal('deleteAccountModal');
 }
 
 function handleDeleteValidation(e) {
