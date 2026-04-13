@@ -1,3 +1,542 @@
+  <!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>Bill Banao - BharatPOS</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="quagga.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <script type="module" src="bharatpos.js"></script>
+
+  <style>
+    /* --- SAAS UI VARIABLES --- */
+    :root {
+      --bg-body: #EAF2FF; --bg-panel: #FFFFFF; --bg-card: #FFFFFF; --bg-input: #F4F8FF;
+      --border: #DBEAFE; --border-hover: #93C5FD;
+      --primary: #1976D2; --primary-dark: #1565C0; --primary-glow: rgba(25,118,210,0.12); --primary-soft: rgba(25,118,210,0.08);
+      --success: #0D9488; --success-soft: rgba(13,148,136,0.1);
+      --danger: #DC2626; --danger-soft: rgba(220,38,38,0.08);
+      --warning: #F59E0B; --purple: #7C3AED;
+      --text-main: #0F172A; --text-muted: #64748B; --text-light: #94A3B8;
+      --shadow-sm: 0 2px 5px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(25,118,210,0.08);
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    body { background: linear-gradient(135deg, #EAF2FF 0%, #C7DDFF 100%); background-attachment: fixed; color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; width: 100vw;}
+
+    /* --- TRI-LINGUAL LOGIC --- */
+    body.lang-en .lang-hinglish, body.lang-en .lang-hi { display: none !important; }
+    body.lang-hinglish .lang-en, body.lang-hinglish .lang-hi { display: none !important; }
+    body.lang-hi .lang-en, body.lang-hi .lang-hinglish { display: none !important; }
+
+    /* --- HAMBURGER MENU --- */
+    .menu-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s; }
+    .menu-btn:hover { background: var(--primary-soft); color: var(--primary); }
+    .side-menu { position: fixed; top: 0; left: -290px; width: 280px; height: 100vh; background: #FFFFFF; z-index: 9999; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 24px 20px; box-shadow: 12px 0 40px rgba(25,118,210,0.12); border-right: 1px solid var(--border); overflow-y: auto; }
+    .side-menu.open { left: 0; }
+    .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.25); z-index: 9998; backdrop-filter: blur(4px); }
+    .side-menu-brand { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .side-menu-brand-text { font-size: 20px; font-weight: 800; color: var(--text-main); }
+    .side-menu-brand-text span { color: var(--primary); }
+    .side-menu-links { display: flex; flex-direction: column; gap: 4px; }
+    .side-menu-links a { padding: 11px 14px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all 0.18s; border: 1px solid transparent; }
+    .side-menu-links a:hover { background: var(--primary-soft); color: var(--primary); transform: translateX(3px); }
+    .side-menu-links a.active-link { background: linear-gradient(135deg, rgba(13,148,136,0.1), rgba(13,148,136,0.05)); color: var(--success); border-color: rgba(13,148,136,0.2); }
+    .side-menu-links i { width: 18px; text-align: center; font-size: 14px; }
+
+    /* --- NAVBAR --- */
+    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 0 15px; height: 60px; background: rgba(255,255,255,0.9); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 100; width: 100%;}
+    @media(min-width: 768px) { .navbar { padding: 0 24px; } }
+    .brand { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--text-main); }
+    .brand-logo-wrap { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--success), #0F766E); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(13,148,136,0.3); }
+    .brand-logo-wrap i { color: #fff; font-size: 13px; }
+    .nav-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* --- POS LAYOUT --- */
+    .pos-container { display: flex; height: calc(100vh - 60px); overflow: hidden; width: 100%; max-width: 1600px; margin: 0 auto; }
+    .left-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); background: var(--bg-body); position: relative;}
+    .right-pane { width: 400px; background: #fff; display: flex; flex-direction: column; z-index: 10; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    
+    @media(max-width: 900px) {
+        .pos-container { flex-direction: column; }
+        .left-pane { flex: 1; height: 100%; width: 100%; }
+        .right-pane { position: fixed; top: 0; right: 0; width: 100%; max-width: 100%; height: 100vh; transform: translateY(100%); z-index: 9999; box-shadow: 0 -5px 30px rgba(0,0,0,0.15); border-radius: 20px 20px 0 0; }
+        .right-pane.open { transform: translateY(0); }
+    }
+
+    /* --- LEFT PANE (PRODUCTS) --- */
+    .catalog-header { padding: 12px 15px; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 5; }
+    .search-bar-wrapper { display: flex; gap: 10px; align-items: center; }
+    
+    /* Search Box with Integrated Barcode */
+    .search-box { position: relative; flex: 1; display: flex; align-items: center; }
+    .search-box > i.fa-magnifying-glass { position: absolute; left: 12px; color: var(--text-light); pointer-events: none; z-index: 2;}
+    .search-box input { width: 100%; background: #fff; border: 1.5px solid var(--border); padding: 10px 45px 10px 34px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; font-family: 'Plus Jakarta Sans', sans-serif; box-shadow: var(--shadow-sm); outline: none; transition: 0.2s;}
+    .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .barcode-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: var(--primary); padding: 8px; cursor: pointer; font-size: 16px; border-radius: 8px; transition: 0.2s; z-index: 2;}
+    .barcode-btn:hover { background: var(--primary-soft); }
+    .floating-label { position: absolute; left: 34px; top: 10px; color: var(--text-muted); font-size: 13px; font-weight: 500; pointer-events: none; transition: 0.2s; }
+    .search-box input:focus ~ .floating-label, .search-box input:not(:placeholder-shown) ~ .floating-label { opacity: 0; }
+    
+    .cat-filters { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+    .cat-tabs-container::-webkit-scrollbar { display: none; }
+    .cat-chip { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); background: #fff; color: var(--text-muted); cursor: pointer; transition: 0.2s; white-space: nowrap; font-family: inherit;}
+    .cat-chip.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px var(--primary-glow); }
+
+    .product-grid { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; align-content: flex-start; }
+    @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); padding: 15px; gap: 12px; } }
+    .product-grid::-webkit-scrollbar { width: 5px; }
+    .product-grid::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 10px; }
+
+    /* Product Card Visual Hierarchy Redesign */
+    .prod-card { background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 10px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;}
+    .prod-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .prod-card:active { transform: scale(0.97); }
+    
+    .pc-name { font-size: 14px; font-weight: 800; color: var(--text-main); line-height: 1.2; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-right: 22px; word-break: break-word;}
+    .pc-variant-prices { font-size: 10px; font-weight: 700; color: var(--success); margin-bottom: 6px; line-height: 1.4; }
+    .pc-variant-item { display: inline-block; margin-right: 4px; background: var(--success-soft); padding: 2px 4px; border-radius: 4px; margin-bottom: 2px;}
+    
+    .pc-cat { font-size: 9px; color: var(--text-light); font-weight: 700; text-transform: uppercase; margin-bottom: auto;}
+    .pc-stock { font-size: 10px; font-weight: 700; color: var(--text-muted); background: var(--bg-input); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 6px;}
+    
+    /* Repositioned Badge */
+    .pc-badge { position: absolute; top: 0; left: 0; background: var(--warning); color: #fff; font-size: 9px; font-weight: 800; padding: 2px 6px; border-bottom-right-radius: 6px; z-index: 1;}
+    .pc-badge-loose { position: absolute; bottom: 0; right: 0; background: var(--purple); color: #fff; font-size: 8px; font-weight: 800; padding: 3px 6px; border-top-left-radius: 6px; z-index: 1;}
+    
+    .pc-info-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.9); border: 1px solid var(--border); color: var(--primary); width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm); z-index: 2;}
+    .pc-info-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* --- RIGHT PANE (CART) --- */
+    .cart-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; touch-action: none; border-radius: 20px 20px 0 0;}
+    
+    .customer-selector-container { display: flex; gap: 8px; padding: 12px 15px; background: #fff; border-bottom: 1px solid var(--bg-input);}
+    .customer-selector { position: relative; flex: 1; }
+    .customer-selector input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; font-weight: 600; outline: none; background: var(--bg-input); font-family: inherit; transition: 0.2s; box-sizing: border-box;}
+    .customer-selector input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 2px var(--primary-glow); }
+    .customer-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); z-index: 50; max-height: 200px; overflow-y: auto; display: none; }
+    .cust-option { padding: 10px 12px; border-bottom: 1px solid var(--bg-input); cursor: pointer; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; }
+    .cust-option:hover { background: var(--bg-input); }
+
+    .cart-items { flex: 1; overflow-y: auto; padding: 12px 15px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-input); }
+    .cart-item { display: flex; justify-content: space-between; align-items: stretch; padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); position: relative;}
+    .ci-details { flex: 1; padding-right: 8px; }
+    .ci-name { font-weight: 700; font-size: 13px; color: var(--text-main); margin-bottom: 2px; line-height:1.2;}
+    .ci-meta { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+    .ci-controls { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+    .ci-btn { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-input); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-weight: 800; font-size: 12px; }
+    .ci-qty { font-weight: 700; font-size: 12px; min-width: 20px; text-align: center; }
+    .ci-pricing { text-align: right; display: flex; flex-direction: column; justify-content: space-between; }
+    .ci-total { font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+    .ci-del { background: none; border: none; color: var(--danger); cursor: pointer; padding: 4px; font-size: 13px; opacity: 0.6; transition: 0.2s; }
+    .cart-item:hover .ci-del { opacity: 1; }
+
+    .cart-summary { padding: 12px 15px; background: #fff; border-top: 1px solid var(--border); box-shadow: 0 -4px 10px rgba(0,0,0,0.02);}
+    .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .summary-total { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-hover); font-size: 16px; font-weight: 800; color: var(--text-main); }
+    
+    /* RE-ENGINEERED CHECKOUT BTNS */
+    .btn-mode { padding: 10px; border-radius: var(--radius-sm); font-weight: 700; font-size: 12px; border: 1.5px solid var(--border); cursor: pointer; transition: 0.2s; background: #fff; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit;}
+    .btn-mode.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); box-shadow: 0 4px 10px var(--primary-glow);}
+    
+    /* --- MOBILE FLOATING CART BTN --- */
+    .mobile-cart-fab { display: none; position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; width: 56px; height: 56px; border-radius: 28px; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 8px 20px rgba(25,118,210,0.4); z-index: 90; cursor: pointer;}
+    .mobile-cart-badge { position: absolute; top: -2px; right: -2px; background: var(--danger); color: white; font-size: 10px; font-weight: 800; width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff;}
+    @media(max-width: 900px) { .mobile-cart-fab { display: flex; } }
+
+    /* --- MODALS --- */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+    @media(min-width: 768px) { .modal-overlay { align-items: center; } }
+    .modal-box { background: #FFFFFF; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; overflow: hidden; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    @media(min-width: 768px) { .modal-box { border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FBFF; }
+    .modal-body { padding: 20px; overflow-y: auto; }
+
+    /* Buttons inside modals */
+    .btn { padding: 12px 20px; border-radius: var(--radius-sm); font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: 0 4px 14px var(--primary-glow); width: 100%;}
+    .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
+
+    /* Inputs inside modals */
+    .form-group { margin-bottom: 15px; position: relative; }
+    .form-input, .form-select { width: 100%; background: #fff; border: 1.5px solid var(--border); color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; transition: all 0.2s; outline: none; font-family: inherit; }
+    .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .floating-label-mod { position: absolute; left: 14px; top: 12px; color: var(--text-muted); font-size: 13px; font-weight: 500; pointer-events: none; transition: all 0.2s; background: transparent; }
+    .form-input:focus ~ .floating-label-mod, .form-input:not(:placeholder-shown) ~ .floating-label-mod { top: -8px; left: 10px; font-size: 11px; font-weight: 700; color: var(--primary); background: #fff; padding: 0 4px; }
+    .form-input::placeholder { color: transparent; }
+
+    /* Quick Preset & Step Buttons */
+    .preset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+    .btn-preset { background: var(--bg-input); border: 1.5px solid var(--border); border-radius: 8px; padding: 15px 5px; font-weight: 800; font-size: 14px; color: var(--text-main); cursor: pointer; transition: 0.2s; font-family: inherit;}
+    .btn-preset:hover, .btn-preset.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+
+    .step-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;}
+    .btn-step { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; font-weight: 700; font-size: 14px; color: var(--text-main); cursor: pointer; transition: 0.2s; text-align: left; display: flex; justify-content: space-between; align-items: center;}
+    .btn-step:hover { border-color: var(--primary); background: var(--bg-input); transform: translateY(-2px); box-shadow: var(--shadow-sm);}
+    .btn-step-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: block;}
+
+    /* Badges */
+    .bell-icon { position: relative; cursor: pointer; background: var(--bg-input); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main); border: 1px solid var(--border); }
+    .bell-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 10px; border: 2px solid #fff; display: none;}
+    .bell-icon.active .bell-badge { display: block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+    /* --- INVOICE MODAL SPECIFICS --- */
+    .invoice-paper { background: white; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #000; line-height: 1.5; border: 1px solid #ccc; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;}
+    .inv-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .inv-table th { border-bottom: 1px dashed #000; padding: 5px 2px; text-align: left; }
+    /* Added visual separation for invoice items */
+    .inv-table td { padding: 8px 2px; vertical-align: top; border-bottom: 1px dotted #ccc; }
+    .inv-table tr:last-child td { border-bottom: none; }
+    .inv-right { text-align: right !important; }
+    .inv-center { text-align: center !important; }
+    .inv-totals { border-top: 1px dashed #000; padding-top: 10px; }
+    .inv-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    @media print {
+        body * { visibility: hidden; }
+        #invoicePaper, #invoicePaper * { visibility: visible; }
+        #invoicePaper { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border: none; box-shadow: none; font-size: 10px;}
+    }
+
+    /* SCANNERS */
+    #barcodeScannerModal { z-index: 10000; }
+    #quaggaPreview { width: 100%; height: 250px; background: #000; border-radius: 12px; overflow: hidden; position: relative; }
+    .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 12px #10B981; animation: laser 2s infinite; }
+
+    /* TOAST */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; white-space: nowrap; }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    
+    /* Product Info Specifics */
+    .info-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
+    .info-detail-row:last-child { border-bottom: none; }
+    .info-detail-row span:first-child { color: var(--text-muted); font-weight: 600; }
+    .info-detail-row span:last-child { color: var(--text-main); font-weight: 700; text-align: right; }
+  </style>
+</head>
+<body class="lang-en">
+
+<datalist id="custSearchList"></datalist>
+
+<div id="menuOverlay" class="menu-overlay"></div>
+
+<div id="sideMenu" class="side-menu">
+  <div class="side-menu-brand">
+    <div class="side-menu-brand-text">Bharat<span>POS</span></div>
+    <button id="btnCloseMenu" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+  </div>
+  <div class="side-menu-links">
+    <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
+    <a href="billing.html" class="active-link"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
+    <a href="products.html"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
+    <a href="sales.html" class="billing-link"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
+    <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
+    <a href="customers.html"><i class="fa-solid fa-users"></i> <span class="lang-en">Bharat CRM</span><span class="lang-hinglish">Grahak (Customers)</span><span class="lang-hi">ग्राहक</span></a>
+    <a href="forecast.html"><i class="fa-solid fa-brain"></i> <span class="lang-en">DemandMitra AI</span><span class="lang-hinglish">AI Forecast</span><span class="lang-hi">AI भविष्यवाणी</span></a>
+  </div>
+</div>
+
+<nav class="navbar">
+  <div class="brand">
+    <button id="btnOpenMenu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+    <div class="brand-logo-wrap"><i class="fa-solid fa-cash-register"></i></div>
+    <div class="nav-breadcrumb">
+      <span>BharatPOS</span> <span style="color:var(--border-hover);">/</span> 
+      <strong>🛒 <span class="lang-en">Point of Sale</span><span class="lang-hinglish">Bill Counter</span><span class="lang-hi">बिल काउंटर</span></strong>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button id="btnLangToggle" class="btn btn-outline btn-icon-only" style="font-weight:800; padding:6px 10px; border-radius:8px;">A/अ</button>
+    <div id="btnOnlineOrders" class="bell-icon" title="Online Orders">
+        <i class="fa-solid fa-bell"></i>
+        <div class="bell-badge" id="onlineBadge">0</div>
+    </div>
+  </div>
+</nav>
+
+<div class="pos-container">
+    
+    <div class="left-pane">
+        <div class="catalog-header">
+            <div class="search-bar-wrapper">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="prodSearchInput" placeholder=" " autocomplete="off">
+                    <button id="btnOpenBarcode" class="barcode-btn" title="Scan Barcode">
+                        <i class="fa-solid fa-barcode" style="position:static; transform:none; color:inherit;"></i>
+                    </button>
+                    <label class="floating-label" style="left:38px; top:12px; background:none;">
+                        <span class="lang-en">Search products or scan...</span>
+                        <span class="lang-hinglish">Samaan dhundein...</span>
+                        <span class="lang-hi">सामान खोजें...</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="cat-filters">
+                <div class="cat-tabs-container" id="catTabs" style="display:flex; gap:8px;">
+                    <button class="cat-chip active" data-cat="ALL">All Items</button>
+                    </div>
+            </div>
+        </div>
+
+        <div class="product-grid" id="productGrid">
+            </div>
+    </div>
+
+    <div class="right-pane" id="rightPane">
+        <div class="cart-header" id="cartHeader">
+            <div style="width: 40px; height: 5px; background: #cbd5e1; border-radius: 10px; margin: 0 auto 10px; display: none;" id="mobileDragHandle"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h3 style="margin:0; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-basket-shopping" style="color:var(--primary);"></i> 
+                    <span class="lang-en">Current Bill</span><span class="lang-hinglish">Naya Bill</span><span class="lang-hi">नया बिल</span>
+                </h3>
+                <div style="display:flex; gap:5px;">
+                    <button id="btnHoldCart" class="btn btn-outline" style="padding:5px 10px; font-size:11px; border-radius:6px;" title="Save cart for later"><i class="fa-regular fa-circle-pause"></i> <span class="lang-en">Hold</span><span class="lang-hinglish">Rokein</span><span class="lang-hi">रोकें</span></button>
+                    <button id="btnViewHeld" class="btn btn-outline" style="padding:5px 10px; font-size:11px; border-radius:6px;" title="View held carts"><i class="fa-solid fa-list-ul"></i></button>
+                    <button id="btnCloseMobileCart" class="btn btn-outline" style="padding:5px 12px; font-size:14px; border-radius:6px; display:none; color:white; background:var(--danger); border:none;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="customer-selector-container">
+            <div class="customer-selector">
+                <input type="text" id="custNameInput" placeholder=" " autocomplete="off">
+                <label class="floating-label-mod">
+                    <span class="lang-en">Customer Name</span><span class="lang-hinglish">Grahak Ka Naam</span><span class="lang-hi">ग्राहक का नाम</span>
+                </label>
+                <div class="customer-dropdown" id="custNameDropdown"></div>
+            </div>
+            <div class="customer-selector">
+                <input type="text" id="custPhoneInput" placeholder=" " autocomplete="off">
+                <label class="floating-label-mod">
+                    <span class="lang-en">Mobile No.</span><span class="lang-hinglish">Mobile Number</span><span class="lang-hi">मोबाइल नंबर</span>
+                </label>
+                <div class="customer-dropdown" id="custPhoneDropdown"></div>
+            </div>
+        </div>
+
+        <div class="cart-items" id="cartItemsList">
+            <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+                <i class="fa-solid fa-cart-arrow-down" style="font-size:30px; opacity:0.3; margin-bottom:10px;"></i>
+                <div style="font-weight:600; font-size:14px;"><span class="lang-en">Cart is empty</span><span class="lang-hinglish">Cart khali hai</span><span class="lang-hi">कार्ट खाली है</span></div>
+                <div style="font-size:11px; margin-top:4px;">Tap products to add them here.</div>
+            </div>
+        </div>
+
+        <div class="cart-summary">
+            <div class="summary-row">
+                <span>Items: <span id="cartTotalItems">0</span></span>
+                <span>Subtotal: <span style="font-family:'JetBrains Mono';">₹</span><span id="cartSubtotal">0.00</span></span>
+            </div>
+            <div class="summary-row" id="cartGstRow" style="display:none; color:var(--warning);">
+                <span>Total GST:</span>
+                <span><span style="font-family:'JetBrains Mono';">₹</span><span id="cartTotalGst">0.00</span></span>
+            </div>
+            <div class="summary-row" style="color:var(--success);">
+                <span>Discount (₹):</span>
+                <input type="number" id="cartDiscountInput" style="width:80px; text-align:right; border:1px solid var(--success-soft); border-radius:6px; padding:4px 8px; outline:none; font-weight:700; color:var(--success);" placeholder="0">
+            </div>
+            <div class="summary-total">
+                <span>Grand Total:</span>
+                <span>₹<span id="cartGrandTotal">0.00</span></span>
+            </div>
+        </div>
+
+        <div style="padding: 10px 15px; background: #fff;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase;">Payment Mode</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <button id="modeCash" class="btn-mode active" data-mode="Cash">
+                    <i class="fa-solid fa-money-bill-wave"></i> <span class="lang-en">Cash</span><span class="lang-hinglish">Nagad</span><span class="lang-hi">नकद</span>
+                </button>
+                <button id="modeOnline" class="btn-mode" data-mode="Online">
+                    <i class="fa-solid fa-qrcode"></i> Online
+                </button>
+                <button id="modePartial" class="btn-mode" data-mode="Partial">
+                    <i class="fa-solid fa-calculator"></i> <span class="lang-en">Partial</span><span class="lang-hinglish">Mix Pay</span><span class="lang-hi">मिक्स</span>
+                </button>
+                <button id="modeUdhaar" class="btn-mode" data-mode="Udhaar">
+                    <i class="fa-solid fa-book-open"></i> <span class="lang-en">Udhaar</span><span class="lang-hinglish">Udhaar</span><span class="lang-hi">उधार</span>
+                </button>
+            </div>
+            <button id="btnGenerateBill" class="btn btn-primary" style="width:100%; padding:15px; font-size:15px; font-weight:800; box-shadow:0 6px 20px var(--primary-glow);">
+                <i class="fa-solid fa-check-circle"></i> <span class="lang-en">Create Bill</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाएं</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="mobileCartFab" class="mobile-cart-fab">
+    <i class="fa-solid fa-basket-shopping"></i>
+    <div class="mobile-cart-badge" id="mobileCartBadge">0</div>
+</div>
+
+<div id="addToCartModal" class="modal-overlay">
+    <div class="modal-box" style="border-radius:20px 20px 0 0;">
+        <div class="modal-header" style="background:var(--primary); color:white; border-radius:20px 20px 0 0; padding:15px 20px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button id="btnConfBack" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;display:none;"><i class="fa-solid fa-arrow-left"></i></button>
+                <h3 id="confProdName" style="margin:0; font-size:15px; font-weight:800;">Product Name</h3>
+            </div>
+            <button id="btnCloseConf" style="background:none;border:none;font-size:18px;cursor:pointer;color:white;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="background:#F8FBFF; padding:20px;">
+            
+            <h4 id="confStepTitle" style="margin-top:0; margin-bottom:15px; font-size:13px; color:var(--text-muted); text-transform:uppercase;">Select Option</h4>
+            
+            <div id="stepVariant" style="display:none;">
+                <div class="step-grid" id="confVariantGrid"></div>
+            </div>
+
+            <div id="stepBrand" style="display:none;">
+                <div class="step-grid" id="confBrandGrid"></div>
+            </div>
+
+            <div id="stepQty" style="display:none;">
+                <div style="background:#FFFFFF; padding:15px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px; box-shadow:var(--shadow-sm);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px dashed var(--border);">
+                        <span style="font-size:12px; font-weight:700; color:var(--text-muted);" id="confPriceLabel">Rate:</span>
+                        <span style="font-size:15px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';" id="confUnitPriceDisplay">₹0.00 / unit</span>
+                    </div>
+                    
+                    <div id="confPresetContainer">
+                        </div>
+
+                    <div class="form-group" style="margin-bottom:0; margin-top:15px;">
+                        <input type="number" id="confCustomQty" class="form-input" placeholder=" " style="font-size:20px; font-weight:800; text-align:center; color:var(--primary-dark);">
+                        <label class="floating-label-mod" id="confQtyLabel">Quantity</label>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:0 5px;">
+                    <span style="font-weight:700; color:var(--text-main); font-size:15px;">Total:</span>
+                    <span style="font-weight:800; color:var(--primary); font-size:24px; font-family:'JetBrains Mono';" id="confItemTotal">₹0.00</span>
+                </div>
+
+                <button type="button" id="btnConfirmAddToCart" class="btn btn-primary" style="font-size:15px; padding:15px; box-shadow: 0 8px 20px var(--primary-glow);"><i class="fa-solid fa-cart-plus"></i> <span class="lang-en">Add to Bill</span><span class="lang-hinglish">Bill Mein Jodein</span><span class="lang-hi">बिल में जोड़ें</span></button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div id="productInfoModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:400px; border-radius:20px 20px 0 0;">
+        <div class="modal-header" style="background:var(--primary); color:white; padding:15px 20px;">
+            <h3 id="infoName" style="margin:0; font-size:16px; font-weight:800;">Product Name</h3>
+            <button id="btnCloseInfo" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="background:#F8FBFF;">
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <span id="infoCat" style="background:#DBEAFE; color:var(--primary-dark); font-size:10px; font-weight:700; padding:4px 10px; border-radius:12px; text-transform:uppercase;">Category</span>
+                <span id="infoLoose" style="display:none; background:var(--purple); color:white; font-size:10px; font-weight:700; padding:4px 10px; border-radius:12px; text-transform:uppercase;">Loose / Weight</span>
+            </div>
+
+            <div style="background:white; border-radius:12px; padding:12px 15px; border:1px solid var(--border); margin-bottom:15px; box-shadow:var(--shadow-sm);">
+                <div style="font-size:10px; color:var(--primary); font-weight:700; margin-bottom:8px; text-transform:uppercase;">Accounting & Tax</div>
+                <div class="info-detail-row"><span>HSN Code:</span><span id="infoHSN">-</span></div>
+                <div class="info-detail-row"><span>GST Rate:</span><span id="infoGST">-</span></div>
+                <div class="info-detail-row" style="border:none; padding-bottom:0;"><span>Tax Type:</span><span id="infoTaxType" style="text-transform:capitalize;">-</span></div>
+            </div>
+
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; margin-bottom:8px; text-transform:uppercase; padding-left:5px;">Variants & Pricing</div>
+            <div id="infoVariantsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="partialPayModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:400px; border-radius:20px 20px 0 0;">
+        <div class="modal-header">
+            <h3 style="margin:0; font-size:15px; font-weight:800;"><i class="fa-solid fa-calculator" style="color:var(--primary);"></i> Partial / Mix Payment</h3>
+            <button id="btnClosePartial" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Grand Total To Pay</div>
+                <div style="font-size:28px; font-weight:800; color:var(--text-main); font-family:'JetBrains Mono';" id="partialGrandTotal">₹0.00</div>
+            </div>
+            
+            <div class="form-group">
+                <input type="number" id="payCash" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--success);">
+                <label class="floating-label-mod"><i class="fa-solid fa-money-bill-wave"></i> Cash Amount</label>
+            </div>
+            <div class="form-group">
+                <input type="number" id="payOnline" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--purple);">
+                <label class="floating-label-mod"><i class="fa-solid fa-qrcode"></i> Online (UPI/Card) Amount</label>
+            </div>
+            <div class="form-group" style="margin-bottom:25px;">
+                <input type="number" id="payUdhaar" class="form-input" placeholder=" " style="font-size:18px; font-weight:800; color:var(--danger);">
+                <label class="floating-label-mod"><i class="fa-solid fa-book-open"></i> Udhaar (Pending) Amount</label>
+            </div>
+
+            <button type="button" id="btnConfirmPartial" class="btn btn-primary" style="padding:16px; font-size:14px;"><i class="fa-solid fa-check-circle"></i> Save Mix Payment</button>
+        </div>
+    </div>
+</div>
+
+<div id="invoiceModal" class="modal-overlay" style="z-index: 10000; background:rgba(0,0,0,0.8);">
+    <div class="modal-box" style="max-width:380px; border-radius:0; max-height:100vh; overflow-y:auto; background:#f1f5f9; padding:20px;">
+        <div id="invoicePaper" class="invoice-paper">
+            </div>
+        <div class="no-print" style="display:flex; gap:10px; margin-top:15px;">
+            <button id="btnPrintInvoice" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-print"></i> Print</button>
+            <button id="btnCloseInvoice" class="btn btn-outline" style="flex:1;">New Bill</button>
+        </div>
+    </div>
+</div>
+
+<div id="heldCartsModal" class="modal-overlay">
+    <div class="modal-box" style="border-radius:20px 20px 0 0;">
+        <div class="modal-header">
+            <h3 style="margin:0; font-size:15px; font-weight:800;"><i class="fa-regular fa-circle-pause" style="color:var(--warning);"></i> Held Carts</h3>
+            <button id="btnCloseHeld" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="heldCartsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="onlineOrdersModal" class="modal-overlay">
+    <div class="modal-box" style="border-radius:20px 20px 0 0;">
+        <div class="modal-header">
+            <h3 style="margin:0; font-size:15px; font-weight:800;"><i class="fa-solid fa-bell" style="color:var(--primary);"></i> Online Orders</h3>
+            <button id="btnCloseOnline" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="onlineOrdersList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="barcodeScannerModal" class="modal-overlay" style="background:rgba(0,0,0,0.9); z-index:11000;">
+    <div style="background:#fff; border-radius:16px; padding:15px; width:90%; max-width:400px; text-align:center;">
+        <h4 style="margin-top:0; margin-bottom:10px; font-family:'Plus Jakarta Sans'; font-size:14px;"><i class="fa-solid fa-barcode"></i> Scan Barcode</h4>
+        <div id="quaggaPreview" style="width:100%; height:250px; background:#000; border-radius:10px; overflow:hidden; position:relative;">
+            <div class="scan-laser"></div>
+        </div>
+        <button type="button" class="btn btn-outline" style="margin-top:15px; width:100%;" id="btnCancelBarcode"><i class="fa-solid fa-xmark"></i> Cancel</button>
+    </div>
+</div>
+<style>@keyframes laser { 0% { top:0; opacity:0; } 10% { opacity:1; } 90% { opacity:1; } 100% { top:100%; opacity:0; } }</style>
+
+<div id="toast">✅ Action Successful</div>
 <script type="module">
 import { db } from "./bharatpos.js";
 import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -1194,3 +1733,6 @@ window.stopBarcodeScan = function() {
     document.getElementById('barcodeScannerModal').style.display = 'none';
 }
 </script>
+</script>
+</body>
+</html>
