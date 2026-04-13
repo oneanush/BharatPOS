@@ -1,3 +1,34 @@
+// --- MASTER DATABASE BRIDGE ---
+
+// Save data asynchronously
+window.dbSave = async function(key, data) {
+    try {
+        // We stringify it to keep it consistent with how localStorage behaved
+        await localforage.setItem(key, JSON.stringify(data));
+        return true;
+    } catch (err) {
+        console.error(`Database Error saving ${key}:`, err);
+        return false;
+    }
+};
+
+// Fetch data asynchronously
+window.dbGet = async function(key, defaultValue = '[]') {
+    try {
+        const value = await localforage.getItem(key);
+        // If it doesn't exist yet, return the default value
+        if (value === null) return JSON.parse(defaultValue);
+        
+        return JSON.parse(value);
+    } catch (err) {
+        console.error(`Database Error reading ${key}:`, err);
+        return JSON.parse(defaultValue);
+    }
+};
+
+
+
+
 // ==========================================================
 // 🟢 1. FIREBASE SDK INITIALIZATION
 // ==========================================================
