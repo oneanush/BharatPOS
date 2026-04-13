@@ -31,7 +31,7 @@
     }
 
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-    body { background: linear-gradient(135deg, #EAF2FF 0%, #C7DDFF 100%); background-attachment: fixed; color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 80px; min-height: 100vh; overflow-x: hidden;}
+    body { background: linear-gradient(135deg, #EAF2FF 0%, #C7DDFF 100%); background-attachment: fixed; color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 80px; min-height: 100vh; overflow-x: hidden; transition: all 0.3s ease;}
 
     /* --- HAMBURGER MENU --- */
     .menu-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s; }
@@ -54,26 +54,26 @@
     .brand-logo-wrap { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #1976D2, #1565C0); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(25,118,210,0.3); }
     .brand-logo-wrap i { color: #fff; font-size: 15px; }
 
-    /* --- LAYOUT & CARDS --- */
-    .container { max-width: 1200px; margin: 28px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 24px; }
+    /* --- LAYOUT & CARDS (Fluid Shrinkable) --- */
+    .container { width: 100%; max-width: 1200px; margin: 28px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 24px; transition: all 0.3s ease; }
     
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-    .kpi-card { background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 20px; position: relative; overflow: hidden; box-shadow: var(--shadow-sm); transition: 0.2s; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; transition: all 0.3s ease;}
+    .kpi-card { background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 20px; position: relative; overflow: hidden; box-shadow: var(--shadow-sm); transition: 0.3s ease; }
     .kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-    .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700; display:flex; justify-content:space-between; }
-    .kpi-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 10px; letter-spacing: -1px; }
+    .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700; display:flex; justify-content:space-between; transition: 0.3s ease;}
+    .kpi-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 10px; letter-spacing: -1px; transition: 0.3s ease;}
     .kpi-icon { font-size: 16px; }
     .kpi-border { position:absolute; bottom:0; left:0; height:4px; width:100%; }
 
     /* --- REPORT PANEL --- */
-    .report-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); }
-    .report-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FBFF; flex-wrap: wrap; gap: 15px;}
+    .report-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); transition: 0.3s ease;}
+    .report-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FBFF; flex-wrap: wrap; gap: 15px; transition: 0.3s ease;}
     .report-title-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
     .report-title { font-size: 16px; font-weight: 800; color: var(--text-main); }
     
     /* Date Filters */
     .date-filter-group { display: flex; align-items: center; gap: 8px; }
-    .date-input { background: #fff; border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-family: inherit; font-weight: 600; outline: none; cursor: pointer; transition: 0.2s;}
+    .date-input { background: #fff; border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-family: inherit; font-weight: 600; outline: none; cursor: pointer; transition: 0.2s; width: 100%; max-width: 140px;}
     .date-input:focus { border-color: var(--primary); }
 
     /* Sync Indicator */
@@ -86,26 +86,41 @@
     .btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; font-family: inherit; }
     .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: 0 4px 14px var(--primary-glow); }
     .btn-primary:active { transform: scale(0.97); }
+    .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text-main); }
+    .btn-outline:hover { background: var(--bg-input); border-color: var(--primary); color: var(--primary); }
 
     /* --- DATA TABLE --- */
-    .table-responsive { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 800px; }
-    th { text-align: left; padding: 16px 20px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1.5px solid var(--border); font-weight: 800; white-space: nowrap; background: #fff;}
-    td { padding: 16px 20px; color: var(--text-main); font-size: 14px; border-bottom: 1px solid var(--bg-input); vertical-align: middle; font-weight: 600; }
+    .table-responsive { overflow-x: auto; width: 100%; }
+    table { width: 100%; border-collapse: collapse; min-width: 650px; }
+    th { text-align: left; padding: 16px 20px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1.5px solid var(--border); font-weight: 800; white-space: nowrap; background: #fff; transition: 0.3s ease;}
+    td { padding: 16px 20px; color: var(--text-main); font-size: 14px; border-bottom: 1px solid var(--bg-input); vertical-align: middle; font-weight: 600; transition: 0.3s ease;}
     .text-right { text-align: right; }
     
     .sale-row { cursor: pointer; transition: background 0.2s; position: relative; background: #fff;}
     .sale-row:hover { background: var(--bg-input); }
     .trend-bg { position: absolute; right: 0; top: 15%; height: 70%; background: var(--primary-soft); z-index: 0; pointer-events: none; border-radius: 4px 0 0 4px; transition: width 1s ease-out; width: 0; }
-    .money-cell { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--success); position: relative; z-index: 1; }
+    .money-cell { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--success); position: relative; z-index: 1; transition: 0.3s ease;}
     
     .details-row { display: none; background: #F8FAFC; box-shadow: inset 0 4px 10px rgba(0,0,0,0.02); }
     .details-row.active { display: table-row; }
-    .details-content { padding: 20px; border-left: 4px solid var(--primary); animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .details-content { padding: 20px; border-left: 4px solid var(--primary); animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); transition: 0.3s ease;}
     .product-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .product-chip { background: #fff; border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-main); font-weight: 700; box-shadow: var(--shadow-sm);}
+    .product-chip { background: #fff; border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-main); font-weight: 700; box-shadow: var(--shadow-sm); transition: 0.3s ease;}
     .chip-qty { background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- 🌟 COMPACT MODE STYLES (The Shrink Feature) --- */
+    body.compact-mode .container { max-width: 100%; margin: 10px auto; padding: 0 10px; gap: 12px; }
+    body.compact-mode .kpi-card { padding: 12px 16px; border-radius: 8px; }
+    body.compact-mode .kpi-value { font-size: 20px; margin-top: 4px; }
+    body.compact-mode .kpi-label { font-size: 10px; }
+    body.compact-mode .report-header { padding: 12px 16px; gap: 10px;}
+    body.compact-mode .report-title { font-size: 14px; }
+    body.compact-mode th, body.compact-mode td { padding: 10px 12px; font-size: 12px; }
+    body.compact-mode .money-cell { font-size: 13px; }
+    body.compact-mode .date-input, body.compact-mode .btn { padding: 6px 10px; font-size: 11px; }
+    body.compact-mode .details-content { padding: 12px; border-left-width: 3px; }
+    body.compact-mode .product-chip { padding: 5px 10px; font-size: 11px; }
 
     /* MOBILE LIST FALLBACK */
     @media (max-width: 768px) {
@@ -120,15 +135,15 @@
       td:nth-child(2)::before { content: "Bills: "; }
       td:nth-child(3) { grid-column: 2; text-align: right; font-size: 12px; color: var(--text-muted); }
       td:nth-child(3)::before { content: "Items: "; }
-      td:nth-child(4) { display: none; } /* Hide Gross on mobile to save space */
-      td:nth-child(5) { display: none; } /* Hide GST on mobile to save space */
+      td:nth-child(4) { display: none; }
+      td:nth-child(5) { display: none; }
       .details-row.active { display: block; }
       .details-content { padding: 15px; border-radius: 0 0 12px 12px; border-left: none; border-top: 4px solid var(--primary); background: #F8FAFC;}
     }
 
     /* --- MODALS --- */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-    .modal-content { background: #fff; width: 100%; max-width: 400px; border-radius: var(--radius-lg); padding: 25px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.15); display: flex; flex-direction: column; animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; }
+    .modal-content { background: #fff; width: 100%; max-width: 400px; border-radius: var(--radius-lg); padding: 25px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.15); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
     @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     
     .export-actions { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px;}
@@ -174,25 +189,25 @@
         <div class="kpi-label">Net Collected <i class="fa-solid fa-money-bill-wave" style="color:var(--success);"></i></div>
         <div class="kpi-value" id="kpiNetRev">₹0</div>
         <div class="kpi-border" style="background: var(--success);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Cash + Online Only</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">Cash + Online Only</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total GST Collected <i class="fa-solid fa-receipt" style="color:var(--warning);"></i></div>
         <div class="kpi-value" id="kpiGST">₹0</div>
         <div class="kpi-border" style="background: var(--warning);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">CGST + SGST</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">CGST + SGST</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Gross Sales <i class="fa-solid fa-chart-line" style="color:var(--primary);"></i></div>
         <div class="kpi-value" id="kpiGrossRev">₹0</div>
         <div class="kpi-border" style="background: var(--primary);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Includes Pending Udhaar</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">Includes Pending Udhaar</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total Bills <i class="fa-solid fa-hashtag" style="color:var(--purple);"></i></div>
         <div class="kpi-value" id="kpiBills">0</div>
         <div class="kpi-border" style="background: var(--purple);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">In selected period</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">In selected period</div>
       </div>
     </div>
 
@@ -213,9 +228,14 @@
             
             <div id="syncStatus" class="sync-status"><span class="sync-dot"></span> <span id="syncText">Syncing...</span></div>
         </div>
-        <button class="btn btn-primary" onclick="document.getElementById('exportModal').style.display='flex'">
-            <i class="fa-solid fa-download"></i> Export Center
-        </button>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline" id="btnToggleCompact" title="Toggle Compact View">
+                <i class="fa-solid fa-compress"></i>
+            </button>
+            <button class="btn btn-primary" onclick="document.getElementById('exportModal').style.display='flex'">
+                <i class="fa-solid fa-download"></i> Export
+            </button>
+        </div>
       </div>
       <div class="table-responsive">
           <table id="reportsTable">
@@ -259,7 +279,7 @@ window.db = db;
 window.allSales = [];
 
 // --- UTILS ---
-function formatCurrency(n){ return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+function formatCurrency(n){ return '₹' + Number(n || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
 
 function animateValue(obj, start, end, duration, isCurrency=false) {
   if(!obj) return;
@@ -267,8 +287,8 @@ function animateValue(obj, start, end, duration, isCurrency=false) {
   const step = (timestamp) => {
     if (!startTimestamp) startTimestamp = timestamp;
     const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    const val = Math.floor(progress * (end - start) + start);
-    obj.innerHTML = isCurrency ? formatCurrency(val) : val;
+    const val = (progress * (end - start) + start);
+    obj.innerHTML = isCurrency ? formatCurrency(val) : Math.floor(val);
     if (progress < 1) { window.requestAnimationFrame(step); }
   };
   window.requestAnimationFrame(step);
@@ -276,29 +296,43 @@ function animateValue(obj, start, end, duration, isCurrency=false) {
 
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", () => {
-    // Menu Binds
     document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
     document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
     document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
     
-    // Export Binds
     document.getElementById('btnExportExcel').addEventListener('click', window.exportExcel);
     document.getElementById('btnExportPDF').addEventListener('click', window.exportPDF);
 
-    // Modal Background Clicks
+    // Compact Mode Toggle
+    document.getElementById('btnToggleCompact').addEventListener('click', () => {
+        document.body.classList.toggle('compact-mode');
+        const icon = document.querySelector('#btnToggleCompact i');
+        if(document.body.classList.contains('compact-mode')) {
+            icon.className = 'fa-solid fa-expand';
+            localStorage.setItem('reports_compact', 'true');
+        } else {
+            icon.className = 'fa-solid fa-compress';
+            localStorage.setItem('reports_compact', 'false');
+        }
+    });
+
+    if(localStorage.getItem('reports_compact') === 'true') {
+        document.body.classList.add('compact-mode');
+        document.querySelector('#btnToggleCompact i').className = 'fa-solid fa-expand';
+    }
+
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) overlay.style.display = 'none';
         });
     });
 
-    // Date Filters Init
     const today = new Date();
     const startInput = document.getElementById('startDate');
     const endInput = document.getElementById('endDate');
     
     endInput.valueAsDate = today;
-    startInput.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1); // 1st of month
+    startInput.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
 
     startInput.addEventListener('change', window.renderReports);
     endInput.addEventListener('change', window.renderReports);
@@ -319,13 +353,11 @@ async function loadSalesFromCloud() {
 
     let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
 
-    // Load available branches
     if (typeof window.loadOwnedShops === 'function' && mobile) {
         const fetchedShops = await window.loadOwnedShops(mobile);
         if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
     }
 
-    // Setup Multi-Branch UI Filter
     const branchFilter = document.getElementById('filterBranch');
     if (shops.length > 1) {
         branchFilter.style.display = 'inline-block';
@@ -334,11 +366,9 @@ async function loadSalesFromCloud() {
         branchFilter.addEventListener('change', window.renderReports);
     }
 
-    // Quick load from local cache
     window.allSales = JSON.parse(localStorage.getItem('bharatpos_enterprise_sales') || localStorage.getItem('bharatpos_sales') || '[]');
     if(window.allSales.length > 0) window.renderReports();
 
-    // Fetch Master Enterprise Data
     if (window.db && navigator.onLine) {
         try {
             let allEnterpriseSales = [];
@@ -382,7 +412,7 @@ function groupSalesByDate() {
   const branchFilter = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : 'all';
 
   sales.forEach(sale => {
-    if(branchFilter !== 'all' && sale._branchId !== branchFilter) return;
+    if(branchFilter !== 'all' && sale._branchId !== branchFilter && sale.merchantId !== branchFilter) return;
 
     const saleDateObj = new Date(sale.date);
     if(saleDateObj < startD || saleDateObj > endD) return;
@@ -461,9 +491,9 @@ window.renderReports = function(){
     if(d.netCollected > maxDailyNet) maxDailyNet = d.netCollected;
   });
 
-  animateValue(document.getElementById('kpiNetRev'), 0, totalNet, 1500, true);
-  animateValue(document.getElementById('kpiGrossRev'), 0, totalGross, 1500, true);
-  animateValue(document.getElementById('kpiGST'), 0, totalTax, 1500, true);
+  animateValue(document.getElementById('kpiNetRev'), 0, totalNet, 1000, true);
+  animateValue(document.getElementById('kpiGrossRev'), 0, totalGross, 1000, true);
+  animateValue(document.getElementById('kpiGST'), 0, totalTax, 1000, true);
   animateValue(document.getElementById('kpiBills'), 0, totalBills, 1000);
 
   if(sortedDates.length === 0){
@@ -561,7 +591,7 @@ window.exportPDF = function() {
     
     doc.setFontSize(10); 
     doc.setTextColor(100, 100, 100);
-
+    
     const branchFilter = document.getElementById('filterBranch');
     const filterText = branchFilter && branchFilter.value !== 'all' ? branchFilter.options[branchFilter.selectedIndex].text : 'All Branches';
 
@@ -630,7 +660,6 @@ async function handleAISnapshot(data, totalNet, totalGross, totalTax) {
 
     const snapshot = getReportsSnapshot(data, totalNet, totalGross, totalTax, user);
     
-    // Hash to prevent unnecessary writes
     const contentToHash = JSON.stringify({ revenue: snapshot.net_collected_revenue, history: snapshot.daily_history });
     const snapshotHash = hashStringDjb2(contentToHash);
     const lastHash = localStorage.getItem('bharatpos_last_sent_reports_snapshot_hash');
@@ -638,12 +667,10 @@ async function handleAISnapshot(data, totalNet, totalGross, totalTax) {
     if (lastHash !== snapshotHash) {
        updateSyncStatus('syncing');
 
-       // 1. Write aggregated summary directly to the Shop Document
        const firebasePromise = updateDoc(doc(db, "shops", user.merchantId), {
            auditData: snapshot
        }).catch(e => console.error("Firebase Audit Sync failed:", e));
 
-       // 2. AI MICROSERVICE
        const consultUrl = window.buildUrl ? window.buildUrl('/ai-business-consult') : 'https://server-xy7s.onrender.com/ai-business-consult';
        const renderPromise = fetch(consultUrl, { 
            method: 'POST', 
@@ -668,7 +695,7 @@ function getReportsSnapshot(groupedData, netTotal, grossTotal, taxTotal, user) {
   
   const dateEntries = dates.map(date => {
     const d = groupedData[date];
-    const products = Object.entries(d.products || {}).map(([name, qty])=>({ name, qty: Number(qty) })).slice(0, 10); // Top 10 items per day for AI
+    const products = Object.entries(d.products || {}).map(([name, qty])=>({ name, qty: Number(qty) })).slice(0, 10);
     return { 
         date, 
         net_collected: Number(d.netCollected || 0), 
