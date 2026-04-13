@@ -177,7 +177,7 @@
     .barcode-modal-content { background: #fff; border-radius: var(--radius-md); padding: 15px; width: 90%; max-width: 400px; text-align: center; }
 
     /* --- TOAST & GLOBAL HINT BAR --- */
-    #toast { position: fixed; bottom: 28px; right: 28px; background: var(--success); color: white; padding: 13px 22px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; max-width: 340px; }
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; max-width: 340px; }
     #toast.show { transform: translateY(0); opacity: 1; }
 
     #globalHintBar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0F172A; color: #fff; padding: 10px 20px; border-radius: 100px; font-size: 12.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 11000; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;}
@@ -719,18 +719,23 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.className = `lang-${savedLang}`;
 
         // ── MULTI-BRANCH INIT ──
-        if(typeof window.initShopSwitcher === 'function') {
-            window.initShopSwitcher().then(shops => {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        if(typeof window.loadOwnedShops === 'function') {
+            window.loadOwnedShops(user.mobile || user.phone).then(shops => {
                 if(shops && shops.length > 1) {
                     const switcher = document.getElementById('shopSwitcher');
                     switcher.style.display = 'inline-block';
-                    document.getElementById('btnTransferFromModal').style.display = 'inline-flex'; // Show transfer option
+                    document.getElementById('btnTransferFromModal').style.display = 'inline-flex';
                     
-                    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-                    switcher.value = user.merchantId;
+                    switcher.innerHTML = shops.map(s => 
+                        `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
+                            ${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
+                        </option>`
+                    ).join('');
+                    
+                    switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
                 }
             });
-            document.getElementById('shopSwitcher').addEventListener('change', (e) => window.switchActiveShop(e.target.value));
         }
 
         // ── TUTORIAL INIT ──
@@ -1010,6 +1015,8 @@ function bindAllEvents() {
         });
     });
 }
+
+function escapeHtml(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; }
 
 // ─── UTILITY ──────────────────────────────────────────────────────────────────
 function toggleMenu() {
@@ -1602,7 +1609,7 @@ function setupIntersectionObserver() {
 }
 
 // ─── 360 PRODUCT DETAILS MODAL ────────────────────────────────────────────────
-function openProductDetails(id) {
+window.openProductDetails = function(id) {
     const base = window.allProducts.find(p => p.id === id);
     if (!base) return;
 
@@ -1778,7 +1785,7 @@ function searchMasterDB() {
     `).join('');
 }
 
-function importMasterProduct(p) {
+window.importMasterProduct = function(p) {
     document.getElementById('masterCatalogModal').style.display = 'none';
     document.getElementById('pName').value     = p.name     || '';
     document.getElementById('pCategory').value = p.category || '';
@@ -1966,9 +1973,7 @@ async function captureAndSendToAI() {
 }
 
 // ─── MULTI-BRANCH STOCK TRANSFER ──────────────────────────────────────────────
-import { getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-function openTransferModal() {
+window.openTransferModal = function() {
     const base = window.allProducts.find(p => p.id === window.currentDetailId);
     if(!base) return;
 
@@ -1990,7 +1995,7 @@ function openTransferModal() {
     document.getElementById('transferStockModal').style.display = 'flex';
 }
 
-async function submitStockTransfer() {
+window.submitStockTransfer = async function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const targetBranch = document.getElementById('transferTargetBranch').value;
     const variantId = document.getElementById('transferVariant').value;
