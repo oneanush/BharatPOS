@@ -12,6 +12,52 @@
 <script type="module" src="bharatpos.js"></script>
  <link rel="stylesheet" href="bharatpos.css">
  <style>
+
+   /* ═══════════════════════════════════════════════════════════
+       NAVBAR (AI Page Specific)
+    ═══════════════════════════════════════════════════════════ */
+    .global-logo {
+      width: 36px; 
+      height: 36px; 
+      border-radius: 50%;
+      border: 2px solid var(--blue-600);
+      box-shadow: 0 4px 10px rgba(25,118,210,0.2);
+      object-fit: cover;
+    }
+
+    .nav-links { 
+      display: flex; 
+      gap: 6px; 
+      align-items: center; 
+    }
+    
+    .nav-links a {
+      color: var(--slate-700); 
+      text-decoration: none;
+      font-size: 13px; 
+      font-weight: 700;
+      padding: 8px 16px; 
+      border-radius: 10px;
+      font-family: var(--font-body);
+      transition: all 0.22s ease;
+      border: 1.5px solid transparent;
+      background: transparent;
+    }
+    
+    .nav-links a:hover { 
+      color: var(--blue-600); 
+      background: var(--blue-50); 
+      border-color: var(--blue-200);
+    }
+
+    /* Navbar Mobile Fix */
+    @media (max-width: 640px) {
+      .nav-links a { padding: 6px 10px; font-size: 12px; }
+      .brand { font-size: 16px; }
+      .global-logo { width: 30px; height: 30px; }
+    }
+
+   
     /* ═══════════════════════════════════════════════════════════
        ANIMATED BACKGROUND BLOBS (Performance Optimized)
     ═══════════════════════════════════════════════════════════ */
