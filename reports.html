@@ -73,7 +73,7 @@
     
     /* Date Filters */
     .date-filter-group { display: flex; align-items: center; gap: 8px; }
-    .date-input { background: #fff; border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-family: inherit; font-weight: 600; outline: none; cursor: pointer; }
+    .date-input { background: #fff; border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-family: inherit; font-weight: 600; outline: none; cursor: pointer; transition: 0.2s;}
     .date-input:focus { border-color: var(--primary); }
 
     /* Sync Indicator */
@@ -127,8 +127,8 @@
     }
 
     /* --- MODALS --- */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; }
-    .modal-content { background: #fff; width: 100%; max-width: 400px; border-radius: var(--radius-lg); padding: 25px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.15); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .modal-content { background: #fff; width: 100%; max-width: 400px; border-radius: var(--radius-lg); padding: 25px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.15); display: flex; flex-direction: column; animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
     @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     
     .export-actions { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px;}
@@ -201,6 +201,10 @@
         <div class="report-title-group">
             <div class="report-title">📊 Daily Aggregates</div>
             
+            <select id="filterBranch" class="date-input" style="display:none; font-weight:800; color:var(--primary); border-color:var(--primary); background:var(--primary-soft);">
+                <option value="all">🌍 All Branches</option>
+            </select>
+
             <div class="date-filter-group">
                 <input type="date" id="startDate" class="date-input">
                 <span style="color:var(--text-muted); font-size:12px; font-weight:700;">TO</span>
@@ -238,7 +242,7 @@
               <button onclick="document.getElementById('exportModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
           </div>
           <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.5;">
-              Export your aggregated daily summaries. The date range selected on the main screen will be applied.
+              Export your aggregated daily summaries. The date range and branch filter selected on the main screen will be applied.
           </p>
           <div class="export-actions">
               <button id="btnExportExcel" class="btn-action btn-excel"><i class="fa-solid fa-file-excel"></i> Download Excel</button>
@@ -249,9 +253,10 @@
 
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 window.db = db;
+window.allSales = [];
 
 // --- UTILS ---
 function formatCurrency(n){ return '₹' + Number(n || 0).toLocaleString('en-IN'); }
@@ -295,10 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
     endInput.valueAsDate = today;
     startInput.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1); // 1st of month
 
-    startInput.addEventListener('change', renderReports);
-    endInput.addEventListener('change', renderReports);
+    startInput.addEventListener('change', window.renderReports);
+    endInput.addEventListener('change', window.renderReports);
 
-    renderReports();
+    loadSalesFromCloud();
 });
 
 function toggleMenu() {
@@ -307,17 +312,80 @@ function toggleMenu() {
     overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
 }
 
-// --- DATA PROCESSING (Singularity + Splits) ---
-function groupSalesByDate(){
-  const sales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
+// ─── MULTI-BRANCH DATA ENGINE ────────────────────────────────────────────────
+async function loadSalesFromCloud() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const mobile = user.mobile || user.phone;
+
+    let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
+
+    // Load available branches
+    if (typeof window.loadOwnedShops === 'function' && mobile) {
+        const fetchedShops = await window.loadOwnedShops(mobile);
+        if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
+    }
+
+    // Setup Multi-Branch UI Filter
+    const branchFilter = document.getElementById('filterBranch');
+    if (shops.length > 1) {
+        branchFilter.style.display = 'inline-block';
+        branchFilter.innerHTML = '<option value="all">🌍 All Branches</option>' + 
+            shops.map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
+        branchFilter.addEventListener('change', window.renderReports);
+    }
+
+    // Quick load from local cache
+    window.allSales = JSON.parse(localStorage.getItem('bharatpos_enterprise_sales') || localStorage.getItem('bharatpos_sales') || '[]');
+    if(window.allSales.length > 0) window.renderReports();
+
+    // Fetch Master Enterprise Data
+    if (window.db && navigator.onLine) {
+        try {
+            let allEnterpriseSales = [];
+            
+            const fetchPromises = shops.map(async (shop) => {
+                if(!shop.merchantId) return;
+                try {
+                    const salesRef = collection(db, "shops", shop.merchantId, "sales");
+                    const snap = await getDocs(salesRef);
+                    snap.forEach(doc => {
+                        let data = doc.data();
+                        data._branchId = shop.merchantId;
+                        data._branchName = shop.shopName;
+                        allEnterpriseSales.push(data);
+                    });
+                } catch(e) { console.warn(`Failed fetching sales for branch: ${shop.shopName}`); }
+            });
+            
+            await Promise.all(fetchPromises);
+            
+            allEnterpriseSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+            window.allSales = allEnterpriseSales;
+            
+            localStorage.setItem('bharatpos_enterprise_sales', JSON.stringify(window.allSales));
+            
+            window.renderReports();
+        } catch (e) {
+            console.warn("Enterprise Fetch Error", e);
+        }
+    }
+}
+
+// --- DATA PROCESSING (Singularity + Splits + Multi-Branch) ---
+function groupSalesByDate() {
+  const sales = window.allSales || [];
   const grouped = {};
   
   const startD = new Date(document.getElementById('startDate').value); startD.setHours(0,0,0,0);
   const endD = new Date(document.getElementById('endDate').value); endD.setHours(23,59,59,999);
+  
+  const branchFilter = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : 'all';
 
   sales.forEach(sale => {
+    if(branchFilter !== 'all' && sale._branchId !== branchFilter) return;
+
     const saleDateObj = new Date(sale.date);
-    if(saleDateObj < startD || saleDateObj > endD) return; // Filter out
+    if(saleDateObj < startD || saleDateObj > endD) return;
 
     let rawDate = sale.date || new Date().toISOString();
     const d = rawDate.substring(0, 10); 
@@ -333,16 +401,13 @@ function groupSalesByDate(){
         collected = gross;
     }
 
-    // Settled Udhaar check
     if(sale.isPaid && sale.settledDate) {
         const setStr = new Date(sale.settledDate).toISOString().substring(0, 10);
         if(setStr === d && rawDate.substring(0,10) !== d) {
-            // Settled on this date but billed previously
             collected += (pMode === 'Partial' && sale.split) ? Number(sale.split.udhaar) : gross;
         }
     }
 
-    // Tax Math
     let tax = 0;
     (sale.items || []).forEach(item => {
        let amt = Number(item.total || (item.price * item.qty) || 0);
@@ -447,7 +512,6 @@ window.renderReports = function(){
 
   tableBody.innerHTML = historyHtml;
   
-  // TRIGGER AI SNAPSHOT & FIREBASE SYNC
   handleAISnapshot(data, totalNet, totalGross, totalTax);
 }
 
@@ -497,7 +561,11 @@ window.exportPDF = function() {
     
     doc.setFontSize(10); 
     doc.setTextColor(100, 100, 100);
-    doc.text(`Business Name: ${shopName}`, 14, 22);
+
+    const branchFilter = document.getElementById('filterBranch');
+    const filterText = branchFilter && branchFilter.value !== 'all' ? branchFilter.options[branchFilter.selectedIndex].text : 'All Branches';
+
+    doc.text(`Business Name: ${shopName} (${filterText})`, 14, 22);
     doc.text(`Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}`, 14, 27);
     
     const tableData = sortedDates.map(date => {
