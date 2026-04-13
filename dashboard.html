@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Enterprise Command Center - BharatPOS</title>
+  <title>Main Dashboard - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -53,8 +53,16 @@
     .btn-nav { background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border); width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-main); cursor: pointer; transition: 0.2s; backdrop-filter: blur(10px); flex-shrink: 0;}
     .btn-nav:hover { background: #fff; color: var(--primary); transform: translateY(-2px); }
     .btn-nav.primary { background: var(--primary); color: white; border: none; box-shadow: 0 4px 10px rgba(37,99,235,0.3); }
-    .btn-bill { background: var(--success); color: white; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; border: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(5,150,105,0.3); cursor: pointer; transition: 0.2s; white-space: nowrap;}
-    .btn-bill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,150,105,0.4); }
+    
+    .btn-bill-nav { background: var(--success); color: white; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; border: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(5,150,105,0.3); cursor: pointer; transition: 0.2s; white-space: nowrap;}
+    .btn-bill-nav:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,150,105,0.4); }
+
+    /* --- GIANT BILL BUTTON --- */
+    .giant-bill-btn {
+        width: 100%; padding: 18px; border-radius: 16px; background: linear-gradient(135deg, var(--success), #0F766E); color: white; border: none; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 25px rgba(5,150,105,0.3); display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; margin-bottom: 20px;
+    }
+    .giant-bill-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(5,150,105,0.4); }
+    .giant-bill-btn:active { transform: scale(0.98); }
 
     /* --- SIDE MENU --- */
     .side-menu { position: fixed; top: 0; left: -290px; width: 280px; height: 100vh; background: #FFFFFF; z-index: 9999; transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1); padding: 24px 20px; box-shadow: 12px 0 40px rgba(37,99,235,0.12); border-right: 1px solid var(--border); overflow-y: auto; }
@@ -70,7 +78,7 @@
     .side-menu-links i { width: 18px; text-align: center; font-size: 14px; }
 
     /* --- LAYOUT --- */
-    .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 10px; display: flex; flex-direction: column; gap: 20px; }
+    .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 10px; display: flex; flex-direction: column; gap: 15px; }
     @media(min-width: 600px) { .container { padding: 0 15px; } }
     .header-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 5px; padding: 0 5px;}
     .welcome-title { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.5px;}
@@ -139,9 +147,9 @@
     .audit-log { position: relative; padding-left: 12px; border-left: 2px solid var(--border-hover); margin-left: 5px; }
     .audit-item { position: relative; margin-bottom: 12px; }
     .audit-item::before { content: ''; position: absolute; left: -17px; top: 2px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 5px var(--primary); }
-    .audit-time { font-size: 9px; color: var(--primary); font-weight: 800; margin-bottom: 2px; }
-    .audit-text { font-size: 11px; color: var(--text-main); font-weight: 600; line-height: 1.4; }
-    .audit-user { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+    .audit-time { font-size: 10px; color: var(--primary); font-weight: 800; margin-bottom: 2px; }
+    .audit-text { font-size: 12px; color: var(--text-main); font-weight: 600; line-height: 1.4; }
+    .audit-user { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
     /* --- UDHAAR KHATA VIEW --- */
     #udhaarView { display: none; animation: fadeIn 0.4s ease; }
@@ -172,6 +180,7 @@
     .btn-close { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; transition: 0.2s;}
     .btn-close:hover { color: var(--danger); }
     
+    /* Map Specifics */
     #shopMap { width: 100%; height: 250px; border-radius: 12px; background: #e2e8f0; z-index: 1; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);}
     @media(min-width: 600px) { #shopMap { height: 300px; } }
     
@@ -222,8 +231,8 @@
     <button id="btnCloseMenu" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; line-height:1;">&times;</button>
   </div>
   <div class="side-menu-links">
-    <a href="dashboard.html" class="active-link"><i class="fa-solid fa-chart-pie"></i> Command Center</a>
-    <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> Bill Banao</a>
+    <a href="dashboard.html" class="active-link"><i class="fa-solid fa-chart-pie"></i> Main Dashboard</a>
+    <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> Bill</a>
     <a href="products.html"><i class="fa-solid fa-box-open"></i> Inventory / Stock</a>
     <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
     <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> Finance HQ</a>
@@ -237,16 +246,16 @@
   <div class="brand">
     <button class="menu-btn" id="btnOpenMenu"><i class="fa-solid fa-bars"></i></button>
     <img src="logo.png" class="brand-icon" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%231976D2\'/><text x=\'50\' y=\'65\' font-family=\'Arial\' font-size=\'40\' fill=\'white\' text-anchor=\'middle\'>B</text></svg>'">
-    <span style="display:none; @media(min-width:480px){display:inline;}">Enterprise HQ</span>
+    <span style="display:none; @media(min-width:480px){display:inline;}">BharatPOS</span>
   </div>
   
   <div class="nav-actions">
     <select id="shopSwitcher" class="shop-switcher">
       <option value="all">🌍 All Branches</option>
     </select>
-    <button id="btnAddBranch" class="btn-nav primary" title="Add New Branch"><i class="fa-solid fa-plus"></i></button>
+    <button id="btnAddBranchNav" class="btn-nav primary" title="Add New Branch"><i class="fa-solid fa-plus"></i></button>
     <button id="btnViewMap" class="btn-nav" title="View Map" style="display:none;"><i class="fa-solid fa-map-location-dot"></i></button>
-    <button class="btn-bill" onclick="window.location.href='billing.html'"><i class="fa-solid fa-cash-register"></i> POS</button>
+    <button class="btn-bill-nav" onclick="window.location.href='billing.html'"><i class="fa-solid fa-file-invoice"></i> Bill</button>
   </div>
 </nav>
 
@@ -254,33 +263,43 @@
     
     <div class="header-row">
         <div>
-            <h1 class="welcome-title" id="greetingDisplay">Command Center</h1>
+            <h1 class="welcome-title" id="greetingDisplay">Main Dashboard</h1>
             <div class="welcome-sub" id="dateDisplay">Loading...</div>
         </div>
-        <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; background: rgba(255,255,255,0.5); padding: 5px 10px; border-radius: 20px; border: 1px solid var(--glass-border);">
-            <i class="fa-solid fa-grip-vertical"></i> Drag widgets to customize
+        <div style="display:flex; gap:10px; align-items:center;">
+            <select id="kpiTimeFilter" class="shop-switcher" style="background: var(--primary); color: white; border: none; font-weight:800; padding: 8px 16px;">
+                <option value="today">📅 Today</option>
+                <option value="month">📅 This Month</option>
+                <option value="all">📅 All Time</option>
+            </select>
         </div>
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        <button onclick="window.location.href='billing.html'" class="giant-bill-btn">
+            <i class="fa-solid fa-cash-register" style="font-size: 20px;"></i> Naya Bill Banao (Create Bill)
+        </button>
     </div>
 
     <div class="kpi-grid">
         <div class="kpi-card glass-panel">
             <div class="kpi-icon c-green"><i class="fa-solid fa-money-bill-wave"></i></div>
             <div class="kpi-details">
-                <h4>Net Revenue</h4>
+                <h4>Kamai (Earnings)</h4>
                 <div class="value" id="kpiRev">₹0</div>
             </div>
         </div>
         <div class="kpi-card glass-panel">
             <div class="kpi-icon c-blue"><i class="fa-solid fa-receipt"></i></div>
             <div class="kpi-details">
-                <h4>Total Bills</h4>
+                <h4>Parchiyan (Bills)</h4>
                 <div class="value" id="kpiBills">0</div>
             </div>
         </div>
         <div class="kpi-card glass-panel">
             <div class="kpi-icon c-purple"><i class="fa-solid fa-box-open"></i></div>
             <div class="kpi-details">
-                <h4>Items Sold</h4>
+                <h4>Samaan Bika (Items)</h4>
                 <div class="value" id="kpiItems">0</div>
             </div>
         </div>
@@ -288,7 +307,7 @@
             <div class="kpi-icon c-red"><i class="fa-solid fa-book-open"></i></div>
             <div class="kpi-details">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h4>Pending Udhaar</h4>
+                    <h4>Baki Udhaar (Total)</h4>
                     <i class="fa-solid fa-arrow-right" style="color:var(--danger); font-size:10px;"></i>
                 </div>
                 <div class="value" id="kpiUdhaar">₹0</div>
@@ -321,7 +340,7 @@
 
         <div class="widget glass-panel" draggable="true" id="w-po">
             <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-file-invoice" style="color:var(--success);"></i> Auto Purchase Orders</h3>
+                <h3 class="w-title"><i class="fa-solid fa-file-invoice" style="color:var(--success);"></i> Low Stock (Maal Mangwayein)</h3>
                 <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
             </div>
             <div class="w-content" id="poListBox">
@@ -330,7 +349,7 @@
 
         <div class="widget glass-panel" draggable="true" id="w-expiry">
             <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> Expiry Tracker (<30 Days)</h3>
+                <h3 class="w-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> Expiry Alerts (<30 Days)</h3>
                 <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
             </div>
             <div class="w-content" id="expiryListBox">
@@ -339,7 +358,7 @@
 
         <div class="widget glass-panel" draggable="true" id="w-audit">
             <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-shield-halved" style="color:var(--purple);"></i> Security Audit Trail</h3>
+                <h3 class="w-title"><i class="fa-solid fa-shield-halved" style="color:var(--purple);"></i> Activity History (Kisne kya kiya)</h3>
                 <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
             </div>
             <div class="w-content">
@@ -488,27 +507,29 @@ let mapMarker = null;
 document.addEventListener('DOMContentLoaded', () => {
     setGreeting();
     initDragAndDrop();
-    logAudit("System Boot", "Command Center initialized.");
+    logAudit("System Boot", "Main Dashboard initialized.");
     
-    // Global Shop Switcher - Safely integrated
+    // Global Shop Switcher
     document.getElementById('shopSwitcher').addEventListener('change', (e) => {
         const val = e.target.value;
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         
         if (val === 'all') {
             currentBranch = 'all';
-            showToast("Showing Enterprise Overview");
+            showToast("Showing All Branches");
             renderAllWidgets();
         } else if (val !== user.merchantId) {
-            // If they select a specific branch and it's NOT their current active one, global switch.
             if(window.switchActiveShop) {
                 window.switchActiveShop(val);
             }
         } else {
-            // They selected their current active branch. Just filter view.
             currentBranch = val;
             renderAllWidgets();
         }
+    });
+
+    document.getElementById('kpiTimeFilter').addEventListener('change', () => {
+        renderKPIs(currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch));
     });
 
     document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
@@ -518,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnViewMap').addEventListener('click', openMap);
     
     // Add Branch Modals
-    document.getElementById('btnAddBranch').addEventListener('click', () => showModal('addBranchModal'));
+    document.getElementById('btnAddBranchNav').addEventListener('click', () => showModal('addBranchModal'));
     document.getElementById('btnQuickBranch').addEventListener('click', () => showModal('addBranchModal'));
     document.getElementById('btnCloseBranchModal').addEventListener('click', () => hideModal('addBranchModal'));
     document.getElementById('btnSubmitBranch').addEventListener('click', submitNewBranch);
@@ -542,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── UTILS ───
 function setGreeting() {
     const d = new Date();
-    document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function showToast(msg, isError = false) {
@@ -591,22 +612,19 @@ async function loadEnterpriseData() {
             shops = fetchedShops;
             
             const switcher = document.getElementById('shopSwitcher');
-            // By default, set the switcher to the ACTIVE shop context
-            switcher.innerHTML = '<option value="all">🌍 Enterprise Overview</option>' + 
+            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
                 shops.map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
             
             switcher.value = user.merchantId;
-            currentBranch = user.merchantId; // Start by showing current branch data
+            currentBranch = user.merchantId; 
         }
     }
 
-    // Try to get cached data first for speed
     enterpriseSales = JSON.parse(localStorage.getItem('bharatpos_enterprise_sales') || localStorage.getItem('bharatpos_sales') || '[]');
     enterpriseProducts = JSON.parse(localStorage.getItem('bharatpos_enterprise_products') || localStorage.getItem('bharatpos_products') || '[]');
     
     if(enterpriseSales.length > 0 || enterpriseProducts.length > 0) renderAllWidgets();
 
-    // Fetch fresh cloud data if online
     if (window.db && navigator.onLine) {
         try {
             let tempSales = [];
@@ -659,17 +677,26 @@ function renderAllWidgets() {
 
 // ─── COMPONENT RENDERERS ───
 function renderKPIs(sales) {
+    const timeFilter = document.getElementById('kpiTimeFilter').value;
     const today = new Date(); today.setHours(0,0,0,0);
     const todayStr = new Date().toISOString().split('T')[0];
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
     let tRev = 0, tBills = 0, tItems = 0, udhaar = 0;
 
     sales.forEach(s => {
         const dStr = new Date(s.date).toISOString().split('T')[0];
-        const isToday = (dStr === todayStr);
+        const dDate = new Date(s.date);
         const total = Number(s.total || s.amount || 0);
         const pMode = s.paymentMethod || s.paymentMode || 'Cash';
 
-        if(isToday) {
+        // Filter Logic for Time Frame
+        let inTimeframe = false;
+        if(timeFilter === 'today' && dStr === todayStr) inTimeframe = true;
+        else if(timeFilter === 'month' && dDate >= startOfMonth) inTimeframe = true;
+        else if(timeFilter === 'all') inTimeframe = true;
+
+        if(inTimeframe) {
             tBills++;
             (s.items||[]).forEach(i => tItems += Number(i.qty || 1));
             
@@ -680,15 +707,22 @@ function renderKPIs(sales) {
             }
         }
 
-        // Udhaar settled today
+        // Udhaar settled in this timeframe
         if(s.isPaid && s.settledDate) {
             const setStr = new Date(s.settledDate).toISOString().split('T')[0];
-            if(setStr === todayStr && dStr !== todayStr) {
+            const setDate = new Date(s.settledDate);
+            
+            let settledInTimeframe = false;
+            if(timeFilter === 'today' && setStr === todayStr) settledInTimeframe = true;
+            else if(timeFilter === 'month' && setDate >= startOfMonth) settledInTimeframe = true;
+            else if(timeFilter === 'all') settledInTimeframe = true;
+
+            if(settledInTimeframe && setStr !== dStr) {
                 tRev += (pMode === 'Partial (Settled)' && s.split) ? Number(s.split.udhaar || 0) : total;
             }
         }
 
-        // Pending udhaar
+        // Pending udhaar is ALWAYS total outstanding regardless of time filter
         if(s.split && Number(s.split.udhaar) > 0 && !s.isPaid) udhaar += Number(s.split.udhaar);
         else if((pMode === 'Udhaar' || s.paymentMode === 'Udhaar') && !s.isPaid) udhaar += total;
     });
@@ -854,15 +888,17 @@ function renderAuditTrail() {
     let logs = JSON.parse(localStorage.getItem('bharatpos_audit') || '[]');
     
     if(logs.length === 0) {
-        box.innerHTML = `<div class="empty-state"><p>No recent security events.</p></div>`;
+        box.innerHTML = `<div class="empty-state"><p>Koi activity nahi (No recent activity).</p></div>`;
         return;
     }
 
-    box.innerHTML = logs.slice(0, 6).map(log => {
-        const timeStr = new Date(log.time).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    box.innerHTML = logs.slice(0, 10).map(log => {
+        const logDate = new Date(log.time);
+        const timeStr = logDate.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+        const dateStr = logDate.toLocaleDateString('en-IN', {day:'2-digit', month:'short'});
         return `
         <div class="audit-item">
-            <div class="audit-time">${timeStr}</div>
+            <div class="audit-time">${dateStr}, ${timeStr}</div>
             <div class="audit-text">${log.action}: ${log.details}</div>
             <div class="audit-user"><i class="fa-regular fa-user"></i> ${log.user}</div>
         </div>`;
@@ -906,9 +942,8 @@ async function submitNewBranch() {
         
         logAudit("Branch Created", `New branch '${shopName}' added to network.`);
         
-        // Let them switch manually or reload
-        alert("Branch Created! Select it from the dropdown to start managing it.");
-        window.location.reload();
+        if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher();
+        setTimeout(()=> window.location.reload(), 1000);
     } catch(e) { 
         showToast("Firebase Error: Could not create branch.", true);
         document.getElementById('btnSubmitBranch').innerText = "Create Branch Shop";
@@ -1127,7 +1162,6 @@ window.openReceipt = function(dataStr) {
     document.getElementById('rec-due').innerText = `₹${formatCurrency(pendingAmt)}`;
 
     const payBtn = document.getElementById('btnSettle');
-    // Ensure we know EXACTLY which branch this sale belongs to, so we update the correct DB!
     payBtn.onclick = () => window.settleDebt(invId, inv._branchId || inv.merchantId);
 
     showModal('receiptModal');
@@ -1158,7 +1192,6 @@ window.settleDebt = async function(id, saleBranchId) {
         
         localStorage.setItem('bharatpos_enterprise_sales', JSON.stringify(enterpriseSales));
 
-        // IF the settled sale belongs to the CURRENT active local shop, update it there too!
         if (targetBranch === user.merchantId) {
             const localSales = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
             const lIndex = localSales.findIndex(ls => (ls.id === id || ls.invoiceNo === id));
