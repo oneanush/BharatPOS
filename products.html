@@ -8,12 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script src="quagga.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script type="module" src="bharatpos.js"></script>
-<link rel="stylesheet" href="bharatpos.css">
-<style>
+  <link rel="stylesheet" href="bharatpos.css">
+
+  <style>
     /* ═══════════════════════════════════════════════════════════
        TRI-LINGUAL DISPLAY LOGIC
     ═══════════════════════════════════════════════════════════ */
@@ -22,15 +24,21 @@
     body.lang-hi .lang-en, body.lang-hi .lang-hinglish { display: none !important; }
 
     /* ═══════════════════════════════════════════════════════════
-       LAYOUT & PANELS
+       LAYOUT & PANELS (SaaS Flat Theme)
     ═══════════════════════════════════════════════════════════ */
     .main-container { 
         max-width: 1400px; margin: 28px auto; padding: 0 15px; 
-        display: grid; grid-template-columns: 420px 1fr; gap: 24px; align-items: start; 
-        transition: all var(--trans);
+        display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; 
+        transition: all var(--trans); font-family: var(--font-body);
     }
-    @media(max-width: 1024px) { .main-container { grid-template-columns: 1fr; } }
+    @media(min-width: 1024px) { .main-container { grid-template-columns: 420px 1fr; } }
     
+    .panel { 
+        background: var(--white); border: 1.5px solid var(--blue-100); 
+        border-radius: var(--radius-card); padding: 24px; 
+        box-shadow: var(--shadow-card); position: relative;
+    }
+
     .panel-header { 
         display: flex; justify-content: space-between; align-items: center; 
         margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1.5px solid var(--blue-100); 
@@ -49,11 +57,22 @@
     /* ═══════════════════════════════════════════════════════════
        FORMS & TOGGLES
     ═══════════════════════════════════════════════════════════ */
+    .form-group { margin-bottom: 16px; position: relative; }
+    .form-input, .form-select { 
+        width: 100%; background: #f9f9f9; border: 1.5px solid var(--blue-200); 
+        color: var(--slate-900); padding: 12px 14px; border-radius: var(--radius-input); 
+        font-size: 14px; font-weight: 600; outline: none; font-family: var(--font-body); transition: var(--trans);
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
+    .floating-label { position: absolute; left: 14px; top: 12px; color: var(--slate-400); font-size: 13px; font-weight: 600; pointer-events: none; transition: var(--trans); background: transparent; }
+    .form-input:focus ~ .floating-label, .form-input:not(:placeholder-shown) ~ .floating-label { top: -8px; left: 10px; font-size: 11px; font-weight: 800; color: var(--blue-600); background: #fff; padding: 0 4px; }
+    .form-input::placeholder { color: transparent; }
+
     .tier-toggle { 
         width: 100%; background: #f9f9f9; border: 1.5px solid var(--blue-100); 
-        padding: 12px 16px; border-radius: var(--radius-input); display: flex; 
+        padding: 14px 16px; border-radius: var(--radius-input); display: flex; 
         justify-content: space-between; align-items: center; color: var(--slate-900); 
-        font-weight: 700; cursor: pointer; transition: var(--trans); margin-bottom: 12px; 
+        font-weight: 700; cursor: pointer; transition: var(--trans); margin-bottom: 16px; 
         font-size: 14px; font-family: var(--font-body); 
     }
     .tier-toggle:hover { background: var(--blue-50); border-color: var(--blue-400); color: var(--blue-600);}
@@ -88,10 +107,16 @@
     .show-adv .adv-only-field { display: block; }
     .show-loose .loose-only-field { display: block; }
 
-    /* Custom Button Overrides for Products */
+    /* Custom Buttons */
+    .btn { padding: 12px 20px; border-radius: var(--radius-input); font-weight: 800; font-size: 14px; border: none; cursor: pointer; transition: var(--trans); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;}
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--primary-gradient); color: white; box-shadow: 0 4px 15px rgba(25,118,210,0.25); width: 100%;}
+    .btn-primary:hover { background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(25,118,210,0.35); }
+    .btn-outline { background: var(--white); border: 1.5px solid var(--blue-200); color: var(--blue-600); font-weight: 800; }
+    .btn-outline:hover { background: var(--blue-50); border-color: var(--blue-400); transform: translateY(-2px); }
     .btn-scan { background: var(--blue-50); border: 1.5px solid var(--blue-200); color: var(--blue-600); font-weight: 800; box-shadow: none;}
     .btn-scan:hover { background: var(--blue-100); border-color: var(--blue-400); transform: translateY(-2px); }
-    .btn-dashed { background: transparent; border: 1.5px dashed var(--blue-400); color: var(--blue-600); font-weight: 700; box-shadow: none;}
+    .btn-dashed { background: transparent; border: 1.5px dashed var(--blue-400); color: var(--blue-600); font-weight: 700; box-shadow: none; width: 100%;}
     .btn-dashed:hover { background: var(--blue-50); transform: translateY(-2px); }
     .btn-icon-only { padding: 10px; width: auto; border-radius: var(--radius-input); }
 
@@ -104,12 +129,28 @@
     input:checked + .slider:before { transform: translateX(20px); }
 
     /* ═══════════════════════════════════════════════════════════
+       COMPRESSED INVENTORY LIST (The requested fix)
+    ═══════════════════════════════════════════════════════════ */
+    .inventory-toggle-btn {
+        width: 100%; padding: 18px; border-radius: var(--radius-card); 
+        background: linear-gradient(135deg, #0f172a, #334155); color: white; 
+        border: none; font-size: 16px; font-weight: 800; cursor: pointer; 
+        box-shadow: 0 6px 20px rgba(15,23,42,0.25); display: flex; align-items: center; 
+        justify-content: center; gap: 10px; transition: var(--trans); 
+        font-family: var(--font-body); letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .inventory-toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(15,23,42,0.35); }
+    .inventory-toggle-btn:active { transform: scale(0.98); }
+    
+    #inventoryWrapper { display: none; margin-top: 24px; animation: slideDown 0.3s ease; }
+    #inventoryWrapper.show { display: block; }
+
+    /* ═══════════════════════════════════════════════════════════
        FILTER ENGINE
     ═══════════════════════════════════════════════════════════ */
     .filter-engine { 
-        background: var(--white); padding: 18px; border-radius: var(--radius-card); 
+        background: #f9f9f9; padding: 18px; border-radius: var(--radius-card); 
         border: 1.5px solid var(--blue-100); margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
-        animation: slideDown 0.2s ease;
     }
     .tier-tabs { display: flex; gap: 10px; border-bottom: 1.5px solid var(--blue-100); padding-bottom: 14px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
     .tab-btn { 
@@ -119,8 +160,8 @@
     }
     .tab-btn.active { background: var(--blue-600); color: white; box-shadow: 0 4px 12px rgba(25,118,210,0.25); }
     .branch-filters { display: flex; gap: 12px; margin-bottom: 14px; }
-    .branch-select { flex: 1; padding: 12px; border-radius: var(--radius-input); border: 1.5px solid var(--blue-200); background: #f9f9f9; font-size: 13px; color: var(--slate-900); font-weight: 600; outline: none; font-family: var(--font-body); transition: var(--trans);}
-    .branch-select:focus { background: white; border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(25,118,210,0.1);}
+    .branch-select { flex: 1; padding: 12px; border-radius: var(--radius-input); border: 1.5px solid var(--blue-200); background: var(--white); font-size: 13px; color: var(--slate-900); font-weight: 600; outline: none; font-family: var(--font-body); transition: var(--trans);}
+    .branch-select:focus { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(25,118,210,0.1);}
     
     .deep-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .action-chip { 
@@ -133,9 +174,10 @@
     /* ═══════════════════════════════════════════════════════════
        INVENTORY GRID
     ═══════════════════════════════════════════════════════════ */
-    .search-box { position: relative; flex: 1; min-width: 240px; }
-    .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 14px; pointer-events: none; }
-    .search-box input { padding-left: 42px !important; }
+    .search-box-wide { position: relative; width: 100%; margin-bottom: 15px; }
+    .search-box-wide i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 14px; pointer-events: none; }
+    .search-box-wide input { width: 100%; padding: 14px 14px 14px 42px; background: #f9f9f9; border: 1.5px solid var(--blue-200); border-radius: var(--radius-input); font-size: 14px; font-weight: 600; font-family: var(--font-body); outline: none; transition: var(--trans); color: var(--slate-900); }
+    .search-box-wide input:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
 
     .inventory-grid { 
         display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
@@ -210,7 +252,7 @@
     .bulk-select option { background: var(--slate-900); color: white; }
 
     /* ═══════════════════════════════════════════════════════════
-       SCANNERS
+       SCANNERS & MODALS
     ═══════════════════════════════════════════════════════════ */
     .scanner-box { 
         background: var(--slate-900); border-radius: var(--radius-card); overflow: hidden; 
@@ -221,12 +263,14 @@
     .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 15px #10B981; animation: laser 2s infinite; }
     @keyframes laser { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 
-    #barcodeScannerModal { display: none; position: fixed; inset: 0; background: rgba(13,58,120,0.8); z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-    .barcode-modal-content { background: var(--white); border-radius: var(--radius-card); padding: 20px; width: 90%; max-width: 400px; text-align: center; border: 2px solid var(--blue-200); box-shadow: 0 28px 70px rgba(25,118,210,0.18);}
+    /* Modal overrides from global */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s ease;}
+    .modal-overlay.show { opacity: 1; }
+    .modal-box { background: var(--white); width: 100%; max-width: 500px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal-overlay.show .modal-box { transform: scale(1); }
+    .modal-header { padding: 20px 24px; border-bottom: 1.5px solid var(--blue-100); display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; }
+    .modal-body { padding: 24px; overflow-y: auto; }
 
-    /* ═══════════════════════════════════════════════════════════
-       MODAL DETAILS OVERRIDE
-    ═══════════════════════════════════════════════════════════ */
     .detail-row { 
         display: flex; justify-content: space-between; padding: 14px 0; 
         border-bottom: 1.5px dashed var(--blue-100); font-size: 14px; font-family: var(--font-body);
@@ -238,7 +282,7 @@
     #globalHintBar.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
     datalist { display: none; }
-</style>
+  </style>
 </head>
 <body class="lang-en">
 
@@ -260,7 +304,7 @@
   </div>
   <div class="side-menu-links">
     <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
-    <a href="billing.html" class="billing-link"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
+    <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
     <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
     <a href="sales.html"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
     <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
@@ -273,17 +317,15 @@
   <div class="brand">
     <button id="btnOpenMenu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
     <div class="brand-logo-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
-    <div class="nav-breadcrumb">
-      <span>BharatPOS</span> <span style="color:var(--border-hover);">/</span> 
-      <strong>📦 <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></strong>
+    <div style="font-size: 15px; font-weight: 800; color: var(--slate-900);">
+      <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span>
     </div>
   </div>
   <div class="nav-actions">
-    <select id="shopSwitcher" class="shop-switcher" style="background:#fff; border:1px solid var(--border); color:var(--text-main); padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; outline:none; cursor:pointer; max-width:160px; text-overflow: ellipsis; display:none;"></select>
-    
-    <button id="btnLangToggle" class="btn btn-outline btn-icon-only" title="Change Language" style="font-weight:800;">A/अ</button>
-    <button id="btnNavPos" class="btn btn-success" style="padding:8px 16px;font-size:13px;width:auto;">
-      <i class="fa-solid fa-cash-register"></i> <span class="lang-en">Open POS</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span>
+    <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
+    <button id="btnLangToggle" class="btn-icon-only" title="Change Language">A/अ</button>
+    <button id="btnNavPos" class="btn btn-success" style="padding:8px 16px;font-size:13px;width:auto; margin-left: 5px;">
+      <i class="fa-solid fa-cash-register"></i> <span class="lang-en">POS</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span>
     </button>
   </div>
 </nav>
@@ -298,7 +340,7 @@
       </h2>
       <div style="display:flex;gap:8px;">
         <button id="btnStartScan" type="button" class="btn btn-scan btn-icon-only" data-hint="en:Auto-fill details using Camera|hinglish:Camera se photo khinch kar automatic detail bharein|hi:कैमरा से फोटो खींचकर आटोमेटिक जानकारी भरें">
-            <i class="fa-solid fa-camera-viewfinder"></i> <span class="lang-en">Lens AI</span><span class="lang-hinglish">AI Scan</span><span class="lang-hi">AI स्कैन</span>
+            <i class="fa-solid fa-camera-viewfinder"></i> <span style="font-size: 12px;" class="lang-en">Lens</span><span style="font-size: 12px;" class="lang-hinglish">Scan</span><span style="font-size: 12px;" class="lang-hi">स्कैन</span>
         </button>
         <button id="btnOpenSettings" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Form Settings (Barcode, Expiry, Batch)|hinglish:Settings: Barcode, Expiry, Batch on/off karein|hi:सेटिंग्स (बारकोड, एक्सपायरी)">
             <i class="fa-solid fa-gear"></i>
@@ -311,8 +353,8 @@
       <video id="cameraPreview" autoplay playsinline></video>
       <canvas id="captureCanvas" style="display:none;"></canvas>
       <div style="position:absolute;bottom:10px;width:100%;text-align:center;">
-        <button id="btnStopScan" type="button" class="btn" style="width:auto;display:inline-flex;padding:7px 18px;font-size:12px;background:rgba(220,38,38,0.85);color:white;border-radius:8px;border:none;">
-          <i class="fa-solid fa-xmark"></i> <span class="lang-en">Stop AI Lens</span><span class="lang-hinglish">Band Karein</span><span class="lang-hi">बंद करें</span>
+        <button id="btnStopScan" type="button" class="btn" style="width:auto;display:inline-flex;padding:7px 18px;font-size:12px;background:rgba(220,38,38,0.9);color:white;border-radius:8px;border:none;">
+          <i class="fa-solid fa-xmark"></i> <span class="lang-en">Stop Lens</span><span class="lang-hinglish">Band Karein</span><span class="lang-hi">बंद करें</span>
         </button>
       </div>
     </div>
@@ -338,18 +380,19 @@
 
       <button type="button" class="tier-toggle" id="btnToggleGst">
         <span style="display:flex;align-items:center;gap:8px;">
-          <span style="width:22px;height:22px;border-radius:6px;background:rgba(245,158,11,0.12);display:inline-flex;align-items:center;justify-content:center;">
-            <i class="fa-solid fa-receipt" style="color:var(--accent);font-size:11px;"></i>
+          <span style="width:24px;height:24px;border-radius:6px;background:var(--warning-soft);display:inline-flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-receipt" style="color:var(--warning);font-size:12px;"></i>
           </span>
           <span class="lang-en">Level 2 — GST Config</span><span class="lang-hinglish">Level 2 — Tax & GST</span><span class="lang-hi">लेवल 2 — टैक्स और GST</span>
         </span>
-        <i class="fa-solid fa-chevron-down chevron" style="color:var(--text-light);font-size:12px;transition:transform 0.2s;"></i>
+        <i class="fa-solid fa-chevron-down chevron" style="color:var(--slate-400);font-size:14px;transition:transform 0.2s;"></i>
       </button>
+      
       <div id="tierGst" class="tier-content">
         <div class="variant-grid">
           <div class="form-group">
             <input type="text" id="pHSN" class="form-input" placeholder=" ">
-            <label class="floating-label"><span class="lang-en">HSN Code</span><span class="lang-hinglish">HSN Code (Tax ke liye)</span><span class="lang-hi">HSN कोड</span></label>
+            <label class="floating-label"><span class="lang-en">HSN Code</span><span class="lang-hinglish">HSN Code</span><span class="lang-hi">HSN कोड</span></label>
           </div>
           <div class="form-group">
             <input type="number" id="pGSTRate" class="form-input" placeholder=" ">
@@ -365,19 +408,19 @@
             <option value="exclusive" class="lang-hinglish">Exclusive (Tax alag se lagega)</option>
             <option value="exclusive" class="lang-hi">Exclusive (टैक्स अलग से)</option>
           </select>
-          <label class="floating-label"><span class="lang-en">Tax Calculation</span><span class="lang-hinglish">Tax Kaise Lagega</span><span class="lang-hi">टैक्स कैसे लगेगा</span></label>
+          <label class="floating-label" style="background:#fff; top:-8px; font-size:11px; color:var(--blue-600);"><span class="lang-en">Tax Calculation</span><span class="lang-hinglish">Tax Kaise Lagega</span><span class="lang-hi">टैक्स कैसे लगेगा</span></label>
         </div>
       </div>
 
-      <div id="advancedFieldsContainer" style="display:none; padding-top:15px; margin-top:10px; border-top:1px dashed var(--border);">
-          <div style="font-size:11px; font-weight:700; color:var(--primary); margin-bottom:12px; text-transform:uppercase;">
+      <div id="advancedFieldsContainer" style="display:none; padding-top:15px; margin-top:10px; border-top:1.5px dashed var(--blue-100);">
+          <div style="font-size:12px; font-weight:800; color:var(--blue-600); margin-bottom:12px; text-transform:uppercase;">
             <span class="lang-en">Advanced Global Details</span><span class="lang-hinglish">Extra Details (Sabke liye)</span><span class="lang-hi">अतिरिक्त जानकारी</span>
           </div>
           
-          <div class="form-group" id="looseInputContainer" style="display:none; justify-content:space-between; align-items:center; background:#F8FBFF; padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1px solid var(--border);">
+          <div class="form-group" id="looseInputContainer" style="display:none; justify-content:space-between; align-items:center; background:#f9f9f9; padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1.5px solid var(--blue-200);">
               <div>
-                  <div style="font-size:13px; font-weight:700; color:var(--text-main);"><span class="lang-en">Sell By Weight / Loose</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान (वजन से)</span></div>
-                  <div style="font-size:11px; color:var(--text-muted); margin-top:2px;"><span class="lang-en">Adds internal Base Qty in Variants</span><span class="lang-hinglish">Daal, Chini, Chawal ke liye on karein</span><span class="lang-hi">दाल, चीनी के लिए चालू करें</span></div>
+                  <div style="font-size:13px; font-weight:700; color:var(--slate-900);"><span class="lang-en">Sell By Weight / Loose</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान (वजन से)</span></div>
+                  <div style="font-size:11px; color:var(--slate-500); margin-top:2px;"><span class="lang-en">Adds internal Base Qty in Variants</span><span class="lang-hinglish">Daal, Chini, Chawal ke liye on karein</span><span class="lang-hi">दाल, चीनी के लिए चालू करें</span></div>
               </div>
               <label class="switch">
                   <input type="checkbox" id="pIsLoose">
@@ -401,80 +444,81 @@
           </div>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="margin-top:16px;font-size:15px;" id="saveBtn">
+      <button type="submit" class="btn btn-primary" style="margin-top:20px;font-size:15px;" id="saveBtn">
         <i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>
       </button>
     </form>
   </div>
 
-  <div class="panel" style="padding-bottom: 80px;">
-    <div class="panel-header">
-      <h2 class="panel-title">
-        <div class="panel-title-icon teal"><i class="fa-solid fa-boxes-stacked"></i></div>
-        <span class="lang-en">Inventory List</span><span class="lang-hinglish">Aapka Samaan</span><span class="lang-hi">आपका सामान</span>
-      </h2>
-      <div style="display:flex;gap:8px;">
-        <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--primary);border-color:var(--border-hover);" data-hint="en:Import products from Global Database|hinglish:Pehle se bani list se samaan jodein|hi:बनी-बनाई लिस्ट से सामान जोड़ें">
-          <i class="fa-solid fa-globe"></i> <span class="lang-en">Global DB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">ग्लोबल लिस्ट</span>
-        </button>
-        <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 13px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Export Inventory to Excel|hinglish:Apne samaan ki list Excel mein download karein|hi:एक्सेल में डाउनलोड करें">
-          <i class="fa-solid fa-file-export"></i> <span class="lang-en">Export</span><span class="lang-hinglish">Excel Nikalein</span><span class="lang-hi">एक्सेल निकालें</span>
-        </button>
-        <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 13px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel|hinglish:Excel se naya samaan dalein|hi:एक्सेल से सामान डालें">
-          <i class="fa-solid fa-file-import"></i> <span class="lang-en">Import</span><span class="lang-hinglish">Excel Daalein</span><span class="lang-hi">एक्सेल इंपोर्ट</span>
-        </button>
-        <input type="file" id="csvUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;">
-        <button id="btnSyncCloud" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Backup to Cloud|hinglish:Internet par save karein (Backup)|hi:क्लाउड पर सेव करें">
-          <i class="fa-solid fa-rotate"></i>
-        </button>
-      </div>
-    </div>
-
-    <div style="display:flex; gap:10px; margin-bottom: 15px;">
-        <div class="search-box" style="flex:1;">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder=" " autocomplete="off">
-            <label class="floating-label" style="left:38px; top:12px; background:none;">
-                <span class="lang-en">Search SKU, barcode...</span>
-                <span class="lang-hinglish">Samaan ka naam ya barcode dhundein...</span>
-                <span class="lang-hi">सामान का नाम या बारकोड खोजें...</span>
-            </label>
+  <div class="panel" style="padding-bottom: 40px;">
+    
+    <button id="btnToggleInventoryList" class="inventory-toggle-btn">
+        <i class="fa-solid fa-boxes-stacked"></i> <span id="toggleInvText">View Inventory List</span>
+    </button>
+    
+    <div id="inventoryWrapper">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <div class="panel-title-icon teal"><i class="fa-solid fa-list-check"></i></div>
+            <span class="lang-en">Inventory List</span><span class="lang-hinglish">Aapka Samaan</span><span class="lang-hi">आपका सामान</span>
+          </h2>
+          <div style="display:flex;gap:8px;">
+            <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--blue-600);" data-hint="en:Import products from Global Database|hinglish:Pehle se bani list se samaan jodein|hi:बनी-बनाई लिस्ट से सामान जोड़ें">
+              <i class="fa-solid fa-globe"></i> <span class="lang-en">Global DB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">ग्लोबल लिस्ट</span>
+            </button>
+            <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Export Inventory to Excel|hinglish:Apne samaan ki list Excel mein download karein|hi:एक्सेल में डाउनलोड करें">
+              <i class="fa-solid fa-file-export"></i> <span class="lang-en">Export</span><span class="lang-hinglish">Excel Nikalein</span><span class="lang-hi">एक्सेल निकालें</span>
+            </button>
+            <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel|hinglish:Excel se naya samaan dalein|hi:एक्सेल से सामान डालें">
+              <i class="fa-solid fa-file-import"></i> <span class="lang-en">Import</span><span class="lang-hinglish">Excel Daalein</span><span class="lang-hi">एक्सेल इंपोर्ट</span>
+            </button>
+            <input type="file" id="csvUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;">
+            <button id="btnSyncCloud" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Backup to Cloud|hinglish:Internet par save karein (Backup)|hi:क्लाउड पर सेव करें">
+              <i class="fa-solid fa-rotate"></i>
+            </button>
+          </div>
         </div>
-        <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 0 15px; border-radius:10px;" title="Aur Filters (More Filters)">
-            <i class="fa-solid fa-filter"></i> <span class="lang-en">Filters ▾</span><span class="lang-hinglish">Aur Filters ▾</span><span class="lang-hi">फ़िल्टर ▾</span>
-        </button>
-    </div>
 
-    <div id="advancedFilterSection" style="display:none; background: #F4F8FF; padding: 15px; border-radius: 14px; margin-bottom:15px; border:1px solid var(--border);">
-      <div class="tier-tabs" id="tierTabs">
-        <button class="tab-btn active" data-tier="ALL">ALL</button>
-        <button class="tab-btn" data-tier="A">Tier A <i class="fa-solid fa-fire" style="color:var(--warning);font-size:10px;"></i></button>
-        <button class="tab-btn" data-tier="B">Tier B</button>
-        <button class="tab-btn" data-tier="C">Tier C</button>
-      </div>
-      <div class="branch-filters">
-        <select id="catTabSelect" class="branch-select"><option value="">Categories ▾</option></select>
-        <select id="batchTabSelect" class="branch-select"><option value="">Batches ▾</option></select>
-      </div>
-      <div class="branch-filters">
-        <select id="filterBrand" class="branch-select"><option value="">All Brands</option></select>
-        <select id="filterTax" class="branch-select"><option value="">All Taxes (GST)</option></select>
-      </div>
-      <div class="deep-actions">
-        <button class="action-chip" data-action="LowStock"><span class="lang-en">Low Stock</span><span class="lang-hinglish">Kam Samaan</span><span class="lang-hi">कम स्टॉक</span></button>
-        <button class="action-chip" data-action="Expiring"><span class="lang-en">Expiring</span><span class="lang-hinglish">Kharab Hone Wala</span><span class="lang-hi">एक्सपायर होने वाला</span></button>
-        <button class="action-chip" data-action="Newest"><span class="lang-en">Newest</span><span class="lang-hinglish">Naya Aaya</span><span class="lang-hi">सबसे नया</span></button>
-      </div>
-    </div>
+        <div style="display:flex; gap:10px; margin-bottom: 15px; align-items: center;">
+            <div class="search-box-wide">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Search SKU, barcode..." autocomplete="off">
+            </div>
+            <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 12px 16px; border-radius:10px;" title="Aur Filters">
+                <i class="fa-solid fa-filter"></i>
+            </button>
+        </div>
 
-    <div class="inventory-grid" id="inventoryGrid" data-hint="en:Click checkboxes for Mass Edit|hinglish:Checkboxes se ek sath bahut saare samaan edit karein|hi:चेकबॉक्स से एक साथ बहुत सारे सामान एडिट करें">
-      </div>
-    <div id="loadMoreTrigger" class="loading-trigger" style="display:none;">
-        <span class="lang-en">Loading more items…</span>
-        <span class="lang-hinglish">Aur samaan aa raha hai...</span>
-        <span class="lang-hi">और सामान लोड हो रहा है...</span>
-    </div>
-  </div>
+        <div id="advancedFilterSection" class="filter-engine" style="display:none;">
+          <div class="tier-tabs" id="tierTabs">
+            <button class="tab-btn active" data-tier="ALL">ALL</button>
+            <button class="tab-btn" data-tier="A">Tier A <i class="fa-solid fa-fire" style="color:var(--warning);font-size:10px;"></i></button>
+            <button class="tab-btn" data-tier="B">Tier B</button>
+            <button class="tab-btn" data-tier="C">Tier C</button>
+          </div>
+          <div class="branch-filters">
+            <select id="catTabSelect" class="branch-select"><option value="">Categories ▾</option></select>
+            <select id="batchTabSelect" class="branch-select"><option value="">Batches ▾</option></select>
+          </div>
+          <div class="branch-filters">
+            <select id="filterBrand" class="branch-select"><option value="">All Brands</option></select>
+            <select id="filterTax" class="branch-select"><option value="">All Taxes (GST)</option></select>
+          </div>
+          <div class="deep-actions">
+            <button class="action-chip" data-action="LowStock"><span class="lang-en">Low Stock</span><span class="lang-hinglish">Kam Samaan</span><span class="lang-hi">कम स्टॉक</span></button>
+            <button class="action-chip" data-action="Expiring"><span class="lang-en">Expiring</span><span class="lang-hinglish">Kharab Hone Wala</span><span class="lang-hi">एक्सपायर होने वाला</span></button>
+            <button class="action-chip" data-action="Newest"><span class="lang-en">Newest</span><span class="lang-hinglish">Naya Aaya</span><span class="lang-hi">सबसे नया</span></button>
+          </div>
+        </div>
+
+        <div class="inventory-grid" id="inventoryGrid" data-hint="en:Click checkboxes for Mass Edit|hinglish:Checkboxes se ek sath bahut saare samaan edit karein|hi:चेकबॉक्स से एक साथ बहुत सारे सामान एडिट करें">
+          </div>
+        <div id="loadMoreTrigger" class="loading-trigger" style="display:none;">
+            <span class="lang-en">Loading more items…</span>
+            <span class="lang-hinglish">Aur samaan aa raha hai...</span>
+            <span class="lang-hi">और सामान लोड हो रहा है...</span>
+        </div>
+    </div> </div>
 
 </div>
 
@@ -491,97 +535,97 @@
             <option value="delete">Delete Items</option>
         </select>
         <input type="text" id="bulkValue" class="bulk-input" placeholder="Value..." style="display:none; width:100px;">
-        <button id="btnApplyBulk" class="btn btn-primary" style="padding: 8px 16px; width: auto;"><span class="lang-en">Apply</span><span class="lang-hinglish">OK</span><span class="lang-hi">ओके</span></button>
-        <button id="btnCancelBulk" class="btn btn-outline" style="padding: 8px 16px; width: auto; color: white; border-color: rgba(255,255,255,0.3); background:transparent;">Cancel</button>
+        <button id="btnApplyBulk" class="btn btn-primary" style="padding: 10px 16px; width: auto;"><span class="lang-en">Apply</span><span class="lang-hinglish">OK</span><span class="lang-hi">ओके</span></button>
+        <button id="btnCancelBulk" class="btn btn-outline" style="padding: 10px 16px; width: auto; color: white; border-color: rgba(255,255,255,0.3); background:transparent;">Cancel</button>
     </div>
 </div>
 
 <div id="settingsModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
-      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px;">
-        <i class="fa-solid fa-gear" style="color:var(--primary);"></i> <span class="lang-en">Form Settings</span><span class="lang-hinglish">Form Ki Settings</span><span class="lang-hi">फॉर्म सेटिंग्स</span>
+      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px; font-family:var(--font-head); font-weight:800; color:var(--slate-900);">
+        <i class="fa-solid fa-gear" style="color:var(--blue-600);"></i> <span class="lang-en">Form Settings</span><span class="lang-hinglish">Form Ki Settings</span><span class="lang-hi">फॉर्म सेटिंग्स</span>
       </h3>
-      <button id="btnCloseSettings" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+      <button id="btnCloseSettings" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
         <div>
-          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry, Brand form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry, Brand form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
         <div>
-          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Sell By Weight</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Defines Base Unit Quantities.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Sell By Weight</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान</span></div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Defines Base Unit Quantities.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgLoose"><span class="slider"></span></label>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
         <div>
-          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Batch System</span><span class="lang-hinglish">Batch Number System</span><span class="lang-hi">बैच नंबर सिस्टम</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Adds Batch ID auto-generation.</span><span class="lang-hinglish">Dawaion ke batch number ke liye.</span><span class="lang-hi">दवाइयों के बैच के लिए।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Batch System</span><span class="lang-hinglish">Batch Number System</span><span class="lang-hi">बैच नंबर सिस्टम</span></div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Adds Batch ID auto-generation.</span><span class="lang-hinglish">Dawaion ke batch number ke liye.</span><span class="lang-hi">दवाइयों के बैच के लिए।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgBatch"><span class="slider"></span></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-weight:600;font-size:14px;color:var(--text-main);"><span class="lang-en">Enable Helpful Hints</span><span class="lang-hinglish">Madad Wale Notes (Hints)</span><span class="lang-hi">मदद वाले नोट्स</span></div>
-          <div style="font-size:11px;color:var(--text-muted);"><span class="lang-en">Show short notes on hover/touch.</span><span class="lang-hinglish">Touch karne par asaan bhasha me jankari.</span><span class="lang-hi">टच करने पर आसान भाषा में जानकारी।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Helpful Hints</span><span class="lang-hinglish">Madad Wale Notes (Hints)</span><span class="lang-hi">मदद वाले नोट्स</span></div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Show short notes on hover/touch.</span><span class="lang-hinglish">Touch karne par asaan bhasha me jankari.</span><span class="lang-hi">टच करने पर आसान भाषा में जानकारी।</span></div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgHints" checked><span class="slider"></span></label>
       </div>
       
-      <button id="btnRestartTutorial" class="btn btn-outline" style="margin-top:20px; width:100%;">
+      <button id="btnRestartTutorial" class="btn btn-outline" style="margin-top:24px; width:100%;">
           <i class="fa-solid fa-graduation-cap"></i> <span class="lang-en">Restart Tutorial</span><span class="lang-hinglish">Tutorial Wapas Dekhein</span><span class="lang-hi">ट्यूटोरियल वापस देखें</span>
       </button>
     </div>
   </div>
 </div>
 
-<div id="barcodeScannerModal">
-    <div class="barcode-modal-content">
-        <h4 style="margin-top:0; margin-bottom:10px;"><span class="lang-en">Scan Barcode</span><span class="lang-hinglish">Barcode Scan Karein</span><span class="lang-hi">बारकोड स्कैन करें</span></h4>
-        <div id="quaggaPreview" style="background:#000; border-radius:10px; overflow:hidden; position:relative;">
+<div id="barcodeScannerModal" class="modal-overlay">
+    <div class="modal-box" style="border-radius:16px; padding:20px; width:90%; max-width:400px; text-align:center; transform:none; background: var(--slate-900); color:white;">
+        <h4 style="margin-top:0; margin-bottom:15px; font-family:var(--font-head); font-size:16px;"><i class="fa-solid fa-barcode" style="color:var(--blue-400);"></i> Scan Barcode</h4>
+        <div id="quaggaPreview" style="width:100%; height:250px; background:#000; border-radius:12px; overflow:hidden; position:relative; border:2px solid var(--blue-600);">
             <div class="scan-laser"></div>
         </div>
-        <button type="button" class="btn btn-outline" style="margin-top:15px;" id="btnCancelBarcode"><i class="fa-solid fa-xmark"></i> Cancel</button>
+        <button type="button" class="btn" style="margin-top:20px; width:100%; background:rgba(255,255,255,0.1); color:white;" id="btnCancelBarcode"><i class="fa-solid fa-xmark"></i> Cancel</button>
     </div>
 </div>
 
 <div id="productDetailsModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:500px;">
-    <div class="modal-header" style="background:var(--primary);color:white;">
-      <h3 id="dName" style="margin:0;font-size:18px;font-weight:800;">Product Name</h3>
-      <button id="btnCloseDetails" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+  <div class="modal-box">
+    <div class="modal-header" style="background:var(--primary-gradient); color:white; border-bottom:none;">
+      <h3 id="dName" style="margin:0;font-size:18px;font-weight:800; font-family:var(--font-head);">Product Name</h3>
+      <button id="btnCloseDetails" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="modal-body" style="background:#F8FBFF;">
-      <div style="display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;">
-        <span id="dTier" class="sku-tier" style="position:static;padding:4px 10px;border-radius:12px;width:auto;height:auto;">Tier A</span>
-        <span id="dCat" style="background:#DBEAFE;color:var(--primary-dark);font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;text-transform:uppercase;">Category</span>
+    <div class="modal-body" style="background:#F4F8FF;">
+      <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+        <span id="dTier" class="sku-tier" style="position:static;padding:6px 12px;border-radius:12px;width:auto;height:auto;">Tier A</span>
+        <span id="dCat" style="background:var(--blue-100);color:var(--blue-700);font-size:11px;font-weight:800;padding:6px 12px;border-radius:12px;text-transform:uppercase;">Category</span>
       </div>
 
-      <div style="background:white;border-radius:12px;padding:15px;border:1px solid var(--border);margin-bottom:15px;box-shadow:var(--shadow-sm);">
-        <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:8px;text-transform:uppercase;">Accounting &amp; Tax</div>
+      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid var(--blue-100);margin-bottom:16px;box-shadow:0 4px 10px rgba(0,0,0,0.02);">
+        <div style="font-size:11px;color:var(--blue-600);font-weight:800;margin-bottom:10px;text-transform:uppercase; letter-spacing:0.5px;">Accounting &amp; Tax</div>
         <div class="detail-row"><span>HSN Code:</span><span id="dHSN">-</span></div>
         <div class="detail-row"><span>GST Rate:</span><span id="dGST">-</span></div>
         <div class="detail-row" style="border:none;padding-bottom:0;"><span>Tax Type:</span><span id="dTaxType" style="text-transform:capitalize;">-</span></div>
       </div>
 
-      <div style="background:white;border-radius:12px;padding:15px;border:1px solid var(--border);margin-bottom:15px;box-shadow:var(--shadow-sm);">
-        <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:8px;text-transform:uppercase;">Global Details</div>
+      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid var(--blue-100);margin-bottom:16px;box-shadow:0 4px 10px rgba(0,0,0,0.02);">
+        <div style="font-size:11px;color:var(--blue-600);font-weight:800;margin-bottom:10px;text-transform:uppercase; letter-spacing:0.5px;">Global Details</div>
         <div class="detail-row"><span>Batch ID:</span><span id="dBatch">-</span></div>
         <div class="detail-row"><span>Alert Threshold:</span><span id="dAlert">-</span></div>
         <div class="detail-row" style="border:none;padding-bottom:0;"><span>Added On:</span><span id="dAdded">-</span></div>
       </div>
 
-      <div style="font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:8px;text-transform:uppercase;padding-left:5px;">Variants &amp; Operations</div>
-      <div id="dVariantsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="font-size:11px;color:var(--slate-500);font-weight:800;margin-bottom:10px;text-transform:uppercase;padding-left:5px;">Variants &amp; Operations</div>
+      <div id="dVariantsList" style="display:flex;flex-direction:column;gap:10px;"></div>
 
-      <div style="display:flex;gap:10px;margin-top:20px;">
-        <button id="btnEditFromModal" class="btn btn-outline" style="color:var(--primary);border-color:var(--primary);">
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button id="btnEditFromModal" class="btn btn-outline" style="color:var(--blue-600);border-color:var(--blue-600);">
           <i class="fa-solid fa-pen"></i> <span class="lang-en">Edit</span><span class="lang-hinglish">Badlein</span><span class="lang-hi">बदलें</span>
         </button>
         <button id="btnTransferFromModal" class="btn btn-outline" style="color:var(--purple);border-color:var(--purple); display:none;">
@@ -596,26 +640,26 @@
 </div>
 
 <div id="transferStockModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:400px;">
+  <div class="modal-box">
     <div class="modal-header">
-      <h3 style="margin:0;font-size:16px;"><i class="fa-solid fa-truck-fast" style="color:var(--purple);"></i> Stock Transfer</h3>
-      <button id="btnCloseTransfer" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+      <h3 style="margin:0;font-size:16px; font-family:var(--font-head);"><i class="fa-solid fa-truck-fast" style="color:var(--purple);"></i> Stock Transfer</h3>
+      <button id="btnCloseTransfer" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">To Branch</label>
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">To Branch</label>
         <select id="transferTargetBranch" class="form-select"></select>
       </div>
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">Variant / Type</label>
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">Variant / Type</label>
         <select id="transferVariant" class="form-select"></select>
       </div>
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">Quantity to Transfer</label>
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">Quantity to Transfer</label>
         <input type="number" step="0.001" id="transferQty" class="form-input" placeholder="Enter quantity">
-        <div id="transferCalcDisplay" style="font-size:12px; font-weight:800; color:var(--primary); margin-top:6px; text-align:right; min-height:16px;"></div>
+        <div id="transferCalcDisplay" style="font-size:12px; font-weight:800; color:var(--blue-600); margin-top:8px; text-align:right; min-height:16px;"></div>
       </div>
-      <button id="btnSubmitTransfer" class="btn btn-primary" style="margin-top:10px; background:linear-gradient(135deg, var(--purple), #6D28D9); width:100%;">
+      <button id="btnSubmitTransfer" class="btn btn-primary" style="margin-top:10px; background:linear-gradient(135deg, var(--purple), #6D28D9); width:100%; box-shadow:0 4px 15px rgba(124, 58, 237, 0.25);">
         <i class="fa-solid fa-truck-fast"></i> Confirm Transfer
       </button>
     </div>
@@ -625,23 +669,20 @@
 <div id="masterCatalogModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
-      <h3 style="margin:0;font-size:16px;">
-        <i class="fa-solid fa-globe" style="color:var(--primary);"></i> <span class="lang-en">Global AI MasterDB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">बनी-बनाई लिस्ट</span>
+      <h3 style="margin:0;font-size:16px; font-family:var(--font-head);">
+        <i class="fa-solid fa-globe" style="color:var(--blue-600);"></i> <span class="lang-en">Global AI MasterDB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">बनी-बनाई लिस्ट</span>
       </h3>
-      <button id="btnCloseMasterCatalog" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+      <button id="btnCloseMasterCatalog" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
-      <div class="search-box" style="margin-bottom:15px;">
+      <div class="search-box-wide" style="margin-bottom:18px;">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="masterSearchInput" placeholder=" " autocomplete="off">
-        <label class="floating-label" style="left:38px; top:12px; background:none;">
-            <span class="lang-en">Search global products…</span><span class="lang-hinglish">Duniya bhar ke samaan dhundein...</span><span class="lang-hi">ग्लोबल सामान खोजें...</span>
-        </label>
+        <input type="text" id="masterSearchInput" placeholder="Search global products…" autocomplete="off">
       </div>
-      <div id="masterDbList" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;">
-        <div style="text-align:center;padding:20px;color:var(--text-muted);">Click Fetch to load normalized data from cloud.</div>
+      <div id="masterDbList" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto; padding-right:4px;">
+        <div style="text-align:center;padding:30px;color:var(--slate-400); font-weight:600;">Click Fetch to load normalized data from cloud.</div>
       </div>
-      <button id="btnFetchMasterCatalog" class="btn btn-primary" style="margin-top:15px;">
+      <button id="btnFetchMasterCatalog" class="btn btn-primary" style="margin-top:18px;">
         <i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>
       </button>
     </div>
@@ -649,34 +690,34 @@
 </div>
 
 <div id="welcomeTutorial" class="modal-overlay" style="z-index: 99999;">
-   <div class="modal-box" style="max-width: 450px; background: #fff; border-radius: 20px;">
+   <div class="modal-box" style="border-radius: 24px; transform: scale(1);">
        <div style="padding: 30px; text-align: center;">
-           <div style="width: 60px; height: 60px; background: #EAF2FF; color: #1976D2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 20px;">
+           <div style="width: 64px; height: 64px; background: var(--blue-50); color: var(--blue-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px;">
                <i class="fa-solid fa-graduation-cap"></i>
            </div>
-           <h2 style="margin: 0 0 10px; font-weight: 800; color: #0F172A;">
+           <h2 style="margin: 0 0 12px; font-weight: 800; color: var(--slate-900); font-family:var(--font-head);">
                <span class="lang-en">Welcome!</span><span class="lang-hinglish">Swagat Hai! (Welcome)</span><span class="lang-hi">स्वागत है!</span>
            </h2>
-           <p style="color: #64748B; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
+           <p style="color: var(--slate-500); font-size: 14px; margin-bottom: 24px; line-height: 1.5; font-weight: 600;">
                <span class="lang-en">Managing inventory in BharatPOS is very easy.</span>
                <span class="lang-hinglish">BharatPOS inventory mein samaan jodna bahut asaan hai.</span>
                <span class="lang-hi">भारतपीओएस इन्वेंटरी में सामान जोड़ना बहुत आसान है।</span>
            </p>
            
-           <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #DBEAFE;">
-               <strong style="color: #1976D2;"><i class="fa-solid fa-camera"></i> 1. Lens AI:</strong> 
+           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--blue-100);">
+               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-camera"></i> 1. Lens AI:</strong> 
                <span class="lang-en">Take a photo, name and price will fill automatically!</span>
                <span class="lang-hinglish">Camera se photo khinchein, naam aur price apne aap bhar jayega!</span>
                <span class="lang-hi">कैमरा से फोटो खींचें, नाम और मूल्य अपने आप भर जाएगा!</span>
            </div>
-           <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #DBEAFE;">
-               <strong style="color: #1976D2;"><i class="fa-solid fa-gear"></i> 2. Settings:</strong> 
+           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--blue-100);">
+               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-gear"></i> 2. Settings:</strong> 
                <span class="lang-en">Turn on advanced fields (Brand, Barcode, Expiry) from the Gear icon.</span>
                <span class="lang-hinglish">Agar Brand, Barcode ya Expiry likhna hai, toh 'Gear' icon daba kar on karein.</span>
                <span class="lang-hi">अगर ब्रांड, बारकोड या एक्सपायरी लिखना है, तो 'गियर' आइकन दबा कर ऑन करें।</span>
            </div>
-           <div style="text-align: left; background: #F8FBFF; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #DBEAFE;">
-               <strong style="color: #1976D2;"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Samaan:</strong> 
+           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 24px; border: 1.5px solid var(--blue-100);">
+               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Samaan:</strong> 
                <span class="lang-en">Click any item card to see details or edit. Use checkboxes for mass edit.</span>
                <span class="lang-hinglish">Kisi bhi samaan ke card par click karke uski details dekhein. Checkbox se ek saath bahut saare edit karein.</span>
                <span class="lang-hi">किसी भी सामान के कार्ड पर क्लिक करके उसकी जानकारी देखें या बदलें।</span>
@@ -692,7 +733,7 @@
 <div id="toast">✅ Action Successful</div>
 <div id="globalHintBar">Hint Text Here</div>
 
- <script type="module">
+<script type="module">
 import { db } from "./bharatpos.js";
 import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -715,6 +756,7 @@ window.currentPage = 0;
 window.pageSize = 50;
 window.currentFilteredData = [];
 window.observer = null;
+window.isInventoryVisible = true; // For desktop
 
 window.cameraStream = null;
 window.targetBarcodeInput = null;
@@ -722,7 +764,7 @@ window.selectedBulkItems = new Set();
 
 const langs = ['en', 'hinglish', 'hi'];
 
-// ─── MODAL ANIMATION HELPERS (FIXED) ────────────────────────────────────────
+// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
 function showModal(id) {
     const m = document.getElementById(id);
     if(m) {
@@ -841,7 +883,7 @@ window.syncVariantMath = function(variantBox, source) {
 };
 
 // ─── INITIALIZATION ───────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     try {
         bindAllEvents();
         loadSettings();
@@ -849,21 +891,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedLang = localStorage.getItem('app_lang') || 'en'; 
         document.body.className = `lang-${savedLang}`;
 
+        // Await IndexedDB Loading
+        window.allProducts = await window.dbGet('bharatpos_products', '[]');
+        window.salesHistory = await window.dbGet('bharatpos_sales', '[]');
+
+        // Handle Mobile/Desktop Toggle State
+        if (window.innerWidth <= 1024) {
+            window.isInventoryVisible = false;
+        } else {
+            window.isInventoryVisible = true;
+            document.getElementById('inventoryWrapper').classList.add('show');
+            const txt = document.getElementById('toggleInvText');
+            if(txt) txt.innerText = "Hide Inventory List";
+        }
+
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         if(typeof window.loadOwnedShops === 'function') {
             window.loadOwnedShops(user.mobile || user.phone).then(shops => {
                 if(shops && shops.length > 1) {
                     const switcher = document.getElementById('shopSwitcher');
-                    switcher.style.display = 'inline-block';
-                    document.getElementById('btnTransferFromModal').style.display = 'inline-flex';
-                    
-                    switcher.innerHTML = shops.map(s => 
-                        `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                            ${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
-                        </option>`
-                    ).join('');
-                    
-                    switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+                    if(switcher) {
+                        switcher.style.display = 'inline-block';
+                        document.getElementById('btnTransferFromModal').style.display = 'inline-flex';
+                        
+                        switcher.innerHTML = shops
+                            .map(s => 
+                                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
+                                    ${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
+                                </option>`
+                            ).join('');
+                        
+                        switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+                    }
                 }
             });
         }
@@ -872,11 +931,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showModal('welcomeTutorial');
         }
 
-        window.allProducts = JSON.parse(localStorage.getItem('bharatpos_products') || '[]');
-        window.salesHistory = JSON.parse(localStorage.getItem('bharatpos_sales') || '[]');
-
         updateDatalists();
-        applyFilters();
+        applyFilters(); // will respect isInventoryVisible internally
         setupIntersectionObserver();
         addVariantUI();
 
@@ -908,7 +964,8 @@ function loadSettings() {
     document.getElementById('cfgAdvFields').checked = isAdv;
     document.getElementById('cfgBatch').checked     = isBatch;
     document.getElementById('cfgLoose').checked     = isLoose;
-    document.getElementById('cfgHints').checked     = isHints;
+    const hintsToggle = document.getElementById('cfgHints');
+    if(hintsToggle) hintsToggle.checked = isHints;
 
     applySettingsUI(isAdv, isBatch, isLoose);
 }
@@ -917,7 +974,8 @@ function saveConfig() {
     const isAdv   = document.getElementById('cfgAdvFields').checked;
     const isBatch = document.getElementById('cfgBatch').checked;
     const isLoose = document.getElementById('cfgLoose').checked;
-    const isHints = document.getElementById('cfgHints').checked;
+    const hintsToggle = document.getElementById('cfgHints');
+    const isHints = hintsToggle ? hintsToggle.checked : true;
 
     localStorage.setItem('cfg_adv_fields', isAdv);
     localStorage.setItem('cfg_batch',      isBatch);
@@ -962,6 +1020,22 @@ function bindAllEvents() {
     document.getElementById('btnToggleFilters').addEventListener('click', () => {
         const area = document.getElementById('advancedFilterSection');
         area.style.display = area.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // The Inventory Toggle Compression Button
+    document.getElementById('btnToggleInventoryList').addEventListener('click', () => {
+        window.isInventoryVisible = !window.isInventoryVisible;
+        const wrapper = document.getElementById('inventoryWrapper');
+        const txt = document.getElementById('toggleInvText');
+        
+        if (window.isInventoryVisible) {
+            wrapper.classList.add('show');
+            txt.innerText = "Hide Inventory List";
+            if(window.currentFilteredData.length === 0) applyFilters(); // Load if empty
+        } else {
+            wrapper.classList.remove('show');
+            txt.innerText = "View Inventory List";
+        }
     });
 
     const hintBar = document.getElementById('globalHintBar');
@@ -1050,7 +1124,8 @@ function bindAllEvents() {
     document.getElementById('cfgAdvFields').addEventListener('change', saveConfig);
     document.getElementById('cfgBatch').addEventListener('change',     saveConfig);
     document.getElementById('cfgLoose').addEventListener('change',     saveConfig);
-    document.getElementById('cfgHints').addEventListener('change',     saveConfig);
+    const hintsToggle = document.getElementById('cfgHints');
+    if(hintsToggle) hintsToggle.addEventListener('change', saveConfig);
     
     document.getElementById('pIsLoose').addEventListener('change', (e) => {
         const engine = document.getElementById('variantEngineWrapper');
@@ -1142,9 +1217,9 @@ function bindAllEvents() {
     document.getElementById('btnCancelBarcode').addEventListener('click', stopBarcodeScan);
 
     // Apply safe closing to ALL modals
-    document.querySelectorAll('.modal-overlay, #barcodeScannerModal').forEach(overlay => {
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) hideModal(overlay.id);
+            if (e.target === overlay && e.target.id !== 'barcodeScannerModal') hideModal(overlay.id);
         });
     });
 }
@@ -1163,14 +1238,6 @@ function showToast(msg, isError = false) {
     t.style.background = isError ? 'var(--danger)' : 'var(--success)';
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function formatStock(amount, unitType) {
-    const u = (unitType || '').toLowerCase();
-    if (u.includes('kg') || u.includes('g') || u.includes('l') || u.includes('ml')) {
-        return parseFloat(amount || 0).toFixed(2).replace(/\.00$/, '');
-    }
-    return Math.floor(amount || 0);
 }
 
 function checkDemandMitraRouting() {
@@ -1408,7 +1475,7 @@ async function handleSaveProduct(e) {
         }
         window.allProducts.push(productDoc);
 
-        localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+        await window.dbSave('bharatpos_products', window.allProducts);
         updateDatalists();
         applyFilters();
 
@@ -1515,6 +1582,8 @@ function toggleChip(btnEl) {
 }
 
 function applyFilters() {
+    if(!window.isInventoryVisible) return; // Prevent heavy DOM rendering if accordion is closed
+    
     const getTier = calculateABCTiers();
     window.filterState.brand = document.getElementById('filterBrand').value;
     window.filterState.tax   = document.getElementById('filterTax').value;
@@ -1608,7 +1677,7 @@ async function executeBulkAction() {
         return true;
     });
 
-    localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+    await window.dbSave('bharatpos_products', window.allProducts);
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
 
     if (user.merchantId && window.db) {
@@ -1633,6 +1702,8 @@ async function executeBulkAction() {
 }
 
 function renderChunk() {
+    if(!window.isInventoryVisible) return;
+
     const grid  = document.getElementById('inventoryGrid');
     const start = window.currentPage * window.pageSize;
     const end   = start + window.pageSize;
@@ -1645,10 +1716,10 @@ function renderChunk() {
           <div style="width:56px;height:56px;border-radius:16px;background:var(--blue-50);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
             <i class="fa-solid fa-box-open" style="color:var(--primary);font-size:22px;"></i>
           </div>
-          <div style="font-weight:700;font-size:14px;color:var(--text-main);">
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">
               <span class="lang-en">No SKUs found</span><span class="lang-hinglish">Koi Samaan Nahi Mila</span><span class="lang-hi">कोई सामान नहीं मिला</span>
           </div>
-          <div style="font-size:12.5px;color:var(--text-muted);margin-top:5px;">
+          <div style="font-size:12px;color:var(--slate-500);font-weight:600;margin-top:5px;">
               <span class="lang-en">Adjust filters or search.</span><span class="lang-hinglish">Search ya filter change karein.</span><span class="lang-hi">सर्च या फिल्टर बदलें।</span>
           </div>
         </div>`;
@@ -1758,26 +1829,26 @@ window.openProductDetails = function(id) {
         
         let brandsSummary = '';
         if(v.brands && v.brands.length > 0) {
-            brandsSummary = `<div style="font-size:10px; color:var(--text-light); margin-top:2px;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name} (${b.stock})`).join(', ') + `</div>`;
+            brandsSummary = `<div style="font-size:10px; color:var(--slate-500); margin-top:4px; font-weight:700;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name} (${b.stock})`).join(', ') + `</div>`;
         }
 
-        if(v.barcode) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
-        if(v.expiryDate) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
-        if(v.costPrice) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
-        if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--text-muted);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||'pcs'}</span>`);
+        if(v.barcode) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
+        if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
+        if(v.costPrice) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
+        if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||'pcs'}</span>`);
         
-        let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--blue-100); font-size:11px;">${details.join('')}</div>` : '';
+        let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--blue-100); font-size:11px; font-weight:700;">${details.join('')}</div>` : '';
 
         return `
-        <div style="background:#FFFFFF;padding:12px;border-radius:10px;border:1.5px solid var(--blue-100);box-shadow:var(--shadow-sm);">
+        <div style="background:var(--white);padding:16px;border-radius:12px;border:1.5px solid var(--blue-100);box-shadow:0 2px 5px rgba(0,0,0,0.02);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <div style="font-weight:700;font-size:13px;color:var(--text-main);">${v.quantity}</div>
+                    <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${v.quantity}</div>
                     ${brandsSummary}
                 </div>
                 <div style="text-align:right;">
-                    <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:15px;">₹${v.price}</div>
-                    <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--text-muted)'};font-weight:700;margin-top:2px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
+                    <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:16px;">₹${v.price}</div>
+                    <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
                 </div>
             </div>
             ${detailsHtml}
@@ -1850,7 +1921,7 @@ async function deleteProduct(id) {
 
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     window.allProducts = window.allProducts.filter(p => p.id !== id);
-    localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+    await window.dbSave('bharatpos_products', window.allProducts);
     applyFilters();
     showToast(isHin ? "🗑️ Samaan delete ho gaya" : "🗑️ Deleted successfully");
 
@@ -1889,12 +1960,12 @@ function searchMasterDB() {
     const filtered = window.masterDbCache.filter(p => (p.name || '').toLowerCase().includes(q)).slice(0, 50);
 
     list.innerHTML = filtered.map(p => `
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#F8FBFF;padding:10px 15px;border:1px solid var(--border);border-radius:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--white);padding:14px;border:1.5px solid var(--blue-100);border-radius:12px; margin-bottom:8px;">
             <div>
-                <div style="font-weight:700;font-size:14px;color:var(--text-main);">${p.name}</div>
-                <div style="font-size:11px;color:var(--text-muted);">${p.category || 'Gen'} • ₹${p.price}</div>
+                <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${p.name}</div>
+                <div style="font-size:11px;color:var(--slate-500); font-weight:700; margin-top:4px;">${p.category || 'Gen'} • ₹${p.price}</div>
             </div>
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:11px;width:auto;" data-json='${JSON.stringify(p).replace(/'/g, "&#39;")}'>Import</button>
+            <button class="btn btn-outline" style="padding:8px 14px;font-size:12px;width:auto;" data-json='${JSON.stringify(p).replace(/'/g, "&#39;")}'>Import</button>
         </div>
     `).join('');
 }
@@ -1927,7 +1998,7 @@ async function handleBulkImport(event) {
     reader.onload = async function (e) {
         try {
             document.getElementById('inventoryGrid').innerHTML =
-                '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i><br><br><span style="font-weight:600;">Parsing file…</span></div>';
+                '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Parsing file…</span></div>';
 
             const data     = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -1971,7 +2042,7 @@ async function handleBulkImport(event) {
 
             if (batch && opCount > 0 && user.merchantId) await batch.commit();
 
-            localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+            await window.dbSave('bharatpos_products', window.allProducts);
             updateDatalists();
             applyFilters();
             showToast(`✅ Imported ${addedCount} products successfully!`);
@@ -1990,7 +2061,7 @@ async function pullFreshData() {
     if (!user.merchantId || !window.db) { showToast("No active cloud connection", true); return; }
 
     document.getElementById('inventoryGrid').innerHTML =
-        '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);"><i class="fa-solid fa-cloud-arrow-down fa-bounce fa-2x" style="color:var(--primary);"></i><br><br><span style="font-weight:600;">Syncing from Cloud…</span></div>';
+        '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-cloud-arrow-down fa-bounce fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Syncing from Cloud…</span></div>';
 
     try {
         const snap  = await getDocs(collection(db, "shops", user.merchantId, "products"));
@@ -2013,7 +2084,7 @@ async function pullFreshData() {
         });
 
         window.allProducts = fresh;
-        localStorage.setItem('bharatpos_products', JSON.stringify(fresh));
+        await window.dbSave('bharatpos_products', fresh);
         updateDatalists();
         applyFilters();
         showToast("☁️ Sync complete!");
@@ -2093,6 +2164,7 @@ window.openTransferModal = function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mobile = user.mobile || user.phone;
     
+    // Safely attempt to fetch branches from local storage
     const storedShopsStr = localStorage.getItem(`bharatpos_shops_${mobile}`);
     let shops = [];
     if (storedShopsStr) {
@@ -2143,7 +2215,7 @@ window.submitStockTransfer = async function() {
             }
         }
 
-        localStorage.setItem('bharatpos_products', JSON.stringify(window.allProducts));
+        await window.dbSave('bharatpos_products', window.allProducts);
         await setDoc(doc(window.db, "shops", user.merchantId, "products", prod.id), prod);
 
         const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
