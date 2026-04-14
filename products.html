@@ -735,7 +735,7 @@
 
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 window.db = db;
 
@@ -756,7 +756,7 @@ window.currentPage = 0;
 window.pageSize = 50;
 window.currentFilteredData = [];
 window.observer = null;
-window.isInventoryVisible = true; // For desktop
+window.isInventoryVisible = true; 
 
 window.cameraStream = null;
 window.targetBarcodeInput = null;
@@ -765,7 +765,7 @@ window.selectedBulkItems = new Set();
 const langs = ['en', 'hinglish', 'hi'];
 
 // ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
-function showModal(id) {
+window.showModal = function(id) {
     const m = document.getElementById(id);
     if(m) {
         m.style.display = 'flex';
@@ -773,7 +773,7 @@ function showModal(id) {
     }
 }
 
-function hideModal(id) {
+window.hideModal = function(id) {
     const m = document.getElementById(id);
     if(m) {
         m.classList.remove('show');
@@ -781,28 +781,151 @@ function hideModal(id) {
     }
 }
 
-// ─── BULK ACTION ENGINE ──────────────────────────────────────────────
-window.toggleBulkItem = function(id, isChecked) {
-    if (isChecked) {
-        window.selectedBulkItems.add(id);
-    } else {
-        window.selectedBulkItems.delete(id);
+// ─── UTILITIES & HELPERS (GLOBALLY ATTACHED) ─────────────────────────────────
+window.formatStock = function(amount, unitType) {
+    const u = (unitType || '').toLowerCase();
+    if (u.includes('kg') || u.includes('g') || u.includes('l') || u.includes('ml')) {
+        return parseFloat(amount || 0).toFixed(2).replace(/\.00$/, '');
     }
-    
-    const actionBar = document.getElementById('bulkActionBar');
-    const countSpan = document.getElementById('bulkCount');
-    
-    countSpan.innerText = window.selectedBulkItems.size;
-    
-    if (window.selectedBulkItems.size > 0) {
-        actionBar.classList.add('show');
+    return Math.floor(amount || 0);
+}
+
+window.getUnitPrice = function(prod, variant) {
+    if (!prod.isLoose) return Number(variant.price);
+    const baseQty = Number(variant.baseQty) || 1;
+    return Number(variant.price) / baseQty;
+}
+
+window.getUnitLabel = function(prod, variant) {
+    if (!prod.isLoose) return 'unit';
+    return variant.baseUnit || 'unit';
+}
+
+window.getVariantStockInfo = function(p, v) {
+    if (p.isLoose) {
+        const bq = Number(v.baseQty) || 1;
+        const totalBase = (Number(v.stock) || 0) * bq;
+        return { available: totalBase, label: v.baseUnit || 'pcs', isLoose: true };
     } else {
-        actionBar.classList.remove('show');
-        document.getElementById('bulkOperation').value = '';
-        document.getElementById('bulkValue').style.display = 'none';
-        document.getElementById('bulkValue').value = '';
+        return { available: Number(v.stock) || 0, label: 'units', isLoose: false };
     }
-};
+}
+
+window.getProductTotalStockInfo = function(p) {
+    if (p.isLoose) {
+        let totalBase = 0;
+        let unit = p.variants[0]?.baseUnit || 'units';
+        p.variants.forEach(v => {
+            const bq = Number(v.baseQty) || 1;
+            totalBase += (Number(v.stock) || 0) * bq;
+        });
+        return `${window.formatStock(totalBase, unit)} ${unit}`;
+    } else {
+        let total = 0;
+        p.variants.forEach(v => total += Number(v.stock) || 0);
+        return `${total} in stock`;
+    }
+}
+
+window.escapeHtml = function(str) { 
+    return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
+}
+
+window.showToast = function(msg, isError = false) {
+    const t = document.getElementById('toast');
+    if(!t) return;
+    t.innerText = msg;
+    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── INITIALIZATION ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        window.bindAllEvents();
+        window.loadSettings();
+
+        const savedLang = localStorage.getItem('app_lang') || 'en'; 
+        document.body.className = `lang-${savedLang}`;
+
+        // Await IndexedDB Loading
+        window.allProducts = await window.dbGet('bharatpos_products', '[]');
+        window.salesHistory = await window.dbGet('bharatpos_sales', '[]');
+
+        if (window.innerWidth <= 1024) {
+            window.isInventoryVisible = false;
+        } else {
+            window.isInventoryVisible = true;
+            const wrap = document.getElementById('inventoryWrapper');
+            if(wrap) wrap.classList.add('show');
+            const txt = document.getElementById('toggleInvText');
+            if(txt) txt.innerText = "Hide Inventory List";
+        }
+
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        if(typeof window.loadOwnedShops === 'function') {
+            window.loadOwnedShops(user.mobile || user.phone).then(shops => {
+                if(shops && shops.length > 1) {
+                    const switcher = document.getElementById('shopSwitcher');
+                    if(switcher) {
+                        switcher.style.display = 'inline-block';
+                        const transferBtn = document.getElementById('btnTransferFromModal');
+                        if(transferBtn) transferBtn.style.display = 'inline-flex';
+                        
+                        switcher.innerHTML = shops.map(s => 
+                                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
+                                    ${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
+                                </option>`
+                            ).join('');
+                        
+                        switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+                    }
+                }
+            });
+        }
+
+        if(localStorage.getItem('tutorial_inventory') !== 'true') {
+            window.showModal('welcomeTutorial');
+        }
+
+        window.updateDatalists();
+        window.applyFilters(); 
+        window.setupIntersectionObserver();
+        window.addVariantUI();
+
+        const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
+        if (isGstGlobal) {
+            const tierGst = document.getElementById('tierGst');
+            if(tierGst) tierGst.classList.add('active');
+            const gstBtn = document.getElementById('btnToggleGst');
+            if(gstBtn) {
+                const chevron = gstBtn.querySelector('.chevron');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+                gstBtn.style.background = 'var(--blue-50)';
+                gstBtn.style.borderColor = 'var(--primary)';
+                gstBtn.style.color = 'var(--primary)';
+            }
+        }
+
+        window.checkDemandMitraRouting();
+
+        // ✅ FIXED FIREBASE LISTENER (STRICT NULL CHECK)
+        if(user && user.merchantId && typeof user.merchantId === 'string' && user.merchantId.trim() !== '' && window.db) {
+            try {
+                onSnapshot(collection(window.db, "shops", user.merchantId, "onlineOrders"), (snap) => {
+                    // Just silently tracking orders in the background if they exist
+                });
+            } catch(e) {
+                console.warn("Online Orders listener failed (Offline or missing ID)", e);
+            }
+        }
+
+    } catch (err) {
+        console.error("Init Error:", err);
+        window.showToast("Initialization error. Check console.", true);
+    }
+});
 
 // ─── LIVE STOCK CALCULATION LOGIC ──────────────────────────────────────────
 window.updateLiveStockCalc = function(box) {
@@ -816,7 +939,8 @@ window.updateLiveStockCalc = function(box) {
         return;
     }
 
-    const isLoose = document.getElementById('pIsLoose').checked;
+    const isLooseToggle = document.getElementById('pIsLoose');
+    const isLoose = isLooseToggle ? isLooseToggle.checked : false;
 
     if (isLoose) {
         const baseQty = parseFloat(box.querySelector('.v-base-qty').value) || 1;
@@ -858,7 +982,6 @@ window.updateTransferLiveCalc = function() {
 window.syncVariantMath = function(variantBox, source) {
     const brandStocks = Array.from(variantBox.querySelectorAll('.vb-stock'));
     const totalStockInput = variantBox.querySelector('.v-add-stock');
-    
     if(brandStocks.length === 0) return;
 
     if (source === 'brand') {
@@ -882,95 +1005,22 @@ window.syncVariantMath = function(variantBox, source) {
     }
 };
 
-// ─── INITIALIZATION ───────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        bindAllEvents();
-        loadSettings();
-
-        const savedLang = localStorage.getItem('app_lang') || 'en'; 
-        document.body.className = `lang-${savedLang}`;
-
-        // Await IndexedDB Loading
-        window.allProducts = await window.dbGet('bharatpos_products', '[]');
-        window.salesHistory = await window.dbGet('bharatpos_sales', '[]');
-
-        // Handle Mobile/Desktop Toggle State
-        if (window.innerWidth <= 1024) {
-            window.isInventoryVisible = false;
-        } else {
-            window.isInventoryVisible = true;
-            document.getElementById('inventoryWrapper').classList.add('show');
-            const txt = document.getElementById('toggleInvText');
-            if(txt) txt.innerText = "Hide Inventory List";
-        }
-
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(typeof window.loadOwnedShops === 'function') {
-            window.loadOwnedShops(user.mobile || user.phone).then(shops => {
-                if(shops && shops.length > 1) {
-                    const switcher = document.getElementById('shopSwitcher');
-                    if(switcher) {
-                        switcher.style.display = 'inline-block';
-                        document.getElementById('btnTransferFromModal').style.display = 'inline-flex';
-                        
-                        switcher.innerHTML = shops
-                            .map(s => 
-                                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                                    ${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
-                                </option>`
-                            ).join('');
-                        
-                        switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
-                    }
-                }
-            });
-        }
-
-        if(localStorage.getItem('tutorial_inventory') !== 'true') {
-            showModal('welcomeTutorial');
-        }
-
-        updateDatalists();
-        applyFilters(); // will respect isInventoryVisible internally
-        setupIntersectionObserver();
-        addVariantUI();
-
-        const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
-        if (isGstGlobal) {
-            document.getElementById('tierGst').classList.add('active');
-            const gstBtn = document.getElementById('btnToggleGst');
-            const chevron = gstBtn.querySelector('.chevron');
-            if (chevron) chevron.style.transform = 'rotate(180deg)';
-            gstBtn.style.background = 'var(--blue-50)';
-            gstBtn.style.borderColor = 'var(--primary)';
-            gstBtn.style.color = 'var(--primary)';
-        }
-
-        checkDemandMitraRouting();
-    } catch (err) {
-        console.error("Init Error:", err);
-        showToast("Initialization error. Check console.", true);
-    }
-});
-
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
-function loadSettings() {
+window.loadSettings = function() {
     const isAdv   = localStorage.getItem('cfg_adv_fields') === 'true';
     const isBatch = localStorage.getItem('cfg_batch') === 'true';
     const isLoose = localStorage.getItem('cfg_loose') === 'true';
     const isHints = localStorage.getItem('cfg_hints') !== 'false';
 
-    document.getElementById('cfgAdvFields').checked = isAdv;
-    document.getElementById('cfgBatch').checked     = isBatch;
-    document.getElementById('cfgLoose').checked     = isLoose;
-    const hintsToggle = document.getElementById('cfgHints');
-    if(hintsToggle) hintsToggle.checked = isHints;
+    const elAdv = document.getElementById('cfgAdvFields'); if(elAdv) elAdv.checked = isAdv;
+    const elBatch = document.getElementById('cfgBatch'); if(elBatch) elBatch.checked = isBatch;
+    const elLoose = document.getElementById('cfgLoose'); if(elLoose) elLoose.checked = isLoose;
+    const elHints = document.getElementById('cfgHints'); if(elHints) elHints.checked = isHints;
 
-    applySettingsUI(isAdv, isBatch, isLoose);
+    window.applySettingsUI(isAdv, isBatch, isLoose);
 }
 
-function saveConfig() {
+window.saveConfig = function() {
     const isAdv   = document.getElementById('cfgAdvFields').checked;
     const isBatch = document.getElementById('cfgBatch').checked;
     const isLoose = document.getElementById('cfgLoose').checked;
@@ -982,23 +1032,30 @@ function saveConfig() {
     localStorage.setItem('cfg_loose',      isLoose);
     localStorage.setItem('cfg_hints',      isHints);
 
-    applySettingsUI(isAdv, isBatch, isLoose);
-    showToast(document.body.classList.contains('lang-hin') ? "Settings badal di gayi" : "Settings Updated");
+    window.applySettingsUI(isAdv, isBatch, isLoose);
+    window.showToast(document.body.classList.contains('lang-hin') ? "Settings badal di gayi" : "Settings Updated");
 }
 
-function applySettingsUI(isAdv, isBatch, isLoose) {
-    document.getElementById('advancedFieldsContainer').style.display = (isAdv || isBatch || isLoose) ? 'block' : 'none';
-    document.getElementById('batchInputContainer').style.display     = isBatch ? 'block' : 'none';
-    document.getElementById('looseInputContainer').style.display     = isLoose ? 'flex'  : 'none';
+window.applySettingsUI = function(isAdv, isBatch, isLoose) {
+    const advCon = document.getElementById('advancedFieldsContainer');
+    if(advCon) advCon.style.display = (isAdv || isBatch || isLoose) ? 'block' : 'none';
+    
+    const batCon = document.getElementById('batchInputContainer');
+    if(batCon) batCon.style.display = isBatch ? 'block' : 'none';
+    
+    const looseCon = document.getElementById('looseInputContainer');
+    if(looseCon) looseCon.style.display = isLoose ? 'flex' : 'none';
     
     const engine = document.getElementById('variantEngineWrapper');
-    if (isAdv) engine.classList.add('show-adv'); else engine.classList.remove('show-adv');
-    if (isLoose) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
+    if(engine) {
+        if (isAdv) engine.classList.add('show-adv'); else engine.classList.remove('show-adv');
+        if (isLoose) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
+    }
 }
 
 // ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
-function bindAllEvents() {
-    document.getElementById('btnLangToggle').addEventListener('click', () => {
+window.bindAllEvents = function() {
+    document.getElementById('btnLangToggle')?.addEventListener('click', () => {
         let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
         currentIdx = (currentIdx + 1) % langs.length;
         const nextLang = langs[currentIdx];
@@ -1006,106 +1063,85 @@ function bindAllEvents() {
         localStorage.setItem('app_lang', nextLang);
     });
 
-    document.getElementById('btnExportCsv').addEventListener('click', handleExportCSV);
+    document.getElementById('btnExportCsv')?.addEventListener('click', window.handleExportCSV);
 
-    document.getElementById('btnCloseTutorial').addEventListener('click', () => {
+    document.getElementById('btnCloseTutorial')?.addEventListener('click', () => {
         localStorage.setItem('tutorial_inventory', 'true');
-        hideModal('welcomeTutorial');
+        window.hideModal('welcomeTutorial');
     });
-    document.getElementById('btnRestartTutorial').addEventListener('click', () => {
-        hideModal('settingsModal');
-        showModal('welcomeTutorial');
+    document.getElementById('btnRestartTutorial')?.addEventListener('click', () => {
+        window.hideModal('settingsModal');
+        window.showModal('welcomeTutorial');
     });
 
-    document.getElementById('btnToggleFilters').addEventListener('click', () => {
+    document.getElementById('btnToggleFilters')?.addEventListener('click', () => {
         const area = document.getElementById('advancedFilterSection');
-        area.style.display = area.style.display === 'none' ? 'block' : 'none';
+        if(area) area.style.display = area.style.display === 'none' ? 'block' : 'none';
     });
 
-    // The Inventory Toggle Compression Button
-    document.getElementById('btnToggleInventoryList').addEventListener('click', () => {
+    document.getElementById('btnToggleInventoryList')?.addEventListener('click', () => {
         window.isInventoryVisible = !window.isInventoryVisible;
         const wrapper = document.getElementById('inventoryWrapper');
         const txt = document.getElementById('toggleInvText');
         
         if (window.isInventoryVisible) {
-            wrapper.classList.add('show');
-            txt.innerText = "Hide Inventory List";
-            if(window.currentFilteredData.length === 0) applyFilters(); // Load if empty
+            if(wrapper) wrapper.classList.add('show');
+            if(txt) txt.innerText = "Hide Inventory List";
+            if(window.currentFilteredData.length === 0) window.applyFilters(); 
         } else {
-            wrapper.classList.remove('show');
-            txt.innerText = "View Inventory List";
+            if(wrapper) wrapper.classList.remove('show');
+            if(txt) txt.innerText = "View Inventory List";
         }
     });
 
     const hintBar = document.getElementById('globalHintBar');
-    document.addEventListener('mouseover', handleHintEvent);
-    document.addEventListener('touchstart', handleHintEvent, {passive: true});
+    document.addEventListener('mouseover', window.handleHintEvent);
+    document.addEventListener('touchstart', window.handleHintEvent, {passive: true});
 
-    function handleHintEvent(e) {
-        if(localStorage.getItem('cfg_hints') === 'false') return;
-        const target = e.target.closest('[data-hint]');
-        if(target) {
-            const hints = target.getAttribute('data-hint').split('|');
-            let hintText = hints[0].split(':')[1]; 
-            const lang = localStorage.getItem('app_lang') || 'en';
-            
-            hints.forEach(h => {
-                const [l, text] = h.split(':');
-                if(l === lang) hintText = text;
-            });
+    document.getElementById('btnOpenMenu')?.addEventListener('click', window.toggleMenu);
+    document.getElementById('btnCloseMenu')?.addEventListener('click', window.toggleMenu);
+    document.getElementById('menuOverlay')?.addEventListener('click', window.toggleMenu);
+    document.getElementById('btnNavPos')?.addEventListener('click', () => window.location.href = 'billing.html');
 
-            hintBar.innerText = `💡 ${hintText}`;
-            hintBar.classList.add('show');
-            clearTimeout(window.hintTimeout);
-            window.hintTimeout = setTimeout(() => hintBar.classList.remove('show'), 3000);
-        }
-    }
-
-    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
-    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
-    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
-    document.getElementById('btnNavPos').addEventListener('click', () => window.location.href = 'billing.html');
-
-    document.getElementById('btnToggleGst').addEventListener('click', function () {
+    document.getElementById('btnToggleGst')?.addEventListener('click', function () {
         const content = document.getElementById('tierGst');
         const chevron = this.querySelector('.chevron');
-        content.classList.toggle('active');
-        if (content.classList.contains('active')) {
-            chevron.style.transform = 'rotate(180deg)';
+        if(content) content.classList.toggle('active');
+        if (content && content.classList.contains('active')) {
+            if(chevron) chevron.style.transform = 'rotate(180deg)';
             this.style.background   = 'var(--blue-50)';
             this.style.borderColor  = 'var(--primary)';
             this.style.color        = 'var(--primary)';
         } else {
-            chevron.style.transform = 'rotate(0deg)';
+            if(chevron) chevron.style.transform = 'rotate(0deg)';
             this.style.background   = '';
             this.style.borderColor  = '';
             this.style.color        = '';
         }
     });
 
-    document.getElementById('btnAddVariant').addEventListener('click', () => addVariantUI());
+    document.getElementById('btnAddVariant')?.addEventListener('click', () => window.addVariantUI());
     
-    document.getElementById('variantEngine').addEventListener('click', (e) => {
+    document.getElementById('variantEngine')?.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('.btn-remove-var');
         if (removeBtn) removeBtn.closest('.variant-box').remove();
         
         const addBrandBtn = e.target.closest('.btn-add-brand');
         if (addBrandBtn) {
             const container = e.target.closest('.variant-brands-container').querySelector('.brand-list');
-            container.insertAdjacentHTML('beforeend', window.getBrandRowHTML());
+            if(container) container.insertAdjacentHTML('beforeend', window.getBrandRowHTML());
         }
         
         const removeBrandBtn = e.target.closest('.btn-remove-brand');
         if (removeBrandBtn) {
             const row = e.target.closest('.brand-row');
             const variantBox = row.closest('.variant-box');
-            row.remove();
-            window.syncVariantMath(variantBox, 'brand'); 
+            if(row) row.remove();
+            if(variantBox) window.syncVariantMath(variantBox, 'brand'); 
         }
     });
 
-    document.getElementById('variantEngine').addEventListener('input', (e) => {
+    document.getElementById('variantEngine')?.addEventListener('input', (e) => {
         if (e.target.classList.contains('vb-stock')) {
             window.syncVariantMath(e.target.closest('.variant-box'), 'brand');
         }
@@ -1117,73 +1153,80 @@ function bindAllEvents() {
         }
     });
 
-    document.getElementById('productForm').addEventListener('submit', handleSaveProduct);
-    document.getElementById('btnOpenSettings').addEventListener('click',  () => showModal('settingsModal'));
-    document.getElementById('btnCloseSettings').addEventListener('click', () => hideModal('settingsModal'));
+    document.getElementById('productForm')?.addEventListener('submit', window.handleSaveProduct);
+    document.getElementById('btnOpenSettings')?.addEventListener('click',  () => window.showModal('settingsModal'));
+    document.getElementById('btnCloseSettings')?.addEventListener('click', () => window.hideModal('settingsModal'));
     
-    document.getElementById('cfgAdvFields').addEventListener('change', saveConfig);
-    document.getElementById('cfgBatch').addEventListener('change',     saveConfig);
-    document.getElementById('cfgLoose').addEventListener('change',     saveConfig);
-    const hintsToggle = document.getElementById('cfgHints');
-    if(hintsToggle) hintsToggle.addEventListener('change', saveConfig);
+    document.getElementById('cfgAdvFields')?.addEventListener('change', window.saveConfig);
+    document.getElementById('cfgBatch')?.addEventListener('change',     window.saveConfig);
+    document.getElementById('cfgLoose')?.addEventListener('change',     window.saveConfig);
+    document.getElementById('cfgHints')?.addEventListener('change',     window.saveConfig);
     
-    document.getElementById('pIsLoose').addEventListener('change', (e) => {
+    document.getElementById('pIsLoose')?.addEventListener('change', (e) => {
         const engine = document.getElementById('variantEngineWrapper');
-        if(e.target.checked) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
+        if(engine) {
+            if(e.target.checked) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
+        }
         document.querySelectorAll('.variant-box').forEach(box => window.updateLiveStockCalc(box));
     });
 
-    document.getElementById('btnAutoBatch').addEventListener('click', () => {
-        const prefix = (document.getElementById('pCategory').value.substring(0,3).toUpperCase() || 'BAT');
-        document.getElementById('pBatchId').value = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+    document.getElementById('btnAutoBatch')?.addEventListener('click', () => {
+        const catInput = document.getElementById('pCategory');
+        const prefix = (catInput ? catInput.value.substring(0,3).toUpperCase() : 'BAT');
+        const batchInput = document.getElementById('pBatchId');
+        if(batchInput) batchInput.value = `${prefix || 'BAT'}-${Math.floor(1000 + Math.random() * 9000)}`;
     });
 
-    document.getElementById('btnOpenMasterCatalog').addEventListener('click',  () => showModal('masterCatalogModal'));
-    document.getElementById('btnCloseMasterCatalog').addEventListener('click', () => hideModal('masterCatalogModal'));
-    document.getElementById('btnFetchMasterCatalog').addEventListener('click', fetchMasterCatalog);
-    document.getElementById('masterSearchInput').addEventListener('input', searchMasterDB);
-    document.getElementById('masterDbList').addEventListener('click', (e) => {
+    document.getElementById('btnOpenMasterCatalog')?.addEventListener('click',  () => window.showModal('masterCatalogModal'));
+    document.getElementById('btnCloseMasterCatalog')?.addEventListener('click', () => window.hideModal('masterCatalogModal'));
+    document.getElementById('btnFetchMasterCatalog')?.addEventListener('click', window.fetchMasterCatalog);
+    document.getElementById('masterSearchInput')?.addEventListener('input', window.searchMasterDB);
+    document.getElementById('masterDbList')?.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             const dataStr = e.target.getAttribute('data-json');
-            if (dataStr) importMasterProduct(JSON.parse(dataStr));
+            if (dataStr) window.importMasterProduct(JSON.parse(dataStr));
         }
     });
 
-    document.getElementById('btnTriggerCsv').addEventListener('click',  () => document.getElementById('csvUpload').click());
-    document.getElementById('csvUpload').addEventListener('change',     handleBulkImport);
-    document.getElementById('btnSyncCloud').addEventListener('click',   pullFreshData);
+    document.getElementById('btnTriggerCsv')?.addEventListener('click',  () => {
+        const f = document.getElementById('csvUpload');
+        if(f) f.click();
+    });
+    document.getElementById('csvUpload')?.addEventListener('change', window.handleBulkImport);
+    document.getElementById('btnSyncCloud')?.addEventListener('click', window.pullFreshData);
 
-    document.getElementById('tierTabs').addEventListener('click', (e) => {
+    document.getElementById('tierTabs')?.addEventListener('click', (e) => {
         if (e.target.classList.contains('tab-btn') && e.target.tagName !== 'SELECT') {
-            toggleTierFilter(e.target.getAttribute('data-tier'), e.target);
+            window.toggleTierFilter(e.target.getAttribute('data-tier'), e.target);
         }
     });
-    document.getElementById('catTabSelect').addEventListener('change', (e) => {
+    document.getElementById('catTabSelect')?.addEventListener('change', (e) => {
         window.activeCategory = e.target.value;
-        updateAllTabHighlight();
-        applyFilters();
+        window.updateAllTabHighlight();
+        window.applyFilters();
     });
-    document.getElementById('batchTabSelect').addEventListener('change', (e) => {
+    document.getElementById('batchTabSelect')?.addEventListener('change', (e) => {
         window.activeBatch = e.target.value;
-        updateAllTabHighlight();
-        applyFilters();
+        window.updateAllTabHighlight();
+        window.applyFilters();
     });
 
-    document.getElementById('filterBrand').addEventListener('change', applyFilters);
-    document.getElementById('filterTax').addEventListener('change',   applyFilters);
-    document.getElementById('searchInput').addEventListener('input',  applyFilters);
+    document.getElementById('filterBrand')?.addEventListener('change', window.applyFilters);
+    document.getElementById('filterTax')?.addEventListener('change',   window.applyFilters);
+    document.getElementById('searchInput')?.addEventListener('input',  window.applyFilters);
     document.querySelectorAll('.action-chip').forEach(chip => {
-        chip.addEventListener('click', (e) => toggleChip(e.currentTarget));
+        chip.addEventListener('click', (e) => window.toggleChip(e.currentTarget));
     });
 
-    document.getElementById('inventoryGrid').addEventListener('click', (e) => {
+    document.getElementById('inventoryGrid')?.addEventListener('click', (e) => {
         const card = e.target.closest('.sku-card');
         if(e.target.classList.contains('bulk-cb')) return; 
-        if (card) openProductDetails(card.getAttribute('data-id'));
+        if (card) window.openProductDetails(card.getAttribute('data-id'));
     });
 
-    document.getElementById('bulkOperation').addEventListener('change', (e) => {
+    document.getElementById('bulkOperation')?.addEventListener('change', (e) => {
         const valInput = document.getElementById('bulkValue');
+        if(!valInput) return;
         if (e.target.value === 'category' || e.target.value === 'tax' || e.target.value === 'discount') {
             valInput.style.display = 'block';
             if(e.target.value === 'discount') valInput.placeholder = "Enter %";
@@ -1193,60 +1236,73 @@ function bindAllEvents() {
             valInput.style.display = 'none';
         }
     });
-    document.getElementById('btnApplyBulk').addEventListener('click', executeBulkAction);
-    document.getElementById('btnCancelBulk').addEventListener('click', clearBulkSelection);
+    document.getElementById('btnApplyBulk')?.addEventListener('click', window.executeBulkAction);
+    document.getElementById('btnCancelBulk')?.addEventListener('click', window.clearBulkSelection);
 
-    document.getElementById('btnCloseDetails').addEventListener('click',     () => hideModal('productDetailsModal'));
-    document.getElementById('btnEditFromModal').addEventListener('click',    () => {
-        hideModal('productDetailsModal');
-        if (window.currentDetailId) loadProductForEdit(window.currentDetailId);
+    document.getElementById('btnCloseDetails')?.addEventListener('click', () => window.hideModal('productDetailsModal'));
+    document.getElementById('btnEditFromModal')?.addEventListener('click', () => {
+        window.hideModal('productDetailsModal');
+        if (window.currentDetailId) window.loadProductForEdit(window.currentDetailId);
     });
-    document.getElementById('btnDeleteFromModal').addEventListener('click',  () => {
-        hideModal('productDetailsModal');
-        if (window.currentDetailId) deleteProduct(window.currentDetailId);
+    document.getElementById('btnDeleteFromModal')?.addEventListener('click', () => {
+        window.hideModal('productDetailsModal');
+        if (window.currentDetailId) window.deleteProduct(window.currentDetailId);
     });
 
-    document.getElementById('btnTransferFromModal').addEventListener('click', openTransferModal);
-    document.getElementById('btnCloseTransfer').addEventListener('click', () => hideModal('transferStockModal'));
-    document.getElementById('btnSubmitTransfer').addEventListener('click', submitStockTransfer);
-    document.getElementById('transferQty').addEventListener('input', window.updateTransferLiveCalc);
-    document.getElementById('transferVariant').addEventListener('change', window.updateTransferLiveCalc);
+    document.getElementById('btnTransferFromModal')?.addEventListener('click', window.openTransferModal);
+    document.getElementById('btnCloseTransfer')?.addEventListener('click', () => window.hideModal('transferStockModal'));
+    document.getElementById('btnSubmitTransfer')?.addEventListener('click', window.submitStockTransfer);
+    document.getElementById('transferQty')?.addEventListener('input', window.updateTransferLiveCalc);
+    document.getElementById('transferVariant')?.addEventListener('change', window.updateTransferLiveCalc);
 
-    document.getElementById('btnStartScan').addEventListener('click', startAIScan);
-    document.getElementById('btnStopScan').addEventListener('click',  stopAIScan);
-    document.getElementById('btnCancelBarcode').addEventListener('click', stopBarcodeScan);
+    document.getElementById('btnStartScan')?.addEventListener('click', window.startAIScan);
+    document.getElementById('btnStopScan')?.addEventListener('click',  window.stopAIScan);
+    document.getElementById('btnCancelBarcode')?.addEventListener('click', window.stopBarcodeScan);
 
     // Apply safe closing to ALL modals
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    document.querySelectorAll('.modal-overlay, #barcodeScannerModal').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay && e.target.id !== 'barcodeScannerModal') hideModal(overlay.id);
+            if (e.target === overlay) window.hideModal(overlay.id);
         });
     });
 }
 
-function escapeHtml(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; }
+window.handleHintEvent = function(e) {
+    const hintBar = document.getElementById('globalHintBar');
+    if(!hintBar) return;
+    if(localStorage.getItem('cfg_hints') === 'false') return;
+    
+    const target = e.target.closest('[data-hint]');
+    if(target) {
+        const hints = target.getAttribute('data-hint').split('|');
+        let hintText = hints[0].split(':')[1]; 
+        const lang = localStorage.getItem('app_lang') || 'en';
+        
+        hints.forEach(h => {
+            const [l, text] = h.split(':');
+            if(l === lang) hintText = text;
+        });
 
-function toggleMenu() {
-    document.getElementById('sideMenu').classList.toggle('open');
+        hintBar.innerText = `💡 ${hintText}`;
+        hintBar.classList.add('show');
+        clearTimeout(window.hintTimeout);
+        window.hintTimeout = setTimeout(() => hintBar.classList.remove('show'), 3000);
+    }
+}
+
+window.toggleMenu = function() {
+    document.getElementById('sideMenu')?.classList.toggle('open');
     const overlay = document.getElementById('menuOverlay');
-    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
 }
 
-function showToast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function checkDemandMitraRouting() {
+window.checkDemandMitraRouting = function() {
     const urlParams = new URLSearchParams(window.location.search);
     const restockName = urlParams.get('restock');
     if (restockName) {
         const targetProd = window.allProducts.find(p => p.name === restockName);
         if(targetProd) {
-            loadProductForEdit(targetProd.id);
+            window.loadProductForEdit(targetProd.id);
             const tempStock = localStorage.getItem("temp_add_stock");
             if (tempStock) {
                 setTimeout(() => {
@@ -1256,15 +1312,15 @@ function checkDemandMitraRouting() {
                         window.updateLiveStockCalc(stockInputs[0].closest('.variant-box'));
                     }
                     localStorage.removeItem("temp_add_stock");
-                    showToast(`DemandMitra suggests adding ${tempStock} units.`);
+                    window.showToast(`DemandMitra suggests adding ${tempStock} units.`);
                 }, 500);
             }
         }
     }
 }
 
-function handleExportCSV() {
-    if(window.allProducts.length === 0) return showToast("No products to export", true);
+window.handleExportCSV = function() {
+    if(window.allProducts.length === 0) return window.showToast("No products to export", true);
     try {
         const flattened = [];
         window.allProducts.forEach(p => {
@@ -1285,37 +1341,8 @@ function handleExportCSV() {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Inventory");
         XLSX.writeFile(wb, `BharatPOS_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
-        showToast("✅ Export Successful!");
-    } catch(e) { showToast("Export Failed", true); }
-}
-
-window.startBarcodeScan = function(btnEl) {
-    window.targetBarcodeInput = btnEl.previousElementSibling;
-    showModal('barcodeScannerModal');
-    
-    Quagga.init({
-        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
-        decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
-    }, function(err) {
-        if (err) { console.log(err); showToast("Scanner failed to start", true); return; }
-        Quagga.start();
-    });
-
-    Quagga.onDetected(function(result) {
-        if(window.targetBarcodeInput && result.codeResult.code) {
-            window.targetBarcodeInput.value = result.codeResult.code;
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.play().catch(e=>{});
-            stopBarcodeScan();
-            showToast("Barcode Scanned");
-        }
-    });
-};
-
-function stopBarcodeScan() {
-    Quagga.stop();
-    hideModal('barcodeScannerModal');
-    window.targetBarcodeInput = null;
+        window.showToast("✅ Export Successful!");
+    } catch(e) { window.showToast("Export Failed", true); }
 }
 
 window.getBrandRowHTML = function(name = '', stock = '') {
@@ -1331,8 +1358,9 @@ window.getBrandRowHTML = function(name = '', stock = '') {
     </div>`;
 }
 
-function addVariantUI(data = null) {
+window.addVariantUI = function(data = null) {
     const container = document.getElementById('variantEngine');
+    if(!container) return;
     const div = document.createElement('div');
     div.className = 'variant-box';
     const uid = Math.floor(Math.random() * 10000);
@@ -1406,7 +1434,7 @@ function addVariantUI(data = null) {
     window.updateLiveStockCalc(div);
 }
 
-async function handleSaveProduct(e) {
+window.handleSaveProduct = async function(e) {
     e.preventDefault();
     const btn = document.getElementById('saveBtn');
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving…`; btn.disabled = true;
@@ -1417,15 +1445,26 @@ async function handleSaveProduct(e) {
         const cat       = document.getElementById('pCategory').value.trim() || 'General';
         const hsn       = document.getElementById('pHSN').value.trim();
         const gstRate   = document.getElementById('pGSTRate').value.trim();
-        const priceType = document.getElementById('pPriceType').value;
+        const pTypeEl   = document.getElementById('pPriceType');
+        const priceType = pTypeEl ? pTypeEl.value : 'inclusive';
 
-        const isAdv      = document.getElementById('cfgAdvFields').checked;
-        const isLooseCfg = document.getElementById('cfgLoose').checked;
-        const isBatchCfg = document.getElementById('cfgBatch').checked;
+        const advEl = document.getElementById('cfgAdvFields');
+        const looseEl = document.getElementById('cfgLoose');
+        const batchEl = document.getElementById('cfgBatch');
+        
+        const isAdv      = advEl ? advEl.checked : false;
+        const isLooseCfg = looseEl ? looseEl.checked : false;
+        const isBatchCfg = batchEl ? batchEl.checked : false;
 
-        const isLoose = isLooseCfg ? document.getElementById('pIsLoose').checked : false;
-        const batchId = isBatchCfg ? document.getElementById('pBatchId').value.trim() : "";
-        const reorder = document.getElementById('pReorderPoint').value;
+        const pLooseEl = document.getElementById('pIsLoose');
+        const isLoose = isLooseCfg ? (pLooseEl ? pLooseEl.checked : false) : false;
+        
+        const pBatchEl = document.getElementById('pBatchId');
+        const batchId = isBatchCfg ? (pBatchEl ? pBatchEl.value.trim() : "") : "";
+        
+        const pReorderEl = document.getElementById('pReorderPoint');
+        const reorder = pReorderEl ? pReorderEl.value : '';
+        
         const nowIso  = new Date().toISOString();
 
         const productId = window.currentEditingId || `prod_${Date.now()}`;
@@ -1476,33 +1515,33 @@ async function handleSaveProduct(e) {
         window.allProducts.push(productDoc);
 
         await window.dbSave('bharatpos_products', window.allProducts);
-        updateDatalists();
-        applyFilters();
+        window.updateDatalists();
+        window.applyFilters();
 
         document.getElementById('productForm').reset();
         document.getElementById('variantEngine').innerHTML = '';
-        addVariantUI();
+        window.addVariantUI();
         window.currentEditingId = null;
         window.currentEditingDate = null;
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast("✅ SKU Saved Successfully");
+        window.showToast("✅ SKU Saved Successfully");
 
         if (user.merchantId && window.db) {
             try {
-                await setDoc(doc(db, "shops", user.merchantId, "products", productDoc.id), productDoc);
+                await setDoc(doc(window.db, "shops", user.merchantId, "products", productDoc.id), productDoc);
             } catch (cloudErr) {
                 console.warn("Offline – data saved to device only.");
             }
         }
     } catch (err) {
         console.error(err);
-        showToast("Critical error saving data", true);
+        window.showToast("Critical error saving data", true);
     } finally {
         btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>`; btn.disabled = false;
     }
 }
 
-function calculateABCTiers() {
+window.calculateABCTiers = function() {
     const freqs = {};
     window.salesHistory.forEach(sale => {
         (sale.items || []).forEach(item => {
@@ -1517,7 +1556,7 @@ function calculateABCTiers() {
     };
 }
 
-function updateDatalists() {
+window.updateDatalists = function() {
     const cats = new Set(), brands = new Set(), taxes = new Set(), batches = new Set();
     window.allProducts.forEach(p => {
         if (p.category) cats.add(p.category);
@@ -1528,35 +1567,39 @@ function updateDatalists() {
         });
     });
 
-    document.getElementById('catList').innerHTML   = Array.from(cats).map(c => `<option value="${c}">`).join('');
-    document.getElementById('brandList').innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
-    document.getElementById('batchList').innerHTML = Array.from(batches).map(b => `<option value="${b}">`).join('');
+    const cList = document.getElementById('catList'); if(cList) cList.innerHTML = Array.from(cats).map(c => `<option value="${c}">`).join('');
+    const bList = document.getElementById('brandList'); if(bList) bList.innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
+    const baList = document.getElementById('batchList'); if(baList) baList.innerHTML = Array.from(batches).map(b => `<option value="${b}">`).join('');
 
-    document.getElementById('catTabSelect').innerHTML = '<option value="">Categories ▾</option>' + 
-        Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
+    const cTab = document.getElementById('catTabSelect'); 
+    if(cTab) cTab.innerHTML = '<option value="">Categories ▾</option>' + Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
         
-    document.getElementById('batchTabSelect').innerHTML = '<option value="">Batches ▾</option>' + 
-        Array.from(batches).map(b => `<option value="${b}">${b}</option>`).join('');
+    const bTab = document.getElementById('batchTabSelect'); 
+    if(bTab) bTab.innerHTML = '<option value="">Batches ▾</option>' + Array.from(batches).map(b => `<option value="${b}">${b}</option>`).join('');
 
-    document.getElementById('filterBrand').innerHTML = '<option value="">All Brands</option>' + Array.from(brands).map(b => `<option value="${b}">${b}</option>`).join('');
-    document.getElementById('filterTax').innerHTML = '<option value="">All Taxes (GST)</option>' + Array.from(taxes).map(t => `<option value="${t}">GST ${t}%</option>`).join('');
+    const fBrand = document.getElementById('filterBrand'); 
+    if(fBrand) fBrand.innerHTML = '<option value="">All Brands</option>' + Array.from(brands).map(b => `<option value="${b}">${b}</option>`).join('');
+    const fTax = document.getElementById('filterTax'); 
+    if(fTax) fTax.innerHTML = '<option value="">All Taxes (GST)</option>' + Array.from(taxes).map(t => `<option value="${t}">GST ${t}%</option>`).join('');
 }
 
-function updateAllTabHighlight() {
+window.updateAllTabHighlight = function() {
+    const allTab = document.querySelector('[data-tier="ALL"]');
+    if(!allTab) return;
     if(window.activeTiers.size === 0 && !window.activeCategory && !window.activeBatch) {
-        document.querySelector('[data-tier="ALL"]').classList.add('active');
+        allTab.classList.add('active');
     } else {
-        document.querySelector('[data-tier="ALL"]').classList.remove('active');
+        allTab.classList.remove('active');
     }
 }
 
-function toggleTierFilter(tier, btnEl) {
+window.toggleTierFilter = function(tier, btnEl) {
     if (tier === 'ALL') {
         window.activeTiers.clear();
         window.activeCategory = '';
         window.activeBatch = '';
-        document.getElementById('catTabSelect').value = '';
-        document.getElementById('batchTabSelect').value = '';
+        const cTab = document.getElementById('catTabSelect'); if(cTab) cTab.value = '';
+        const bTab = document.getElementById('batchTabSelect'); if(bTab) bTab.value = '';
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btnEl.classList.add('active');
     } else {
@@ -1567,27 +1610,30 @@ function toggleTierFilter(tier, btnEl) {
             window.activeTiers.add(tier);
             btnEl.classList.add('active');
         }
-        updateAllTabHighlight();
+        window.updateAllTabHighlight();
     }
-    applyFilters();
+    window.applyFilters();
 }
 
-function toggleChip(btnEl) {
+window.toggleChip = function(btnEl) {
     btnEl.classList.toggle('active');
     const action = btnEl.getAttribute('data-action');
     if (action === 'LowStock')  window.filterState.lowStock  = !window.filterState.lowStock;
     if (action === 'Expiring')  window.filterState.expiring  = !window.filterState.expiring;
     if (action === 'Newest')    window.filterState.newest    = !window.filterState.newest;
-    applyFilters();
+    window.applyFilters();
 }
 
-function applyFilters() {
-    if(!window.isInventoryVisible) return; // Prevent heavy DOM rendering if accordion is closed
+window.applyFilters = function() {
+    if(!window.isInventoryVisible) return; 
     
-    const getTier = calculateABCTiers();
-    window.filterState.brand = document.getElementById('filterBrand').value;
-    window.filterState.tax   = document.getElementById('filterTax').value;
-    window.filterState.query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const getTier = window.calculateABCTiers();
+    const fb = document.getElementById('filterBrand');
+    window.filterState.brand = fb ? fb.value : '';
+    const ft = document.getElementById('filterTax');
+    window.filterState.tax   = ft ? ft.value : '';
+    const si = document.getElementById('searchInput');
+    window.filterState.query = si ? si.value.toLowerCase().trim() : '';
 
     let filtered = window.allProducts;
 
@@ -1636,24 +1682,31 @@ function applyFilters() {
 
     window.currentFilteredData = filtered;
     window.currentPage = 0;
-    document.getElementById('inventoryGrid').innerHTML = '';
-    renderChunk();
+    const grid = document.getElementById('inventoryGrid');
+    if(grid) grid.innerHTML = '';
+    window.renderChunk();
 }
 
-function clearBulkSelection() {
+window.clearBulkSelection = function() {
     window.selectedBulkItems.clear();
-    document.getElementById('bulkActionBar').classList.remove('show');
-    document.getElementById('inventoryGrid').innerHTML = '';
+    const bb = document.getElementById('bulkActionBar');
+    if(bb) bb.classList.remove('show');
+    const ig = document.getElementById('inventoryGrid');
+    if(ig) ig.innerHTML = '';
     window.currentPage = 0;
-    renderChunk();
+    window.renderChunk();
 }
 
-async function executeBulkAction() {
-    const op = document.getElementById('bulkOperation').value;
-    const val = document.getElementById('bulkValue').value.trim();
+window.executeBulkAction = async function() {
+    const opEl = document.getElementById('bulkOperation');
+    const valEl = document.getElementById('bulkValue');
+    if(!opEl || !valEl) return;
+
+    const op = opEl.value;
+    const val = valEl.value.trim();
     
-    if(!op) return showToast("Select an action first", true);
-    if(op !== 'delete' && !val) return showToast("Please enter a value", true);
+    if(!op) return window.showToast("Select an action first", true);
+    if(op !== 'delete' && !val) return window.showToast("Please enter a value", true);
     if(!confirm(`Are you sure you want to modify ${window.selectedBulkItems.size} products?`)) return;
 
     let modifiedIds = [];
@@ -1682,33 +1735,35 @@ async function executeBulkAction() {
 
     if (user.merchantId && window.db) {
         try {
-            let currentBatch = writeBatch(db);
+            let currentBatch = writeBatch(window.db);
             let opCount = 0;
 
             const commitBatch = async () => {
-                if(opCount > 0) { await currentBatch.commit(); currentBatch = writeBatch(db); opCount = 0; }
+                if(opCount > 0) { await currentBatch.commit(); currentBatch = writeBatch(window.db); opCount = 0; }
             };
 
-            for (const id of deletedIds) { currentBatch.delete(doc(db, "shops", user.merchantId, "products", id)); opCount++; if (opCount >= 490) await commitBatch(); }
-            for (const p of modifiedIds) { currentBatch.set(doc(db, "shops", user.merchantId, "products", p.id), p); opCount++; if (opCount >= 490) await commitBatch(); }
+            for (const id of deletedIds) { currentBatch.delete(doc(window.db, "shops", user.merchantId, "products", id)); opCount++; if (opCount >= 490) await commitBatch(); }
+            for (const p of modifiedIds) { currentBatch.set(doc(window.db, "shops", user.merchantId, "products", p.id), p); opCount++; if (opCount >= 490) await commitBatch(); }
             await commitBatch(); 
         } catch(e) { console.warn("Offline - bulk action saved locally only."); }
     }
 
-    clearBulkSelection();
-    updateDatalists();
-    applyFilters();
-    showToast("✨ Bulk Action Applied Successfully");
+    window.clearBulkSelection();
+    window.updateDatalists();
+    window.applyFilters();
+    window.showToast("✨ Bulk Action Applied Successfully");
 }
 
-function renderChunk() {
+window.renderChunk = function() {
     if(!window.isInventoryVisible) return;
 
     const grid  = document.getElementById('inventoryGrid');
+    if(!grid) return;
+
     const start = window.currentPage * window.pageSize;
     const end   = start + window.pageSize;
     const chunk = window.currentFilteredData.slice(start, end);
-    const getTier = calculateABCTiers();
+    const getTier = window.calculateABCTiers();
 
     if (window.currentFilteredData.length === 0 && window.currentPage === 0) {
         grid.innerHTML = `
@@ -1723,7 +1778,8 @@ function renderChunk() {
               <span class="lang-en">Adjust filters or search.</span><span class="lang-hinglish">Search ya filter change karein.</span><span class="lang-hi">सर्च या फिल्टर बदलें।</span>
           </div>
         </div>`;
-        document.getElementById('loadMoreTrigger').style.display = 'none';
+        const loadTrig = document.getElementById('loadMoreTrigger');
+        if(loadTrig) loadTrig.style.display = 'none';
         return;
     }
 
@@ -1737,12 +1793,12 @@ function renderChunk() {
         const vCount   = p.variants.length;
         const basePrice = p.variants[0].price;
         const tier     = getTier(p.variants[0].id);
-        const formatTotalStock = formatStock(totalStock, p.variants[0].quantity);
+        const formatTotalStock = window.formatStock(totalStock, p.variants[0].quantity);
         const isChecked = window.selectedBulkItems.has(p.id) ? 'checked' : '';
 
         let displayBrand = '';
         if(p.variants[0].brands && p.variants[0].brands.length > 0) {
-            displayBrand = ` • ${p.variants[0].brands[0].name}${p.variants[0].brands.length > 1 ? ' (+More)' : ''}`;
+            displayBrand = ` • ${window.escapeHtml(p.variants[0].brands[0].name)}${p.variants[0].brands.length > 1 ? ' (+More)' : ''}`;
         }
 
         const card = document.createElement('div');
@@ -1754,12 +1810,12 @@ function renderChunk() {
             <div>
                 <div class="sku-header">
                     <input type="checkbox" class="bulk-cb" ${isChecked} onclick="event.stopPropagation(); window.toggleBulkItem('${p.id}', this.checked)">
-                    <h3 class="sku-name">${p.name}</h3>
+                    <h3 class="sku-name">${window.escapeHtml(p.name)}</h3>
                 </div>
-                <div class="sku-cat">${p.category || 'General'}</div>
+                <div class="sku-cat">${window.escapeHtml(p.category) || 'General'}</div>
                 <div class="sku-variant-label">
                     <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
-                    ${vCount > 1 ? `${vCount} Variants` : p.variants[0].quantity}${displayBrand}
+                    ${vCount > 1 ? `${vCount} Variants` : window.escapeHtml(p.variants[0].quantity)}${displayBrand}
                 </div>
             </div>
             <div>
@@ -1777,19 +1833,23 @@ function renderChunk() {
 
     grid.appendChild(fragment);
 
-    if (end < window.currentFilteredData.length) {
-        document.getElementById('loadMoreTrigger').style.display = 'block';
-    } else {
-        document.getElementById('loadMoreTrigger').style.display = 'none';
+    const loadTrig = document.getElementById('loadMoreTrigger');
+    if(loadTrig) {
+        if (end < window.currentFilteredData.length) {
+            loadTrig.style.display = 'block';
+        } else {
+            loadTrig.style.display = 'none';
+        }
     }
 }
 
-function setupIntersectionObserver() {
+window.setupIntersectionObserver = function() {
     const trigger = document.getElementById('loadMoreTrigger');
+    if(!trigger) return;
     window.observer = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && (window.currentPage * window.pageSize) < window.currentFilteredData.length) {
             window.currentPage++;
-            renderChunk();
+            window.renderChunk();
         }
     }, { root: null, threshold: 0.1 });
     window.observer.observe(trigger);
@@ -1801,117 +1861,122 @@ window.openProductDetails = function(id) {
     if (!base) return;
 
     window.currentDetailId = id;
-    const getTier = calculateABCTiers();
+    const getTier = window.calculateABCTiers();
     const tier  = getTier(base.variants[0].id);
 
-    document.getElementById('dName').innerText        = base.name;
-    document.getElementById('dTier').innerText        = `Tier ${tier}`;
-    document.getElementById('dTier').className        = `sku-tier tier-${tier.toLowerCase()}`;
-    document.getElementById('dCat').innerText         = base.category || 'General';
+    const dName = document.getElementById('dName'); if(dName) dName.innerText = base.name;
+    const dTier = document.getElementById('dTier'); if(dTier) { dTier.innerText = `Tier ${tier}`; dTier.className = `sku-tier tier-${tier.toLowerCase()}`; }
+    const dCat = document.getElementById('dCat'); if(dCat) dCat.innerText = base.category || 'General';
 
-    document.getElementById('dHSN').innerText         = base.hsn      || '-';
-    document.getElementById('dGST').innerText         = base.gstRate ? `${base.gstRate}%` : '-';
-    document.getElementById('dTaxType').innerText     = base.priceType || 'inclusive';
-    document.getElementById('dBatch').innerText       = base.batchId || '-';
+    const dHsn = document.getElementById('dHSN'); if(dHsn) dHsn.innerText = base.hsn || '-';
+    const dGst = document.getElementById('dGST'); if(dGst) dGst.innerText = base.gstRate ? `${base.gstRate}%` : '-';
+    const dTaxType = document.getElementById('dTaxType'); if(dTaxType) dTaxType.innerText = base.priceType || 'inclusive';
+    const dBatch = document.getElementById('dBatch'); if(dBatch) dBatch.innerText = base.batchId || '-';
     
     const threshold = (base.reorderPoint !== undefined && base.reorderPoint !== '') ? base.reorderPoint : 5;
-    document.getElementById('dAlert').innerText       = `${threshold} Units`;
+    const dAlert = document.getElementById('dAlert'); if(dAlert) dAlert.innerText = `${threshold} Units`;
 
     let dateAddedDisplay = '-';
     if(base.dateAdded) {
         const d = new Date(base.dateAdded);
         if(!isNaN(d.getTime())) dateAddedDisplay = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
-    document.getElementById('dAdded').innerText = dateAddedDisplay;
+    const dAdded = document.getElementById('dAdded'); if(dAdded) dAdded.innerText = dateAddedDisplay;
 
-    document.getElementById('dVariantsList').innerHTML = base.variants.map(v => {
-        let details = [];
-        
-        let brandsSummary = '';
-        if(v.brands && v.brands.length > 0) {
-            brandsSummary = `<div style="font-size:10px; color:var(--slate-500); margin-top:4px; font-weight:700;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name} (${b.stock})`).join(', ') + `</div>`;
-        }
+    const vList = document.getElementById('dVariantsList');
+    if(vList) {
+        vList.innerHTML = base.variants.map(v => {
+            let details = [];
+            
+            let brandsSummary = '';
+            if(v.brands && v.brands.length > 0) {
+                brandsSummary = `<div style="font-size:10px; color:var(--slate-500); margin-top:4px; font-weight:700;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${window.escapeHtml(b.name)} (${b.stock})`).join(', ') + `</div>`;
+            }
 
-        if(v.barcode) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
-        if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
-        if(v.costPrice) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
-        if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${v.baseUnit||'pcs'}</span>`);
-        
-        let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--blue-100); font-size:11px; font-weight:700;">${details.join('')}</div>` : '';
+            if(v.barcode) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
+            if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
+            if(v.costPrice) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
+            if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${window.escapeHtml(v.baseUnit)||'pcs'}</span>`);
+            
+            let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--blue-100); font-size:11px; font-weight:700;">${details.join('')}</div>` : '';
 
-        return `
-        <div style="background:var(--white);padding:16px;border-radius:12px;border:1.5px solid var(--blue-100);box-shadow:0 2px 5px rgba(0,0,0,0.02);">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                    <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${v.quantity}</div>
-                    ${brandsSummary}
+            return `
+            <div style="background:var(--white);padding:16px;border-radius:12px;border:1.5px solid var(--blue-100);box-shadow:0 2px 5px rgba(0,0,0,0.02);">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(v.quantity)}</div>
+                        ${brandsSummary}
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:16px;">₹${v.price}</div>
+                        <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${window.formatStock(v.stock, v.quantity)}</div>
+                    </div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:16px;">₹${v.price}</div>
-                    <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
-                </div>
+                ${detailsHtml}
             </div>
-            ${detailsHtml}
-        </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
 
-    showModal('productDetailsModal');
+    window.showModal('productDetailsModal');
 }
 
-function loadProductForEdit(id) {
+window.loadProductForEdit = function(id) {
     const base = window.allProducts.find(p => p.id === id);
     if (!base) return;
 
     window.currentEditingId = base.id;
     window.currentEditingDate = base.dateAdded;
 
-    document.getElementById('pName').value     = base.name;
-    document.getElementById('pCategory').value = base.category || '';
-    document.getElementById('pHSN').value      = base.hsn      || '';
-    document.getElementById('pGSTRate').value  = base.gstRate  || '';
-    if (base.priceType) document.getElementById('pPriceType').value = base.priceType;
+    const pName = document.getElementById('pName'); if(pName) pName.value = base.name;
+    const pCat = document.getElementById('pCategory'); if(pCat) pCat.value = base.category || '';
+    const pHsn = document.getElementById('pHSN'); if(pHsn) pHsn.value = base.hsn || '';
+    const pGst = document.getElementById('pGSTRate'); if(pGst) pGst.value = base.gstRate || '';
+    
+    if (base.priceType) { const pPt = document.getElementById('pPriceType'); if(pPt) pPt.value = base.priceType; }
 
-    document.getElementById('pReorderPoint').value = base.reorderPoint || '';
-    document.getElementById('pBatchId').value   = base.batchId || '';
-    document.getElementById('pIsLoose').checked = base.isLoose || false;
+    const pReo = document.getElementById('pReorderPoint'); if(pReo) pReo.value = base.reorderPoint || '';
+    const pBat = document.getElementById('pBatchId'); if(pBat) pBat.value = base.batchId || '';
+    const pLoo = document.getElementById('pIsLoose'); if(pLoo) pLoo.checked = base.isLoose || false;
 
-    if (base.batchId) document.getElementById('cfgBatch').checked = true;
-    if (base.isLoose) document.getElementById('cfgLoose').checked = true;
+    if (base.batchId) { const cb = document.getElementById('cfgBatch'); if(cb) cb.checked = true; }
+    if (base.isLoose) { const cl = document.getElementById('cfgLoose'); if(cl) cl.checked = true; }
     if (base.variants.some(v => (v.brands && v.brands.length>0) || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
-        document.getElementById('cfgAdvFields').checked = true;
+        const ca = document.getElementById('cfgAdvFields'); if(ca) ca.checked = true;
     }
 
-    applySettingsUI(
-        document.getElementById('cfgAdvFields').checked,
-        document.getElementById('cfgBatch').checked,
-        document.getElementById('cfgLoose').checked
-    );
+    const ca = document.getElementById('cfgAdvFields');
+    const cb = document.getElementById('cfgBatch');
+    const cl = document.getElementById('cfgLoose');
+    window.applySettingsUI(ca?ca.checked:false, cb?cb.checked:false, cl?cl.checked:false);
 
     if (base.hsn || base.gstRate) {
         const gstContent = document.getElementById('tierGst');
-        if (!gstContent.classList.contains('active')) {
+        if (gstContent && !gstContent.classList.contains('active')) {
             gstContent.classList.add('active');
             const gstBtn = document.getElementById('btnToggleGst');
-            const chevron = gstBtn.querySelector('.chevron');
-            if (chevron) chevron.style.transform = 'rotate(180deg)';
-            gstBtn.style.background  = 'var(--blue-50)';
-            gstBtn.style.borderColor = 'var(--primary)';
-            gstBtn.style.color       = 'var(--primary)';
+            if(gstBtn) {
+                const chevron = gstBtn.querySelector('.chevron');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+                gstBtn.style.background  = 'var(--blue-50)';
+                gstBtn.style.borderColor = 'var(--primary)';
+                gstBtn.style.color       = 'var(--primary)';
+            }
         }
     }
 
-    document.getElementById('variantEngine').innerHTML = '';
-    base.variants.forEach(v => addVariantUI(v));
+    const eng = document.getElementById('variantEngine');
+    if(eng) eng.innerHTML = '';
+    base.variants.forEach(v => window.addVariantUI(v));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    document.getElementById('pName').focus();
+    if(pName) pName.focus();
     
     const isHin = document.body.classList.contains('lang-hin');
-    showToast(isHin ? `✏️ "${base.name}" Edit mode mein khul gaya` : `✏️ Loaded "${base.name}" for editing`);
+    window.showToast(isHin ? `✏️ "${base.name}" Edit mode mein khul gaya` : `✏️ Loaded "${base.name}" for editing`);
 }
 
-async function deleteProduct(id) {
+window.deleteProduct = async function(id) {
     const base = window.allProducts.find(p => p.id === id);
     if(!base) return;
 
@@ -1922,39 +1987,42 @@ async function deleteProduct(id) {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     window.allProducts = window.allProducts.filter(p => p.id !== id);
     await window.dbSave('bharatpos_products', window.allProducts);
-    applyFilters();
-    showToast(isHin ? "🗑️ Samaan delete ho gaya" : "🗑️ Deleted successfully");
+    window.applyFilters();
+    window.showToast(isHin ? "🗑️ Samaan delete ho gaya" : "🗑️ Deleted successfully");
 
     if (user.merchantId && window.db) {
         try {
-            await deleteDoc(doc(db, "shops", user.merchantId, "products", id));
+            await deleteDoc(doc(window.db, "shops", user.merchantId, "products", id));
         } catch (e) {
             console.warn("Delete offline mode — removed locally only.", e);
         }
     }
 }
 
-async function fetchMasterCatalog() {
+window.fetchMasterCatalog = async function() {
     const btn = document.getElementById('btnFetchMasterCatalog');
+    if(!btn) return;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching…`; btn.disabled = true;
     try {
         if (!window.db) throw new Error("Firebase disconnected");
-        const masterRef = collection(db, "masterCatalog");
+        const masterRef = collection(window.db, "masterCatalog");
         const snap      = await getDocs(masterRef);
         window.masterDbCache   = snap.docs.map(d => d.data());
-        searchMasterDB();
-        showToast("MasterDB Synced");
+        window.searchMasterDB();
+        window.showToast("MasterDB Synced");
     } catch (e) {
         console.error(e);
-        showToast("Failed to fetch MasterDB", true);
+        window.showToast("Failed to fetch MasterDB", true);
     } finally {
         btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>`; btn.disabled = false;
     }
 }
 
-function searchMasterDB() {
-    const q    = document.getElementById('masterSearchInput').value.toLowerCase().trim();
+window.searchMasterDB = function() {
+    const si = document.getElementById('masterSearchInput');
+    const q  = si ? si.value.toLowerCase().trim() : '';
     const list = document.getElementById('masterDbList');
+    if(!list) return;
 
     if (window.masterDbCache.length === 0) return;
     const filtered = window.masterDbCache.filter(p => (p.name || '').toLowerCase().includes(q)).slice(0, 50);
@@ -1962,8 +2030,8 @@ function searchMasterDB() {
     list.innerHTML = filtered.map(p => `
         <div style="display:flex;justify-content:space-between;align-items:center;background:var(--white);padding:14px;border:1.5px solid var(--blue-100);border-radius:12px; margin-bottom:8px;">
             <div>
-                <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${p.name}</div>
-                <div style="font-size:11px;color:var(--slate-500); font-weight:700; margin-top:4px;">${p.category || 'Gen'} • ₹${p.price}</div>
+                <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(p.name)}</div>
+                <div style="font-size:11px;color:var(--slate-500); font-weight:700; margin-top:4px;">${window.escapeHtml(p.category) || 'Gen'} • ₹${p.price}</div>
             </div>
             <button class="btn btn-outline" style="padding:8px 14px;font-size:12px;width:auto;" data-json='${JSON.stringify(p).replace(/'/g, "&#39;")}'>Import</button>
         </div>
@@ -1971,34 +2039,40 @@ function searchMasterDB() {
 }
 
 window.importMasterProduct = function(p) {
-    hideModal('masterCatalogModal');
-    document.getElementById('pName').value     = p.name     || '';
-    document.getElementById('pCategory').value = p.category || '';
-    document.getElementById('pHSN').value      = p.hsn      || '';
-    document.getElementById('pGSTRate').value  = p.gstRate  || '';
-    if (document.getElementById('cfgLoose').checked) {
-        document.getElementById('pIsLoose').checked = p.isLoose || false;
+    window.hideModal('masterCatalogModal');
+    
+    const pN = document.getElementById('pName'); if(pN) pN.value = p.name || '';
+    const pC = document.getElementById('pCategory'); if(pC) pC.value = p.category || '';
+    const pH = document.getElementById('pHSN'); if(pH) pH.value = p.hsn || '';
+    const pG = document.getElementById('pGSTRate'); if(pG) pG.value = p.gstRate || '';
+    
+    const cl = document.getElementById('cfgLoose');
+    const pil = document.getElementById('pIsLoose');
+    if (cl && cl.checked && pil) {
+        pil.checked = p.isLoose || false;
     }
 
     const firstRow = document.querySelector('.variant-box');
     if (firstRow) {
-        if (p.quantity) firstRow.querySelector('.v-unit').value  = p.quantity;
-        if (p.price)    firstRow.querySelector('.v-price').value = p.price;
+        const vu = firstRow.querySelector('.v-unit'); if(vu && p.quantity) vu.value = p.quantity;
+        const vp = firstRow.querySelector('.v-price'); if(vp && p.price) vp.value = p.price;
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    document.getElementById('pName').focus();
-    showToast(`Imported "${p.name}"`);
+    if(pN) pN.focus();
+    window.showToast(`Imported "${p.name}"`);
 }
 
-async function handleBulkImport(event) {
+window.handleBulkImport = async function(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async function (e) {
         try {
-            document.getElementById('inventoryGrid').innerHTML =
-                '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Parsing file…</span></div>';
+            const grid = document.getElementById('inventoryGrid');
+            if(grid) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Parsing file…</span></div>';
+            }
 
             const data     = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -2006,7 +2080,7 @@ async function handleBulkImport(event) {
             if (jsonData.length === 0) throw new Error("File is empty");
 
             const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-            let batch = (user.merchantId && window.db) ? writeBatch(db) : null;
+            let batch = (user.merchantId && window.db) ? writeBatch(window.db) : null;
             let opCount = 0, addedCount = 0;
 
             for (const row of jsonData) {
@@ -2034,37 +2108,39 @@ async function handleBulkImport(event) {
                 };
 
                 window.allProducts.push(productDoc);
-                if (batch && user.merchantId) { batch.set(doc(db, "shops", user.merchantId, "products", skuId), productDoc); }
+                if (batch && user.merchantId) { batch.set(doc(window.db, "shops", user.merchantId, "products", skuId), productDoc); }
                 opCount++; addedCount++;
 
-                if (batch && opCount === 490) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
+                if (batch && opCount === 490) { await batch.commit(); batch = writeBatch(window.db); opCount = 0; }
             }
 
             if (batch && opCount > 0 && user.merchantId) await batch.commit();
 
             await window.dbSave('bharatpos_products', window.allProducts);
-            updateDatalists();
-            applyFilters();
-            showToast(`✅ Imported ${addedCount} products successfully!`);
+            window.updateDatalists();
+            window.applyFilters();
+            window.showToast(`✅ Imported ${addedCount} products successfully!`);
 
         } catch (error) {
             console.error(error);
-            showToast("Import failed. Ensure valid CSV/Excel format.", true);
-            applyFilters();
+            window.showToast("Import failed. Ensure valid CSV/Excel format.", true);
+            window.applyFilters();
         }
     };
     reader.readAsArrayBuffer(file);
 }
 
-async function pullFreshData() {
+window.pullFreshData = async function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    if (!user.merchantId || !window.db) { showToast("No active cloud connection", true); return; }
+    if (!user.merchantId || !window.db) { window.showToast("No active cloud connection", true); return; }
 
-    document.getElementById('inventoryGrid').innerHTML =
-        '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-cloud-arrow-down fa-bounce fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Syncing from Cloud…</span></div>';
+    const grid = document.getElementById('inventoryGrid');
+    if(grid) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-cloud-arrow-down fa-bounce fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Syncing from Cloud…</span></div>';
+    }
 
     try {
-        const snap  = await getDocs(collection(db, "shops", user.merchantId, "products"));
+        const snap  = await getDocs(collection(window.db, "shops", user.merchantId, "products"));
         let fresh = snap.docs.map(d => d.data());
         
         fresh = fresh.map(p => {
@@ -2085,46 +2161,51 @@ async function pullFreshData() {
 
         window.allProducts = fresh;
         await window.dbSave('bharatpos_products', fresh);
-        updateDatalists();
-        applyFilters();
-        showToast("☁️ Sync complete!");
+        window.updateDatalists();
+        window.applyFilters();
+        window.showToast("☁️ Sync complete!");
     } catch (e) {
-        showToast("Sync failed", true);
-        applyFilters();
+        window.showToast("Sync failed", true);
+        window.applyFilters();
     }
 }
 
-async function startAIScan() {
+window.startAIScan = async function() {
     const box   = document.getElementById('scannerBox');
     const video = document.getElementById('cameraPreview');
+    if(!box || !video) return;
+    
     box.style.display = 'block';
     try {
         window.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         video.srcObject = window.cameraStream;
-        setTimeout(captureAndSendToAI, 3000);
+        setTimeout(window.captureAndSendToAI, 3000);
     } catch (err) {
-        showToast("Camera access denied", true);
+        window.showToast("Camera access denied", true);
         box.style.display = 'none';
     }
 }
 
-function stopAIScan() {
+window.stopAIScan = function() {
     if (window.cameraStream) { window.cameraStream.getTracks().forEach(t => t.stop()); window.cameraStream = null; }
-    document.getElementById('scannerBox').style.display = 'none';
+    const box = document.getElementById('scannerBox');
+    if(box) box.style.display = 'none';
 }
 
-async function captureAndSendToAI() {
+window.captureAndSendToAI = async function() {
     if (!window.cameraStream) return;
     const video  = document.getElementById("cameraPreview");
     const canvas = document.getElementById("captureCanvas");
+    if(!video || !canvas) return;
+    
     const ctx    = canvas.getContext("2d");
     canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
 
-    stopAIScan();
-    showToast("✨ AI Lens analyzing...");
+    window.stopAIScan();
+    window.showToast("✨ AI Lens analyzing...");
 
     try {
         const url  = window.buildUrl ? window.buildUrl('/ai-product-scan') : 'https://server-xy7s.onrender.com/ai-product-scan';
@@ -2132,24 +2213,26 @@ async function captureAndSendToAI() {
         const data = await res.json();
 
         if (data && data.success && data.product) {
-            if(!document.getElementById("pName").value) document.getElementById("pName").value = data.product.name || "";
-            if(!document.getElementById("pCategory").value) document.getElementById("pCategory").value = data.product.category || "";
+            const pN = document.getElementById("pName"); if(pN && !pN.value) pN.value = data.product.name || "";
+            const pC = document.getElementById("pCategory"); if(pC && !pC.value) pC.value = data.product.category || "";
 
             const firstVariant = document.querySelector('.variant-box');
-            if (firstVariant && data.product.price && !firstVariant.querySelector('.v-price').value) {
-                firstVariant.querySelector('.v-price').value = data.product.price;
+            if (firstVariant && data.product.price) {
+                const vP = firstVariant.querySelector('.v-price');
+                if(vP && !vP.value) vP.value = data.product.price;
             }
 
-            if (document.getElementById('cfgAdvFields').checked && firstVariant) {
+            const advEl = document.getElementById('cfgAdvFields');
+            if (advEl && advEl.checked && firstVariant) {
                 const bCode = firstVariant.querySelector('.v-barcode');
                 const eDate = firstVariant.querySelector('.v-expiry');
-                if (data.product.expiry_date && !eDate.value) eDate.value = data.product.expiry_date;
-                if (data.product.barcode && !bCode.value) bCode.value = data.product.barcode;
+                if (data.product.expiry_date && eDate && !eDate.value) eDate.value = data.product.expiry_date;
+                if (data.product.barcode && bCode && !bCode.value) bCode.value = data.product.barcode;
             }
-            showToast("✨ AI Auto-fill complete");
+            window.showToast("✨ AI Auto-fill complete");
         }
     } catch (e) {
-        showToast("AI Lens failed", true);
+        window.showToast("AI Lens failed", true);
     }
 }
 
@@ -2158,42 +2241,51 @@ window.openTransferModal = function() {
     if(!base) return;
 
     const vSel = document.getElementById('transferVariant');
-    vSel.innerHTML = base.variants.map(v => `<option value="${v.id}">${v.quantity} (Avail: ${v.stock})</option>`).join('');
+    if(vSel) vSel.innerHTML = base.variants.map(v => `<option value="${v.id}">${v.quantity} (Avail: ${v.stock})</option>`).join('');
 
     const bSel = document.getElementById('transferTargetBranch');
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const mobile = user.mobile || user.phone;
-    
-    // Safely attempt to fetch branches from local storage
-    const storedShopsStr = localStorage.getItem(`bharatpos_shops_${mobile}`);
-    let shops = [];
-    if (storedShopsStr) {
-        try { shops = JSON.parse(storedShopsStr); } catch(e) {}
-    }
-    
-    if(shops.length > 1) {
-        bSel.innerHTML = shops.filter(s => s.merchantId !== user.merchantId)
-                              .map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
-    } else {
-        bSel.innerHTML = '<option value="">No other branches found</option>';
+    if(bSel) {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const mobile = user.mobile || user.phone;
+        
+        const storedShopsStr = localStorage.getItem(`bharatpos_shops_${mobile}`);
+        let shops = [];
+        if (storedShopsStr) {
+            try { shops = JSON.parse(storedShopsStr); } catch(e) {}
+        }
+        
+        if(shops.length > 1) {
+            bSel.innerHTML = shops.filter(s => s.merchantId !== user.merchantId)
+                                  .map(s => `<option value="${s.merchantId}">${window.escapeHtml(s.shopName)}</option>`).join('');
+        } else {
+            bSel.innerHTML = '<option value="">No other branches found</option>';
+        }
     }
 
-    document.getElementById('transferQty').value = '';
-    document.getElementById('transferCalcDisplay').innerText = '';
-    hideModal('productDetailsModal');
-    showModal('transferStockModal');
+    const tQty = document.getElementById('transferQty'); if(tQty) tQty.value = '';
+    const tCalc = document.getElementById('transferCalcDisplay'); if(tCalc) tCalc.innerText = '';
+    
+    window.hideModal('productDetailsModal');
+    window.showModal('transferStockModal');
 }
 
 window.submitStockTransfer = async function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const targetBranch = document.getElementById('transferTargetBranch').value;
-    const variantId = document.getElementById('transferVariant').value;
-    const qty = parseFloat(document.getElementById('transferQty').value);
+    
+    const tTarget = document.getElementById('transferTargetBranch');
+    const tVar = document.getElementById('transferVariant');
+    const tQtyInput = document.getElementById('transferQty');
+    
+    if(!tTarget || !tVar || !tQtyInput) return;
+    
+    const targetBranch = tTarget.value;
+    const variantId = tVar.value;
+    const qty = parseFloat(tQtyInput.value);
 
-    if(!targetBranch || !variantId || isNaN(qty) || qty <= 0) return showToast("Invalid transfer details", true);
+    if(!targetBranch || !variantId || isNaN(qty) || qty <= 0) return window.showToast("Invalid transfer details", true);
 
     const btn = document.getElementById('btnSubmitTransfer');
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Transferring...`; btn.disabled = true;
+    if(btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Transferring...`; btn.disabled = true; }
 
     try {
         const pIdx = window.allProducts.findIndex(p => p.id === window.currentDetailId);
@@ -2216,54 +2308,56 @@ window.submitStockTransfer = async function() {
         }
 
         await window.dbSave('bharatpos_products', window.allProducts);
-        await setDoc(doc(window.db, "shops", user.merchantId, "products", prod.id), prod);
+        if(window.db) await setDoc(doc(window.db, "shops", user.merchantId, "products", prod.id), prod);
 
-        const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
-        const targetSnap = await getDoc(targetRef);
+        if(window.db) {
+            const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
+            const targetSnap = await getDoc(targetRef);
 
-        if(targetSnap.exists()) {
-            let targetProd = targetSnap.data();
-            let targetVar = targetProd.variants.find(v => v.id === variantId);
-            
-            if(targetVar) {
-                targetVar.stock = (Number(targetVar.stock) || 0) + qty;
-                if(targetVar.brands && targetVar.brands.length > 0) {
-                    targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
-                }
-            } else {
-                let newVar = JSON.parse(JSON.stringify(variant));
-                newVar.stock = qty;
-                if(newVar.brands && newVar.brands.length > 0) {
-                   newVar.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
-                }
-                targetProd.variants.push(newVar);
-            }
-            await setDoc(targetRef, targetProd);
-        } else {
-            let clonedProd = JSON.parse(JSON.stringify(prod));
-            clonedProd.variants.forEach(v => {
-                if(v.id === variantId) {
-                    v.stock = qty;
-                    if(v.brands && v.brands.length > 0) {
-                       v.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
+            if(targetSnap.exists()) {
+                let targetProd = targetSnap.data();
+                let targetVar = targetProd.variants.find(v => v.id === variantId);
+                
+                if(targetVar) {
+                    targetVar.stock = (Number(targetVar.stock) || 0) + qty;
+                    if(targetVar.brands && targetVar.brands.length > 0) {
+                        targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
                     }
                 } else {
-                    v.stock = 0;
-                    if(v.brands) v.brands.forEach(b => b.stock = 0);
+                    let newVar = JSON.parse(JSON.stringify(variant));
+                    newVar.stock = qty;
+                    if(newVar.brands && newVar.brands.length > 0) {
+                       newVar.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
+                    }
+                    targetProd.variants.push(newVar);
                 }
-            });
-            await setDoc(targetRef, clonedProd);
+                await setDoc(targetRef, targetProd);
+            } else {
+                let clonedProd = JSON.parse(JSON.stringify(prod));
+                clonedProd.variants.forEach(v => {
+                    if(v.id === variantId) {
+                        v.stock = qty;
+                        if(v.brands && v.brands.length > 0) {
+                           v.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
+                        }
+                    } else {
+                        v.stock = 0;
+                        if(v.brands) v.brands.forEach(b => b.stock = 0);
+                    }
+                });
+                await setDoc(targetRef, clonedProd);
+            }
         }
 
-        showToast("📦 Stock Transferred Successfully!");
-        hideModal('transferStockModal');
-        applyFilters(); 
+        window.showToast("📦 Stock Transferred Successfully!");
+        window.hideModal('transferStockModal');
+        window.applyFilters(); 
 
     } catch (e) {
         console.error(e);
-        showToast("Transfer failed: " + e.message, true);
+        window.showToast("Transfer failed: " + e.message, true);
     } finally {
-        btn.innerHTML = `<i class="fa-solid fa-truck-fast"></i> Confirm Transfer`; btn.disabled = false;
+        if(btn) { btn.innerHTML = `<i class="fa-solid fa-truck-fast"></i> Confirm Transfer`; btn.disabled = false; }
     }
 }
 </script>
