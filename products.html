@@ -12,17 +12,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script src="quagga.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script type="module" src="bharatpos.js"></script>
   <link rel="stylesheet" href="bharatpos.css">
 
   <style>
-    /* ═══════════════════════════════════════════════════════════
-       TRI-LINGUAL DISPLAY LOGIC
-    ═══════════════════════════════════════════════════════════ */
-    body.lang-en .lang-hinglish, body.lang-en .lang-hi { display: none !important; }
-    body.lang-hinglish .lang-en, body.lang-hinglish .lang-hi { display: none !important; }
-    body.lang-hi .lang-en, body.lang-hi .lang-hinglish { display: none !important; }
-
     /* ═══════════════════════════════════════════════════════════
        LAYOUT & PANELS (SaaS Flat Theme)
     ═══════════════════════════════════════════════════════════ */
@@ -61,7 +53,7 @@
     .form-input, .form-select { 
         width: 100%; background: #f9f9f9; border: 1.5px solid var(--blue-200); 
         color: var(--slate-900); padding: 12px 14px; border-radius: var(--radius-input); 
-        font-size: 14px; font-weight: 600; outline: none; font-family: var(--font-body); transition: var(--trans);
+        font-size: 14px; font-weight: 600; outline: none; font-family: var(--font-body); transition: var(--trans); box-sizing: border-box;
     }
     .form-input:focus, .form-select:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
     .floating-label { position: absolute; left: 14px; top: 12px; color: var(--slate-400); font-size: 13px; font-weight: 600; pointer-events: none; transition: var(--trans); background: transparent; }
@@ -129,7 +121,7 @@
     input:checked + .slider:before { transform: translateX(20px); }
 
     /* ═══════════════════════════════════════════════════════════
-       COMPRESSED INVENTORY LIST (The requested fix)
+       COMPRESSED INVENTORY LIST
     ═══════════════════════════════════════════════════════════ */
     .inventory-toggle-btn {
         width: 100%; padding: 18px; border-radius: var(--radius-card); 
@@ -176,7 +168,7 @@
     ═══════════════════════════════════════════════════════════ */
     .search-box-wide { position: relative; width: 100%; margin-bottom: 15px; }
     .search-box-wide i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 14px; pointer-events: none; }
-    .search-box-wide input { width: 100%; padding: 14px 14px 14px 42px; background: #f9f9f9; border: 1.5px solid var(--blue-200); border-radius: var(--radius-input); font-size: 14px; font-weight: 600; font-family: var(--font-body); outline: none; transition: var(--trans); color: var(--slate-900); }
+    .search-box-wide input { width: 100%; padding: 14px 14px 14px 42px; background: #f9f9f9; border: 1.5px solid var(--blue-200); border-radius: var(--radius-input); font-size: 14px; font-weight: 600; font-family: var(--font-body); outline: none; transition: var(--trans); color: var(--slate-900); box-sizing: border-box;}
     .search-box-wide input:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
 
     .inventory-grid { 
@@ -286,6 +278,11 @@
 </head>
 <body class="lang-en">
 
+<script type="module">
+    import './bharatpos.js';
+    window.injectLayout('products'); // Dynamically injects secure, centralized Navigation
+</script>
+
 <datalist id="unitOptions">
   <option value="pcs"></option><option value="kg"></option><option value="g"></option>
   <option value="L"></option><option value="ml"></option><option value="box"></option>
@@ -295,54 +292,19 @@
 <datalist id="catList"></datalist>
 <datalist id="batchList"></datalist>
 
-<div id="menuOverlay" class="menu-overlay"></div>
-
-<div id="sideMenu" class="side-menu">
-  <div class="side-menu-brand">
-    <div class="side-menu-brand-text">Bharat<span>POS</span></div>
-    <button id="btnCloseMenu" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
-  </div>
-  <div class="side-menu-links">
-    <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
-    <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
-    <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
-    <a href="sales.html"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
-    <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
-    <a href="customers.html"><i class="fa-solid fa-users"></i> <span class="lang-en">Bharat CRM</span><span class="lang-hinglish">Grahak (Customers)</span><span class="lang-hi">ग्राहक</span></a>
-    <a href="forecast.html"><i class="fa-solid fa-brain"></i> <span class="lang-en">DemandMitra AI</span><span class="lang-hinglish">AI Forecast</span><span class="lang-hi">AI भविष्यवाणी</span></a>
-  </div>
-</div>
-
-<nav class="navbar">
-  <div class="brand">
-    <button id="btnOpenMenu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
-    <div class="brand-logo-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
-    <div style="font-size: 15px; font-weight: 800; color: var(--slate-900);">
-      <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span>
-    </div>
-  </div>
-  <div class="nav-actions">
-    <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
-    <button id="btnLangToggle" class="btn-icon-only" title="Change Language">A/अ</button>
-    <button id="btnNavPos" class="btn btn-success" style="padding:8px 16px;font-size:13px;width:auto; margin-left: 5px;">
-      <i class="fa-solid fa-cash-register"></i> <span class="lang-en">POS</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span>
-    </button>
-  </div>
-</nav>
-
 <div class="main-container">
 
   <div class="panel">
     <div class="panel-header">
       <h2 class="panel-title">
         <div class="panel-title-icon blue"><i class="fa-solid fa-layer-group"></i></div>
-        <span class="lang-en">Product Engine</span><span class="lang-hinglish">Naya Samaan Jodein</span><span class="lang-hi">नया सामान जोड़ें</span>
+        <span data-i18n="product_engine">Product Engine</span>
       </h2>
       <div style="display:flex;gap:8px;">
-        <button id="btnStartScan" type="button" class="btn btn-scan btn-icon-only" data-hint="en:Auto-fill details using Camera|hinglish:Camera se photo khinch kar automatic detail bharein|hi:कैमरा से फोटो खींचकर आटोमेटिक जानकारी भरें">
-            <i class="fa-solid fa-camera-viewfinder"></i> <span style="font-size: 12px;" class="lang-en">Lens</span><span style="font-size: 12px;" class="lang-hinglish">Scan</span><span style="font-size: 12px;" class="lang-hi">स्कैन</span>
+        <button id="btnStartScan" type="button" class="btn btn-scan btn-icon-only">
+            <i class="fa-solid fa-camera-viewfinder"></i> <span style="font-size: 12px;" data-i18n="lens_scan">Lens</span>
         </button>
-        <button id="btnOpenSettings" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Form Settings (Barcode, Expiry, Batch)|hinglish:Settings: Barcode, Expiry, Batch on/off karein|hi:सेटिंग्स (बारकोड, एक्सपायरी)">
+        <button id="btnOpenSettings" type="button" class="btn btn-outline btn-icon-only">
             <i class="fa-solid fa-gear"></i>
         </button>
       </div>
@@ -354,7 +316,7 @@
       <canvas id="captureCanvas" style="display:none;"></canvas>
       <div style="position:absolute;bottom:10px;width:100%;text-align:center;">
         <button id="btnStopScan" type="button" class="btn" style="width:auto;display:inline-flex;padding:7px 18px;font-size:12px;background:rgba(220,38,38,0.9);color:white;border-radius:8px;border:none;">
-          <i class="fa-solid fa-xmark"></i> <span class="lang-en">Stop Lens</span><span class="lang-hinglish">Band Karein</span><span class="lang-hi">बंद करें</span>
+          <i class="fa-solid fa-xmark"></i> Stop Lens
         </button>
       </div>
     </div>
@@ -362,20 +324,20 @@
     <form id="productForm">
       <div class="form-group">
         <input type="text" id="pName" class="form-input" placeholder=" " required autocomplete="off">
-        <label class="floating-label"><span class="lang-en">Product Name</span><span class="lang-hinglish">Samaan Ka Naam</span><span class="lang-hi">सामान का नाम</span></label>
+        <label class="floating-label">Product Name</label>
       </div>
 
       <div class="form-group">
         <input type="text" id="pCategory" class="form-input" list="catList" placeholder=" " autocomplete="off">
-        <label class="floating-label"><span class="lang-en">Category</span><span class="lang-hinglish">Category (Jaise: Sabji, Kirana)</span><span class="lang-hi">श्रेणी (जैसे: किराना)</span></label>
+        <label class="floating-label">Category</label>
       </div>
 
       <div id="variantEngineWrapper">
           <div id="variantEngine"></div>
       </div>
 
-      <button id="btnAddVariant" type="button" class="btn btn-dashed" style="margin-bottom:18px;font-size:13px;" data-hint="en:Add a different size, color, or weight for this item|hinglish:Samaan ka alag size ya rang jodein|hi:सामान का अलग साइज या रंग जोड़ें">
-        <i class="fa-solid fa-plus"></i> <span class="lang-en">Add Type (Color/Size/Wt)</span><span class="lang-hinglish">+ Ek Aur Type Jodein</span><span class="lang-hi">+ एक और प्रकार जोड़ें</span>
+      <button id="btnAddVariant" type="button" class="btn btn-dashed" style="margin-bottom:18px;font-size:13px;">
+        <i class="fa-solid fa-plus"></i> Add Type (Color/Size/Wt)
       </button>
 
       <button type="button" class="tier-toggle" id="btnToggleGst">
@@ -383,7 +345,7 @@
           <span style="width:24px;height:24px;border-radius:6px;background:var(--warning-soft);display:inline-flex;align-items:center;justify-content:center;">
             <i class="fa-solid fa-receipt" style="color:var(--warning);font-size:12px;"></i>
           </span>
-          <span class="lang-en">Level 2 — GST Config</span><span class="lang-hinglish">Level 2 — Tax & GST</span><span class="lang-hi">लेवल 2 — टैक्स और GST</span>
+          Level 2 — GST Config
         </span>
         <i class="fa-solid fa-chevron-down chevron" style="color:var(--slate-400);font-size:14px;transition:transform 0.2s;"></i>
       </button>
@@ -392,7 +354,7 @@
         <div class="variant-grid">
           <div class="form-group">
             <input type="text" id="pHSN" class="form-input" placeholder=" ">
-            <label class="floating-label"><span class="lang-en">HSN Code</span><span class="lang-hinglish">HSN Code</span><span class="lang-hi">HSN कोड</span></label>
+            <label class="floating-label">HSN Code</label>
           </div>
           <div class="form-group">
             <input type="number" id="pGSTRate" class="form-input" placeholder=" ">
@@ -401,26 +363,20 @@
         </div>
         <div class="form-group" style="margin-bottom:0;">
           <select id="pPriceType" class="form-select">
-            <option value="inclusive" class="lang-en">Inclusive (Rate includes Tax)</option>
-            <option value="inclusive" class="lang-hinglish">Inclusive (Rate mein Tax juda hai)</option>
-            <option value="inclusive" class="lang-hi">Inclusive (टैक्स शामिल है)</option>
-            <option value="exclusive" class="lang-en">Exclusive (Tax added on top)</option>
-            <option value="exclusive" class="lang-hinglish">Exclusive (Tax alag se lagega)</option>
-            <option value="exclusive" class="lang-hi">Exclusive (टैक्स अलग से)</option>
+            <option value="inclusive">Inclusive (Rate includes Tax)</option>
+            <option value="exclusive">Exclusive (Tax added on top)</option>
           </select>
-          <label class="floating-label" style="background:#fff; top:-8px; font-size:11px; color:var(--blue-600);"><span class="lang-en">Tax Calculation</span><span class="lang-hinglish">Tax Kaise Lagega</span><span class="lang-hi">टैक्स कैसे लगेगा</span></label>
+          <label class="floating-label" style="background:#fff; top:-8px; font-size:11px; color:var(--blue-600);">Tax Calculation</label>
         </div>
       </div>
 
       <div id="advancedFieldsContainer" style="display:none; padding-top:15px; margin-top:10px; border-top:1.5px dashed var(--blue-100);">
-          <div style="font-size:12px; font-weight:800; color:var(--blue-600); margin-bottom:12px; text-transform:uppercase;">
-            <span class="lang-en">Advanced Global Details</span><span class="lang-hinglish">Extra Details (Sabke liye)</span><span class="lang-hi">अतिरिक्त जानकारी</span>
-          </div>
+          <div style="font-size:12px; font-weight:800; color:var(--blue-600); margin-bottom:12px; text-transform:uppercase;">Advanced Details</div>
           
           <div class="form-group" id="looseInputContainer" style="display:none; justify-content:space-between; align-items:center; background:#f9f9f9; padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1.5px solid var(--blue-200);">
               <div>
-                  <div style="font-size:13px; font-weight:700; color:var(--slate-900);"><span class="lang-en">Sell By Weight / Loose</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान (वजन से)</span></div>
-                  <div style="font-size:11px; color:var(--slate-500); margin-top:2px;"><span class="lang-en">Adds internal Base Qty in Variants</span><span class="lang-hinglish">Daal, Chini, Chawal ke liye on karein</span><span class="lang-hi">दाल, चीनी के लिए चालू करें</span></div>
+                  <div style="font-size:13px; font-weight:700; color:var(--slate-900);">Sell By Weight / Loose</div>
+                  <div style="font-size:11px; color:var(--slate-500); margin-top:2px;">Adds internal Base Qty in Variants</div>
               </div>
               <label class="switch">
                   <input type="checkbox" id="pIsLoose">
@@ -432,20 +388,20 @@
               <div style="display:flex; gap:10px;">
                   <div style="position:relative; flex:1;">
                       <input type="text" id="pBatchId" class="form-input" placeholder=" " list="batchList">
-                      <label class="floating-label"><i class="fa-solid fa-layer-group" style="margin-right:4px;"></i> <span class="lang-en">Batch ID (Lot No.)</span><span class="lang-hinglish">Batch Number (Lot)</span><span class="lang-hi">बैच नंबर (लॉट)</span></label>
+                      <label class="floating-label"><i class="fa-solid fa-layer-group" style="margin-right:4px;"></i> Batch ID (Lot No.)</label>
                   </div>
-                  <button type="button" id="btnAutoBatch" class="btn btn-outline" style="width:auto; padding:0 15px;"><span class="lang-en">Auto</span><span class="lang-hinglish">Apne aap</span><span class="lang-hi">ऑटो</span></button>
+                  <button type="button" id="btnAutoBatch" class="btn btn-outline" style="width:auto; padding:0 15px;">Auto</button>
               </div>
           </div>
 
           <div class="form-group" style="margin-bottom:0;">
               <input type="number" id="pReorderPoint" class="form-input" placeholder=" ">
-              <label class="floating-label"><i class="fa-solid fa-bell-concierge" style="margin-right:4px;"></i> <span class="lang-en">Min. Stock Alert Threshold</span><span class="lang-hinglish">Kitna bachne par Alert aaye?</span><span class="lang-hi">न्यूनतम स्टॉक अलर्ट</span></label>
+              <label class="floating-label"><i class="fa-solid fa-bell-concierge" style="margin-right:4px;"></i> Min. Stock Alert Threshold</label>
           </div>
       </div>
 
       <button type="submit" class="btn btn-primary" style="margin-top:20px;font-size:15px;" id="saveBtn">
-        <i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>
+        <i class="fa-solid fa-cloud-arrow-up"></i> Save to Database
       </button>
     </form>
   </div>
@@ -460,20 +416,20 @@
         <div class="panel-header">
           <h2 class="panel-title">
             <div class="panel-title-icon teal"><i class="fa-solid fa-list-check"></i></div>
-            <span class="lang-en">Inventory List</span><span class="lang-hinglish">Aapka Samaan</span><span class="lang-hi">आपका सामान</span>
+            Inventory List
           </h2>
           <div style="display:flex;gap:8px;">
-            <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--blue-600);" data-hint="en:Import products from Global Database|hinglish:Pehle se bani list se samaan jodein|hi:बनी-बनाई लिस्ट से सामान जोड़ें">
-              <i class="fa-solid fa-globe"></i> <span class="lang-en">Global DB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">ग्लोबल लिस्ट</span>
+            <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--blue-600);">
+              <i class="fa-solid fa-globe"></i> Global DB
             </button>
-            <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Export Inventory to Excel|hinglish:Apne samaan ki list Excel mein download karein|hi:एक्सेल में डाउनलोड करें">
-              <i class="fa-solid fa-file-export"></i> <span class="lang-en">Export</span><span class="lang-hinglish">Excel Nikalein</span><span class="lang-hi">एक्सेल निकालें</span>
+            <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;">
+              <i class="fa-solid fa-file-export"></i> Export
             </button>
-            <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel|hinglish:Excel se naya samaan dalein|hi:एक्सेल से सामान डालें">
-              <i class="fa-solid fa-file-import"></i> <span class="lang-en">Import</span><span class="lang-hinglish">Excel Daalein</span><span class="lang-hi">एक्सेल इंपोर्ट</span>
+            <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;">
+              <i class="fa-solid fa-file-import"></i> Import
             </button>
             <input type="file" id="csvUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;">
-            <button id="btnSyncCloud" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Backup to Cloud|hinglish:Internet par save karein (Backup)|hi:क्लाउड पर सेव करें">
+            <button id="btnSyncCloud" type="button" class="btn btn-outline btn-icon-only">
               <i class="fa-solid fa-rotate"></i>
             </button>
           </div>
@@ -505,37 +461,31 @@
             <select id="filterTax" class="branch-select"><option value="">All Taxes (GST)</option></select>
           </div>
           <div class="deep-actions">
-            <button class="action-chip" data-action="LowStock"><span class="lang-en">Low Stock</span><span class="lang-hinglish">Kam Samaan</span><span class="lang-hi">कम स्टॉक</span></button>
-            <button class="action-chip" data-action="Expiring"><span class="lang-en">Expiring</span><span class="lang-hinglish">Kharab Hone Wala</span><span class="lang-hi">एक्सपायर होने वाला</span></button>
-            <button class="action-chip" data-action="Newest"><span class="lang-en">Newest</span><span class="lang-hinglish">Naya Aaya</span><span class="lang-hi">सबसे नया</span></button>
+            <button class="action-chip" data-action="LowStock">Low Stock</button>
+            <button class="action-chip" data-action="Expiring">Expiring</button>
+            <button class="action-chip" data-action="Newest">Newest</button>
           </div>
         </div>
 
-        <div class="inventory-grid" id="inventoryGrid" data-hint="en:Click checkboxes for Mass Edit|hinglish:Checkboxes se ek sath bahut saare samaan edit karein|hi:चेकबॉक्स से एक साथ बहुत सारे सामान एडिट करें">
-          </div>
-        <div id="loadMoreTrigger" class="loading-trigger" style="display:none;">
-            <span class="lang-en">Loading more items…</span>
-            <span class="lang-hinglish">Aur samaan aa raha hai...</span>
-            <span class="lang-hi">और सामान लोड हो रहा है...</span>
-        </div>
-    </div> </div>
+        <div class="inventory-grid" id="inventoryGrid"></div>
+        <div id="loadMoreTrigger" class="loading-trigger" style="display:none;">Loading more items…</div>
+    </div> 
+  </div>
 
 </div>
 
 <div id="bulkActionBar" class="bulk-action-bar">
-    <div class="bulk-info"><span id="bulkCount">0</span> <span class="lang-en">selected</span><span class="lang-hinglish">chune gaye</span><span class="lang-hi">चुने गए</span></div>
+    <div class="bulk-info"><span id="bulkCount">0</span> selected</div>
     <div class="bulk-controls">
         <select id="bulkOperation" class="bulk-select">
-            <option value="" class="lang-en">Select Action...</option>
-            <option value="" class="lang-hinglish">Kya karna hai?</option>
-            <option value="" class="lang-hi">क्या करना है?</option>
+            <option value="">Select Action...</option>
             <option value="category">Change Category</option>
             <option value="tax">Update GST %</option>
             <option value="discount">Apply Discount %</option>
             <option value="delete">Delete Items</option>
         </select>
         <input type="text" id="bulkValue" class="bulk-input" placeholder="Value..." style="display:none; width:100px;">
-        <button id="btnApplyBulk" class="btn btn-primary" style="padding: 10px 16px; width: auto;"><span class="lang-en">Apply</span><span class="lang-hinglish">OK</span><span class="lang-hi">ओके</span></button>
+        <button id="btnApplyBulk" class="btn btn-primary" style="padding: 10px 16px; width: auto;">Apply</button>
         <button id="btnCancelBulk" class="btn btn-outline" style="padding: 10px 16px; width: auto; color: white; border-color: rgba(255,255,255,0.3); background:transparent;">Cancel</button>
     </div>
 </div>
@@ -544,42 +494,42 @@
   <div class="modal-box">
     <div class="modal-header">
       <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px; font-family:var(--font-head); font-weight:800; color:var(--slate-900);">
-        <i class="fa-solid fa-gear" style="color:var(--blue-600);"></i> <span class="lang-en">Form Settings</span><span class="lang-hinglish">Form Ki Settings</span><span class="lang-hi">फॉर्म सेटिंग्स</span>
+        <i class="fa-solid fa-gear" style="color:var(--blue-600);"></i> Form Settings
       </h3>
       <button id="btnCloseSettings" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry, Brand form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);">Enable Advanced Fields</div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;">Show Barcode, Expiry, Brand.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Sell By Weight</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Defines Base Unit Quantities.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);">Enable Sell By Weight</div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;">Defines Base Unit Quantities.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgLoose"><span class="slider"></span></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Batch System</span><span class="lang-hinglish">Batch Number System</span><span class="lang-hi">बैच नंबर सिस्टम</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Adds Batch ID auto-generation.</span><span class="lang-hinglish">Dawaion ke batch number ke liye.</span><span class="lang-hi">दवाइयों के बैच के लिए।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);">Enable Batch System</div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;">Adds Batch ID auto-generation.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgBatch"><span class="slider"></span></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Helpful Hints</span><span class="lang-hinglish">Madad Wale Notes (Hints)</span><span class="lang-hi">मदद वाले नोट्स</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Show short notes on hover/touch.</span><span class="lang-hinglish">Touch karne par asaan bhasha me jankari.</span><span class="lang-hi">टच करने पर आसान भाषा में जानकारी।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);">Enable Helpful Hints</div>
+          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;">Show short notes on hover/touch.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgHints" checked><span class="slider"></span></label>
       </div>
       
       <button id="btnRestartTutorial" class="btn btn-outline" style="margin-top:24px; width:100%;">
-          <i class="fa-solid fa-graduation-cap"></i> <span class="lang-en">Restart Tutorial</span><span class="lang-hinglish">Tutorial Wapas Dekhein</span><span class="lang-hi">ट्यूटोरियल वापस देखें</span>
+          <i class="fa-solid fa-graduation-cap"></i> Restart Tutorial
       </button>
     </div>
   </div>
@@ -626,13 +576,13 @@
 
       <div style="display:flex;gap:12px;margin-top:24px;">
         <button id="btnEditFromModal" class="btn btn-outline" style="color:var(--blue-600);border-color:var(--blue-600);">
-          <i class="fa-solid fa-pen"></i> <span class="lang-en">Edit</span><span class="lang-hinglish">Badlein</span><span class="lang-hi">बदलें</span>
+          <i class="fa-solid fa-pen"></i> Edit
         </button>
         <button id="btnTransferFromModal" class="btn btn-outline" style="color:var(--purple);border-color:var(--purple); display:none;">
-          <i class="fa-solid fa-truck-fast"></i> <span class="lang-en">Transfer</span><span class="lang-hinglish">Bhejein</span><span class="lang-hi">भेजें</span>
+          <i class="fa-solid fa-truck-fast"></i> Transfer
         </button>
         <button id="btnDeleteFromModal" class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);">
-          <i class="fa-solid fa-trash"></i> <span class="lang-en">Delete</span><span class="lang-hinglish">Hataein</span><span class="lang-hi">हटाएं</span>
+          <i class="fa-solid fa-trash"></i> Delete
         </button>
       </div>
     </div>
@@ -647,19 +597,19 @@
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">To Branch</label>
+        <label class="floating-label" style="position:static; margin-bottom:6px;">To Branch</label>
         <select id="transferTargetBranch" class="form-select"></select>
       </div>
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">Variant / Type</label>
+        <label class="floating-label" style="position:static; margin-bottom:6px;">Variant / Type</label>
         <select id="transferVariant" class="form-select"></select>
       </div>
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">Quantity to Transfer</label>
+        <label class="floating-label" style="position:static; margin-bottom:6px;">Quantity to Transfer</label>
         <input type="number" step="0.001" id="transferQty" class="form-input" placeholder="Enter quantity">
         <div id="transferCalcDisplay" style="font-size:12px; font-weight:800; color:var(--blue-600); margin-top:8px; text-align:right; min-height:16px;"></div>
       </div>
-      <button id="btnSubmitTransfer" class="btn btn-primary" style="margin-top:10px; background:linear-gradient(135deg, var(--purple), #6D28D9); width:100%; box-shadow:0 4px 15px rgba(124, 58, 237, 0.25);">
+      <button id="btnSubmitTransfer" class="btn btn-primary" style="margin-top:10px; background:linear-gradient(135deg, var(--purple), #6D28D9); width:100%;">
         <i class="fa-solid fa-truck-fast"></i> Confirm Transfer
       </button>
     </div>
@@ -670,7 +620,7 @@
   <div class="modal-box">
     <div class="modal-header">
       <h3 style="margin:0;font-size:16px; font-family:var(--font-head);">
-        <i class="fa-solid fa-globe" style="color:var(--blue-600);"></i> <span class="lang-en">Global AI MasterDB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">बनी-बनाई लिस्ट</span>
+        <i class="fa-solid fa-globe" style="color:var(--blue-600);"></i> Global AI MasterDB
       </h3>
       <button id="btnCloseMasterCatalog" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
     </div>
@@ -683,7 +633,7 @@
         <div style="text-align:center;padding:30px;color:var(--slate-400); font-weight:600;">Click Fetch to load normalized data from cloud.</div>
       </div>
       <button id="btnFetchMasterCatalog" class="btn btn-primary" style="margin-top:18px;">
-        <i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>
+        <i class="fa-solid fa-cloud-arrow-down"></i> Fetch Global Database
       </button>
     </div>
   </div>
@@ -695,168 +645,76 @@
            <div style="width: 64px; height: 64px; background: var(--blue-50); color: var(--blue-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px;">
                <i class="fa-solid fa-graduation-cap"></i>
            </div>
-           <h2 style="margin: 0 0 12px; font-weight: 800; color: var(--slate-900); font-family:var(--font-head);">
-               <span class="lang-en">Welcome!</span><span class="lang-hinglish">Swagat Hai! (Welcome)</span><span class="lang-hi">स्वागत है!</span>
-           </h2>
+           <h2 style="margin: 0 0 12px; font-weight: 800; color: var(--slate-900); font-family:var(--font-head);">Welcome!</h2>
            <p style="color: var(--slate-500); font-size: 14px; margin-bottom: 24px; line-height: 1.5; font-weight: 600;">
-               <span class="lang-en">Managing inventory in BharatPOS is very easy.</span>
-               <span class="lang-hinglish">BharatPOS inventory mein samaan jodna bahut asaan hai.</span>
-               <span class="lang-hi">भारतपीओएस इन्वेंटरी में सामान जोड़ना बहुत आसान है।</span>
+               Managing inventory in BharatPOS is very easy.
            </p>
            
            <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--blue-100);">
                <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-camera"></i> 1. Lens AI:</strong> 
-               <span class="lang-en">Take a photo, name and price will fill automatically!</span>
-               <span class="lang-hinglish">Camera se photo khinchein, naam aur price apne aap bhar jayega!</span>
-               <span class="lang-hi">कैमरा से फोटो खींचें, नाम और मूल्य अपने आप भर जाएगा!</span>
+               Take a photo, name and price will fill automatically!
            </div>
            <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--blue-100);">
                <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-gear"></i> 2. Settings:</strong> 
-               <span class="lang-en">Turn on advanced fields (Brand, Barcode, Expiry) from the Gear icon.</span>
-               <span class="lang-hinglish">Agar Brand, Barcode ya Expiry likhna hai, toh 'Gear' icon daba kar on karein.</span>
-               <span class="lang-hi">अगर ब्रांड, बारकोड या एक्सपायरी लिखना है, तो 'गियर' आइकन दबा कर ऑन करें।</span>
+               Turn on advanced fields (Brand, Barcode, Expiry) from the Gear icon.
            </div>
            <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 24px; border: 1.5px solid var(--blue-100);">
-               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Samaan:</strong> 
-               <span class="lang-en">Click any item card to see details or edit. Use checkboxes for mass edit.</span>
-               <span class="lang-hinglish">Kisi bhi samaan ke card par click karke uski details dekhein. Checkbox se ek saath bahut saare edit karein.</span>
-               <span class="lang-hi">किसी भी सामान के कार्ड पर क्लिक करके उसकी जानकारी देखें या बदलें।</span>
+               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Items:</strong> 
+               Click any item card to see details or edit. Use checkboxes for mass edit.
            </div>
            
-           <button class="btn btn-primary" id="btnCloseTutorial">
-               <span class="lang-en">Got it 👍</span><span class="lang-hinglish">Samajh Gaya 👍</span><span class="lang-hi">समझ गया 👍</span>
-           </button>
+           <button class="btn btn-primary" id="btnCloseTutorial">Got it 👍</button>
        </div>
    </div>
 </div>
 
-<div id="toast">✅ Action Successful</div>
 <div id="globalHintBar">Hint Text Here</div>
 
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-window.db = db;
+// ─── 1. INJECT UI ────────────────────────────────────────────────────────────
+window.injectLayout('products');
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
-window.allProducts = [];
-window.salesHistory = [];
-window.currentEditingId = null;
-window.currentDetailId = null;
-window.currentEditingDate = null;
-window.masterDbCache = [];
+// ─── 2. ENCAPSULATED STATE (Crash-Proofed) ───────────────────────────────────
+let allProducts = [];
+let salesHistory = [];
+let currentEditingId = null;
+let currentDetailId = null;
+let currentEditingDate = null;
+let masterDbCache = [];
 
-window.activeTiers = new Set();
-window.activeCategory = '';
-window.activeBatch = '';
-window.filterState = { brand: '', tax: '', lowStock: false, expiring: false, newest: false, query: '' };
+let activeTiers = new Set();
+let activeCategory = '';
+let activeBatch = '';
+let filterState = { brand: '', tax: '', lowStock: false, expiring: false, newest: false, query: '' };
 
-window.currentPage = 0;
-window.pageSize = 50;
-window.currentFilteredData = [];
-window.observer = null;
-window.isInventoryVisible = true; 
+let currentPage = 0;
+let pageSize = 50;
+let currentFilteredData = [];
+let observer = null;
+let isInventoryVisible = true; 
 
-window.cameraStream = null;
-window.targetBarcodeInput = null;
-window.selectedBulkItems = new Set();
+let cameraStream = null;
+let selectedBulkItems = new Set();
 
-const langs = ['en', 'hinglish', 'hi'];
+const escapeHtml = window.escapeHtml || function(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; };
 
-// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
-window.showModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.style.display = 'flex';
-        setTimeout(() => m.classList.add('show'), 10);
-    }
-}
-
-window.hideModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.classList.remove('show');
-        setTimeout(() => m.style.display = 'none', 300);
-    }
-}
-
-// ─── UTILITIES & HELPERS (GLOBALLY ATTACHED) ─────────────────────────────────
-window.formatStock = function(amount, unitType) {
-    const u = (unitType || '').toLowerCase();
-    if (u.includes('kg') || u.includes('g') || u.includes('l') || u.includes('ml')) {
-        return parseFloat(amount || 0).toFixed(2).replace(/\.00$/, '');
-    }
-    return Math.floor(amount || 0);
-}
-
-window.getUnitPrice = function(prod, variant) {
-    if (!prod.isLoose) return Number(variant.price);
-    const baseQty = Number(variant.baseQty) || 1;
-    return Number(variant.price) / baseQty;
-}
-
-window.getUnitLabel = function(prod, variant) {
-    if (!prod.isLoose) return 'unit';
-    return variant.baseUnit || 'unit';
-}
-
-window.getVariantStockInfo = function(p, v) {
-    if (p.isLoose) {
-        const bq = Number(v.baseQty) || 1;
-        const totalBase = (Number(v.stock) || 0) * bq;
-        return { available: totalBase, label: v.baseUnit || 'pcs', isLoose: true };
-    } else {
-        return { available: Number(v.stock) || 0, label: 'units', isLoose: false };
-    }
-}
-
-window.getProductTotalStockInfo = function(p) {
-    if (p.isLoose) {
-        let totalBase = 0;
-        let unit = p.variants[0]?.baseUnit || 'units';
-        p.variants.forEach(v => {
-            const bq = Number(v.baseQty) || 1;
-            totalBase += (Number(v.stock) || 0) * bq;
-        });
-        return `${window.formatStock(totalBase, unit)} ${unit}`;
-    } else {
-        let total = 0;
-        p.variants.forEach(v => total += Number(v.stock) || 0);
-        return `${total} in stock`;
-    }
-}
-
-window.escapeHtml = function(str) { 
-    return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
-}
-
-window.showToast = function(msg, isError = false) {
-    const t = document.getElementById('toast');
-    if(!t) return;
-    t.innerText = msg;
-    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// ─── INITIALIZATION ───────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
+// ─── 3. CORE INITIALIZATION ──────────────────────────────────────────────────
+async function initInventory() {
     try {
-        window.bindAllEvents();
-        window.loadSettings();
+        bindAllEvents();
+        loadSettings();
 
-        const savedLang = localStorage.getItem('app_lang') || 'en'; 
-        document.body.className = `lang-${savedLang}`;
-
-        // Await IndexedDB Loading
-        window.allProducts = await window.dbGet('bharatpos_products', '[]');
-        window.salesHistory = await window.dbGet('bharatpos_sales', '[]');
+        // Await Async Bridge
+        allProducts = await window.dbGet('bharatpos_products', '[]');
+        salesHistory = await window.dbGet('bharatpos_sales', '[]');
 
         if (window.innerWidth <= 1024) {
-            window.isInventoryVisible = false;
+            isInventoryVisible = false;
         } else {
-            window.isInventoryVisible = true;
+            isInventoryVisible = true;
             const wrap = document.getElementById('inventoryWrapper');
             if(wrap) wrap.classList.add('show');
             const txt = document.getElementById('toggleInvText');
@@ -867,20 +725,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(typeof window.loadOwnedShops === 'function') {
             window.loadOwnedShops(user.mobile || user.phone).then(shops => {
                 if(shops && shops.length > 1) {
-                    const switcher = document.getElementById('shopSwitcher');
-                    if(switcher) {
-                        switcher.style.display = 'inline-block';
-                        const transferBtn = document.getElementById('btnTransferFromModal');
-                        if(transferBtn) transferBtn.style.display = 'inline-flex';
-                        
-                        switcher.innerHTML = shops.map(s => 
-                                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                                    ${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
-                                </option>`
-                            ).join('');
-                        
-                        switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
-                    }
+                    const transferBtn = document.getElementById('btnTransferFromModal');
+                    if(transferBtn) transferBtn.style.display = 'inline-flex';
                 }
             });
         }
@@ -889,10 +735,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.showModal('welcomeTutorial');
         }
 
-        window.updateDatalists();
-        window.applyFilters(); 
-        window.setupIntersectionObserver();
-        window.addVariantUI();
+        updateDatalists();
+        applyFilters(); 
+        setupIntersectionObserver();
+        window.addVariantUI(); // Exported for HTML onclick
 
         const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
         if (isGstGlobal) {
@@ -908,24 +754,59 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        window.checkDemandMitraRouting();
-
-        // ✅ FIXED FIREBASE LISTENER (STRICT NULL CHECK)
-        if(user && user.merchantId && typeof user.merchantId === 'string' && user.merchantId.trim() !== '' && window.db) {
-            try {
-                onSnapshot(collection(window.db, "shops", user.merchantId, "onlineOrders"), (snap) => {
-                    // Just silently tracking orders in the background if they exist
-                });
-            } catch(e) {
-                console.warn("Online Orders listener failed (Offline or missing ID)", e);
-            }
-        }
+        checkDemandMitraRouting();
 
     } catch (err) {
         console.error("Init Error:", err);
-        window.showToast("Initialization error. Check console.", true);
+        window.showToast("Initialization error.", true);
     }
-});
+}
+
+// ─── UTILITIES & HELPERS ─────────────────────────────────────────────────────
+function formatStock(amount, unitType) {
+    const u = (unitType || '').toLowerCase();
+    if (u.includes('kg') || u.includes('g') || u.includes('l') || u.includes('ml')) {
+        return parseFloat(amount || 0).toFixed(2).replace(/\.00$/, '');
+    }
+    return Math.floor(amount || 0);
+}
+
+function getUnitPrice(prod, variant) {
+    if (!prod.isLoose) return Number(variant.price);
+    const baseQty = Number(variant.baseQty) || 1;
+    return Number(variant.price) / baseQty;
+}
+
+function getUnitLabel(prod, variant) {
+    if (!prod.isLoose) return 'unit';
+    return variant.baseUnit || 'unit';
+}
+
+function getVariantStockInfo(p, v) {
+    if (p.isLoose) {
+        const bq = Number(v.baseQty) || 1;
+        const totalBase = (Number(v.stock) || 0) * bq;
+        return { available: totalBase, label: v.baseUnit || 'pcs', isLoose: true };
+    } else {
+        return { available: Number(v.stock) || 0, label: 'units', isLoose: false };
+    }
+}
+
+function getProductTotalStockInfo(p) {
+    if (p.isLoose) {
+        let totalBase = 0;
+        let unit = p.variants[0]?.baseUnit || 'units';
+        p.variants.forEach(v => {
+            const bq = Number(v.baseQty) || 1;
+            totalBase += (Number(v.stock) || 0) * bq;
+        });
+        return `${formatStock(totalBase, unit)} ${unit}`;
+    } else {
+        let total = 0;
+        p.variants.forEach(v => total += Number(v.stock) || 0);
+        return `${total} in stock`;
+    }
+}
 
 // ─── LIVE STOCK CALCULATION LOGIC ──────────────────────────────────────────
 window.updateLiveStockCalc = function(box) {
@@ -963,7 +844,7 @@ window.updateTransferLiveCalc = function() {
         return;
     }
 
-    const prod = window.allProducts.find(p => p.id === window.currentDetailId);
+    const prod = allProducts.find(p => p.id === currentDetailId);
     if(!prod) return;
     const variant = prod.variants.find(v => v.id === varId);
     if(!variant) return;
@@ -1006,7 +887,7 @@ window.syncVariantMath = function(variantBox, source) {
 };
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
-window.loadSettings = function() {
+function loadSettings() {
     const isAdv   = localStorage.getItem('cfg_adv_fields') === 'true';
     const isBatch = localStorage.getItem('cfg_batch') === 'true';
     const isLoose = localStorage.getItem('cfg_loose') === 'true';
@@ -1017,7 +898,7 @@ window.loadSettings = function() {
     const elLoose = document.getElementById('cfgLoose'); if(elLoose) elLoose.checked = isLoose;
     const elHints = document.getElementById('cfgHints'); if(elHints) elHints.checked = isHints;
 
-    window.applySettingsUI(isAdv, isBatch, isLoose);
+    applySettingsUI(isAdv, isBatch, isLoose);
 }
 
 window.saveConfig = function() {
@@ -1032,11 +913,11 @@ window.saveConfig = function() {
     localStorage.setItem('cfg_loose',      isLoose);
     localStorage.setItem('cfg_hints',      isHints);
 
-    window.applySettingsUI(isAdv, isBatch, isLoose);
-    window.showToast(document.body.classList.contains('lang-hin') ? "Settings badal di gayi" : "Settings Updated");
+    applySettingsUI(isAdv, isBatch, isLoose);
+    window.showToast("Settings Updated");
 }
 
-window.applySettingsUI = function(isAdv, isBatch, isLoose) {
+function applySettingsUI(isAdv, isBatch, isLoose) {
     const advCon = document.getElementById('advancedFieldsContainer');
     if(advCon) advCon.style.display = (isAdv || isBatch || isLoose) ? 'block' : 'none';
     
@@ -1054,16 +935,8 @@ window.applySettingsUI = function(isAdv, isBatch, isLoose) {
 }
 
 // ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
-window.bindAllEvents = function() {
-    document.getElementById('btnLangToggle')?.addEventListener('click', () => {
-        let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
-        currentIdx = (currentIdx + 1) % langs.length;
-        const nextLang = langs[currentIdx];
-        document.body.className = `lang-${nextLang}`;
-        localStorage.setItem('app_lang', nextLang);
-    });
-
-    document.getElementById('btnExportCsv')?.addEventListener('click', window.handleExportCSV);
+function bindAllEvents() {
+    document.getElementById('btnExportCsv')?.addEventListener('click', handleExportCSV);
 
     document.getElementById('btnCloseTutorial')?.addEventListener('click', () => {
         localStorage.setItem('tutorial_inventory', 'true');
@@ -1080,28 +953,22 @@ window.bindAllEvents = function() {
     });
 
     document.getElementById('btnToggleInventoryList')?.addEventListener('click', () => {
-        window.isInventoryVisible = !window.isInventoryVisible;
+        isInventoryVisible = !isInventoryVisible;
         const wrapper = document.getElementById('inventoryWrapper');
         const txt = document.getElementById('toggleInvText');
         
-        if (window.isInventoryVisible) {
+        if (isInventoryVisible) {
             if(wrapper) wrapper.classList.add('show');
             if(txt) txt.innerText = "Hide Inventory List";
-            if(window.currentFilteredData.length === 0) window.applyFilters(); 
+            if(currentFilteredData.length === 0) applyFilters(); 
         } else {
             if(wrapper) wrapper.classList.remove('show');
             if(txt) txt.innerText = "View Inventory List";
         }
     });
 
-    const hintBar = document.getElementById('globalHintBar');
-    document.addEventListener('mouseover', window.handleHintEvent);
-    document.addEventListener('touchstart', window.handleHintEvent, {passive: true});
-
-    document.getElementById('btnOpenMenu')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('btnCloseMenu')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('menuOverlay')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('btnNavPos')?.addEventListener('click', () => window.location.href = 'billing.html');
+    document.addEventListener('mouseover', handleHintEvent);
+    document.addEventListener('touchstart', handleHintEvent, {passive: true});
 
     document.getElementById('btnToggleGst')?.addEventListener('click', function () {
         const content = document.getElementById('tierGst');
@@ -1153,7 +1020,7 @@ window.bindAllEvents = function() {
         }
     });
 
-    document.getElementById('productForm')?.addEventListener('submit', window.handleSaveProduct);
+    document.getElementById('productForm')?.addEventListener('submit', handleSaveProduct);
     document.getElementById('btnOpenSettings')?.addEventListener('click',  () => window.showModal('settingsModal'));
     document.getElementById('btnCloseSettings')?.addEventListener('click', () => window.hideModal('settingsModal'));
     
@@ -1179,12 +1046,12 @@ window.bindAllEvents = function() {
 
     document.getElementById('btnOpenMasterCatalog')?.addEventListener('click',  () => window.showModal('masterCatalogModal'));
     document.getElementById('btnCloseMasterCatalog')?.addEventListener('click', () => window.hideModal('masterCatalogModal'));
-    document.getElementById('btnFetchMasterCatalog')?.addEventListener('click', window.fetchMasterCatalog);
-    document.getElementById('masterSearchInput')?.addEventListener('input', window.searchMasterDB);
+    document.getElementById('btnFetchMasterCatalog')?.addEventListener('click', fetchMasterCatalog);
+    document.getElementById('masterSearchInput')?.addEventListener('input', searchMasterDB);
     document.getElementById('masterDbList')?.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             const dataStr = e.target.getAttribute('data-json');
-            if (dataStr) window.importMasterProduct(JSON.parse(dataStr));
+            if (dataStr) importMasterProduct(JSON.parse(dataStr));
         }
     });
 
@@ -1192,36 +1059,36 @@ window.bindAllEvents = function() {
         const f = document.getElementById('csvUpload');
         if(f) f.click();
     });
-    document.getElementById('csvUpload')?.addEventListener('change', window.handleBulkImport);
-    document.getElementById('btnSyncCloud')?.addEventListener('click', window.pullFreshData);
+    document.getElementById('csvUpload')?.addEventListener('change', handleBulkImport);
+    document.getElementById('btnSyncCloud')?.addEventListener('click', pullFreshData);
 
     document.getElementById('tierTabs')?.addEventListener('click', (e) => {
         if (e.target.classList.contains('tab-btn') && e.target.tagName !== 'SELECT') {
-            window.toggleTierFilter(e.target.getAttribute('data-tier'), e.target);
+            toggleTierFilter(e.target.getAttribute('data-tier'), e.target);
         }
     });
     document.getElementById('catTabSelect')?.addEventListener('change', (e) => {
-        window.activeCategory = e.target.value;
-        window.updateAllTabHighlight();
-        window.applyFilters();
+        activeCategory = e.target.value;
+        updateAllTabHighlight();
+        applyFilters();
     });
     document.getElementById('batchTabSelect')?.addEventListener('change', (e) => {
-        window.activeBatch = e.target.value;
-        window.updateAllTabHighlight();
-        window.applyFilters();
+        activeBatch = e.target.value;
+        updateAllTabHighlight();
+        applyFilters();
     });
 
-    document.getElementById('filterBrand')?.addEventListener('change', window.applyFilters);
-    document.getElementById('filterTax')?.addEventListener('change',   window.applyFilters);
-    document.getElementById('searchInput')?.addEventListener('input',  window.applyFilters);
+    document.getElementById('filterBrand')?.addEventListener('change', applyFilters);
+    document.getElementById('filterTax')?.addEventListener('change',   applyFilters);
+    document.getElementById('searchInput')?.addEventListener('input',  applyFilters);
     document.querySelectorAll('.action-chip').forEach(chip => {
-        chip.addEventListener('click', (e) => window.toggleChip(e.currentTarget));
+        chip.addEventListener('click', (e) => toggleChip(e.currentTarget));
     });
 
     document.getElementById('inventoryGrid')?.addEventListener('click', (e) => {
         const card = e.target.closest('.sku-card');
         if(e.target.classList.contains('bulk-cb')) return; 
-        if (card) window.openProductDetails(card.getAttribute('data-id'));
+        if (card) openProductDetails(card.getAttribute('data-id'));
     });
 
     document.getElementById('bulkOperation')?.addEventListener('change', (e) => {
@@ -1237,19 +1104,19 @@ window.bindAllEvents = function() {
         }
     });
     document.getElementById('btnApplyBulk')?.addEventListener('click', window.executeBulkAction);
-    document.getElementById('btnCancelBulk')?.addEventListener('click', window.clearBulkSelection);
+    document.getElementById('btnCancelBulk')?.addEventListener('click', clearBulkSelection);
 
     document.getElementById('btnCloseDetails')?.addEventListener('click', () => window.hideModal('productDetailsModal'));
     document.getElementById('btnEditFromModal')?.addEventListener('click', () => {
         window.hideModal('productDetailsModal');
-        if (window.currentDetailId) window.loadProductForEdit(window.currentDetailId);
+        if (currentDetailId) loadProductForEdit(currentDetailId);
     });
     document.getElementById('btnDeleteFromModal')?.addEventListener('click', () => {
         window.hideModal('productDetailsModal');
-        if (window.currentDetailId) window.deleteProduct(window.currentDetailId);
+        if (currentDetailId) window.deleteProduct(currentDetailId);
     });
 
-    document.getElementById('btnTransferFromModal')?.addEventListener('click', window.openTransferModal);
+    document.getElementById('btnTransferFromModal')?.addEventListener('click', openTransferModal);
     document.getElementById('btnCloseTransfer')?.addEventListener('click', () => window.hideModal('transferStockModal'));
     document.getElementById('btnSubmitTransfer')?.addEventListener('click', window.submitStockTransfer);
     document.getElementById('transferQty')?.addEventListener('input', window.updateTransferLiveCalc);
@@ -1260,14 +1127,14 @@ window.bindAllEvents = function() {
     document.getElementById('btnCancelBarcode')?.addEventListener('click', window.stopBarcodeScan);
 
     // Apply safe closing to ALL modals
-    document.querySelectorAll('.modal-overlay, #barcodeScannerModal').forEach(overlay => {
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) window.hideModal(overlay.id);
+            if (e.target === overlay && e.target.id !== 'barcodeScannerModal') window.hideModal(overlay.id);
         });
     });
 }
 
-window.handleHintEvent = function(e) {
+function handleHintEvent(e) {
     const hintBar = document.getElementById('globalHintBar');
     if(!hintBar) return;
     if(localStorage.getItem('cfg_hints') === 'false') return;
@@ -1290,19 +1157,13 @@ window.handleHintEvent = function(e) {
     }
 }
 
-window.toggleMenu = function() {
-    document.getElementById('sideMenu')?.classList.toggle('open');
-    const overlay = document.getElementById('menuOverlay');
-    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-}
-
-window.checkDemandMitraRouting = function() {
+function checkDemandMitraRouting() {
     const urlParams = new URLSearchParams(window.location.search);
     const restockName = urlParams.get('restock');
     if (restockName) {
-        const targetProd = window.allProducts.find(p => p.name === restockName);
+        const targetProd = allProducts.find(p => p.name === restockName);
         if(targetProd) {
-            window.loadProductForEdit(targetProd.id);
+            loadProductForEdit(targetProd.id);
             const tempStock = localStorage.getItem("temp_add_stock");
             if (tempStock) {
                 setTimeout(() => {
@@ -1319,11 +1180,11 @@ window.checkDemandMitraRouting = function() {
     }
 }
 
-window.handleExportCSV = function() {
-    if(window.allProducts.length === 0) return window.showToast("No products to export", true);
+function handleExportCSV() {
+    if(allProducts.length === 0) return window.showToast("No products to export", true);
     try {
         const flattened = [];
-        window.allProducts.forEach(p => {
+        allProducts.forEach(p => {
             p.variants.forEach(v => {
                 let brandsStr = '';
                 if(v.brands && v.brands.length > 0) {
@@ -1349,7 +1210,7 @@ window.getBrandRowHTML = function(name = '', stock = '') {
     return `
     <div class="brand-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
         <div style="flex:2; position:relative;">
-            <input type="text" class="form-input vb-name" list="brandList" placeholder="Brand Name" style="padding:10px 12px; font-size:12px;" value="${name}">
+            <input type="text" class="form-input vb-name" list="brandList" placeholder="Brand Name" style="padding:10px 12px; font-size:12px;" value="${escapeHtml(name)}">
         </div>
         <div style="flex:1; position:relative;">
             <input type="number" step="0.001" class="form-input vb-stock" placeholder="Stock" style="padding:10px 12px; font-size:12px;" value="${stock}">
@@ -1377,64 +1238,58 @@ window.addVariantUI = function(data = null) {
         ${container.children.length > 0 ? `<button type="button" class="btn-remove-var"><i class="fa-solid fa-xmark"></i></button>` : ''}
         <div class="variant-grid">
             <div class="form-group" style="margin-bottom:0;">
-                <input type="text" class="form-input v-unit" list="unitOptions" id="u_${uid}" placeholder=" " value="${data?.quantity || ''}" required>
-                <label for="u_${uid}" class="floating-label">
-                    <span class="lang-en">Type (Color, Size, ₹, Wt)</span><span class="lang-hinglish">Type (Rang, Size, Wazan)</span><span class="lang-hi">प्रकार (रंग, साइज़, वजन)</span>
-                </label>
+                <input type="text" class="form-input v-unit" list="unitOptions" id="u_${uid}" placeholder=" " value="${escapeHtml(data?.quantity) || ''}" required>
+                <label for="u_${uid}" class="floating-label">Type (Color, Size, ₹, Wt)</label>
             </div>
             <div class="form-group" style="margin-bottom:0;">
                 <input type="number" step="0.001" class="form-input v-add-stock" id="s_${uid}" placeholder=" " value="${data?.stock || ''}">
-                <label for="s_${uid}" class="floating-label" style="color:var(--success);">
-                    <span class="lang-en">Total Stock</span><span class="lang-hinglish">Kul Stock</span><span class="lang-hi">कुल स्टॉक</span>
-                </label>
+                <label for="s_${uid}" class="floating-label" style="color:var(--success);">Total Stock</label>
                 <div class="v-calc-stock" style="font-size:11px; font-weight:800; color:var(--primary); margin-top:6px; text-align:right; min-height:14px;"></div>
             </div>
         </div>
         <div class="form-group" style="margin-top:10px;margin-bottom:0;">
             <input type="number" step="0.01" class="form-input v-price" id="p_${uid}" placeholder=" " value="${data?.price || ''}" required style="font-size:17px;font-weight:800;color:var(--success);font-family:'JetBrains Mono',monospace;">
-            <label for="p_${uid}" class="floating-label">
-                <span class="lang-en">Selling Price (₹)</span><span class="lang-hinglish">Bechne Ka Daam (₹)</span><span class="lang-hi">बिक्री मूल्य (₹)</span>
-            </label>
+            <label for="p_${uid}" class="floating-label">Selling Price (₹)</label>
         </div>
         
         <div class="variant-brands-container adv-only-field" style="margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;">
            <label class="floating-label" style="position:static; display:block; margin-bottom:8px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-copyright"></i> Brands & Stock List</label>
            <div class="brand-list">${brandsHtml}</div>
-           <button type="button" class="btn btn-dashed btn-add-brand" style="padding: 6px; font-size: 11px; width:auto; display:inline-block;"><i class="fa-solid fa-plus"></i> <span class="lang-en">Add Brand</span><span class="lang-hinglish">+ Brand Jodein</span><span class="lang-hi">+ ब्रांड जोड़ें</span></button>
+           <button type="button" class="btn btn-dashed btn-add-brand" style="padding: 6px; font-size: 11px; width:auto; display:inline-block;"><i class="fa-solid fa-plus"></i> Add Brand</button>
         </div>
 
         <div class="variant-grid adv-only-field">
             <div class="form-group" style="margin-bottom:0; position:relative;">
-                <input type="text" class="form-input v-barcode" placeholder=" " value="${data?.barcode || ''}" style="font-family:'JetBrains Mono'; padding-right:40px;">
+                <input type="text" class="form-input v-barcode" placeholder=" " value="${escapeHtml(data?.barcode) || ''}" style="font-family:'JetBrains Mono'; padding-right:40px;">
                 <button type="button" onclick="window.startBarcodeScan(this)" style="position:absolute; right:8px; top:11px; background:none; border:none; color:var(--primary); font-size:16px; cursor:pointer;"><i class="fa-solid fa-barcode"></i></button>
                 <label class="floating-label"><i class="fa-solid fa-barcode"></i> Barcode</label>
             </div>
             <div class="form-group" style="margin-bottom:0;">
                 <input type="number" step="0.01" class="form-input v-cost" placeholder=" " value="${data?.costPrice || ''}">
-                <label class="floating-label"><i class="fa-solid fa-tags"></i> <span class="lang-en">Cost Price</span><span class="lang-hinglish">Kharid Ka Daam</span><span class="lang-hi">खरीद मूल्य</span></label>
+                <label class="floating-label"><i class="fa-solid fa-tags"></i> Cost Price</label>
             </div>
         </div>
         <div class="form-group adv-only-field" style="margin-bottom:0;">
-            <input type="date" class="form-input v-expiry" placeholder=" " value="${data?.expiryDate || ''}">
-            <label class="floating-label"><i class="fa-regular fa-calendar-xmark"></i> <span class="lang-en">Expiry Date</span><span class="lang-hinglish">Expiry Date</span><span class="lang-hi">एक्सपायरी डेट</span></label>
+            <input type="date" class="form-input v-expiry" placeholder=" " value="${escapeHtml(data?.expiryDate) || ''}">
+            <label class="floating-label"><i class="fa-regular fa-calendar-xmark"></i> Expiry Date</label>
         </div>
 
         <div class="form-group loose-only-field" style="margin-bottom:0;">
             <div style="display:flex; gap:8px;">
                 <input type="number" step="0.001" class="form-input v-base-qty" placeholder=" " value="${data?.baseQty || ''}" style="flex:1;">
-                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${data?.baseUnit || 'pcs'}" style="width: 90px;">
+                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${escapeHtml(data?.baseUnit) || 'pcs'}" style="width: 90px;">
             </div>
-            <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> <span class="lang-en">1 Stock Contains</span><span class="lang-hinglish">1 Stock Mein Kitna</span><span class="lang-hi">1 स्टॉक में मात्रा</span></label>
+            <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> 1 Stock Contains</label>
         </div>
 
-        <input type="hidden" class="v-id" value="${data?.id || ''}">
-        <input type="hidden" class="v-added" value="${data?.dateAdded || ''}">
+        <input type="hidden" class="v-id" value="${escapeHtml(data?.id) || ''}">
+        <input type="hidden" class="v-added" value="${escapeHtml(data?.dateAdded) || ''}">
     `;
     container.appendChild(div);
     window.updateLiveStockCalc(div);
 }
 
-window.handleSaveProduct = async function(e) {
+async function handleSaveProduct(e) {
     e.preventDefault();
     const btn = document.getElementById('saveBtn');
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving…`; btn.disabled = true;
@@ -1467,12 +1322,12 @@ window.handleSaveProduct = async function(e) {
         
         const nowIso  = new Date().toISOString();
 
-        const productId = window.currentEditingId || `prod_${Date.now()}`;
+        const productId = currentEditingId || `prod_${Date.now()}`;
         
         const productDoc = {
             id: productId, name: name, category: cat, hsn: hsn, gstRate: gstRate, priceType: priceType,
             isLoose: isLoose, batchId: batchId, reorderPoint: reorder, 
-            dateAdded: window.currentEditingDate || nowIso,
+            dateAdded: currentEditingDate || nowIso,
             variants: []
         };
 
@@ -1509,20 +1364,20 @@ window.handleSaveProduct = async function(e) {
             });
         }
 
-        if(window.currentEditingId) {
-            window.allProducts = window.allProducts.filter(p => p.id !== window.currentEditingId);
+        if(currentEditingId) {
+            allProducts = allProducts.filter(p => p.id !== currentEditingId);
         }
-        window.allProducts.push(productDoc);
+        allProducts.push(productDoc);
 
-        await window.dbSave('bharatpos_products', window.allProducts);
-        window.updateDatalists();
-        window.applyFilters();
+        await window.dbSave('bharatpos_products', allProducts);
+        updateDatalists();
+        applyFilters();
 
         document.getElementById('productForm').reset();
         document.getElementById('variantEngine').innerHTML = '';
         window.addVariantUI();
-        window.currentEditingId = null;
-        window.currentEditingDate = null;
+        currentEditingId = null;
+        currentEditingDate = null;
         window.scrollTo({ top: 0, behavior: 'smooth' });
         window.showToast("✅ SKU Saved Successfully");
 
@@ -1537,13 +1392,13 @@ window.handleSaveProduct = async function(e) {
         console.error(err);
         window.showToast("Critical error saving data", true);
     } finally {
-        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>`; btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Save to Database`; btn.disabled = false;
     }
 }
 
-window.calculateABCTiers = function() {
+function calculateABCTiers() {
     const freqs = {};
-    window.salesHistory.forEach(sale => {
+    salesHistory.forEach(sale => {
         (sale.items || []).forEach(item => {
             if (item.id) freqs[item.id] = (freqs[item.id] || 0) + (item.qty || 1);
         });
@@ -1556,9 +1411,9 @@ window.calculateABCTiers = function() {
     };
 }
 
-window.updateDatalists = function() {
+function updateDatalists() {
     const cats = new Set(), brands = new Set(), taxes = new Set(), batches = new Set();
-    window.allProducts.forEach(p => {
+    allProducts.forEach(p => {
         if (p.category) cats.add(p.category);
         if (p.gstRate)  taxes.add(p.gstRate);
         if (p.batchId)  batches.add(p.batchId);
@@ -1567,134 +1422,150 @@ window.updateDatalists = function() {
         });
     });
 
-    const cList = document.getElementById('catList'); if(cList) cList.innerHTML = Array.from(cats).map(c => `<option value="${c}">`).join('');
-    const bList = document.getElementById('brandList'); if(bList) bList.innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
-    const baList = document.getElementById('batchList'); if(baList) baList.innerHTML = Array.from(batches).map(b => `<option value="${b}">`).join('');
+    const cList = document.getElementById('catList'); if(cList) cList.innerHTML = Array.from(cats).map(c => `<option value="${escapeHtml(c)}">`).join('');
+    const bList = document.getElementById('brandList'); if(bList) bList.innerHTML = Array.from(brands).map(b => `<option value="${escapeHtml(b)}">`).join('');
+    const baList = document.getElementById('batchList'); if(baList) baList.innerHTML = Array.from(batches).map(b => `<option value="${escapeHtml(b)}">`).join('');
 
     const cTab = document.getElementById('catTabSelect'); 
-    if(cTab) cTab.innerHTML = '<option value="">Categories ▾</option>' + Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
+    if(cTab) cTab.innerHTML = '<option value="">Categories ▾</option>' + Array.from(cats).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
         
     const bTab = document.getElementById('batchTabSelect'); 
-    if(bTab) bTab.innerHTML = '<option value="">Batches ▾</option>' + Array.from(batches).map(b => `<option value="${b}">${b}</option>`).join('');
+    if(bTab) bTab.innerHTML = '<option value="">Batches ▾</option>' + Array.from(batches).map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
 
     const fBrand = document.getElementById('filterBrand'); 
-    if(fBrand) fBrand.innerHTML = '<option value="">All Brands</option>' + Array.from(brands).map(b => `<option value="${b}">${b}</option>`).join('');
+    if(fBrand) fBrand.innerHTML = '<option value="">All Brands</option>' + Array.from(brands).map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
     const fTax = document.getElementById('filterTax'); 
-    if(fTax) fTax.innerHTML = '<option value="">All Taxes (GST)</option>' + Array.from(taxes).map(t => `<option value="${t}">GST ${t}%</option>`).join('');
+    if(fTax) fTax.innerHTML = '<option value="">All Taxes (GST)</option>' + Array.from(taxes).map(t => `<option value="${escapeHtml(t)}">GST ${escapeHtml(t)}%</option>`).join('');
 }
 
-window.updateAllTabHighlight = function() {
+function updateAllTabHighlight() {
     const allTab = document.querySelector('[data-tier="ALL"]');
     if(!allTab) return;
-    if(window.activeTiers.size === 0 && !window.activeCategory && !window.activeBatch) {
+    if(activeTiers.size === 0 && !activeCategory && !activeBatch) {
         allTab.classList.add('active');
     } else {
         allTab.classList.remove('active');
     }
 }
 
-window.toggleTierFilter = function(tier, btnEl) {
+function toggleTierFilter(tier, btnEl) {
     if (tier === 'ALL') {
-        window.activeTiers.clear();
-        window.activeCategory = '';
-        window.activeBatch = '';
+        activeTiers.clear();
+        activeCategory = '';
+        activeBatch = '';
         const cTab = document.getElementById('catTabSelect'); if(cTab) cTab.value = '';
         const bTab = document.getElementById('batchTabSelect'); if(bTab) bTab.value = '';
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btnEl.classList.add('active');
     } else {
-        if (window.activeTiers.has(tier)) {
-            window.activeTiers.delete(tier);
+        if (activeTiers.has(tier)) {
+            activeTiers.delete(tier);
             btnEl.classList.remove('active');
         } else {
-            window.activeTiers.add(tier);
+            activeTiers.add(tier);
             btnEl.classList.add('active');
         }
-        window.updateAllTabHighlight();
+        updateAllTabHighlight();
     }
-    window.applyFilters();
+    applyFilters();
 }
 
-window.toggleChip = function(btnEl) {
+window.toggleBulkItem = function(id, isChecked) {
+    if(isChecked) selectedBulkItems.add(id);
+    else selectedBulkItems.delete(id);
+    
+    const bar = document.getElementById('bulkActionBar');
+    const count = document.getElementById('bulkCount');
+    if(bar && count) {
+        if(selectedBulkItems.size > 0) {
+            bar.classList.add('show');
+            count.innerText = selectedBulkItems.size;
+        } else {
+            bar.classList.remove('show');
+        }
+    }
+}
+
+function toggleChip(btnEl) {
     btnEl.classList.toggle('active');
     const action = btnEl.getAttribute('data-action');
-    if (action === 'LowStock')  window.filterState.lowStock  = !window.filterState.lowStock;
-    if (action === 'Expiring')  window.filterState.expiring  = !window.filterState.expiring;
-    if (action === 'Newest')    window.filterState.newest    = !window.filterState.newest;
-    window.applyFilters();
+    if (action === 'LowStock')  filterState.lowStock  = !filterState.lowStock;
+    if (action === 'Expiring')  filterState.expiring  = !filterState.expiring;
+    if (action === 'Newest')    filterState.newest    = !filterState.newest;
+    applyFilters();
 }
 
-window.applyFilters = function() {
-    if(!window.isInventoryVisible) return; 
+function applyFilters() {
+    if(!isInventoryVisible) return; 
     
-    const getTier = window.calculateABCTiers();
+    const getTier = calculateABCTiers();
     const fb = document.getElementById('filterBrand');
-    window.filterState.brand = fb ? fb.value : '';
+    filterState.brand = fb ? fb.value : '';
     const ft = document.getElementById('filterTax');
-    window.filterState.tax   = ft ? ft.value : '';
+    filterState.tax   = ft ? ft.value : '';
     const si = document.getElementById('searchInput');
-    window.filterState.query = si ? si.value.toLowerCase().trim() : '';
+    filterState.query = si ? si.value.toLowerCase().trim() : '';
 
-    let filtered = window.allProducts;
+    let filtered = allProducts;
 
-    if (window.activeTiers.size > 0) {
-        filtered = filtered.filter(p => p.variants.some(v => window.activeTiers.has(getTier(v.id))));
+    if (activeTiers.size > 0) {
+        filtered = filtered.filter(p => p.variants.some(v => activeTiers.has(getTier(v.id))));
     }
-    if (window.activeCategory) {
-        filtered = filtered.filter(p => (p.category || '').toLowerCase() === window.activeCategory.toLowerCase());
+    if (activeCategory) {
+        filtered = filtered.filter(p => (p.category || '').toLowerCase() === activeCategory.toLowerCase());
     }
-    if (window.activeBatch) {
-        filtered = filtered.filter(p => (p.batchId || '') === window.activeBatch);
+    if (activeBatch) {
+        filtered = filtered.filter(p => (p.batchId || '') === activeBatch);
     }
 
-    if (window.filterState.brand) {
-        filtered = filtered.filter(p => p.variants.some(v => v.brands && v.brands.some(b => b.name === window.filterState.brand)));
+    if (filterState.brand) {
+        filtered = filtered.filter(p => p.variants.some(v => v.brands && v.brands.some(b => b.name === filterState.brand)));
     }
-    if (window.filterState.tax) {
-        filtered = filtered.filter(p => p.gstRate == window.filterState.tax);
+    if (filterState.tax) {
+        filtered = filtered.filter(p => p.gstRate == filterState.tax);
     }
     
-    if (window.filterState.lowStock) {
+    if (filterState.lowStock) {
         filtered = filtered.filter(p => {
             const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
             let total = 0; p.variants.forEach(v => total += Number(v.stock||0));
             return total <= threshold;
         });
     }
-    if (window.filterState.expiring) {
+    if (filterState.expiring) {
         const nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1);
         filtered = filtered.filter(p => p.variants.some(v => v.expiryDate && new Date(v.expiryDate) < nextMonth));
     }
 
-    if (window.filterState.newest) {
+    if (filterState.newest) {
         filtered.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
-    } else if (window.filterState.query === '') {
+    } else if (filterState.query === '') {
         filtered.sort((a, b) => (a.name||'').localeCompare(b.name||''));
     }
 
-    if (window.filterState.query) {
-        const fuzzyReg = new RegExp(window.filterState.query.split('').join('.*'), 'i');
+    if (filterState.query) {
+        const fuzzyReg = new RegExp(filterState.query.split('').join('.*'), 'i');
         filtered = filtered.filter(p =>
-            (p.name||'').toLowerCase().includes(window.filterState.query) || fuzzyReg.test(p.name||'') ||
-            p.variants.some(v => (v.barcode || '').includes(window.filterState.query))
+            (p.name||'').toLowerCase().includes(filterState.query) || fuzzyReg.test(p.name||'') ||
+            p.variants.some(v => (v.barcode || '').includes(filterState.query))
         );
     }
 
-    window.currentFilteredData = filtered;
-    window.currentPage = 0;
+    currentFilteredData = filtered;
+    currentPage = 0;
     const grid = document.getElementById('inventoryGrid');
     if(grid) grid.innerHTML = '';
-    window.renderChunk();
+    renderChunk();
 }
 
-window.clearBulkSelection = function() {
-    window.selectedBulkItems.clear();
+function clearBulkSelection() {
+    selectedBulkItems.clear();
     const bb = document.getElementById('bulkActionBar');
     if(bb) bb.classList.remove('show');
     const ig = document.getElementById('inventoryGrid');
     if(ig) ig.innerHTML = '';
-    window.currentPage = 0;
-    window.renderChunk();
+    currentPage = 0;
+    renderChunk();
 }
 
 window.executeBulkAction = async function() {
@@ -1707,13 +1578,13 @@ window.executeBulkAction = async function() {
     
     if(!op) return window.showToast("Select an action first", true);
     if(op !== 'delete' && !val) return window.showToast("Please enter a value", true);
-    if(!confirm(`Are you sure you want to modify ${window.selectedBulkItems.size} products?`)) return;
+    if(!confirm(`Are you sure you want to modify ${selectedBulkItems.size} products?`)) return;
 
     let modifiedIds = [];
     let deletedIds = [];
 
-    window.allProducts = window.allProducts.filter(p => {
-        if (window.selectedBulkItems.has(p.id)) {
+    allProducts = allProducts.filter(p => {
+        if (selectedBulkItems.has(p.id)) {
             if (op === 'delete') {
                 deletedIds.push(p.id);
                 return false; 
@@ -1730,7 +1601,7 @@ window.executeBulkAction = async function() {
         return true;
     });
 
-    await window.dbSave('bharatpos_products', window.allProducts);
+    await window.dbSave('bharatpos_products', allProducts);
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
 
     if (user.merchantId && window.db) {
@@ -1748,34 +1619,34 @@ window.executeBulkAction = async function() {
         } catch(e) { console.warn("Offline - bulk action saved locally only."); }
     }
 
-    window.clearBulkSelection();
-    window.updateDatalists();
-    window.applyFilters();
+    clearBulkSelection();
+    updateDatalists();
+    applyFilters();
     window.showToast("✨ Bulk Action Applied Successfully");
 }
 
 window.renderChunk = function() {
-    if(!window.isInventoryVisible) return;
+    if(!isInventoryVisible) return;
 
     const grid  = document.getElementById('inventoryGrid');
     if(!grid) return;
 
-    const start = window.currentPage * window.pageSize;
-    const end   = start + window.pageSize;
-    const chunk = window.currentFilteredData.slice(start, end);
-    const getTier = window.calculateABCTiers();
+    const start = currentPage * pageSize;
+    const end   = start + pageSize;
+    const chunk = currentFilteredData.slice(start, end);
+    const getTier = calculateABCTiers();
 
-    if (window.currentFilteredData.length === 0 && window.currentPage === 0) {
+    if (currentFilteredData.length === 0 && currentPage === 0) {
         grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;padding:52px 20px;">
           <div style="width:56px;height:56px;border-radius:16px;background:var(--blue-50);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
             <i class="fa-solid fa-box-open" style="color:var(--primary);font-size:22px;"></i>
           </div>
           <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">
-              <span class="lang-en">No SKUs found</span><span class="lang-hinglish">Koi Samaan Nahi Mila</span><span class="lang-hi">कोई सामान नहीं मिला</span>
+              No SKUs found
           </div>
           <div style="font-size:12px;color:var(--slate-500);font-weight:600;margin-top:5px;">
-              <span class="lang-en">Adjust filters or search.</span><span class="lang-hinglish">Search ya filter change karein.</span><span class="lang-hi">सर्च या फिल्टर बदलें।</span>
+              Adjust filters or search.
           </div>
         </div>`;
         const loadTrig = document.getElementById('loadMoreTrigger');
@@ -1793,12 +1664,12 @@ window.renderChunk = function() {
         const vCount   = p.variants.length;
         const basePrice = p.variants[0].price;
         const tier     = getTier(p.variants[0].id);
-        const formatTotalStock = window.formatStock(totalStock, p.variants[0].quantity);
-        const isChecked = window.selectedBulkItems.has(p.id) ? 'checked' : '';
+        const formatTotalStock = formatStock(totalStock, p.variants[0].quantity);
+        const isChecked = selectedBulkItems.has(p.id) ? 'checked' : '';
 
         let displayBrand = '';
         if(p.variants[0].brands && p.variants[0].brands.length > 0) {
-            displayBrand = ` • ${window.escapeHtml(p.variants[0].brands[0].name)}${p.variants[0].brands.length > 1 ? ' (+More)' : ''}`;
+            displayBrand = ` • ${escapeHtml(p.variants[0].brands[0].name)}${p.variants[0].brands.length > 1 ? ' (+More)' : ''}`;
         }
 
         const card = document.createElement('div');
@@ -1810,12 +1681,12 @@ window.renderChunk = function() {
             <div>
                 <div class="sku-header">
                     <input type="checkbox" class="bulk-cb" ${isChecked} onclick="event.stopPropagation(); window.toggleBulkItem('${p.id}', this.checked)">
-                    <h3 class="sku-name">${window.escapeHtml(p.name)}</h3>
+                    <h3 class="sku-name">${escapeHtml(p.name)}</h3>
                 </div>
-                <div class="sku-cat">${window.escapeHtml(p.category) || 'General'}</div>
+                <div class="sku-cat">${escapeHtml(p.category) || 'General'}</div>
                 <div class="sku-variant-label">
                     <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
-                    ${vCount > 1 ? `${vCount} Variants` : window.escapeHtml(p.variants[0].quantity)}${displayBrand}
+                    ${vCount > 1 ? `${vCount} Variants` : escapeHtml(p.variants[0].quantity)}${displayBrand}
                 </div>
             </div>
             <div>
@@ -1835,7 +1706,7 @@ window.renderChunk = function() {
 
     const loadTrig = document.getElementById('loadMoreTrigger');
     if(loadTrig) {
-        if (end < window.currentFilteredData.length) {
+        if (end < currentFilteredData.length) {
             loadTrig.style.display = 'block';
         } else {
             loadTrig.style.display = 'none';
@@ -1846,22 +1717,22 @@ window.renderChunk = function() {
 window.setupIntersectionObserver = function() {
     const trigger = document.getElementById('loadMoreTrigger');
     if(!trigger) return;
-    window.observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && (window.currentPage * window.pageSize) < window.currentFilteredData.length) {
-            window.currentPage++;
+    observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && (currentPage * pageSize) < currentFilteredData.length) {
+            currentPage++;
             window.renderChunk();
         }
     }, { root: null, threshold: 0.1 });
-    window.observer.observe(trigger);
+    observer.observe(trigger);
 }
 
 // ─── 360 PRODUCT DETAILS MODAL ────────────────────────────────────────────────
-window.openProductDetails = function(id) {
-    const base = window.allProducts.find(p => p.id === id);
+function openProductDetails(id) {
+    const base = allProducts.find(p => p.id === id);
     if (!base) return;
 
-    window.currentDetailId = id;
-    const getTier = window.calculateABCTiers();
+    currentDetailId = id;
+    const getTier = calculateABCTiers();
     const tier  = getTier(base.variants[0].id);
 
     const dName = document.getElementById('dName'); if(dName) dName.innerText = base.name;
@@ -1890,13 +1761,13 @@ window.openProductDetails = function(id) {
             
             let brandsSummary = '';
             if(v.brands && v.brands.length > 0) {
-                brandsSummary = `<div style="font-size:10px; color:var(--slate-500); margin-top:4px; font-weight:700;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${window.escapeHtml(b.name)} (${b.stock})`).join(', ') + `</div>`;
+                brandsSummary = `<div style="font-size:10px; color:var(--slate-500); margin-top:4px; font-weight:700;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${escapeHtml(b.name)} (${b.stock})`).join(', ') + `</div>`;
             }
 
-            if(v.barcode) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
-            if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
+            if(v.barcode) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-barcode"></i> ${escapeHtml(v.barcode)}</span>`);
+            if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${escapeHtml(v.expiryDate)}</span>`);
             if(v.costPrice) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
-            if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${window.escapeHtml(v.baseUnit)||'pcs'}</span>`);
+            if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${escapeHtml(v.baseUnit)||'pcs'}</span>`);
             
             let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--blue-100); font-size:11px; font-weight:700;">${details.join('')}</div>` : '';
 
@@ -1904,12 +1775,12 @@ window.openProductDetails = function(id) {
             <div style="background:var(--white);padding:16px;border-radius:12px;border:1.5px solid var(--blue-100);box-shadow:0 2px 5px rgba(0,0,0,0.02);">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                        <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(v.quantity)}</div>
+                        <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${escapeHtml(v.quantity)}</div>
                         ${brandsSummary}
                     </div>
                     <div style="text-align:right;">
                         <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:16px;">₹${v.price}</div>
-                        <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${window.formatStock(v.stock, v.quantity)}</div>
+                        <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${formatStock(v.stock, v.quantity)}</div>
                     </div>
                 </div>
                 ${detailsHtml}
@@ -1921,12 +1792,12 @@ window.openProductDetails = function(id) {
     window.showModal('productDetailsModal');
 }
 
-window.loadProductForEdit = function(id) {
-    const base = window.allProducts.find(p => p.id === id);
+function loadProductForEdit(id) {
+    const base = allProducts.find(p => p.id === id);
     if (!base) return;
 
-    window.currentEditingId = base.id;
-    window.currentEditingDate = base.dateAdded;
+    currentEditingId = base.id;
+    currentEditingDate = base.dateAdded;
 
     const pName = document.getElementById('pName'); if(pName) pName.value = base.name;
     const pCat = document.getElementById('pCategory'); if(pCat) pCat.value = base.category || '';
@@ -1948,7 +1819,7 @@ window.loadProductForEdit = function(id) {
     const ca = document.getElementById('cfgAdvFields');
     const cb = document.getElementById('cfgBatch');
     const cl = document.getElementById('cfgLoose');
-    window.applySettingsUI(ca?ca.checked:false, cb?cb.checked:false, cl?cl.checked:false);
+    applySettingsUI(ca?ca.checked:false, cb?cb.checked:false, cl?cl.checked:false);
 
     if (base.hsn || base.gstRate) {
         const gstContent = document.getElementById('tierGst');
@@ -1971,24 +1842,20 @@ window.loadProductForEdit = function(id) {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if(pName) pName.focus();
-    
-    const isHin = document.body.classList.contains('lang-hin');
-    window.showToast(isHin ? `✏️ "${base.name}" Edit mode mein khul gaya` : `✏️ Loaded "${base.name}" for editing`);
+    window.showToast(`✏️ Loaded "${base.name}" for editing`);
 }
 
 window.deleteProduct = async function(id) {
-    const base = window.allProducts.find(p => p.id === id);
+    const base = allProducts.find(p => p.id === id);
     if(!base) return;
 
-    const isHin = document.body.classList.contains('lang-hin') || document.body.classList.contains('lang-hi');
-    const confirmMsg = isHin ? `Kya aap "${base.name}" ko pakka delete karna chahte hain?` : `Delete product "${base.name}"?`;
-    if (!confirm(confirmMsg)) return;
+    if (!confirm(`Delete product "${base.name}"?`)) return;
 
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    window.allProducts = window.allProducts.filter(p => p.id !== id);
-    await window.dbSave('bharatpos_products', window.allProducts);
-    window.applyFilters();
-    window.showToast(isHin ? "🗑️ Samaan delete ho gaya" : "🗑️ Deleted successfully");
+    allProducts = allProducts.filter(p => p.id !== id);
+    await window.dbSave('bharatpos_products', allProducts);
+    applyFilters();
+    window.showToast("🗑️ Deleted successfully");
 
     if (user.merchantId && window.db) {
         try {
@@ -1999,7 +1866,7 @@ window.deleteProduct = async function(id) {
     }
 }
 
-window.fetchMasterCatalog = async function() {
+async function fetchMasterCatalog() {
     const btn = document.getElementById('btnFetchMasterCatalog');
     if(!btn) return;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching…`; btn.disabled = true;
@@ -2007,38 +1874,38 @@ window.fetchMasterCatalog = async function() {
         if (!window.db) throw new Error("Firebase disconnected");
         const masterRef = collection(window.db, "masterCatalog");
         const snap      = await getDocs(masterRef);
-        window.masterDbCache   = snap.docs.map(d => d.data());
-        window.searchMasterDB();
+        masterDbCache   = snap.docs.map(d => d.data());
+        searchMasterDB();
         window.showToast("MasterDB Synced");
     } catch (e) {
         console.error(e);
         window.showToast("Failed to fetch MasterDB", true);
     } finally {
-        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>`; btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Fetch Global Database`; btn.disabled = false;
     }
 }
 
-window.searchMasterDB = function() {
+function searchMasterDB() {
     const si = document.getElementById('masterSearchInput');
     const q  = si ? si.value.toLowerCase().trim() : '';
     const list = document.getElementById('masterDbList');
     if(!list) return;
 
-    if (window.masterDbCache.length === 0) return;
-    const filtered = window.masterDbCache.filter(p => (p.name || '').toLowerCase().includes(q)).slice(0, 50);
+    if (masterDbCache.length === 0) return;
+    const filtered = masterDbCache.filter(p => (p.name || '').toLowerCase().includes(q)).slice(0, 50);
 
     list.innerHTML = filtered.map(p => `
         <div style="display:flex;justify-content:space-between;align-items:center;background:var(--white);padding:14px;border:1.5px solid var(--blue-100);border-radius:12px; margin-bottom:8px;">
             <div>
-                <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(p.name)}</div>
-                <div style="font-size:11px;color:var(--slate-500); font-weight:700; margin-top:4px;">${window.escapeHtml(p.category) || 'Gen'} • ₹${p.price}</div>
+                <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${escapeHtml(p.name)}</div>
+                <div style="font-size:11px;color:var(--slate-500); font-weight:700; margin-top:4px;">${escapeHtml(p.category) || 'Gen'} • ₹${p.price}</div>
             </div>
-            <button class="btn btn-outline" style="padding:8px 14px;font-size:12px;width:auto;" data-json='${JSON.stringify(p).replace(/'/g, "&#39;")}'>Import</button>
+            <button class="btn btn-outline" style="padding:8px 14px;font-size:12px;width:auto;" data-json='${escapeHtml(JSON.stringify(p))}'>Import</button>
         </div>
     `).join('');
 }
 
-window.importMasterProduct = function(p) {
+function importMasterProduct(p) {
     window.hideModal('masterCatalogModal');
     
     const pN = document.getElementById('pName'); if(pN) pN.value = p.name || '';
@@ -2063,7 +1930,7 @@ window.importMasterProduct = function(p) {
     window.showToast(`Imported "${p.name}"`);
 }
 
-window.handleBulkImport = async function(event) {
+async function handleBulkImport(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -2107,7 +1974,7 @@ window.handleBulkImport = async function(event) {
                     }]
                 };
 
-                window.allProducts.push(productDoc);
+                allProducts.push(productDoc);
                 if (batch && user.merchantId) { batch.set(doc(window.db, "shops", user.merchantId, "products", skuId), productDoc); }
                 opCount++; addedCount++;
 
@@ -2116,21 +1983,21 @@ window.handleBulkImport = async function(event) {
 
             if (batch && opCount > 0 && user.merchantId) await batch.commit();
 
-            await window.dbSave('bharatpos_products', window.allProducts);
-            window.updateDatalists();
-            window.applyFilters();
+            await window.dbSave('bharatpos_products', allProducts);
+            updateDatalists();
+            applyFilters();
             window.showToast(`✅ Imported ${addedCount} products successfully!`);
 
         } catch (error) {
             console.error(error);
             window.showToast("Import failed. Ensure valid CSV/Excel format.", true);
-            window.applyFilters();
+            applyFilters();
         }
     };
     reader.readAsArrayBuffer(file);
 }
 
-window.pullFreshData = async function() {
+async function pullFreshData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if (!user.merchantId || !window.db) { window.showToast("No active cloud connection", true); return; }
 
@@ -2159,14 +2026,14 @@ window.pullFreshData = async function() {
             return p;
         });
 
-        window.allProducts = fresh;
+        allProducts = fresh;
         await window.dbSave('bharatpos_products', fresh);
-        window.updateDatalists();
-        window.applyFilters();
+        updateDatalists();
+        applyFilters();
         window.showToast("☁️ Sync complete!");
     } catch (e) {
         window.showToast("Sync failed", true);
-        window.applyFilters();
+        applyFilters();
     }
 }
 
@@ -2177,8 +2044,8 @@ window.startAIScan = async function() {
     
     box.style.display = 'block';
     try {
-        window.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        video.srcObject = window.cameraStream;
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = cameraStream;
         setTimeout(window.captureAndSendToAI, 3000);
     } catch (err) {
         window.showToast("Camera access denied", true);
@@ -2187,13 +2054,13 @@ window.startAIScan = async function() {
 }
 
 window.stopAIScan = function() {
-    if (window.cameraStream) { window.cameraStream.getTracks().forEach(t => t.stop()); window.cameraStream = null; }
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
     const box = document.getElementById('scannerBox');
     if(box) box.style.display = 'none';
 }
 
 window.captureAndSendToAI = async function() {
-    if (!window.cameraStream) return;
+    if (!cameraStream) return;
     const video  = document.getElementById("cameraPreview");
     const canvas = document.getElementById("captureCanvas");
     if(!video || !canvas) return;
@@ -2236,8 +2103,8 @@ window.captureAndSendToAI = async function() {
     }
 }
 
-window.openTransferModal = function() {
-    const base = window.allProducts.find(p => p.id === window.currentDetailId);
+function openTransferModal() {
+    const base = allProducts.find(p => p.id === currentDetailId);
     if(!base) return;
 
     const vSel = document.getElementById('transferVariant');
@@ -2256,7 +2123,7 @@ window.openTransferModal = function() {
         
         if(shops.length > 1) {
             bSel.innerHTML = shops.filter(s => s.merchantId !== user.merchantId)
-                                  .map(s => `<option value="${s.merchantId}">${window.escapeHtml(s.shopName)}</option>`).join('');
+                                  .map(s => `<option value="${s.merchantId}">${escapeHtml(s.shopName)}</option>`).join('');
         } else {
             bSel.innerHTML = '<option value="">No other branches found</option>';
         }
@@ -2269,6 +2136,7 @@ window.openTransferModal = function() {
     window.showModal('transferStockModal');
 }
 
+// 🌟 FIRESTORE ATOMIC TRANSACTION FOR STOCK TRANSFER 🌟
 window.submitStockTransfer = async function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     
@@ -2288,70 +2156,89 @@ window.submitStockTransfer = async function() {
     if(btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Transferring...`; btn.disabled = true; }
 
     try {
-        const pIdx = window.allProducts.findIndex(p => p.id === window.currentDetailId);
-        const prod = window.allProducts[pIdx];
-        const vIdx = prod.variants.findIndex(v => v.id === variantId);
-        const variant = prod.variants[vIdx];
+        const pIdx = allProducts.findIndex(p => p.id === currentDetailId);
+        const prod = allProducts[pIdx];
 
-        if(variant.stock < qty) throw new Error("Not enough stock available.");
+        if(window.db && navigator.onLine) {
+            await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js").then(async ({runTransaction}) => {
+                await runTransaction(window.db, async (transaction) => {
+                    const sourceRef = doc(window.db, "shops", user.merchantId, "products", prod.id);
+                    const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
 
-        variant.stock -= qty;
+                    const sourceSnap = await transaction.get(sourceRef);
+                    const targetSnap = await transaction.get(targetRef);
+
+                    if (!sourceSnap.exists()) throw new Error("Source product not found in cloud");
+                    
+                    let sourceProd = sourceSnap.data();
+                    let sourceVar = sourceProd.variants.find(v => v.id === variantId);
+                    
+                    if(!sourceVar || sourceVar.stock < qty) throw new Error("Not enough stock in cloud to transfer");
+
+                    sourceVar.stock -= qty;
+                    if(sourceVar.brands && sourceVar.brands.length > 0) {
+                         let remaining = qty;
+                         for(let b of sourceVar.brands) {
+                             if(remaining <= 0) break;
+                             let deduct = Math.min(b.stock, remaining);
+                             b.stock -= deduct;
+                             remaining -= deduct;
+                         }
+                    }
+                    transaction.update(sourceRef, { variants: sourceProd.variants });
+
+                    if (targetSnap.exists()) {
+                        let targetProd = targetSnap.data();
+                        let targetVar = targetProd.variants.find(v => v.id === variantId);
+                        if(targetVar) {
+                            targetVar.stock = (Number(targetVar.stock) || 0) + qty;
+                            if(targetVar.brands && targetVar.brands.length > 0) {
+                                targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
+                            }
+                        } else {
+                            let newVar = JSON.parse(JSON.stringify(sourceVar));
+                            newVar.stock = qty;
+                            if(newVar.brands && newVar.brands.length > 0) {
+                                newVar.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
+                            }
+                            targetProd.variants.push(newVar);
+                        }
+                        transaction.update(targetRef, { variants: targetProd.variants });
+                    } else {
+                        let clonedProd = JSON.parse(JSON.stringify(sourceProd));
+                        clonedProd.variants.forEach(v => {
+                            if(v.id === variantId) {
+                                v.stock = qty;
+                                if(v.brands && v.brands.length > 0) v.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
+                            } else {
+                                v.stock = 0;
+                                if(v.brands) v.brands.forEach(b => b.stock = 0);
+                            }
+                        });
+                        transaction.set(targetRef, clonedProd);
+                    }
+                });
+            });
+        }
+
+        // Update Local State AFTER successful transaction
+        const vIdx = allProducts[pIdx].variants.findIndex(v => v.id === variantId);
+        allProducts[pIdx].variants[vIdx].stock -= qty;
         
-        if(variant.brands && variant.brands.length > 0) {
+        if(allProducts[pIdx].variants[vIdx].brands && allProducts[pIdx].variants[vIdx].brands.length > 0) {
             let remaining = qty;
-            for(let b of variant.brands) {
+            for(let b of allProducts[pIdx].variants[vIdx].brands) {
                 if(remaining <= 0) break;
                 let deduct = Math.min(b.stock, remaining);
                 b.stock -= deduct;
                 remaining -= deduct;
             }
         }
-
-        await window.dbSave('bharatpos_products', window.allProducts);
-        if(window.db) await setDoc(doc(window.db, "shops", user.merchantId, "products", prod.id), prod);
-
-        if(window.db) {
-            const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
-            const targetSnap = await getDoc(targetRef);
-
-            if(targetSnap.exists()) {
-                let targetProd = targetSnap.data();
-                let targetVar = targetProd.variants.find(v => v.id === variantId);
-                
-                if(targetVar) {
-                    targetVar.stock = (Number(targetVar.stock) || 0) + qty;
-                    if(targetVar.brands && targetVar.brands.length > 0) {
-                        targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
-                    }
-                } else {
-                    let newVar = JSON.parse(JSON.stringify(variant));
-                    newVar.stock = qty;
-                    if(newVar.brands && newVar.brands.length > 0) {
-                       newVar.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
-                    }
-                    targetProd.variants.push(newVar);
-                }
-                await setDoc(targetRef, targetProd);
-            } else {
-                let clonedProd = JSON.parse(JSON.stringify(prod));
-                clonedProd.variants.forEach(v => {
-                    if(v.id === variantId) {
-                        v.stock = qty;
-                        if(v.brands && v.brands.length > 0) {
-                           v.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
-                        }
-                    } else {
-                        v.stock = 0;
-                        if(v.brands) v.brands.forEach(b => b.stock = 0);
-                    }
-                });
-                await setDoc(targetRef, clonedProd);
-            }
-        }
+        await window.dbSave('bharatpos_products', allProducts);
 
         window.showToast("📦 Stock Transferred Successfully!");
         window.hideModal('transferStockModal');
-        window.applyFilters(); 
+        applyFilters(); 
 
     } catch (e) {
         console.error(e);
@@ -2360,6 +2247,10 @@ window.submitStockTransfer = async function() {
         if(btn) { btn.innerHTML = `<i class="fa-solid fa-truck-fast"></i> Confirm Transfer`; btn.disabled = false; }
     }
 }
+
+// Ensure the page boots up synchronously
+initInventory();
+
 </script>
 </body>
 </html>
