@@ -1401,7 +1401,6 @@ window.openPartialPayment = function() {
     const pUdh = document.getElementById('payUdhaar'); if(pUdh) pUdh.value = '';
     window.showModal('partialPayModal');
 }
-
 window.processCheckout = async function(method, split = null) {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return window.showToast("Merchant ID missing", true);
@@ -1435,10 +1434,12 @@ window.processCheckout = async function(method, split = null) {
             split: { cash: cashAmt, online: onlineAmt, udhaar: udhaarAmt }
         };
 
+        // 🛡️ FIX: Declare uniqueProdIds in the outer scope so the whole function can see it
+        const uniqueProdIds = [...new Set(cart.map(item => item.prodId))];
+
         // 🌟 FIRESTORE ATOMIC TRANSACTION 🌟
         await runTransaction(db, async (transaction) => {
             let pSnaps = {};
-            const uniqueProdIds = [...new Set(cart.map(item => item.prodId))];
             
             for(const pid of uniqueProdIds) {
                 const pRef = doc(db, "shops", user.merchantId, "products", pid);
@@ -1512,7 +1513,7 @@ window.processCheckout = async function(method, split = null) {
         sales.push(saleDoc);
         await window.dbSave('bharatpos_sales', sales);
 
-        // 🛡️ FIX: INSTANTLY UPDATE ENTERPRISE CACHES FOR DASHBOARD
+        // 🛡️ INSTANTLY UPDATE ENTERPRISE CACHES FOR DASHBOARD
         const eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
         if(eSales !== null) {
             saleDoc._branchId = user.merchantId; 
@@ -1528,9 +1529,9 @@ window.processCheckout = async function(method, split = null) {
                 if(localP && eIdx > -1) eProds[eIdx].variants = localP.variants;
             });
             await window.dbSave('bharatpos_enterprise_products', eProds);
-        };
+        }
 
-        window.hideModal('partialPayModal');
+        document.getElementById('partialPayModal').style.display = 'none';
         window.generateInvoice(saleDoc); 
         renderProductGrid();
 
