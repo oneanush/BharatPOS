@@ -332,10 +332,10 @@
 </div>
 
 <div id="addBranchModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 class="modal-title" style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-store" style="color:var(--primary);"></i> Add New Branch</h3>
-            <button class="btn-close" id="btnCloseBranchModal"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-content" style="max-width: 400px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-store" style="color:var(--primary);"></i> Add New Branch</h3>
+            <button onclick="window.hideModal('addBranchModal')" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="form-group">
             <label>Branch Name / Location</label>
@@ -358,10 +358,10 @@
 </div>
 
 <div id="mapModal" class="modal-overlay">
-    <div class="modal-content" style="max-width:600px;">
-        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 class="modal-title" style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-location-dot" style="color:var(--danger);"></i> Branch Location</h3>
-            <button class="btn-close" onclick="window.hideModal('mapModal')"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-content" style="max-width:600px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-location-dot" style="color:var(--danger);"></i> Branch Location</h3>
+            <button onclick="window.closeMap()" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div id="shopMap"></div>
         <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 12px; font-weight:600;">
@@ -371,20 +371,20 @@
 </div>
 
 <div id="customerModal" class="modal-overlay">
-    <div class="modal-content" style="max-width:480px;">
-      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+    <div class="modal-content" style="max-width:480px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <div>
-          <h3 style="margin:0; font-size:16px; color:var(--text-main); font-weight:800;" id="custModalName">Customer</h3>
+          <h3 style="margin:0; font-size:16px; color:var(--text-main); font-weight:800; font-family:var(--font-head);" id="custModalName">Customer</h3>
           <div style="color:var(--text-muted); font-size:11px; margin-top:4px; font-weight:600;" id="custModalPhone">Phone</div>
         </div>
-        <button id="btnCloseCustomerModal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+        <button id="btnCloseCustomerModal" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div id="invoiceListBody" style="max-height: 50vh; overflow-y: auto; padding-right:5px; margin-top:10px;"></div>
     </div>
 </div>
 
 <div id="receiptModal" class="modal-overlay" style="z-index: 6000;">
-    <div class="modal-content" style="max-width:360px; background:#f8fafc; padding:15px;">
+    <div class="modal-content" style="max-width:360px; background:#f8fafc; padding:15px; border-radius: var(--radius-lg);">
       <div class="receipt-content">
         <div style="text-align:center; margin-bottom:12px; border-bottom:1px dashed #000; padding-bottom:10px;">
           <h3 style="margin:0; font-size:14px; font-family:'Inter', sans-serif; font-weight:800;" id="rec-shop">BHARAT POS</h3>
@@ -411,15 +411,17 @@
         </div>
       </div>
       <div style="display:flex; gap:8px; margin-top:12px;">
-          <button id="btnSettle" class="btn-settle" style="padding:10px; font-size:12px; flex:1;">✅ Receive Cash</button>
+          <button id="btnSettle" class="btn-settle" style="flex:1; padding:10px; font-size:12px;">✅ Receive Cash</button>
           <button id="btnCloseReceipt" class="btn-settle" style="flex:1; background:#e2e8f0; color:#333; box-shadow:none; padding:10px; font-size:12px;">Close</button>
       </div>
     </div>
 </div>
 
+<div id="toast">✅ Action Successful</div>
+
 <script type="module">
 import { db } from "./bharatpos.js";
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // --- 1. RESTORE CUSTOM DASHBOARD NAVBAR BUTTONS ---
 const navActions = document.querySelector('.nav-actions');
@@ -543,10 +545,13 @@ async function loadEnterpriseData() {
         }
     }
 
-    // Await the new async bridge
-    let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
-    if (eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
-    enterpriseSales = eSales;
+    // 🛡️ FIX: MERGE LOCAL OFFLINE SALES WITH ENTERPRISE SALES INSTANTLY
+    let localSales = await window.dbGet('bharatpos_sales', '[]');
+    let eSales = await window.dbGet('bharatpos_enterprise_sales', '[]');
+    
+    let mergedSalesMap = {};
+    [...eSales, ...localSales].forEach(s => mergedSalesMap[s.id] = s);
+    enterpriseSales = Object.values(mergedSalesMap).sort((a, b) => new Date(b.date) - new Date(a.date));
 
     let eProds = await window.dbGet('bharatpos_enterprise_products', 'null');
     if (eProds === null) eProds = await window.dbGet('bharatpos_products', '[]');
@@ -555,13 +560,8 @@ async function loadEnterpriseData() {
     enterpriseProducts = eProds.map(p => {
         if (!p.variants || !Array.isArray(p.variants) || p.variants.length === 0) {
             p.variants = [{
-                id: p.id + '_v0',
-                quantity: p.quantity || '1 pcs',
-                price: Number(p.price) || 0,
-                stock: Number(p.stock) || 0,
-                barcode: p.barcode || '',
-                baseQty: 1,
-                baseUnit: 'pcs'
+                id: p.id + '_v0', quantity: p.quantity || '1 pcs', price: Number(p.price) || 0,
+                stock: Number(p.stock) || 0, barcode: p.barcode || '', baseQty: 1, baseUnit: 'pcs'
             }];
         }
         return p;
@@ -571,7 +571,19 @@ async function loadEnterpriseData() {
 
     if (window.db && navigator.onLine) {
         try {
-            let tempSales = [];
+            // 🛡️ FIX: PUSH ANY OFFLINE SALES TO FIRESTORE FIRST
+            if (user.merchantId && localSales.length > 0) {
+                const batch = writeBatch(db);
+                let ops = 0;
+                localSales.forEach(sale => {
+                    const ref = doc(db, "shops", user.merchantId, "sales", sale.id);
+                    batch.set(ref, sale, { merge: true });
+                    ops++;
+                });
+                if (ops > 0) await batch.commit();
+            }
+
+            let tempSalesMap = {};
             let tempProds = [];
 
             const fetchPromises = shops.map(async (shop) => {
@@ -579,29 +591,35 @@ async function loadEnterpriseData() {
                 try {
                     const salesRef = collection(db, "shops", shop.merchantId, "sales");
                     const sSnap = await getDocs(salesRef);
-                    sSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; tempSales.push(data); });
+                    sSnap.forEach(d => { 
+                        let data = d.data(); 
+                        data._branchId = shop.merchantId; 
+                        tempSalesMap[data.id] = data; 
+                    });
 
                     const prodRef = collection(db, "shops", shop.merchantId, "products");
                     const pSnap = await getDocs(prodRef);
-                    pSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; data._branchName = shop.shopName; tempProds.push(data); });
+                    pSnap.forEach(d => { 
+                        let data = d.data(); 
+                        data._branchId = shop.merchantId; 
+                        data._branchName = shop.shopName; 
+                        tempProds.push(data); 
+                    });
                 } catch(e) {}
             });
             
             await Promise.all(fetchPromises);
             
-            enterpriseSales = tempSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // 🛡️ FIX: MERGE CLOUD RESULTS WITH ANY LINGERING LOCAL SALES TO PREVENT DATA LOSS
+            localSales.forEach(s => { if(!tempSalesMap[s.id]) tempSalesMap[s.id] = s; });
+            enterpriseSales = Object.values(tempSalesMap).sort((a, b) => new Date(b.date) - new Date(a.date));
             
             // Apply shield to fresh cloud data
             enterpriseProducts = tempProds.map(p => {
                 if (!p.variants || !Array.isArray(p.variants) || p.variants.length === 0) {
                     p.variants = [{
-                        id: p.id + '_v0',
-                        quantity: p.quantity || '1 pcs',
-                        price: Number(p.price) || 0,
-                        stock: Number(p.stock) || 0,
-                        barcode: p.barcode || '',
-                        baseQty: 1,
-                        baseUnit: 'pcs'
+                        id: p.id + '_v0', quantity: p.quantity || '1 pcs', price: Number(p.price) || 0,
+                        stock: Number(p.stock) || 0, barcode: p.barcode || '', baseQty: 1, baseUnit: 'pcs'
                     }];
                 }
                 return p;
@@ -794,6 +812,7 @@ function renderPOs(products) {
         return;
     }
 
+    // XSS Defense applied
     box.innerHTML = poList.slice(0, 5).map(po => `
         <div class="list-item">
             <div>
@@ -833,6 +852,7 @@ function renderExpiry(products) {
         return;
     }
 
+    // XSS Defense applied
     box.innerHTML = expList.slice(0, 5).map(ex => {
         let badgeClass = ex.days <= 7 ? 'badge-danger' : 'badge-warning';
         let dayText = ex.days < 0 ? 'Expired' : (ex.days === 0 ? 'Today' : `${ex.days} Days`);
@@ -857,6 +877,7 @@ function renderAuditTrail() {
         return;
     }
 
+    // XSS Defense applied
     box.innerHTML = logs.slice(0, 10).map(log => {
         const logDate = new Date(log.time);
         const timeStr = logDate.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
@@ -1020,6 +1041,8 @@ window.closeUdhaarSection = function() {
 window.renderUdhaarGroups = function() {
     const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
     const container = document.getElementById('udhaarGroupList');
+    if(!container) return;
+    
     const pending = fSales.filter(s => getPendingUdhaarAmount(s) > 0);
 
     const totalPending = pending.reduce((acc, s) => acc + getPendingUdhaarAmount(s), 0);
@@ -1045,6 +1068,7 @@ window.renderUdhaarGroups = function() {
 
     const sortedGroups = Object.values(groups).sort((a,b) => b.total - a.total);
 
+    // XSS Defense applied
     container.innerHTML = sortedGroups.map(g => `
         <div class="group-card" onclick="window.openCustomerModal('${escapeHtml(g.phone)}')">
             <div>
@@ -1074,6 +1098,8 @@ window.openCustomerModal = function(phone) {
     document.getElementById('custModalPhone').textContent = escapeHtml(phone);
 
     const listBody = document.getElementById('invoiceListBody');
+    
+    // XSS Defense applied
     listBody.innerHTML = invoices.map(inv => {
         const dataStr = encodeURIComponent(JSON.stringify(inv));
         const amt = getPendingUdhaarAmount(inv);
@@ -1085,7 +1111,7 @@ window.openCustomerModal = function(phone) {
             <div class="inv-info">
                 <h4>#${escapeHtml(invId.slice(-8))}</h4>
                 <p>${new Date(inv.date).toLocaleDateString()} • <span style="color:var(--warning);">${escapeHtml(pMode)}</span></p>
-                ${currentBranch === 'all' && inv._branchName ? `<p style="margin-top:2px; color:var(--blue-600); font-weight:700;">Branch: ${escapeHtml(inv._branchName)}</p>` : ''}
+                ${currentBranch === 'all' ? `<p style="margin-top:2px; color:var(--blue-600); font-weight:700;">Branch: ${escapeHtml(inv._branchName || 'Main')}</p>` : ''}
             </div>
             <div class="inv-action">
                 <div class="inv-price">₹${formatCurrency(amt)}</div>
@@ -1103,6 +1129,7 @@ window.openReceipt = function(dataStr) {
     const pendingAmt = getPendingUdhaarAmount(inv);
     const invId = inv.id || inv.invoiceNo;
 
+    // XSS Defense applied
     document.getElementById('rec-shop').innerText = escapeHtml(inv._branchName || user.shopName || "BHARAT POS");
     document.getElementById('rec-id').innerText = "INV: " + escapeHtml(invId.slice(-8));
     document.getElementById('rec-date').innerText = new Date(inv.date).toLocaleString();
@@ -1132,6 +1159,7 @@ window.openReceipt = function(dataStr) {
     window.showModal('receiptModal');
 }
 
+// 🌟 FIRESTORE ATOMIC TRANSACTION FOR DEBT SETTLEMENT 🌟
 window.settleDebt = async function(id, saleBranchId) {
     if(!confirm("Mark this pending amount as PAID (Cash Received)?")) return;
 
@@ -1161,15 +1189,8 @@ window.settleDebt = async function(id, saleBranchId) {
             const localSales = await window.dbGet('bharatpos_sales', '[]');
             const lIndex = localSales.findIndex(ls => (ls.id === id || ls.invoiceNo === id));
             if (lIndex > -1) {
-                localSales[lIndex].isPaid = true;
-                localSales[lIndex].settledDate = s.settledDate;
-                if(localSales[lIndex].paymentMethod === 'Partial' && localSales[lIndex].split) {
-                    localSales[lIndex].split.cash += pendingAmt;
-                    localSales[lIndex].paymentMethod = "Partial (Settled)";
-                } else {
-                    localSales[lIndex].paymentMode = "Cash (Settled)";
-                    localSales[lIndex].paymentMethod = "Cash (Settled)";
-                }
+                localSales[lIndex] = { ...localSales[lIndex], isPaid: true, settledDate: s.settledDate, paymentMethod: s.paymentMethod, paymentMode: s.paymentMode };
+                if(s.split) localSales[lIndex].split = s.split;
                 await window.dbSave('bharatpos_sales', localSales);
             }
         }
@@ -1185,17 +1206,18 @@ window.settleDebt = async function(id, saleBranchId) {
         
         if(targetBranch && window.db) {
             try {
-                const saleRef = doc(db, "shops", targetBranch, "sales", id);
-                let updateData = { isPaid: true, settledDate: s.settledDate };
-
-                if(s.split) {
-                    updateData.paymentMethod = "Partial (Settled)";
-                    updateData.split = s.split;
-                } else {
-                    updateData.paymentMode = "Cash (Settled)";
-                    updateData.paymentMethod = "Cash (Settled)";
-                }
-                await updateDoc(saleRef, updateData);
+                // Force Atomic Update
+                const { runTransaction } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                await runTransaction(window.db, async (transaction) => {
+                    const saleRef = doc(window.db, "shops", targetBranch, "sales", id);
+                    transaction.update(saleRef, {
+                        isPaid: true,
+                        settledDate: s.settledDate,
+                        paymentMethod: s.paymentMethod,
+                        paymentMode: s.paymentMode,
+                        split: s.split || null
+                    });
+                });
             } catch(e) { console.error("Firebase Udhaar Update Failed:", e); }
         }
     } else {
@@ -1264,10 +1286,99 @@ function initDragAndDrop() {
         }
     });
 }
-
-// ─── KICKSTART ───
-initDashboard();
-
 </script>
+
+<div id="addBranchModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-store" style="color:var(--primary);"></i> Add New Branch</h3>
+            <button onclick="window.hideModal('addBranchModal')" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="form-group">
+            <label>Branch Name / Location</label>
+            <input type="text" id="newBranchName" class="form-input" placeholder="e.g. South Extension Store">
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select id="newBranchCat" class="form-select">
+                <option value="GROCERY">Kirana / Grocery</option>
+                <option value="MEDICAL">Pharmacy / Medical</option>
+                <option value="ELECTRONIC">Electronics</option>
+                <option value="OTHER">Other Retail</option>
+            </select>
+        </div>
+        <button id="btnSubmitBranch" class="btn-submit">Create Branch Shop</button>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 15px; text-align: center; line-height:1.4;">
+            This branch will be linked to your master mobile number. You can switch between branches globally using the top menu.
+        </div>
+    </div>
+</div>
+
+<div id="mapModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:600px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-location-dot" style="color:var(--danger);"></i> Branch Location</h3>
+            <button onclick="window.hideModal('mapModal')" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="shopMap"></div>
+        <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 12px; font-weight:600;">
+            Click anywhere on the map to drop a pin. Coordinates sync automatically.
+        </div>
+    </div>
+</div>
+
+<div id="customerModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:480px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <div>
+          <h3 style="margin:0; font-size:16px; color:var(--text-main); font-weight:800; font-family:var(--font-head);" id="custModalName">Customer</h3>
+          <div style="color:var(--text-muted); font-size:11px; margin-top:4px; font-weight:600;" id="custModalPhone">Phone</div>
+        </div>
+        <button id="btnCloseCustomerModal" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="invoiceListBody" style="max-height: 50vh; overflow-y: auto; padding-right:5px; margin-top:10px;"></div>
+    </div>
+</div>
+
+<div id="receiptModal" class="modal-overlay" style="z-index: 6000;">
+    <div class="modal-content" style="max-width:360px; background:#f8fafc; padding:15px; border-radius: var(--radius-lg);">
+      <div class="receipt-content">
+        <div style="text-align:center; margin-bottom:12px; border-bottom:1px dashed #000; padding-bottom:10px;">
+          <h3 style="margin:0; font-size:14px; font-family:'Inter', sans-serif; font-weight:800;" id="rec-shop">BHARAT POS</h3>
+          <div style="font-size:10px; margin-top:4px;" id="rec-id"></div>
+          <div style="font-size:10px;" id="rec-date"></div>
+        </div>
+        <div style="font-size:11px; margin-bottom:12px; border-bottom:1px solid #ccc; padding-bottom:8px;">
+          <strong>Bill To:</strong> <span id="rec-name"></span> <span id="rec-phone" style="color:#555;"></span>
+        </div>
+        <table class="rec-table">
+          <thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Amt</th></tr></thead>
+          <tbody id="rec-items"></tbody>
+        </table>
+        
+        <div style="border-top:1px dashed #000; padding-top:8px; margin-top:8px;">
+            <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#555;">
+                <span>Total Bill Value:</span><span id="rec-full-total">₹0</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#555;" id="rec-split-info"></div>
+            <div class="rec-total" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px solid #000; padding-top:8px;">
+                <span style="font-size:11px; color:var(--danger);">PENDING UDHAAR:</span>
+                <span id="rec-due" style="color:var(--danger); font-size:14px;">₹0</span>
+            </div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+          <button id="btnSettle" class="btn-settle" style="flex:1; padding:10px; font-size:12px;">✅ Receive Cash</button>
+          <button id="btnCloseReceipt" class="btn-settle" style="flex:1; background:#e2e8f0; color:#333; box-shadow:none; padding:10px; font-size:12px;">Close</button>
+      </div>
+    </div>
+</div>
+
+<div id="toast">✅ Action Successful</div>
+
+<script type="module">
+    initDashboard();
+</script>
+
 </body>
 </html>
