@@ -24,6 +24,10 @@
         display: flex; flex-direction: column; gap: 24px; transition: all 0.3s ease; font-family: var(--font-body);
     }
     
+    .nav-actions { display: flex; gap: 10px; align-items: center; }
+    .shop-switcher { background: #f9f9f9; border: 1.5px solid var(--blue-200); color: var(--slate-900); padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; outline: none; cursor: pointer; max-width: 160px; transition: 0.2s; font-family: var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
+    .shop-switcher:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.1); }
+
     .kpi-grid { 
         display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
         gap: 16px; transition: all 0.3s ease;
@@ -176,11 +180,11 @@
     /* ═══════════════════════════════════════════════════════════
        EXPORT MODAL ACTIONS & BUTTONS
     ═══════════════════════════════════════════════════════════ */
-    .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;}
     .btn-action { 
         padding: 14px; border-radius: var(--radius-input); border: none; font-weight: 800; 
         cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; 
-        font-size: 13px; color: white; font-family: var(--font-body); transition: var(--trans); 
+        font-size: 13.5px; color: white; font-family: var(--font-body); transition: var(--trans); 
         box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 0.04em;
     }
     .btn-action:active { transform: scale(0.97); }
@@ -228,6 +232,9 @@
       <button class="menu-btn" id="btnOpenMenu" style="background: var(--blue-50); border: 1.5px solid var(--blue-200); color: var(--blue-600); width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fa-solid fa-bars"></i></button>
       <div class="brand-logo-wrap" style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #059669, #047857); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(5,150,105,0.25);"><i class="fa-solid fa-file-invoice-dollar" style="color: #fff; font-size: 14px;"></i></div>
       Bharat<span>POS</span>
+    </div>
+    <div class="nav-actions">
+        <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
     </div>
   </nav>
 
@@ -327,6 +334,10 @@ window.db = db;
 window.allSales = [];
 
 // --- UTILS ---
+window.escapeHtml = function(str) { 
+    return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
+}
+
 window.formatCurrency = function(n){ return '₹' + Number(n || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
 
 window.animateValue = function(obj, start, end, duration, isCurrency=false) {
@@ -434,11 +445,27 @@ window.loadSalesFromCloud = async function() {
     }
 
     const branchFilter = document.getElementById('filterBranch');
-    if (shops.length > 1 && branchFilter) {
-        branchFilter.style.display = 'inline-block';
-        branchFilter.innerHTML = '<option value="all">🌍 All Branches</option>' + 
-            shops.map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
-        branchFilter.addEventListener('change', window.renderReports);
+    const shopSwitcher = document.getElementById('shopSwitcher');
+
+    if (shops.length > 1) {
+        if (branchFilter) {
+            branchFilter.style.display = 'inline-block';
+            branchFilter.innerHTML = '<option value="all">🌍 All Branches</option>' + 
+                shops.map(s => `<option value="${s.merchantId}">${window.escapeHtml(s.shopName)}</option>`).join('');
+            branchFilter.addEventListener('change', window.renderReports);
+        }
+        
+        if (shopSwitcher) {
+            shopSwitcher.style.display = 'inline-block';
+            shopSwitcher.innerHTML = shops.map(s => 
+                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
+                    ${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
+                </option>`
+            ).join('');
+            shopSwitcher.addEventListener('change', (e) => {
+                if(window.switchActiveShop) window.switchActiveShop(e.target.value);
+            });
+        }
     }
 
     // Load from Async Bridge
@@ -534,7 +561,7 @@ window.groupSalesByDate = function() {
        const q = Number(item.qty || 1);
        grouped[d].itemsCount += q;
        
-       const displayName = `${item.name} ${item.variant ? `(${item.variant})` : ''}`;
+       const displayName = `${window.escapeHtml(item.name)} ${item.variant ? `(${window.escapeHtml(item.variant)})` : ''}`;
        grouped[d].products[displayName] = (grouped[d].products[displayName] || 0) + q;
     });
 
