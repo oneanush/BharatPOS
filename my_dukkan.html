@@ -38,8 +38,11 @@
     .brand h1 { margin: 0; font-size: 18px; font-weight: 800; color: var(--blue-600); display: flex; align-items: center; gap: 8px; font-family: var(--font-head); } 
     .brand span { font-size: 11px; font-weight: 700; color: var(--slate-500); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px; font-family: var(--font-body); }
     
-    .header-actions { display: flex; gap: 10px; }
+    .header-actions { display: flex; gap: 10px; align-items: center;}
     
+    .shop-switcher { background: #f9f9f9; border: 1.5px solid var(--blue-200); color: var(--slate-900); padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; outline: none; cursor: pointer; max-width: 160px; transition: 0.2s; font-family: var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
+    .shop-switcher:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.1); }
+
     .btn-nav { 
         background: var(--blue-50); color: var(--blue-600); border: 1.5px solid var(--blue-200); 
         padding: 8px 14px; border-radius: var(--radius-input); font-size: 13px; font-weight: 700; 
@@ -160,6 +163,7 @@
     .modal-body { padding: 20px 24px; overflow-y: auto; background: var(--white); max-height: 70vh;} 
     
     .udhaar-row { padding: 16px 0; border-bottom: 1.5px solid var(--blue-100); display: flex; justify-content: space-between; align-items: center; transition: var(--trans); } 
+    .udhaar-row:hover { background: var(--blue-50); }
     
     #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--slate-900); color: white; padding: 14px 28px; border-radius: 100px; font-weight: 700; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 12000; white-space: nowrap; font-family: var(--font-body);}
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
@@ -187,6 +191,8 @@
         <span>Finance HQ</span>
     </div>
     <div class="header-actions">
+        <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
+        
         <button class="btn-nav btn-sync" onclick="window.syncAllData()" id="syncBtn">
             <i class="fa-solid fa-rotate"></i> <span class="desktop-only">Sync</span>
         </button>
@@ -321,12 +327,13 @@
             </div>
             
             <div style="font-size: 11px; font-weight: 800; color: var(--slate-500); text-transform: uppercase; margin-bottom:8px;">Add Item Manually</div>
-            <select id="poProductSelect" class="inp" style="margin-bottom:12px;"></select>
-            <div style="display:flex; gap:10px; margin-bottom:24px;">
-                <input type="number" id="poQty" class="inp" placeholder="Qty" style="flex:1;">
+            <select id="poProductSelect" class="inp" style="margin-bottom:12px;" onchange="window.updatePOHint()"></select>
+            <div style="display:flex; gap:10px; margin-bottom:8px;">
+                <input type="number" id="poQty" class="inp" placeholder="Stock Qty" style="flex:1;" oninput="window.updatePOHint()">
                 <input type="number" id="poCost" class="inp" placeholder="Total Cost (₹)" style="flex:1;">
                 <button class="btn-record" onclick="window.addDraftPOItem()" style="background:var(--primary-gradient); width:auto; padding:0 20px; margin:0;"><i class="fa-solid fa-plus"></i></button>
             </div>
+            <div id="poQtyHint" style="font-size: 11px; margin-bottom: 24px; line-height: 1.4; color: var(--slate-500);">Select a product to see stock unit details.</div>
             
             <button class="btn-record" onclick="window.submitPO()" style="background: linear-gradient(135deg, var(--purple), #6D28D9);">Save Purchase Order</button>
         </div>
@@ -400,12 +407,13 @@
         else el.innerText = `Good Evening, ${name}`;
     }
 
-    // --- STATE ---
-    window.localExpenses = []; 
-    window.localSales = [];
-    window.localUdhaar = [];
-    window.localPOs = [];
+    // --- STATE (Enterprise & Local) ---
+    window.enterpriseExpenses = [];
+    window.enterpriseSales = [];
+    window.enterprisePOs = [];
     window.allProducts = [];
+    
+    window.currentBranch = 'all';
     window.poDraftItems = [];
     window.currentReceivePOId = null;
     let lineChart = null;
@@ -416,18 +424,59 @@
         
         // 1. Initial Load via Async Bridge
         window.allProducts = await window.dbGet('bharatpos_products', '[]');
-        window.localExpenses = await window.dbGet('bharatpos_expenses', '[]');
-        window.localSales = await window.dbGet('bharatpos_sales', '[]');
-        window.localPOs = await window.dbGet('bharatpos_pos', '[]');
         
-        window.localUdhaar = window.localSales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true) || (s.paymentMethod === 'Udhaar' && s.isPaid !== true));
+        let eExp = await window.dbGet('bharatpos_enterprise_expenses', 'null');
+        if (eExp === null) eExp = await window.dbGet('bharatpos_expenses', '[]');
+        window.enterpriseExpenses = eExp;
+
+        let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
+        if (eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
+        window.enterpriseSales = eSales;
+
+        let ePO = await window.dbGet('bharatpos_enterprise_pos', 'null');
+        if (ePO === null) ePO = await window.dbGet('bharatpos_pos', '[]');
+        window.enterprisePOs = ePO;
         
+        // Multi-Branch Setup
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
+
+        if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
+            const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
+            if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
+        }
+
+        const switcher = document.getElementById('shopSwitcher');
+        if (shops.length > 1 && switcher) {
+            switcher.style.display = 'inline-block';
+            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
+                shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
+            
+            window.currentBranch = user.merchantId;
+            switcher.value = user.merchantId;
+
+            switcher.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if(val === 'all' || val === user.merchantId) {
+                    window.currentBranch = val;
+                    refreshDashboard();
+                } else if(window.switchActiveShop) {
+                    window.switchActiveShop(val);
+                }
+            });
+        } else if (switcher) {
+            window.currentBranch = user.merchantId;
+            switcher.value = user.merchantId;
+        }
+
         refreshDashboard();
         
         setTimeout(() => {
             document.querySelectorAll('.skeleton-load').forEach(el => el.classList.remove('skeleton-load'));
-            // Silently pull fresh cloud data
-            window.syncAllData(true);
+            // Silently pull fresh cloud data from all branches
+            if (user.merchantId && db && navigator.onLine) {
+                window.syncAllData(true, shops);
+            }
         }, 500); 
 
         // Populate Product Select for POs
@@ -442,8 +491,8 @@
         return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
     }
 
-    // --- 🟢 FIREBASE: SYNC LOGIC ---
-    window.syncAllData = async function(isSilent = false) {
+    // --- 🟢 FIREBASE: SYNC LOGIC (Multi-Branch) ---
+    window.syncAllData = async function(isSilent = false, shopsArray = null) {
         const btn = document.getElementById('syncBtn');
         if(btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span class="desktop-only">Syncing</span>`;
         
@@ -456,24 +505,46 @@
         }
 
         try {
-            // 1. Fetch Expenses
-            const expRef = collection(db, "shops", user.merchantId, "expenses");
-            const expSnap = await getDocs(expRef);
-            window.localExpenses = expSnap.docs.map(d => d.data());
-            await window.dbSave('bharatpos_expenses', window.localExpenses);
+            let shops = shopsArray;
+            if(!shops) {
+                shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
+                if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
+                    const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
+                    if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
+                }
+            }
 
-            // 2. Fetch Sales (Income)
-            const salesRef = collection(db, "shops", user.merchantId, "sales");
-            const salesSnap = await getDocs(salesRef);
-            window.localSales = salesSnap.docs.map(d => d.data());
-            await window.dbSave('bharatpos_sales', window.localSales);
-            window.localUdhaar = window.localSales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true) || (s.paymentMethod === 'Udhaar' && s.isPaid !== true));
+            let allExp = [];
+            let allSales = [];
+            let allPOs = [];
 
-            // 3. Fetch POs
-            const poRef = collection(db, "shops", user.merchantId, "purchase_orders");
-            const poSnap = await getDocs(poRef);
-            window.localPOs = poSnap.docs.map(d => d.data());
-            await window.dbSave('bharatpos_pos', window.localPOs);
+            const fetchPromises = shops.map(async (shop) => {
+                if(!shop.merchantId) return;
+                try {
+                    const expSnap = await getDocs(collection(db, "shops", shop.merchantId, "expenses"));
+                    expSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allExp.push(data); });
+
+                    const salesSnap = await getDocs(collection(db, "shops", shop.merchantId, "sales"));
+                    salesSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allSales.push(data); });
+
+                    const poSnap = await getDocs(collection(db, "shops", shop.merchantId, "purchase_orders"));
+                    poSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allPOs.push(data); });
+                } catch(e) { console.warn(`Failed fetching data for branch: ${shop.shopName}`); }
+            });
+            
+            await Promise.all(fetchPromises);
+
+            allExp.sort((a,b) => new Date(b.date) - new Date(a.date));
+            allSales.sort((a,b) => new Date(b.date) - new Date(a.date));
+            allPOs.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            window.enterpriseExpenses = allExp;
+            window.enterpriseSales = allSales;
+            window.enterprisePOs = allPOs;
+
+            await window.dbSave('bharatpos_enterprise_expenses', window.enterpriseExpenses);
+            await window.dbSave('bharatpos_enterprise_sales', window.enterpriseSales);
+            await window.dbSave('bharatpos_enterprise_pos', window.enterprisePOs);
 
             refreshDashboard();
             if(!isSilent) {
@@ -489,7 +560,7 @@
     }
 
     // --- 🟢 FIREBASE: ADD EXPENSE ---
-    window.addExpense = async function(customAmt = null, customDesc = null, customCat = null, customMode = 'Cash') {
+    window.addExpense = async function(customAmt = null, customDesc = null, customCat = null, customMode = 'Cash', targetBranchId = null) {
         const amtInp = document.getElementById('exAmt');
         const descInp = document.getElementById('exDesc');
         const catInp = document.getElementById('exCat');
@@ -507,6 +578,9 @@
             btn.disabled = true;
         }
 
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const branchToSave = targetBranchId || user.merchantId;
+
         const expenseObj = {
             id: "EXP-" + Date.now(), 
             date: new Date().toISOString(),
@@ -514,18 +588,23 @@
             type: 'expense', 
             cat: cat, 
             desc: desc,
-            paymentMode: customMode
+            paymentMode: customMode,
+            _branchId: branchToSave
         };
 
         // 1. Save Locally
-        window.localExpenses.unshift(expenseObj); 
-        await window.dbSave('bharatpos_expenses', window.localExpenses);
+        window.enterpriseExpenses.unshift(expenseObj); 
+        await window.dbSave('bharatpos_enterprise_expenses', window.enterpriseExpenses);
+        
+        // Push to local shop array as well just for redundancy if offline
+        const localOnly = await window.dbGet('bharatpos_expenses', '[]');
+        localOnly.unshift(expenseObj);
+        await window.dbSave('bharatpos_expenses', localOnly);
 
         // 2. Save to Cloud
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(user.merchantId && db && navigator.onLine) {
+        if(branchToSave && db && navigator.onLine) {
             try {
-                const expRef = doc(db, "shops", user.merchantId, "expenses", expenseObj.id);
+                const expRef = doc(db, "shops", branchToSave, "expenses", expenseObj.id);
                 await setDoc(expRef, expenseObj);
             } catch(e) { console.error("Failed to save expense to cloud", e); }
         }
@@ -546,14 +625,23 @@
     window.deleteExpense = async function(id) {
         if(!confirm("Delete this expense record?")) return;
 
-        window.localExpenses = window.localExpenses.filter(e => e.id !== id);
-        await window.dbSave('bharatpos_expenses', window.localExpenses);
+        const targetExp = window.enterpriseExpenses.find(e => e.id === id);
+        const branchId = targetExp ? targetExp._branchId : null;
+
+        // Remove locally
+        window.enterpriseExpenses = window.enterpriseExpenses.filter(e => e.id !== id);
+        await window.dbSave('bharatpos_enterprise_expenses', window.enterpriseExpenses);
+        
+        const localOnly = await window.dbGet('bharatpos_expenses', '[]');
+        const newLocal = localOnly.filter(e => e.id !== id);
+        await window.dbSave('bharatpos_expenses', newLocal);
+        
         refreshDashboard();
 
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(user.merchantId && db && navigator.onLine) {
+        // Remove from Cloud
+        if(branchId && db && navigator.onLine) {
             try {
-                const expRef = doc(db, "shops", user.merchantId, "expenses", id);
+                const expRef = doc(db, "shops", branchId, "expenses", id);
                 await deleteDoc(expRef);
             } catch(e) { console.error("Failed to delete from cloud", e); }
         }
@@ -566,7 +654,38 @@
         window.renderPODraftList();
         const pQty = document.getElementById('poQty'); if(pQty) pQty.value = '';
         const pCost = document.getElementById('poCost'); if(pCost) pCost.value = '';
+        const hint = document.getElementById('poQtyHint'); if(hint) hint.innerHTML = 'Select a product to see stock unit details.';
         window.showModal('createPOModal');
+    }
+
+    window.updatePOHint = function() {
+        const prodId = document.getElementById('poProductSelect').value;
+        const qty = parseFloat(document.getElementById('poQty').value) || 0;
+        const hintEl = document.getElementById('poQtyHint');
+        
+        if(!prodId) { hintEl.innerHTML = 'Select a product to see stock unit details.'; return; }
+        
+        const p = window.allProducts.find(x => x.id === prodId);
+        if(!p) return;
+        const v = p.variants[0]; 
+        
+        let label = `1 Stock Unit = ${v.quantity}`;
+        let total = qty;
+        let unitStr = v.quantity;
+
+        if(p.isLoose) {
+            const bq = Number(v.baseQty) || 1;
+            const bu = v.baseUnit || 'units';
+            label = `1 Stock Unit = ${bq} ${bu} (Loose Base Qty)`;
+            total = qty * bq;
+            unitStr = bu;
+        }
+        
+        if(qty > 0) {
+            hintEl.innerHTML = `<span style="color:var(--blue-600); font-weight:800;">${label}</span><br>You are ordering: <strong style="color:var(--success); font-family:'JetBrains Mono';">${total} ${unitStr}</strong> to be added to inventory.`;
+        } else {
+            hintEl.innerHTML = `<span style="color:var(--slate-500); font-weight:700;">${label}. Enter quantity to see total.</span>`;
+        }
     }
 
     window.autoGeneratePO = function() {
@@ -633,6 +752,7 @@
         }
 
         qtyInp.value = ''; costInp.value = '';
+        const hint = document.getElementById('poQtyHint'); if(hint) hint.innerHTML = 'Select a product to see stock unit details.';
         window.renderPODraftList();
     }
 
@@ -654,10 +774,10 @@
         list.innerHTML = window.poDraftItems.map((item, i) => {
             totalExpected += item.cost;
             return `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid var(--border); background:var(--white);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid var(--blue-100); background:var(--white);">
                 <div>
                     <div style="font-weight:800; font-size:13px; color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(item.name)}</div>
-                    <div style="font-size:11px; color:var(--slate-500); font-weight:600; margin-top:2px;">Order Qty: ${item.qty}</div>
+                    <div style="font-size:11px; color:var(--slate-500); font-weight:700; margin-top:2px;">Stock Units: ${item.qty}</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div style="font-weight:800; color:var(--danger); font-family:'JetBrains Mono';">₹${item.cost.toFixed(2)}</div>
@@ -667,7 +787,7 @@
         }).join('');
         
         list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 10px; background:var(--blue-50); border-top:2px dashed var(--blue-200); border-radius:0 0 10px 10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 10px; background:var(--blue-50); border-top:2px dashed var(--blue-200); border-radius:0 0 10px 10px;">
                 <div style="font-weight:800; font-size:12px; color:var(--blue-600); text-transform:uppercase;">Expected Total</div>
                 <div style="font-weight:800; font-size:16px; color:var(--blue-600); font-family:'JetBrains Mono';">₹${totalExpected.toFixed(2)}</div>
             </div>
@@ -677,19 +797,25 @@
     window.submitPO = async function() {
         if(window.poDraftItems.length === 0) return window.showToast("Add items to PO first", "error");
 
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         const totalExpected = window.poDraftItems.reduce((sum, item) => sum + item.cost, 0);
+        
         const poObj = {
             id: "PO-" + Date.now(),
             date: new Date().toISOString(),
             status: "Pending",
             items: [...window.poDraftItems],
-            totalExpected: totalExpected
+            totalExpected: totalExpected,
+            _branchId: user.merchantId
         };
 
-        window.localPOs.unshift(poObj);
-        await window.dbSave('bharatpos_pos', window.localPOs);
+        window.enterprisePOs.unshift(poObj);
+        await window.dbSave('bharatpos_enterprise_pos', window.enterprisePOs);
+        
+        const localOnly = await window.dbGet('bharatpos_pos', '[]');
+        localOnly.unshift(poObj);
+        await window.dbSave('bharatpos_pos', localOnly);
 
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         if(user.merchantId && db && navigator.onLine) {
             try {
                 await setDoc(doc(db, "shops", user.merchantId, "purchase_orders", poObj.id), poObj);
@@ -702,11 +828,11 @@
     }
 
     window.openReceivePOModal = function(poId) {
-        const po = window.localPOs.find(p => p.id === poId);
+        const po = window.enterprisePOs.find(p => p.id === poId);
         if(!po) return;
 
         window.currentReceivePOId = poId;
-        const t = document.getElementById('receivePOTitle'); if(t) t.innerText = `Receive ${po.id}`;
+        const t = document.getElementById('receivePOTitle'); if(t) t.innerText = `Receive ${po.id.slice(-8)}`;
         const c = document.getElementById('receivePOCost'); if(c) c.innerText = `₹${po.totalExpected.toFixed(2)}`;
         const m = document.getElementById('receivePOMode'); if(m) m.value = "Cash";
 
@@ -714,7 +840,7 @@
     }
 
     window.confirmReceivePO = async function() {
-        const po = window.localPOs.find(p => p.id === window.currentReceivePOId);
+        const po = window.enterprisePOs.find(p => p.id === window.currentReceivePOId);
         if(!po) return;
 
         const mEl = document.getElementById('receivePOMode');
@@ -724,47 +850,59 @@
         po.status = 'Received';
         po.receivedDate = new Date().toISOString();
 
-        // 2. Record Expense
-        await window.addExpense(po.totalExpected, `Received ${po.id}`, 'Stock / Inventory', payMode);
+        // 2. Record Expense (Pass the branch ID of the PO)
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const branchToSaveTo = po._branchId || user.merchantId;
+        await window.addExpense(po.totalExpected, `Received PO ${po.id.slice(-8)}`, 'Stock / Inventory', payMode, branchToSaveTo);
 
         // 3. Increment Stock in Inventory
         let stockUpdated = false;
         po.items.forEach(poItem => {
             const prod = window.allProducts.find(p => p.id === poItem.prodId);
             if(prod && prod.variants && prod.variants.length > 0) {
-                // Increment base variant for simplicity in this flow, or distribute if needed.
-                // Assuming standard simple inventory: increment first variant.
-                let deduction = poItem.qty;
+                // Determine deduction based on whether it is loose or not
+                let addition = poItem.qty;
                 if(prod.isLoose) {
                     const bq = Number(prod.variants[0].baseQty) || 1;
-                    deduction = poItem.qty / bq; // convert PO units back to logical stock
+                    addition = poItem.qty / bq; // convert PO units back to logical stock
                 }
-                prod.variants[0].stock = (Number(prod.variants[0].stock) || 0) + deduction;
+                
+                prod.variants[0].stock = (Number(prod.variants[0].stock) || 0) + addition;
                 
                 // Update primary brand if exists
                 if(prod.variants[0].brands && prod.variants[0].brands.length > 0) {
-                    prod.variants[0].brands[0].stock = (Number(prod.variants[0].brands[0].stock) || 0) + deduction;
+                    prod.variants[0].brands[0].stock = (Number(prod.variants[0].brands[0].stock) || 0) + addition;
                 }
                 stockUpdated = true;
             }
         });
 
         // 4. Save all states
-        await window.dbSave('bharatpos_pos', window.localPOs);
+        await window.dbSave('bharatpos_enterprise_pos', window.enterprisePOs);
+        
+        // Update local-only arrays as well
+        const localPOs = await window.dbGet('bharatpos_pos', '[]');
+        const idx = localPOs.findIndex(p => p.id === po.id);
+        if(idx > -1) {
+            localPOs[idx].status = 'Received';
+            localPOs[idx].receivedDate = po.receivedDate;
+            await window.dbSave('bharatpos_pos', localPOs);
+        }
+
         if(stockUpdated) {
             await window.dbSave('bharatpos_products', window.allProducts);
         }
 
         // 5. Cloud Sync
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(user.merchantId && db && navigator.onLine) {
+        if(branchToSaveTo && db && navigator.onLine) {
             try {
                 const batch = writeBatch(db);
-                batch.set(doc(db, "shops", user.merchantId, "purchase_orders", po.id), po);
+                batch.set(doc(db, "shops", branchToSaveTo, "purchase_orders", po.id), po);
+                
                 if(stockUpdated) {
                     po.items.forEach(poItem => {
                         const prod = window.allProducts.find(p => p.id === poItem.prodId);
-                        if(prod) batch.set(doc(db, "shops", user.merchantId, "products", prod.id), prod);
+                        if(prod) batch.set(doc(db, "shops", branchToSaveTo, "products", prod.id), prod);
                     });
                 }
                 await batch.commit();
@@ -780,17 +918,21 @@
     function refreshDashboard() {
         let rev = 0, exp = 0, catMap = {};
         
-        window.localSales.forEach(s => {
+        const fSales = window.currentBranch === 'all' ? window.enterpriseSales : window.enterpriseSales.filter(s => s._branchId === window.currentBranch || s.merchantId === window.currentBranch);
+        const fExp = window.currentBranch === 'all' ? window.enterpriseExpenses : window.enterpriseExpenses.filter(e => e._branchId === window.currentBranch || e.merchantId === window.currentBranch);
+        const fUdhaar = fSales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true) || (s.paymentMethod === 'Udhaar' && s.isPaid !== true));
+
+        fSales.forEach(s => {
             rev += Number(s.amount || s.total || 0);
         });
 
-        window.localExpenses.forEach(t => {
+        fExp.forEach(t => {
             exp += Number(t.amount || 0);
             catMap[t.cat] = (catMap[t.cat] || 0) + Number(t.amount);
         });
 
         const profit = rev - exp;
-        const udhaarTotal = window.localUdhaar.reduce((s, i) => s + Number(i.amount || i.total || 0), 0);
+        const udhaarTotal = fUdhaar.reduce((s, i) => s + Number(i.amount || i.total || 0), 0);
 
         updateVal('valRev', rev);
         updateVal('valExp', exp);
@@ -800,9 +942,9 @@
         const vP = document.getElementById('valProf'); if(vP) vP.style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
         const pS = document.getElementById('profStat'); if(pS) pS.innerText = profit >= 0 ? "Healthy Margins" : "Loss / Overspending";
 
-        renderRecentExpenses();
+        renderRecentExpenses(fExp);
         renderPendingPOs();
-        renderCharts(window.localSales, window.localExpenses, catMap, exp);
+        renderCharts(fSales, fExp, catMap, exp);
     }
 
     function updateVal(id, target) {
@@ -812,16 +954,16 @@
         el.classList.remove('skeleton-load', 'skeleton');
     }
 
-    function renderRecentExpenses() {
+    function renderRecentExpenses(expensesList) {
         const container = document.getElementById('recentExpensesList');
         if(!container) return;
 
-        if(window.localExpenses.length === 0) {
+        if(expensesList.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:15px; font-size:12px; color:var(--slate-400); font-weight:600;">No recent expenses</div>';
             return;
         }
 
-        const recent = window.localExpenses.slice(0, 5);
+        const recent = expensesList.slice(0, 5);
         container.innerHTML = recent.map(e => {
             let modeBadge = '';
             if(e.paymentMode) {
@@ -829,6 +971,8 @@
                 if(e.paymentMode === 'Udhaar Payable') { badgeClass = 'var(--danger-soft)'; textCol = 'var(--danger)'; }
                 modeBadge = `<span style="font-size:9px; background:${badgeClass}; color:${textCol}; padding:2px 6px; border-radius:6px; margin-left:6px; font-weight:800; text-transform:uppercase;">${e.paymentMode}</span>`;
             }
+            
+            const branchTag = window.currentBranch === 'all' && e._branchId ? `<div style="font-size:9px; color:var(--blue-600); background:var(--blue-50); padding:2px 6px; border-radius:4px; margin-top:2px; display:inline-block;">${e._branchId.slice(-4)}</div>` : '';
 
             return `
             <div class="recent-item">
@@ -838,6 +982,7 @@
                         ${modeBadge}
                     </div>
                     <span class="recent-desc">${new Date(e.date).toLocaleDateString('en-IN')} • ${window.escapeHtml(e.desc)}</span>
+                    ${branchTag}
                 </div>
                 <div style="display:flex; align-items:center;">
                     <span class="recent-amt">-₹${e.amount}</span>
@@ -852,14 +997,18 @@
         const container = document.getElementById('pendingPOList');
         if(!container) return;
 
-        const pending = window.localPOs.filter(p => p.status === 'Pending');
+        const fPOs = window.currentBranch === 'all' ? window.enterprisePOs : window.enterprisePOs.filter(p => p._branchId === window.currentBranch || p.merchantId === window.currentBranch);
+        const pending = fPOs.filter(p => p.status === 'Pending');
         
         if(pending.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:25px; color:var(--slate-400); font-weight:600; font-size:12px;"><i class="fa-solid fa-check-circle" style="font-size:24px; color:var(--success); margin-bottom:10px;"></i><br>No pending purchase orders.</div>';
             return;
         }
 
-        container.innerHTML = pending.map(po => `
+        container.innerHTML = pending.map(po => {
+            const branchTag = window.currentBranch === 'all' && po._branchId ? `<div style="font-size:9px; color:var(--purple); background:var(--purple-soft); padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block;">${po._branchId.slice(-4)}</div>` : '';
+            
+            return `
             <div class="recent-item" style="border: 1.5px solid var(--purple-soft); background:#f9f9f9; margin-bottom:8px;">
                 <div class="recent-info">
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -867,13 +1016,15 @@
                         <span class="po-status po-pending">Pending</span>
                     </div>
                     <span class="recent-desc">${new Date(po.date).toLocaleDateString('en-IN')} • ${po.items.length} items</span>
+                    ${branchTag}
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end;">
                     <span class="po-amt">₹${po.totalExpected.toFixed(2)}</span>
                     <button class="btn-ghost" onclick="window.openReceivePOModal('${po.id}')" style="margin-top:6px; background:var(--white); border-color:var(--success); color:var(--success); padding:4px 10px; font-size:10px;">Receive</button>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     // --- CHARTS ---
@@ -949,42 +1100,21 @@
         }
     }
 
-    // --- MODALS & DOWNLOAD ---
-    window.openUdhaarModal = function() {
-        const div = document.getElementById('udhaarListBody');
-        if(!div) return;
-        
-        if(window.localUdhaar.length===0) {
-            div.innerHTML = `<div style="text-align:center;padding:40px;color:var(--slate-400);"><div style="font-size:30px;margin-bottom:10px;">🎉</div><div style="font-weight:700;">No pending payments!</div></div>`;
-        } else {
-            div.innerHTML = window.localUdhaar.map(i=>`
-            <div class="udhaar-row">
-                <div>
-                    <span style="font-weight:800; color:var(--slate-900); display:block; font-family:var(--font-head);">${window.escapeHtml(i.customerName||'Unknown Customer')}</span>
-                    <span style="font-size:11px; color:var(--slate-500); font-weight:600;">${new Date(i.date).toLocaleDateString()}</span>
-                </div>
-                <div style="font-weight:800; color:var(--danger); font-family:'JetBrains Mono', monospace; font-size:16px;">${window.formatMoney(i.amount || i.total || 0)}</div>
-            </div>`).join('');
-        }
-        window.showModal('udhaarModal');
-    }
-    
-    window.closeModal = function(e) { 
-        if(!e || e.target.classList.contains('modal-overlay')) {
-            document.querySelectorAll('.modal-overlay').forEach(m => window.hideModal(m.id));
-        }
-    }
-
+    // --- DOWNLOAD ---
     window.downloadCSV = function() {
-        if(window.localExpenses.length === 0) { window.showToast("No expenses to download."); return; }
-        let csv = "Date,Category,Amount,Description\n";
-        window.localExpenses.forEach(row => { 
+        const fExp = window.currentBranch === 'all' ? window.enterpriseExpenses : window.enterpriseExpenses.filter(e => e._branchId === window.currentBranch || e.merchantId === window.currentBranch);
+        
+        if(fExp.length === 0) { window.showToast("No expenses to download.", "error"); return; }
+        
+        let csv = "Date,Category,Amount,Description,PaymentMode,BranchId\n";
+        fExp.forEach(row => { 
             const desc = row.desc ? row.desc.replace(/,/g, ' ') : '';
-            csv += `${new Date(row.date).toLocaleDateString()},${row.cat},${row.amount},${desc}\n`; 
+            csv += `${new Date(row.date).toLocaleDateString()},${row.cat},${row.amount},${desc},${row.paymentMode||'Cash'},${row._branchId||'Main'}\n`; 
         });
+        
         const link = document.createElement('a');
         link.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
-        link.download = 'MyDukkan_Expenses.csv';
+        link.download = `MyDukkan_Expenses_${Date.now()}.csv`;
         link.click();
         window.showToast("Report downloaded!", "success");
     }
