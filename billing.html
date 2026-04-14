@@ -13,7 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-  <script type="module" src="bharatpos.js"></script>
+  <link rel="stylesheet" href="bharatpos.css">
 
   <style>
     /* --- SAAS UI VARIABLES --- */
@@ -33,41 +33,13 @@
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
     body { background: linear-gradient(135deg, #EAF2FF 0%, #C7DDFF 100%); background-attachment: fixed; color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; width: 100vw;}
 
-    /* --- TRI-LINGUAL LOGIC --- */
-    body.lang-en .lang-hinglish, body.lang-en .lang-hi { display: none !important; }
-    body.lang-hinglish .lang-en, body.lang-hinglish .lang-hi { display: none !important; }
-    body.lang-hi .lang-en, body.lang-hi .lang-hinglish { display: none !important; }
-
-    /* --- HAMBURGER MENU --- */
-    .menu-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s; }
-    .menu-btn:hover { background: var(--primary-soft); color: var(--primary); }
-    .side-menu { position: fixed; top: 0; left: -290px; width: 280px; height: 100vh; background: #FFFFFF; z-index: 9999; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 24px 20px; box-shadow: 12px 0 40px rgba(25,118,210,0.12); border-right: 1px solid var(--border); overflow-y: auto; }
-    .side-menu.open { left: 0; }
-    .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.25); z-index: 9998; backdrop-filter: blur(4px); }
-    .side-menu-brand { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-    .side-menu-brand-text { font-size: 20px; font-weight: 800; color: var(--text-main); }
-    .side-menu-brand-text span { color: var(--primary); }
-    .side-menu-links { display: flex; flex-direction: column; gap: 4px; }
-    .side-menu-links a { padding: 11px 14px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all 0.18s; border: 1px solid transparent; }
-    .side-menu-links a:hover { background: var(--primary-soft); color: var(--primary); transform: translateX(3px); }
-    .side-menu-links a.active-link { background: linear-gradient(135deg, rgba(13,148,136,0.1), rgba(13,148,136,0.05)); color: var(--success); border-color: rgba(13,148,136,0.2); }
-    .side-menu-links i { width: 18px; text-align: center; font-size: 14px; }
-
-    /* --- NAVBAR --- */
-    .navbar { display: flex; align-items: center; justify-content: space-between; padding: 0 15px; height: 60px; background: rgba(255,255,255,0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 100; width: 100%;}
-    @media(min-width: 768px) { .navbar { padding: 0 24px; } }
-    .brand { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--text-main); }
-    .brand-logo-wrap { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--success), #0F766E); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(13,148,136,0.3); }
-    .brand-logo-wrap i { color: #fff; font-size: 13px; }
-    .nav-actions { display: flex; gap: 8px; align-items: center; }
-
     /* --- POS LAYOUT --- */
-    .pos-container { display: flex; height: calc(100vh - 60px); overflow: hidden; width: 100%; max-width: 1600px; margin: 0 auto; }
+    .pos-container { display: flex; height: calc(100vh - 64px); overflow: hidden; width: 100%; max-width: 1600px; margin: 0 auto; }
     .left-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); background: var(--bg-body); position: relative;}
     .right-pane { width: 400px; background: #fff; display: flex; flex-direction: column; z-index: 10; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     
     @media(max-width: 900px) {
-        .pos-container { flex-direction: column; }
+        .pos-container { flex-direction: column; height: calc(100vh - 64px); }
         .left-pane { flex: 1; height: 100%; width: 100%; }
         .right-pane { position: fixed; top: 0; right: 0; width: 100%; max-width: 100%; height: 100vh; transform: translateY(100%); z-index: 9999; box-shadow: 0 -5px 30px rgba(0,0,0,0.15); border-radius: 20px 20px 0 0; }
         .right-pane.open { transform: translateY(0); }
@@ -186,12 +158,6 @@
     .btn-step:hover { border-color: var(--primary); background: var(--bg-input); transform: translateY(-2px); box-shadow: var(--shadow-sm);}
     .btn-step-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: block;}
 
-    /* BADGES & ICONS */
-    .bell-icon { position: relative; cursor: pointer; background: var(--bg-input); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main); border: 1px solid var(--border); }
-    .bell-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 10px; border: 2px solid #fff; display: none;}
-    .bell-icon.active .bell-badge { display: block; animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
     /* --- INVOICE MODAL SPECIFICS --- */
     .invoice-paper { background: white; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #000; line-height: 1.5; border: 1px solid #ccc; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;}
     .inv-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
@@ -214,10 +180,6 @@
     #quaggaPreview { width: 100%; height: 250px; background: #000; border-radius: 12px; overflow: hidden; position: relative; }
     .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 12px #10B981; animation: laser 2s infinite; }
 
-    /* TOAST */
-    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #0F172A; color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10000; white-space: nowrap; }
-    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    
     /* Product Info Specifics */
     .info-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
     .info-detail-row:last-child { border-bottom: none; }
@@ -227,45 +189,12 @@
 </head>
 <body class="lang-en">
 
+<script type="module">
+    import './bharatpos.js';
+    window.injectLayout('billing'); // Dynamically injects secure, centralized Navigation
+</script>
+
 <datalist id="custSearchList"></datalist>
-
-<div id="menuOverlay" class="menu-overlay"></div>
-
-<div id="sideMenu" class="side-menu">
-  <div class="side-menu-brand">
-    <div class="side-menu-brand-text">Bharat<span>POS</span></div>
-    <button id="btnCloseMenu" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
-  </div>
-  <div class="side-menu-links">
-    <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
-    <a href="billing.html" class="active-link"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
-    <a href="products.html"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
-    <a href="sales.html" class="billing-link"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
-    <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
-    <a href="customers.html"><i class="fa-solid fa-users"></i> <span class="lang-en">Bharat CRM</span><span class="lang-hinglish">Grahak (Customers)</span><span class="lang-hi">ग्राहक</span></a>
-    <a href="forecast.html"><i class="fa-solid fa-brain"></i> <span class="lang-en">DemandMitra AI</span><span class="lang-hinglish">AI Forecast</span><span class="lang-hi">AI भविष्यवाणी</span></a>
-  </div>
-</div>
-
-<nav class="navbar">
-  <div class="brand">
-    <button id="btnOpenMenu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
-    <div class="brand-logo-wrap"><i class="fa-solid fa-cash-register"></i></div>
-    <div class="nav-breadcrumb">
-      <span>BharatPOS</span> <span style="color:var(--border-hover);">/</span> 
-      <strong>🛒 <span class="lang-en">Point of Sale</span><span class="lang-hinglish">Bill Counter</span><span class="lang-hi">बिल काउंटर</span></strong>
-    </div>
-  </div>
-  <div class="nav-actions">
-    <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
-    
-    <button id="btnLangToggle" class="btn btn-outline btn-icon-only" style="font-weight:800; padding:6px 10px; border-radius:8px;">A/अ</button>
-    <div id="btnOnlineOrders" class="bell-icon" title="Online Orders">
-        <i class="fa-solid fa-bell"></i>
-        <div class="bell-badge" id="onlineBadge">0</div>
-    </div>
-  </div>
-</nav>
 
 <div class="pos-container">
     
@@ -279,9 +208,7 @@
                         <i class="fa-solid fa-barcode" style="position:static; transform:none; color:inherit;"></i>
                     </button>
                     <label class="floating-label" style="left:38px; top:12px; background:none;">
-                        <span class="lang-en">Search products or scan...</span>
-                        <span class="lang-hinglish">Samaan dhundein...</span>
-                        <span class="lang-hi">सामान खोजें...</span>
+                        <span data-i18n="search_placeholder">Search products or scan...</span>
                     </label>
                 </div>
             </div>
@@ -289,7 +216,7 @@
             <div class="cat-filters">
                 <div class="cat-tabs-container" id="catTabs" style="display:flex; gap:8px;">
                     <button class="cat-chip active" data-cat="ALL">All Items</button>
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -303,10 +230,10 @@
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <h3 style="margin:0; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-basket-shopping" style="color:var(--primary);"></i> 
-                    <span class="lang-en">Current Bill</span><span class="lang-hinglish">Naya Bill</span><span class="lang-hi">नया बिल</span>
+                    <span data-i18n="current_bill">Current Bill</span>
                 </h3>
                 <div style="display:flex; gap:5px;">
-                    <button id="btnHoldCart" class="btn btn-outline" style="padding:5px 10px; font-size:11px; border-radius:6px;" title="Save cart for later"><i class="fa-regular fa-circle-pause"></i> <span class="lang-en">Hold</span><span class="lang-hinglish">Rokein</span><span class="lang-hi">रोकें</span></button>
+                    <button id="btnHoldCart" class="btn btn-outline" style="padding:5px 10px; font-size:11px; border-radius:6px;" title="Save cart for later"><i class="fa-regular fa-circle-pause"></i> <span data-i18n="hold_btn">Hold</span></button>
                     <button id="btnViewHeld" class="btn btn-outline" style="padding:5px 10px; font-size:11px; border-radius:6px;" title="View held carts"><i class="fa-solid fa-list-ul"></i></button>
                     <button id="btnCloseMobileCart" class="btn btn-outline" style="padding:5px 12px; font-size:14px; border-radius:6px; display:none; color:white; background:var(--danger); border:none;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
@@ -317,14 +244,14 @@
             <div class="customer-selector">
                 <input type="text" id="custNameInput" placeholder=" " autocomplete="off">
                 <label class="floating-label-mod">
-                    <span class="lang-en">Customer Name</span><span class="lang-hinglish">Grahak Ka Naam</span><span class="lang-hi">ग्राहक का नाम</span>
+                    <span data-i18n="cust_name">Customer Name</span>
                 </label>
                 <div class="customer-dropdown" id="custNameDropdown"></div>
             </div>
             <div class="customer-selector">
                 <input type="text" id="custPhoneInput" placeholder=" " autocomplete="off">
                 <label class="floating-label-mod">
-                    <span class="lang-en">Mobile No.</span><span class="lang-hinglish">Mobile Number</span><span class="lang-hi">मोबाइल नंबर</span>
+                    <span data-i18n="cust_phone">Mobile No.</span>
                 </label>
                 <div class="customer-dropdown" id="custPhoneDropdown"></div>
             </div>
@@ -333,7 +260,7 @@
         <div class="cart-items" id="cartItemsList">
             <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
                 <i class="fa-solid fa-cart-arrow-down" style="font-size:30px; opacity:0.3; margin-bottom:10px;"></i>
-                <div style="font-weight:600; font-size:14px;"><span class="lang-en">Cart is empty</span><span class="lang-hinglish">Cart khali hai</span><span class="lang-hi">कार्ट खाली है</span></div>
+                <div style="font-weight:600; font-size:14px;"><span data-i18n="cart_empty">Cart is empty</span></div>
                 <div style="font-size:11px; margin-top:4px;">Tap products to add them here.</div>
             </div>
         </div>
@@ -361,20 +288,20 @@
             <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase;">Payment Mode</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
                 <button id="modeCash" class="btn-mode active" data-mode="Cash">
-                    <i class="fa-solid fa-money-bill-wave"></i> <span class="lang-en">Cash</span><span class="lang-hinglish">Nagad</span><span class="lang-hi">नकद</span>
+                    <i class="fa-solid fa-money-bill-wave"></i> <span data-i18n="pay_cash">Cash</span>
                 </button>
                 <button id="modeOnline" class="btn-mode" data-mode="Online">
-                    <i class="fa-solid fa-qrcode"></i> Online
+                    <i class="fa-solid fa-qrcode"></i> <span data-i18n="pay_online">Online</span>
                 </button>
                 <button id="modePartial" class="btn-mode" data-mode="Partial">
-                    <i class="fa-solid fa-calculator"></i> <span class="lang-en">Partial</span><span class="lang-hinglish">Mix Pay</span><span class="lang-hi">मिक्स</span>
+                    <i class="fa-solid fa-calculator"></i> <span data-i18n="pay_partial">Partial</span>
                 </button>
                 <button id="modeUdhaar" class="btn-mode" data-mode="Udhaar">
-                    <i class="fa-solid fa-book-open"></i> <span class="lang-en">Udhaar</span><span class="lang-hinglish">Udhaar</span><span class="lang-hi">उधार</span>
+                    <i class="fa-solid fa-book-open"></i> <span data-i18n="pay_udhaar">Udhaar</span>
                 </button>
             </div>
             <button id="btnGenerateBill" class="btn btn-primary" style="width:100%; padding:15px; font-size:15px; font-weight:800; box-shadow:0 6px 20px var(--primary-glow);">
-                <i class="fa-solid fa-check-circle"></i> <span class="lang-en">Create Bill</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाएं</span>
+                <i class="fa-solid fa-check-circle"></i> <span data-i18n="create_bill">Create Bill</span>
             </button>
         </div>
     </div>
@@ -413,8 +340,7 @@
                         <span style="font-size:15px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';" id="confUnitPriceDisplay">₹0.00 / unit</span>
                     </div>
                     
-                    <div id="confPresetContainer">
-                        </div>
+                    <div id="confPresetContainer"></div>
 
                     <div class="form-group" style="margin-bottom:0; margin-top:15px;">
                         <input type="number" id="confCustomQty" class="form-input" placeholder=" " style="font-size:20px; font-weight:800; text-align:center; color:var(--primary-dark);">
@@ -427,7 +353,7 @@
                     <span style="font-weight:800; color:var(--primary); font-size:24px; font-family:'JetBrains Mono';" id="confItemTotal">₹0.00</span>
                 </div>
 
-                <button type="button" id="btnConfirmAddToCart" class="btn btn-primary" style="font-size:15px; padding:15px; box-shadow: 0 8px 20px var(--primary-glow);"><i class="fa-solid fa-cart-plus"></i> <span class="lang-en">Add to Bill</span><span class="lang-hinglish">Bill Mein Jodein</span><span class="lang-hi">बिल में जोड़ें</span></button>
+                <button type="button" id="btnConfirmAddToCart" class="btn btn-primary" style="font-size:15px; padding:15px; box-shadow: 0 8px 20px var(--primary-glow);"><i class="fa-solid fa-cart-plus"></i> <span data-i18n="add_to_bill">Add to Bill</span></button>
             </div>
             
         </div>
@@ -491,8 +417,7 @@
 
 <div id="invoiceModal" class="modal-overlay" style="z-index: 10000; background:rgba(0,0,0,0.8);">
     <div class="modal-box" style="max-width:380px; border-radius:0; max-height:100vh; overflow-y:auto; background:#f1f5f9; padding:20px;">
-        <div id="invoicePaper" class="invoice-paper">
-            </div>
+        <div id="invoicePaper" class="invoice-paper"></div>
         <div class="no-print" style="display:flex; gap:10px; margin-top:15px;">
             <button id="btnPrintInvoice" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-print"></i> Print</button>
             <button id="btnCloseInvoice" class="btn btn-outline" style="flex:1;">New Bill</button>
@@ -535,90 +460,66 @@
 </div>
 <style>@keyframes laser { 0% { top:0; opacity:0; } 10% { opacity:1; } 90% { opacity:1; } 100% { top:100%; opacity:0; } }</style>
 
-<div id="toast">✅ Action Successful</div>
 
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, collection, runTransaction, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-window.db = db;
+// ─── ENCAPSULATED STATE (Problem 1: Solved) ───────────────────────────
+let allProducts = [];
+let customers = [];
+let cart = [];
+let heldCarts = [];
+let onlineOrders = [];
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
-window.allProducts = [];
-window.customers = [];
-window.cart = [];
-window.heldCarts = [];
-window.onlineOrders = [];
+let currentCustomer = { name: '', phone: '' };
+let activeCategory = 'ALL';
+let configState = { prod: null, step: 'variant', selectedVariant: null, selectedBrand: null };
+let currentPaymentMode = 'Cash';
+let partialSplitData = null;
 
-window.currentCustomer = { name: '', phone: '' };
-window.activeCategory = 'ALL';
-window.configState = { prod: null, step: 'variant', selectedVariant: null, selectedBrand: null };
-window.currentPaymentMode = 'Cash';
-window.partialSplitData = null;
-
-const langs = ['en', 'hinglish', 'hi'];
+const escapeHtml = window.escapeHtml || function(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; };
 
 // ─── INITIALIZATION ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         bindAllEvents();
         
-        const savedLang = localStorage.getItem('app_lang') || 'en'; 
-        document.body.className = `lang-${savedLang}`;
-
-        // AWAIT the new Async Bridge
-        window.allProducts = await window.dbGet('bharatpos_products', '[]');
-        window.customers = await window.dbGet('bharatpos_customers', '[]');
-        window.heldCarts = await window.dbGet('bharatpos_held_carts', '[]');
+        // Load data securely
+        allProducts = await window.dbGet('bharatpos_products', '[]');
+        customers = await window.dbGet('bharatpos_customers', '[]');
+        heldCarts = await window.dbGet('bharatpos_held_carts', '[]');
         
         // Sort products by popularity
         const sales = await window.dbGet('bharatpos_sales', '[]');
         const freqs = {};
         sales.forEach(s => (s.items||[]).forEach(i => freqs[i.id] = (freqs[i.id]||0) + (i.qty||1)));
-        window.allProducts.sort((a,b) => (freqs[b.id]||0) - (freqs[a.id]||0));
+        allProducts.sort((a,b) => (freqs[b.id]||0) - (freqs[a.id]||0));
 
         renderCategories();
         renderProductGrid();
         renderCart();
         
-        // Setup Mobile Swipe safely
         setupMobileCartSwipe();
 
-        // Multi-Branch Dropdown logic
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(typeof window.loadOwnedShops === 'function') {
-            window.loadOwnedShops(user.mobile || user.phone).then(shops => {
-                if(shops && shops.length > 1) {
-                    const switcher = document.getElementById('shopSwitcher');
-                    if(switcher) {
-                        switcher.style.display = 'inline-block';
-                        switcher.innerHTML = shops.map(s => 
-                            `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                                ${s.shopName} ${s.isMain ? '⭐' : ''}
-                            </option>`
-                        ).join('');
-                        switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
-                    }
-                }
-            });
-        }
         
         // Listen to Online Orders
         if(user.merchantId && db) {
             onSnapshot(collection(db, "shops", user.merchantId, "onlineOrders"), (snap) => {
-                window.onlineOrders = snap.docs.map(d => ({...d.data(), orderId: d.id}));
+                onlineOrders = snap.docs.map(d => ({...d.data(), orderId: d.id}));
                 const badge = document.getElementById('onlineBadge');
                 const btn = document.getElementById('btnOnlineOrders');
-                if(badge) badge.innerText = window.onlineOrders.length;
+                if(badge) badge.innerText = onlineOrders.length;
                 if(btn) {
-                    if(window.onlineOrders.length > 0) btn.classList.add('active');
+                    if(onlineOrders.length > 0) btn.classList.add('active');
                     else btn.classList.remove('active');
                 }
             });
         }
     } catch (err) {
         console.error("Init Error:", err);
-        showToast("Initialization error.", true);
+        window.showToast("Initialization error.", true);
     }
 });
 
@@ -670,22 +571,6 @@ function getProductTotalStockInfo(p) {
 
 // ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
 function bindAllEvents() {
-    // Nav & Lang
-    const langToggle = document.getElementById('btnLangToggle');
-    if(langToggle) {
-        langToggle.addEventListener('click', () => {
-            let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
-            currentIdx = (currentIdx + 1) % langs.length;
-            const nextLang = langs[currentIdx];
-            document.body.className = `lang-${nextLang}`;
-            localStorage.setItem('app_lang', nextLang);
-        });
-    }
-
-    document.getElementById('btnOpenMenu')?.addEventListener('click', toggleMenu);
-    document.getElementById('btnCloseMenu')?.addEventListener('click', toggleMenu);
-    document.getElementById('menuOverlay')?.addEventListener('click', toggleMenu);
-    
     // Mobile Cart FAB
     document.getElementById('mobileCartFab')?.addEventListener('click', () => {
         document.getElementById('rightPane').classList.add('open');
@@ -703,13 +588,13 @@ function bindAllEvents() {
         if(e.target.classList.contains('cat-chip')) {
             document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
-            window.activeCategory = e.target.getAttribute('data-cat');
+            activeCategory = e.target.getAttribute('data-cat');
             renderProductGrid();
         }
     });
 
     document.getElementById('productGrid')?.addEventListener('click', (e) => {
-        if(e.target.closest('.pc-info-btn')) return; // handled by info btn click
+        if(e.target.closest('.pc-info-btn')) return; 
         const card = e.target.closest('.prod-card');
         if(card) window.openAddToCartWizard(card.getAttribute('data-id'));
     });
@@ -723,20 +608,21 @@ function bindAllEvents() {
     if(cName && cPhone && dName && dPhone) {
         const handleSearch = (e, drop) => {
             const val = e.target.value.toLowerCase().trim();
-            window.currentCustomer.name = cName.value;
-            window.currentCustomer.phone = cPhone.value;
+            currentCustomer.name = cName.value;
+            currentCustomer.phone = cPhone.value;
             
             if(!val) { drop.style.display = 'none'; return; }
-            const matches = window.customers.filter(c => {
+            const matches = customers.filter(c => {
                 const phoneVal = c.phone || c.mobile || '';
                 const nameVal = c.name || '';
                 return nameVal.toLowerCase().includes(val) || phoneVal.includes(val);
             }).slice(0, 5);
 
             if(matches.length > 0) {
+                // XSS Defense applied
                 drop.innerHTML = matches.map(c => {
                     const phoneVal = c.phone || c.mobile || '';
-                    return `<div class="cust-option" data-name="${c.name}" data-phone="${phoneVal}"><span>${c.name}</span><span style="color:var(--text-muted);">${phoneVal}</span></div>`;
+                    return `<div class="cust-option" data-name="${escapeHtml(c.name)}" data-phone="${escapeHtml(phoneVal)}"><span>${escapeHtml(c.name)}</span><span style="color:var(--text-muted);">${escapeHtml(phoneVal)}</span></div>`;
                 }).join('');
                 drop.style.display = 'block';
             } else {
@@ -749,9 +635,9 @@ function bindAllEvents() {
         const handleSelect = (e, drop) => {
             const opt = e.target.closest('.cust-option');
             if(opt) {
-                window.currentCustomer = { name: opt.getAttribute('data-name'), phone: opt.getAttribute('data-phone') };
-                cName.value = window.currentCustomer.name;
-                cPhone.value = window.currentCustomer.phone;
+                currentCustomer = { name: opt.getAttribute('data-name'), phone: opt.getAttribute('data-phone') };
+                cName.value = currentCustomer.name;
+                cPhone.value = currentCustomer.phone;
                 drop.style.display = 'none';
             }
         };
@@ -765,9 +651,7 @@ function bindAllEvents() {
     }
 
     // Wizard Flow Events
-    document.getElementById('btnCloseConf')?.addEventListener('click', () => {
-        document.getElementById('addToCartModal').style.display='none';
-    });
+    document.getElementById('btnCloseConf')?.addEventListener('click', () => { document.getElementById('addToCartModal').style.display='none'; });
     document.getElementById('btnConfBack')?.addEventListener('click', window.wizardBack);
     document.getElementById('confVariantGrid')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-step');
@@ -801,11 +685,11 @@ function bindAllEvents() {
         if(idx === undefined) return;
         
         if(e.target.closest('.ci-del')) {
-            window.cart.splice(idx, 1);
+            cart.splice(idx, 1);
             renderCart();
         } else if(e.target.closest('.ci-plus')) {
-            const cartItem = window.cart[idx];
-            const p = window.allProducts.find(prod => prod.id === cartItem.prodId);
+            const cartItem = cart[idx];
+            const p = allProducts.find(prod => prod.id === cartItem.prodId);
             const v = p.variants.find(vx => vx.id === cartItem.id);
             const stockInfo = getVariantStockInfo(p, v);
             
@@ -819,16 +703,16 @@ function bindAllEvents() {
             }
 
             if (cartItem.qty + 1 > maxAvail) {
-                return showToast(`Max stock reached! Only ${formatStock(maxAvail, stockInfo.label)} ${stockInfo.label} available.`, true);
+                return window.showToast(`Max stock reached! Only ${formatStock(maxAvail, stockInfo.label)} ${stockInfo.label} available.`, true);
             }
             
             cartItem.qty += 1;
             cartItem.total = cartItem.qty * cartItem.unitPrice;
             renderCart();
         } else if(e.target.closest('.ci-minus')) {
-            if(window.cart[idx].qty > 1) {
-                window.cart[idx].qty -= 1;
-                window.cart[idx].total = window.cart[idx].qty * window.cart[idx].unitPrice;
+            if(cart[idx].qty > 1) {
+                cart[idx].qty -= 1;
+                cart[idx].total = cart[idx].qty * cart[idx].unitPrice;
                 renderCart();
             }
         }
@@ -840,28 +724,28 @@ function bindAllEvents() {
     document.querySelectorAll('.btn-mode').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const mode = e.currentTarget.getAttribute('data-mode');
-            window.currentPaymentMode = mode;
+            currentPaymentMode = mode;
             
             document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
             e.currentTarget.classList.add('active');
 
-            if(mode === 'Partial') { openPartialPayment(); }
+            if(mode === 'Partial') { window.openPartialPayment(); }
         });
     });
 
     document.getElementById('btnGenerateBill')?.addEventListener('click', () => {
-        if(window.cart.length === 0) return showToast("Cart is empty", true);
-        if(window.currentPaymentMode === 'Udhaar' && !window.currentCustomer.name) {
-            return showToast("Customer name required for Udhaar", true);
+        if(cart.length === 0) return window.showToast("Cart is empty", true);
+        if(currentPaymentMode === 'Udhaar' && !currentCustomer.name) {
+            return window.showToast("Customer name required for Udhaar", true);
         }
-        if(window.currentPaymentMode === 'Partial') {
+        if(currentPaymentMode === 'Partial') {
             const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
-            if(!window.partialSplitData || window.partialSplitData.total !== grand) {
-                openPartialPayment();
+            if(!partialSplitData || partialSplitData.total !== grand) {
+                window.openPartialPayment();
                 return;
             }
         }
-        processCheckout(window.currentPaymentMode, window.partialSplitData);
+        window.processCheckout(currentPaymentMode, partialSplitData);
     });
     
     // Partial Math
@@ -907,12 +791,12 @@ function bindAllEvents() {
         const u = Number(pcUdhaar.value) || 0;
         const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
 
-        if(Math.abs(c + o + u - grand) > 0.01) return showToast("Amounts must equal Grand Total", true);
-        if(u > 0 && !window.currentCustomer.name) return showToast("Customer required for Partial Udhaar", true);
+        if(Math.abs(c + o + u - grand) > 0.01) return window.showToast("Amounts must equal Grand Total", true);
+        if(u > 0 && !currentCustomer.name) return window.showToast("Customer required for Partial Udhaar", true);
 
-        window.partialSplitData = { cash: c, online: o, udhaar: u, total: grand };
+        partialSplitData = { cash: c, online: o, udhaar: u, total: grand };
         document.getElementById('partialPayModal').style.display = 'none';
-        showToast("Mix Payment Saved");
+        window.showToast("Mix Payment Saved");
     });
 
     // Held Carts
@@ -935,13 +819,12 @@ function bindAllEvents() {
     // Invoice
     document.getElementById('btnCloseInvoice')?.addEventListener('click', () => {
         document.getElementById('invoiceModal').style.display='none';
-        window.cart = []; window.currentCustomer = {name:'', phone:''}; 
+        cart = []; currentCustomer = {name:'', phone:''}; 
         const cn = document.getElementById('custNameInput'); if(cn) cn.value = ''; 
         const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = '';
         const dis = document.getElementById('cartDiscountInput'); if(dis) dis.value = '';
         
-        // Reset Payment Mode to Cash
-        window.currentPaymentMode = 'Cash'; window.partialSplitData = null;
+        currentPaymentMode = 'Cash'; partialSplitData = null;
         document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
         const mCash = document.getElementById('modeCash');
         if(mCash) mCash.classList.add('active');
@@ -1023,24 +906,12 @@ function setupMobileCartSwipe() {
     }, {passive: true});
 }
 
-function toggleMenu() {
-    document.getElementById('sideMenu').classList.toggle('open');
-    const overlay = document.getElementById('menuOverlay');
-    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-}
-
-function showToast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    t.innerText = msg; t.style.background = isError ? 'var(--danger)' : 'var(--success)';
-    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// ─── RENDERING LOGIC ─────────────────────────────────────────────────────────
+// ─── RENDERING LOGIC (XSS Secured) ──────────────────────────────────────────
 function renderCategories() {
     const cats = new Set();
-    window.allProducts.forEach(p => { if(p.category) cats.add(p.category); });
+    allProducts.forEach(p => { if(p.category) cats.add(p.category); });
     let html = `<button class="cat-chip active" data-cat="ALL">All Items</button>`;
-    Array.from(cats).forEach(c => { html += `<button class="cat-chip" data-cat="${c}">${c}</button>`; });
+    Array.from(cats).forEach(c => { html += `<button class="cat-chip" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`; });
     const catTabs = document.getElementById('catTabs');
     if(catTabs) catTabs.innerHTML = html;
 }
@@ -1048,10 +919,10 @@ function renderCategories() {
 function renderProductGrid() {
     const searchInput = document.getElementById('prodSearchInput');
     const q = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    let filtered = window.allProducts;
+    let filtered = allProducts;
 
-    if(window.activeCategory !== 'ALL') {
-        filtered = filtered.filter(p => (p.category||'').toLowerCase() === window.activeCategory.toLowerCase());
+    if(activeCategory !== 'ALL') {
+        filtered = filtered.filter(p => (p.category||'').toLowerCase() === activeCategory.toLowerCase());
     }
     if(q) {
         filtered = filtered.filter(p => 
@@ -1080,18 +951,18 @@ function renderProductGrid() {
         const varPrices = (p.variants||[]).map(v => {
             const uPrice = getUnitPrice(p, v);
             const uLabel = getUnitLabel(p, v);
-            return `<span class="pc-variant-item">${v.quantity}: ₹${uPrice.toFixed(2)}/${uLabel}</span>`;
+            return `<span class="pc-variant-item">${escapeHtml(v.quantity)}: ₹${uPrice.toFixed(2)}/${escapeHtml(uLabel)}</span>`;
         }).join('');
         
         return `
         <div class="prod-card" data-id="${p.id}">
             <button class="pc-info-btn" onclick="event.stopPropagation(); window.openProductInfo('${p.id}')"><i class="fa-solid fa-circle-info"></i></button>
             ${badges}
-            <div class="pc-cat">${p.category || 'Gen'}</div>
-            <div class="pc-name">${p.name}</div>
+            <div class="pc-cat">${escapeHtml(p.category || 'Gen')}</div>
+            <div class="pc-name">${escapeHtml(p.name)}</div>
             <div class="pc-variant-prices">${varPrices}</div>
             <div class="pc-bottom">
-                <span class="pc-stock">${displayStock}</span>
+                <span class="pc-stock">${escapeHtml(displayStock)}</span>
             </div>
         </div>
         `;
@@ -1101,23 +972,24 @@ function renderProductGrid() {
 function renderCart() {
     const list = document.getElementById('cartItemsList');
     const badge = document.getElementById('mobileCartBadge');
-    if(badge) badge.innerText = window.cart.length;
+    if(badge) badge.innerText = cart.length;
 
     if(!list) return;
 
-    if(window.cart.length === 0) {
+    if(cart.length === 0) {
         list.innerHTML = `
             <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
                 <i class="fa-solid fa-cart-arrow-down" style="font-size:30px; opacity:0.3; margin-bottom:10px;"></i>
-                <div style="font-weight:600; font-size:14px;"><span class="lang-en">Cart is empty</span><span class="lang-hinglish">Cart khali hai</span><span class="lang-hi">कार्ट खाली है</span></div>
+                <div style="font-weight:600; font-size:14px;"><span data-i18n="cart_empty">Cart is empty</span></div>
+                <div style="font-size:11px; margin-top:4px;">Tap products to add them here.</div>
             </div>`;
         const cTotal = document.getElementById('cartTotalItems'); if(cTotal) cTotal.innerText = '0';
         const cSub = document.getElementById('cartSubtotal'); if(cSub) cSub.innerText = '0.00';
         const cGrand = document.getElementById('cartGrandTotal'); if(cGrand) cGrand.innerText = '0.00';
         const cGst = document.getElementById('cartGstRow'); if(cGst) cGst.style.display = 'none';
         
-        if(window.partialSplitData) { 
-            window.partialSplitData.total = 0; 
+        if(partialSplitData) { 
+            partialSplitData.total = 0; 
             const pCash = document.getElementById('payCash'); if(pCash) pCash.value = ''; 
         }
         return;
@@ -1127,7 +999,7 @@ function renderCart() {
     let totalGst = 0;
     let hasGst = false;
 
-    list.innerHTML = window.cart.map((item, idx) => {
+    list.innerHTML = cart.map((item, idx) => {
         const amt = item.total; 
         let gstAmt = 0;
         if(item.gstRate > 0) {
@@ -1148,11 +1020,11 @@ function renderCart() {
         return `
         <div class="cart-item">
             <div class="ci-details">
-                <div class="ci-name">${item.name}</div>
-                <div class="ci-meta">${item.variant} ${item.brand ? `• ${item.brand}` : ''} @ ₹${item.unitPrice.toFixed(2)}/${item.unitLabel}</div>
+                <div class="ci-name">${escapeHtml(item.name)}</div>
+                <div class="ci-meta">${escapeHtml(item.variant)} ${item.brand ? `• ${escapeHtml(item.brand)}` : ''} @ ₹${item.unitPrice.toFixed(2)}/${escapeHtml(item.unitLabel)}</div>
                 <div class="ci-controls">
                     <button class="ci-btn ci-minus" data-idx="${idx}">-</button>
-                    <span class="ci-qty">${item.qty} ${item.unitLabel==='unit'?'':item.unitLabel}</span>
+                    <span class="ci-qty">${item.qty} ${item.unitLabel==='unit'?'':escapeHtml(item.unitLabel)}</span>
                     <button class="ci-btn ci-plus" data-idx="${idx}">+</button>
                 </div>
             </div>
@@ -1167,7 +1039,7 @@ function renderCart() {
     const discount = parseFloat(discInput ? discInput.value : 0) || 0;
     const grand = Math.max(0, subtotal + totalGst - discount);
 
-    const cTotal = document.getElementById('cartTotalItems'); if(cTotal) cTotal.innerText = window.cart.length;
+    const cTotal = document.getElementById('cartTotalItems'); if(cTotal) cTotal.innerText = cart.length;
     const cSub = document.getElementById('cartSubtotal'); if(cSub) cSub.innerText = subtotal.toFixed(2);
     const cGrand = document.getElementById('cartGrandTotal'); if(cGrand) cGrand.innerText = grand.toFixed(2);
 
@@ -1184,7 +1056,7 @@ function renderCart() {
 
 // ─── PRODUCT INFO 360 ────────────────────────────────────────────────────────
 window.openProductInfo = function(prodId) {
-    const prod = window.allProducts.find(p => p.id === prodId);
+    const prod = allProducts.find(p => p.id === prodId);
     if(!prod) return;
     
     const infoName = document.getElementById('infoName'); if(infoName) infoName.innerText = prod.name;
@@ -1206,20 +1078,20 @@ window.openProductInfo = function(prodId) {
             
             let brandsStr = '';
             if(v.brands && v.brands.length > 0) {
-                brandsStr = `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${b.name}(${b.stock})`).join(', ') + `</div>`;
+                brandsStr = `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${escapeHtml(b.name)}(${b.stock})`).join(', ') + `</div>`;
             }
             
             return `
             <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px; box-shadow:var(--shadow-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
-                        <span style="font-weight:700; color:var(--text-main); font-size:13px;">${v.quantity}</span>
-                        <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">₹${uPrice.toFixed(2)} per ${uLabel}</div>
+                        <span style="font-weight:700; color:var(--text-main); font-size:13px;">${escapeHtml(v.quantity)}</span>
+                        <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">₹${uPrice.toFixed(2)} per ${escapeHtml(uLabel)}</div>
                         ${brandsStr}
                     </div>
                     <div style="text-align:right;">
                         <div style="color:var(--success); font-weight:800; font-size:14px;">Total ₹${v.price}</div>
-                        <div style="font-size:10px; color:var(--text-muted); font-weight:600;">Avail: ${formatStock(sInfo.available, sInfo.label)} ${sInfo.label}</div>
+                        <div style="font-size:10px; color:var(--text-muted); font-weight:600;">Avail: ${formatStock(sInfo.available, sInfo.label)} ${escapeHtml(sInfo.label)}</div>
                     </div>
                 </div>
             </div>`;
@@ -1231,23 +1103,23 @@ window.openProductInfo = function(prodId) {
 
 // ─── HIGH-SPEED WIZARD & MATH ─────────────────────────────────────────────────
 window.openAddToCartWizard = function(prodId) {
-    const prod = window.allProducts.find(p => p.id === prodId);
+    const prod = allProducts.find(p => p.id === prodId);
     if(!prod || !prod.variants || prod.variants.length === 0) return;
 
-    window.configState = { prod: prod, step: 'variant', selectedVariant: null, selectedBrand: null };
+    configState = { prod: prod, step: 'variant', selectedVariant: null, selectedBrand: null };
     const pName = document.getElementById('confProdName'); if(pName) pName.innerText = prod.name;
     
     if(prod.variants.length > 1) {
         window.wizardRenderVariants();
     } else {
-        window.configState.selectedVariant = prod.variants[0];
+        configState.selectedVariant = prod.variants[0];
         window.checkBrandStep();
     }
     document.getElementById('addToCartModal').style.display = 'flex';
 }
 
 window.wizardRenderVariants = function() {
-    window.configState.step = 'variant';
+    configState.step = 'variant';
     document.getElementById('stepVariant').style.display = 'block';
     document.getElementById('stepBrand').style.display = 'none';
     document.getElementById('stepQty').style.display = 'none';
@@ -1257,44 +1129,44 @@ window.wizardRenderVariants = function() {
     const grid = document.getElementById('confVariantGrid');
     if(!grid) return;
 
-    grid.innerHTML = window.configState.prod.variants.map(v => {
-        const sInfo = getVariantStockInfo(window.configState.prod, v);
+    grid.innerHTML = configState.prod.variants.map(v => {
+        const sInfo = getVariantStockInfo(configState.prod, v);
         return `
         <button class="btn-step" data-vid="${v.id}">
             <div>
-                <span>${v.quantity}</span>
-                <span class="btn-step-sub">Avail: ${formatStock(sInfo.available, sInfo.label)} ${sInfo.label}</span>
+                <span>${escapeHtml(v.quantity)}</span>
+                <span class="btn-step-sub">Avail: ${formatStock(sInfo.available, sInfo.label)} ${escapeHtml(sInfo.label)}</span>
             </div>
-            <span style="color:var(--success); font-weight:800; font-family:'JetBrains Mono';">₹${getUnitPrice(window.configState.prod, v).toFixed(2)}/${getUnitLabel(window.configState.prod, v)}</span>
+            <span style="color:var(--success); font-weight:800; font-family:'JetBrains Mono';">₹${getUnitPrice(configState.prod, v).toFixed(2)}/${escapeHtml(getUnitLabel(configState.prod, v))}</span>
         </button>`;
     }).join('');
 }
 
 window.wizardSelectVariant = function(vid) {
-    window.configState.selectedVariant = window.configState.prod.variants.find(v => v.id === vid);
+    configState.selectedVariant = configState.prod.variants.find(v => v.id === vid);
     window.checkBrandStep();
 }
 
 window.checkBrandStep = function() {
-    const v = window.configState.selectedVariant;
+    const v = configState.selectedVariant;
     if(v.brands && v.brands.length > 0) {
         window.wizardRenderBrands();
     } else {
-        window.configState.selectedBrand = '';
+        configState.selectedBrand = '';
         window.wizardRenderQty();
     }
 }
 
 window.wizardRenderBrands = function() {
-    window.configState.step = 'brand';
+    configState.step = 'brand';
     document.getElementById('stepVariant').style.display = 'none';
     document.getElementById('stepBrand').style.display = 'block';
     document.getElementById('stepQty').style.display = 'none';
-    const b = document.getElementById('btnConfBack'); if(b) b.style.display = window.configState.prod.variants.length > 1 ? 'block' : 'none';
+    const b = document.getElementById('btnConfBack'); if(b) b.style.display = configState.prod.variants.length > 1 ? 'block' : 'none';
     const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Brand";
 
-    const p = window.configState.prod;
-    const v = window.configState.selectedVariant;
+    const p = configState.prod;
+    const v = configState.selectedVariant;
     const grid = document.getElementById('confBrandGrid');
     if(!grid) return;
     
@@ -1306,26 +1178,26 @@ window.wizardRenderBrands = function() {
             label = v.baseUnit || 'pcs';
         }
         return `
-        <button class="btn-step" data-bname="${b.name}">
-            <span>${b.name}</span>
-            <span style="color:var(--text-muted); font-size:12px;">Avail: ${formatStock(avail, label)} ${label}</span>
+        <button class="btn-step" data-bname="${escapeHtml(b.name)}">
+            <span>${escapeHtml(b.name)}</span>
+            <span style="color:var(--text-muted); font-size:12px;">Avail: ${formatStock(avail, label)} ${escapeHtml(label)}</span>
         </button>`;
     }).join('');
 }
 
 window.wizardSelectBrand = function(bName) {
-    window.configState.selectedBrand = bName;
+    configState.selectedBrand = bName;
     window.wizardRenderQty();
 }
 
 window.wizardRenderQty = function() {
-    window.configState.step = 'qty';
+    configState.step = 'qty';
     document.getElementById('stepVariant').style.display = 'none';
     document.getElementById('stepBrand').style.display = 'none';
     document.getElementById('stepQty').style.display = 'block';
     
-    const p = window.configState.prod;
-    const v = window.configState.selectedVariant;
+    const p = configState.prod;
+    const v = configState.selectedVariant;
     
     let backShows = false;
     if(v.brands && v.brands.length > 0) backShows = true;
@@ -1336,7 +1208,7 @@ window.wizardRenderQty = function() {
 
     const uPrice = getUnitPrice(p, v);
     const uLabel = getUnitLabel(p, v);
-    const uDisp = document.getElementById('confUnitPriceDisplay'); if(uDisp) uDisp.innerText = `₹${uPrice.toFixed(2)} / ${uLabel}`;
+    const uDisp = document.getElementById('confUnitPriceDisplay'); if(uDisp) uDisp.innerText = `₹${uPrice.toFixed(2)} / ${escapeHtml(uLabel)}`;
     
     const container = document.getElementById('confPresetContainer');
     if(!container) return;
@@ -1351,10 +1223,10 @@ window.wizardRenderQty = function() {
             <button type="button" class="btn-preset" data-val="0.1">100g</button>
             <button type="button" class="btn-preset" data-val="0.25">250g</button>
             <button type="button" class="btn-preset" data-val="0.5">500g</button>
-            <button type="button" class="btn-preset" data-val="1">1 ${uLabel}</button>
-            <button type="button" class="btn-preset" data-val="2">2 ${uLabel}</button>
-            <button type="button" class="btn-preset" data-val="5">5 ${uLabel}</button>
-            <button type="button" class="btn-preset" data-val="10">10 ${uLabel}</button>
+            <button type="button" class="btn-preset" data-val="1">1 ${escapeHtml(uLabel)}</button>
+            <button type="button" class="btn-preset" data-val="2">2 ${escapeHtml(uLabel)}</button>
+            <button type="button" class="btn-preset" data-val="5">5 ${escapeHtml(uLabel)}</button>
+            <button type="button" class="btn-preset" data-val="10">10 ${escapeHtml(uLabel)}</button>
         </div>`;
     } else {
         container.innerHTML = `
@@ -1375,9 +1247,9 @@ window.wizardRenderQty = function() {
 }
 
 window.wizardBack = function() {
-    const step = window.configState.step;
-    const p = window.configState.prod;
-    const v = window.configState.selectedVariant;
+    const step = configState.step;
+    const p = configState.prod;
+    const v = configState.selectedVariant;
 
     if(step === 'qty') {
         if(v.brands && v.brands.length > 0) window.wizardRenderBrands();
@@ -1388,8 +1260,8 @@ window.wizardBack = function() {
 }
 
 window.recalcConfigTotal = function() {
-    const p = window.configState.prod;
-    const v = window.configState.selectedVariant;
+    const p = configState.prod;
+    const v = configState.selectedVariant;
     const uPrice = getUnitPrice(p, v);
     const qtyEl = document.getElementById('confCustomQty');
     const qty = parseFloat(qtyEl ? qtyEl.value : 0) || 0;
@@ -1399,16 +1271,16 @@ window.recalcConfigTotal = function() {
 }
 
 window.confirmAddToCart = async function() {
-    const p = window.configState.prod;
-    const v = window.configState.selectedVariant;
+    const p = configState.prod;
+    const v = configState.selectedVariant;
     const qtyEl = document.getElementById('confCustomQty');
     const qty = parseFloat(qtyEl ? qtyEl.value : 0) || 0;
     
-    if(qty <= 0) return showToast("Enter valid quantity", true);
+    if(qty <= 0) return window.showToast("Enter valid quantity", true);
 
     const uPrice = getUnitPrice(p, v);
     const uLabel = getUnitLabel(p, v);
-    const brandStr = window.configState.selectedBrand || '';
+    const brandStr = configState.selectedBrand || '';
 
     const stockInfo = getVariantStockInfo(p, v);
     let maxAvail = stockInfo.available;
@@ -1421,18 +1293,18 @@ window.confirmAddToCart = async function() {
         }
     }
 
-    const existingIdx = window.cart.findIndex(i => i.prodId === p.id && i.variant === v.quantity && i.brand === brandStr);
-    const existingQty = existingIdx >= 0 ? window.cart[existingIdx].qty : 0;
+    const existingIdx = cart.findIndex(i => i.prodId === p.id && i.variant === v.quantity && i.brand === brandStr);
+    const existingQty = existingIdx >= 0 ? cart[existingIdx].qty : 0;
     
     if (existingQty + qty > maxAvail) {
-        return showToast(`Max stock reached! Only ${formatStock(maxAvail - existingQty, stockInfo.label)} available.`, true);
+        return window.showToast(`Max stock reached! Only ${formatStock(maxAvail - existingQty, stockInfo.label)} available.`, true);
     }
 
     if(existingIdx >= 0) {
-        window.cart[existingIdx].qty += qty;
-        window.cart[existingIdx].total = window.cart[existingIdx].qty * uPrice;
+        cart[existingIdx].qty += qty;
+        cart[existingIdx].total = cart[existingIdx].qty * uPrice;
     } else {
-        window.cart.push({
+        cart.push({
             id: v.id,
             prodId: p.id,
             name: p.name,
@@ -1459,9 +1331,9 @@ window.confirmAddToCart = async function() {
     }
 }
 
-// ─── CHECKOUT & PAYMENTS ──────────────────────────────────────────────────────
+// ─── CHECKOUT & PAYMENTS (Problem 4: FIRESTORE ATOMIC TRANSACTION) ───────────
 window.openPartialPayment = function() {
-    if(window.cart.length === 0) return showToast("Cart is empty", true);
+    if(cart.length === 0) return window.showToast("Cart is empty", true);
     const grand = parseFloat(document.getElementById('cartGrandTotal').innerText);
     const pGrand = document.getElementById('partialGrandTotal'); if(pGrand) pGrand.innerText = `₹${grand.toFixed(2)}`;
     const pCash = document.getElementById('payCash'); if(pCash) pCash.value = grand.toFixed(2);
@@ -1472,7 +1344,7 @@ window.openPartialPayment = function() {
 
 window.processCheckout = async function(method, split = null) {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    if(!user.merchantId) return showToast("Merchant ID missing", true);
+    if(!user.merchantId) return window.showToast("Merchant ID missing", true);
 
     const btn = document.getElementById('btnGenerateBill');
     const origHtml = btn.innerHTML;
@@ -1494,65 +1366,96 @@ window.processCheckout = async function(method, split = null) {
         const saleDoc = {
             id: `inv_${Date.now()}`,
             date: new Date().toISOString(),
-            customer: window.currentCustomer.name || 'Walk-in',
-            customerPhone: window.currentCustomer.phone || '',
-            items: window.cart,
+            customer: currentCustomer.name || 'Walk-in',
+            customerPhone: currentCustomer.phone || '',
+            items: cart,
             total: grand,
             discount: discount,
             paymentMethod: method,
             split: { cash: cashAmt, online: onlineAmt, udhaar: udhaarAmt }
         };
 
-        const batch = writeBatch(db);
-        batch.set(doc(db, "shops", user.merchantId, "sales", saleDoc.id), saleDoc);
+        // 🌟 FIRESTORE ATOMIC TRANSACTION 🌟
+        // Ensures exact stock deductions even if 10 cashiers sell simultaneously
+        await runTransaction(db, async (transaction) => {
+            // --- 1. READ PHASE ---
+            let pSnaps = {};
+            const uniqueProdIds = [...new Set(cart.map(item => item.prodId))];
+            
+            for(const pid of uniqueProdIds) {
+                const pRef = doc(db, "shops", user.merchantId, "products", pid);
+                pSnaps[pid] = await transaction.get(pRef);
+            }
 
-        window.cart.forEach(cItem => {
-            const pIdx = window.allProducts.findIndex(p => p.id === cItem.prodId);
-            if(pIdx > -1) {
-                const vIdx = window.allProducts[pIdx].variants.findIndex(v => v.id === cItem.id);
-                if(vIdx > -1) {
-                    const p = window.allProducts[pIdx];
-                    const v = p.variants[vIdx];
-                    let deduction = cItem.qty;
-                    if(p.isLoose) {
-                        const bq = Number(v.baseQty) || 1;
-                        deduction = cItem.qty / bq; 
-                    }
-                    v.stock -= deduction;
+            let customerRef = null;
+            let customerSnap = null;
+            if(currentCustomer.name || currentCustomer.phone) {
+                const custId = currentCustomer.phone || currentCustomer.name.toLowerCase().replace(/\s/g,'_');
+                customerRef = doc(db, "shops", user.merchantId, "customers", custId);
+                customerSnap = await transaction.get(customerRef);
+            }
+
+            // --- 2. WRITE PHASE ---
+            // Update Products
+            for(const pid of uniqueProdIds) {
+                const snap = pSnaps[pid];
+                if(snap.exists()) {
+                    let pData = snap.data();
                     
-                    if(cItem.brand && v.brands) {
-                        const bIdx = v.brands.findIndex(b => b.name === cItem.brand);
-                        if(bIdx > -1) v.brands[bIdx].stock -= deduction;
-                    }
-                    batch.set(doc(db, "shops", user.merchantId, "products", cItem.prodId), window.allProducts[pIdx]);
+                    cart.filter(c => c.prodId === pid).forEach(cItem => {
+                        const vIdx = pData.variants.findIndex(v => v.id === cItem.id);
+                        if(vIdx > -1) {
+                            let deduction = cItem.qty;
+                            if(pData.isLoose) {
+                                const bq = Number(pData.variants[vIdx].baseQty) || 1;
+                                deduction = cItem.qty / bq; 
+                            }
+                            pData.variants[vIdx].stock -= deduction;
+                            
+                            if(cItem.brand && pData.variants[vIdx].brands) {
+                                const bIdx = pData.variants[vIdx].brands.findIndex(b => b.name === cItem.brand);
+                                if(bIdx > -1) pData.variants[vIdx].brands[bIdx].stock -= deduction;
+                            }
+                        }
+                    });
+                    transaction.update(snap.ref, { variants: pData.variants });
+                    
+                    // Keep local array in sync
+                    const localIdx = allProducts.findIndex(p => p.id === pid);
+                    if(localIdx > -1) allProducts[localIdx].variants = pData.variants;
                 }
             }
-        });
-        await window.dbSave('bharatpos_products', window.allProducts);
 
-        if(window.currentCustomer.name || window.currentCustomer.phone) {
-            const custId = window.currentCustomer.phone || window.currentCustomer.name.toLowerCase().replace(/\s/g,'_');
-            let cIdx = window.customers.findIndex(c => c.id === custId || (window.currentCustomer.phone && c.phone === window.currentCustomer.phone));
-            
-            if(cIdx === -1) {
-                const newCust = { id: custId, name: window.currentCustomer.name, phone: window.currentCustomer.phone, balance: udhaarAmt };
-                window.customers.push(newCust);
-                cIdx = window.customers.length - 1;
-            } else {
-                if(window.currentCustomer.name) window.customers[cIdx].name = window.currentCustomer.name;
-                if(window.currentCustomer.phone) window.customers[cIdx].phone = window.currentCustomer.phone;
-                window.customers[cIdx].balance = (Number(window.customers[cIdx].balance)||0) + udhaarAmt;
+            // Update Customer Balance
+            if(customerRef) {
+                if(customerSnap.exists()) {
+                    let cData = customerSnap.data();
+                    if(currentCustomer.name) cData.name = currentCustomer.name;
+                    if(currentCustomer.phone) cData.phone = currentCustomer.phone;
+                    cData.balance = (Number(cData.balance)||0) + udhaarAmt;
+                    transaction.update(customerRef, cData);
+                    
+                    const cIdx = customers.findIndex(c => c.id === customerRef.id);
+                    if(cIdx > -1) customers[cIdx] = cData;
+                } else {
+                    const newCust = { id: customerRef.id, name: currentCustomer.name, phone: currentCustomer.phone, balance: udhaarAmt };
+                    transaction.set(customerRef, newCust);
+                    customers.push(newCust);
+                }
             }
-            
-            await window.dbSave('bharatpos_customers', window.customers);
-            batch.set(doc(db, "shops", user.merchantId, "customers", window.customers[cIdx].id), window.customers[cIdx]);
-        }
 
+            // Save Ledger Sale
+            const saleRef = doc(db, "shops", user.merchantId, "sales", saleDoc.id);
+            transaction.set(saleRef, saleDoc);
+        });
+
+        // Save local states post-transaction
+        await window.dbSave('bharatpos_products', allProducts);
+        await window.dbSave('bharatpos_customers', customers);
+        
         const sales = await window.dbGet('bharatpos_sales', '[]');
         sales.push(saleDoc);
         await window.dbSave('bharatpos_sales', sales);
-
-        await batch.commit();
 
         document.getElementById('partialPayModal').style.display = 'none';
         window.generateInvoice(saleDoc); 
@@ -1560,7 +1463,7 @@ window.processCheckout = async function(method, split = null) {
 
     } catch(e) {
         console.error(e);
-        showToast("Transaction failed.", true);
+        window.showToast("Transaction failed.", true);
     } finally {
         btn.innerHTML = origHtml; btn.disabled = false;
     }
@@ -1592,8 +1495,8 @@ window.generateInvoice = function(sale) {
 
         rows += `
         <tr>
-            <td>${i.name} <div style="font-size:10px; color:#555;">${i.variant} ${i.brand?`(${i.brand})`:''}</div></td>
-            <td class="inv-center">${i.qty}${i.unitLabel==='unit'?'':i.unitLabel}</td>
+            <td>${escapeHtml(i.name)} <div style="font-size:10px; color:#555;">${escapeHtml(i.variant)} ${i.brand?`(${escapeHtml(i.brand)})`:''}</div></td>
+            <td class="inv-center">${i.qty}${i.unitLabel==='unit'?'':escapeHtml(i.unitLabel)}</td>
             <td class="inv-center">${i.unitPrice.toFixed(2)}</td>
             ${taxHtml}
             <td class="inv-right">${amt.toFixed(2)}</td>
@@ -1605,14 +1508,14 @@ window.generateInvoice = function(sale) {
 
     const html = `
         <div class="inv-header">
-            <h2 style="margin:0; font-size:18px;">${user.shopName || 'Retail Store'}</h2>
-            <div>${user.address || ''}</div>
-            <div>GSTIN: ${user.gstin || 'N/A'}</div>
+            <h2 style="margin:0; font-size:18px;">${escapeHtml(user.shopName || 'Retail Store')}</h2>
+            <div>${escapeHtml(user.address || '')}</div>
+            <div>GSTIN: ${escapeHtml(user.gstin || 'N/A')}</div>
             <div style="margin-top:10px; font-weight:bold;">TAX INVOICE</div>
         </div>
         <div style="margin-bottom:10px;">
             <div class="inv-row"><span>Inv No: ${sale.id.slice(-6)}</span><span>Date: ${new Date(sale.date).toLocaleDateString()}</span></div>
-            <div class="inv-row"><span>Customer: ${sale.customer}</span><span>Pay: ${sale.paymentMethod}</span></div>
+            <div class="inv-row"><span>Customer: ${escapeHtml(sale.customer)}</span><span>Pay: ${sale.paymentMethod}</span></div>
         </div>
         <table class="inv-table">
             <thead>
@@ -1648,35 +1551,35 @@ window.generateInvoice = function(sale) {
 
 // ─── HELD CARTS & ONLINE ORDERS ───────────────────────────────────────────────
 window.holdCurrentCart = async function() {
-    if(window.cart.length === 0) return showToast("Cart empty");
-    window.heldCarts.push({
+    if(cart.length === 0) return window.showToast("Cart empty");
+    heldCarts.push({
         id: `hold_${Date.now()}`,
         time: new Date().toLocaleTimeString(),
-        cust: window.currentCustomer,
-        items: [...window.cart],
+        cust: currentCustomer,
+        items: [...cart],
         discount: parseFloat(document.getElementById('cartDiscountInput').value) || 0
     });
     
-    await window.dbSave('bharatpos_held_carts', window.heldCarts);
+    await window.dbSave('bharatpos_held_carts', heldCarts);
     
-    window.cart = []; window.currentCustomer = {name:'', phone:''}; 
+    cart = []; currentCustomer = {name:'', phone:''}; 
     const cn = document.getElementById('custNameInput'); if(cn) cn.value = ''; 
     const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = '';
     const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = '';
     renderCart();
-    showToast("Cart held securely.");
+    window.showToast("Cart held securely.");
 }
 
 window.showHeldCarts = function() {
     const list = document.getElementById('heldCartsList');
     if(!list) return;
-    if(window.heldCarts.length === 0) {
+    if(heldCarts.length === 0) {
         list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No held carts.</div>";
     } else {
-        list.innerHTML = window.heldCarts.map((h, i) => `
+        list.innerHTML = heldCarts.map((h, i) => `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--border); border-radius:10px;">
                 <div>
-                    <div style="font-weight:700; font-size:13px;">${h.cust.name || 'Walk-in'}</div>
+                    <div style="font-weight:700; font-size:13px;">${escapeHtml(h.cust.name || 'Walk-in')}</div>
                     <div style="font-size:11px; color:var(--text-muted);">${h.items.length} items • ${h.time}</div>
                 </div>
                 <button class="btn btn-outline" style="padding:6px 12px; font-size:11px;" data-hidx="${i}">Restore</button>
@@ -1687,15 +1590,15 @@ window.showHeldCarts = function() {
 }
 
 window.restoreHeldCart = async function(idx) {
-    const h = window.heldCarts[idx];
-    window.cart = [...h.items];
-    window.currentCustomer = {...h.cust};
-    const cn = document.getElementById('custNameInput'); if(cn) cn.value = window.currentCustomer.name;
-    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = window.currentCustomer.phone;
+    const h = heldCarts[idx];
+    cart = [...h.items];
+    currentCustomer = {...h.cust};
+    const cn = document.getElementById('custNameInput'); if(cn) cn.value = currentCustomer.name;
+    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = currentCustomer.phone;
     const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = h.discount || '';
     
-    window.heldCarts.splice(idx, 1);
-    await window.dbSave('bharatpos_held_carts', window.heldCarts);
+    heldCarts.splice(idx, 1);
+    await window.dbSave('bharatpos_held_carts', heldCarts);
     document.getElementById('heldCartsModal').style.display = 'none';
     renderCart();
 }
@@ -1703,17 +1606,17 @@ window.restoreHeldCart = async function(idx) {
 window.showOnlineOrders = function() {
     const list = document.getElementById('onlineOrdersList');
     if(!list) return;
-    if(window.onlineOrders.length === 0) {
+    if(onlineOrders.length === 0) {
         list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No active online orders.</div>";
     } else {
-        list.innerHTML = window.onlineOrders.map(o => `
+        list.innerHTML = onlineOrders.map(o => `
             <div style="border:1px solid var(--border); border-radius:10px; padding:15px; background:#F8FAFC;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span style="font-weight:700; font-size:14px;"><i class="fa-solid fa-mobile-screen"></i> ${o.customerName}</span>
+                    <span style="font-weight:700; font-size:14px;"><i class="fa-solid fa-mobile-screen"></i> ${escapeHtml(o.customerName)}</span>
                     <span style="font-weight:800; color:var(--success);">₹${o.totalAmount}</span>
                 </div>
                 <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">
-                    ${(o.items||[]).map(i => `${i.qty}x ${i.name}`).join(', ')}
+                    ${(o.items||[]).map(i => `${i.qty}x ${escapeHtml(i.name)}`).join(', ')}
                 </div>
                 <button class="btn btn-primary" style="width:100%; font-size:12px; padding:10px;" data-oid="${o.orderId}">Load into Cart</button>
             </div>
@@ -1723,22 +1626,22 @@ window.showOnlineOrders = function() {
 }
 
 window.loadOnlineOrderToCart = async function(orderId) {
-    const order = window.onlineOrders.find(o => o.orderId === orderId);
+    const order = onlineOrders.find(o => o.orderId === orderId);
     if(!order) return;
 
-    if(window.cart.length > 0) await window.holdCurrentCart();
+    if(cart.length > 0) await window.holdCurrentCart();
     
-    window.cart = order.items.map(i => {
-        const p = window.allProducts.find(prod => prod.id === i.prodId);
+    cart = order.items.map(i => {
+        const p = allProducts.find(prod => prod.id === i.prodId);
         const uPrice = p ? (p.priceType === 'inclusive' ? i.price : i.price) : i.price; 
         return {
             id: i.variantId || 'unknown', prodId: i.prodId, name: i.name, variant: i.variant || '1 pcs', brand: '',
-            qty: i.qty, unitPrice: i.price, unitLabel: 'unit', total: i.qty * i.price, 
+            qty: i.qty, unitPrice: uPrice, unitLabel: 'unit', total: i.qty * uPrice, 
             hsn: p?.hsn||'', gstRate: p?.gstRate||0, priceType: p?.priceType||'inclusive'
         };
     });
     
-    window.currentCustomer = { name: order.customerName, phone: order.customerMobile || '' };
+    currentCustomer = { name: order.customerName, phone: order.customerMobile || '' };
     const cn = document.getElementById('custNameInput'); if(cn) cn.value = order.customerName;
     const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = order.customerMobile || '';
     
@@ -1759,7 +1662,7 @@ window.startBarcodeScan = function() {
         inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
         decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
     }, function(err) {
-        if (err) { console.log(err); showToast("Scanner failed to start", true); return; }
+        if (err) { console.log(err); window.showToast("Scanner failed to start", true); return; }
         Quagga.start();
     });
 
@@ -1771,7 +1674,7 @@ window.startBarcodeScan = function() {
             window.stopBarcodeScan();
             
             let foundProd = null, foundVar = null;
-            window.allProducts.forEach(p => {
+            allProducts.forEach(p => {
                 const v = p.variants.find(vx => vx.barcode === code);
                 if(v) { foundProd = p; foundVar = v; }
             });
@@ -1780,11 +1683,11 @@ window.startBarcodeScan = function() {
                 window.openAddToCartWizard(foundProd.id);
                 const varIdx = foundProd.variants.findIndex(v => v.id === foundVar.id);
                 if(varIdx > -1) {
-                    window.configState.selectedVarIdx = varIdx;
+                    configState.selectedVarIdx = varIdx;
                     window.wizardSelectVariant(foundVar.id);
                 }
             } else {
-                showToast("Product not found in inventory", true);
+                window.showToast("Product not found in inventory", true);
             }
         }
     });
@@ -1795,3 +1698,5 @@ window.stopBarcodeScan = function() {
     document.getElementById('barcodeScannerModal').style.display = 'none';
 }
 </script>
+</body>
+</html>
