@@ -1528,7 +1528,7 @@ window.processCheckout = async function(method, split = null) {
                 if(localP && eIdx > -1) eProds[eIdx].variants = localP.variants;
             });
             await window.dbSave('bharatpos_enterprise_products', eProds);
-        }
+        };
 
         window.hideModal('partialPayModal');
         window.generateInvoice(saleDoc); 
