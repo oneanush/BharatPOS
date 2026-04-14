@@ -55,6 +55,9 @@
     .brand-logo-wrap { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--success), #0F766E); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(13,148,136,0.3); }
     .brand-logo-wrap i { color: #fff; font-size: 13px; }
     .nav-actions { display: flex; gap: 8px; align-items: center; }
+    
+    .shop-switcher { background: #f9f9f9; border: 1.5px solid var(--border); color: var(--text-main); padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; outline: none; cursor: pointer; max-width: 140px; transition: 0.2s; font-family: inherit;}
+    .shop-switcher:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 2px var(--primary-glow); }
 
     /* --- POS LAYOUT --- */
     .pos-container { display: flex; height: calc(100vh - 60px); overflow: hidden; width: 100%; max-width: 1600px; margin: 0 auto; }
@@ -75,7 +78,7 @@
     /* Search Box with Integrated Barcode */
     .search-box { position: relative; flex: 1; display: flex; align-items: center; }
     .search-box > i.fa-magnifying-glass { position: absolute; left: 12px; color: var(--text-light); pointer-events: none; z-index: 2;}
-    .search-box input { width: 100%; background: #fff; border: 1.5px solid var(--border); padding: 10px 45px 10px 34px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; font-family: 'Plus Jakarta Sans', sans-serif; box-shadow: var(--shadow-sm); outline: none; transition: 0.2s;}
+    .search-box input { width: 100%; background: #fff; border: 1.5px solid var(--border); padding: 10px 45px 10px 34px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; font-family: inherit; box-shadow: var(--shadow-sm); outline: none; transition: 0.2s;}
     .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
     .barcode-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: var(--primary); padding: 8px; cursor: pointer; font-size: 16px; border-radius: 8px; transition: 0.2s; z-index: 2;}
     .barcode-btn:hover { background: var(--primary-soft); }
@@ -116,6 +119,8 @@
     /* CUSTOMER SEARCH INPUTS */
     .customer-selector-container { display: flex; gap: 8px; padding: 12px 15px; background: #fff; border-bottom: 1px solid var(--bg-input);}
     .customer-selector { position: relative; flex: 1; }
+    .customer-selector input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; font-weight: 600; outline: none; background: var(--bg-input); font-family: inherit; transition: 0.2s; box-sizing: border-box;}
+    .customer-selector input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 2px var(--primary-glow); }
     .customer-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); z-index: 50; max-height: 200px; overflow-y: auto; display: none; }
     .cust-option { padding: 10px 12px; border-bottom: 1px solid var(--bg-input); cursor: pointer; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; }
     .cust-option:hover { background: var(--bg-input); }
@@ -163,7 +168,7 @@
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-main); font-weight: 600; }
 
     .form-group { margin-bottom: 15px; position: relative; }
-    .form-input, .form-select { width: 100%; background: #fff; border: 1.5px solid var(--border); color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; transition: all 0.2s; outline: none; font-family: inherit; }
+    .form-input, .form-select { width: 100%; background: #fff; border: 1.5px solid var(--border); color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; transition: all 0.2s; outline: none; font-family: inherit; box-sizing: border-box;}
     .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
     .floating-label-mod { position: absolute; left: 14px; top: 12px; color: var(--text-muted); font-size: 13px; font-weight: 500; pointer-events: none; transition: all 0.2s; background: transparent; }
     .form-input:focus ~ .floating-label-mod, .form-input:not(:placeholder-shown) ~ .floating-label-mod { top: -8px; left: 10px; font-size: 11px; font-weight: 700; color: var(--primary); background: #fff; padding: 0 4px; }
@@ -210,7 +215,10 @@
 </head>
 <body class="lang-en">
 
-<datalist id="custSearchList"></datalist>
+<script type="module">
+    import './bharatpos.js';
+    window.injectLayout('billing'); // Dynamically injects secure, centralized Navigation
+</script>
 
 <div class="pos-container">
     
@@ -274,12 +282,7 @@
         </div>
 
         <div class="cart-items" id="cartItemsList">
-            <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
-                <i class="fa-solid fa-cart-arrow-down" style="font-size:30px; opacity:0.3; margin-bottom:10px;"></i>
-                <div style="font-weight:600; font-size:14px;"><span data-i18n="cart_empty">Cart is empty</span></div>
-                <div style="font-size:11px; margin-top:4px;">Tap products to add them here.</div>
             </div>
-        </div>
 
         <div class="cart-summary">
             <div class="summary-row">
@@ -481,10 +484,7 @@
 import { db } from "./bharatpos.js";
 import { doc, collection, runTransaction, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ─── 1. INJECT UI FIRST ──────────────────────────────────────────────────────
-window.injectLayout('billing');
-
-// ─── 2. ENCAPSULATED STATE ───────────────────────────────────────────────────
+// ─── 1. ENCAPSULATED STATE (Crash-Proofed) ───────────────────────────────────
 let allProducts = [];
 let customers = [];
 let cart = [];
@@ -499,13 +499,29 @@ let partialSplitData = null;
 
 const escapeHtml = window.escapeHtml || function(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; };
 
-// ─── 3. CORE INITIALIZATION ──────────────────────────────────────────────────
+// ─── 2. CORE INITIALIZATION ──────────────────────────────────────────────────
 async function initBilling() {
     try {
-        bindAllEvents();
+        // Fetch raw data
+        let rawProducts = await window.dbGet('bharatpos_products', '[]');
         
-        // Load data securely
-        allProducts = await window.dbGet('bharatpos_products', '[]');
+        // --- 🛡️ LEGACY DATA MIGRATION SHIELD ---
+        // This stops old products without variants from crashing the render loops
+        allProducts = rawProducts.map(p => {
+            if (!p.variants || !Array.isArray(p.variants) || p.variants.length === 0) {
+                p.variants = [{
+                    id: p.id + '_v0',
+                    quantity: p.quantity || '1 pcs',
+                    price: Number(p.price) || 0,
+                    stock: Number(p.stock) || 0,
+                    barcode: p.barcode || '',
+                    baseQty: 1,
+                    baseUnit: 'pcs'
+                }];
+            }
+            return p;
+        });
+
         customers = await window.dbGet('bharatpos_customers', '[]');
         heldCarts = await window.dbGet('bharatpos_held_carts', '[]');
         
@@ -515,6 +531,7 @@ async function initBilling() {
         sales.forEach(s => (s.items||[]).forEach(i => freqs[i.id] = (freqs[i.id]||0) + (i.qty||1)));
         allProducts.sort((a,b) => (freqs[b.id]||0) - (freqs[a.id]||0));
 
+        bindAllEvents();
         renderCategories();
         renderProductGrid();
         renderCart();
@@ -573,17 +590,20 @@ function getVariantStockInfo(p, v) {
 }
 
 function getProductTotalStockInfo(p) {
+    const variants = p.variants || [];
+    if (variants.length === 0) return `${p.stock || 0} in stock`;
+
     if (p.isLoose) {
         let totalBase = 0;
-        let unit = p.variants[0]?.baseUnit || 'units';
-        p.variants.forEach(v => {
+        let unit = variants[0]?.baseUnit || 'units';
+        variants.forEach(v => {
             const bq = Number(v.baseQty) || 1;
             totalBase += (Number(v.stock) || 0) * bq;
         });
         return `${formatStock(totalBase, unit)} ${unit}`;
     } else {
         let total = 0;
-        p.variants.forEach(v => total += Number(v.stock) || 0);
+        variants.forEach(v => total += Number(v.stock) || 0);
         return `${total} in stock`;
     }
 }
@@ -658,7 +678,6 @@ function bindAllEvents() {
             }).slice(0, 5);
 
             if(matches.length > 0) {
-                // XSS Defense applied
                 drop.innerHTML = matches.map(c => {
                     const phoneVal = c.phone || c.mobile || '';
                     return `<div class="cust-option" data-name="${escapeHtml(c.name)}" data-phone="${escapeHtml(phoneVal)}"><span>${escapeHtml(c.name)}</span><span style="color:var(--text-muted);">${escapeHtml(phoneVal)}</span></div>`;
@@ -1574,164 +1593,4 @@ window.generateInvoice = function(sale) {
                 Split: Cash: ₹${sale.split.cash} | Online: ₹${sale.split.online} | Udhaar: ₹${sale.split.udhaar}
             </div>` : ''}
         </div>
-        <div style="text-align:center; margin-top:20px; font-size:10px;">Thank you for visiting!</div>
-    `;
-
-    const invPaper = document.getElementById('invoicePaper');
-    if(invPaper) invPaper.innerHTML = html;
-    document.getElementById('invoiceModal').style.display = 'flex';
-}
-
-// ─── HELD CARTS & ONLINE ORDERS ───────────────────────────────────────────────
-window.holdCurrentCart = async function() {
-    if(cart.length === 0) return window.showToast("Cart empty");
-    heldCarts.push({
-        id: `hold_${Date.now()}`,
-        time: new Date().toLocaleTimeString(),
-        cust: currentCustomer,
-        items: [...cart],
-        discount: parseFloat(document.getElementById('cartDiscountInput').value) || 0
-    });
-    
-    await window.dbSave('bharatpos_held_carts', heldCarts);
-    
-    cart = []; currentCustomer = {name:'', phone:''}; 
-    const cn = document.getElementById('custNameInput'); if(cn) cn.value = ''; 
-    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = '';
-    const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = '';
-    renderCart();
-    window.showToast("Cart held securely.");
-}
-
-window.showHeldCarts = function() {
-    const list = document.getElementById('heldCartsList');
-    if(!list) return;
-    if(heldCarts.length === 0) {
-        list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No held carts.</div>";
-    } else {
-        list.innerHTML = heldCarts.map((h, i) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--border); border-radius:10px;">
-                <div>
-                    <div style="font-weight:700; font-size:13px;">${escapeHtml(h.cust.name || 'Walk-in')}</div>
-                    <div style="font-size:11px; color:var(--text-muted);">${h.items.length} items • ${h.time}</div>
-                </div>
-                <button class="btn btn-outline" style="padding:6px 12px; font-size:11px;" data-hidx="${i}">Restore</button>
-            </div>
-        `).join('');
-    }
-    document.getElementById('heldCartsModal').style.display = 'flex';
-}
-
-window.restoreHeldCart = async function(idx) {
-    const h = heldCarts[idx];
-    cart = [...h.items];
-    currentCustomer = {...h.cust};
-    const cn = document.getElementById('custNameInput'); if(cn) cn.value = currentCustomer.name;
-    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = currentCustomer.phone;
-    const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = h.discount || '';
-    
-    heldCarts.splice(idx, 1);
-    await window.dbSave('bharatpos_held_carts', heldCarts);
-    document.getElementById('heldCartsModal').style.display = 'none';
-    renderCart();
-}
-
-window.showOnlineOrders = function() {
-    const list = document.getElementById('onlineOrdersList');
-    if(!list) return;
-    if(onlineOrders.length === 0) {
-        list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No active online orders.</div>";
-    } else {
-        list.innerHTML = onlineOrders.map(o => `
-            <div style="border:1px solid var(--border); border-radius:10px; padding:15px; background:#F8FAFC;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span style="font-weight:700; font-size:14px;"><i class="fa-solid fa-mobile-screen"></i> ${escapeHtml(o.customerName)}</span>
-                    <span style="font-weight:800; color:var(--success);">₹${o.totalAmount}</span>
-                </div>
-                <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">
-                    ${(o.items||[]).map(i => `${i.qty}x ${escapeHtml(i.name)}`).join(', ')}
-                </div>
-                <button class="btn btn-primary" style="width:100%; font-size:12px; padding:10px;" data-oid="${o.orderId}">Load into Cart</button>
-            </div>
-        `).join('');
-    }
-    document.getElementById('onlineOrdersModal').style.display = 'flex';
-}
-
-window.loadOnlineOrderToCart = async function(orderId) {
-    const order = onlineOrders.find(o => o.orderId === orderId);
-    if(!order) return;
-
-    if(cart.length > 0) await window.holdCurrentCart();
-    
-    cart = order.items.map(i => {
-        const p = allProducts.find(prod => prod.id === i.prodId);
-        const uPrice = p ? (p.priceType === 'inclusive' ? i.price : i.price) : i.price; 
-        return {
-            id: i.variantId || 'unknown', prodId: i.prodId, name: i.name, variant: i.variant || '1 pcs', brand: '',
-            qty: i.qty, unitPrice: uPrice, unitLabel: 'unit', total: i.qty * uPrice, 
-            hsn: p?.hsn||'', gstRate: p?.gstRate||0, priceType: p?.priceType||'inclusive'
-        };
-    });
-    
-    currentCustomer = { name: order.customerName, phone: order.customerMobile || '' };
-    const cn = document.getElementById('custNameInput'); if(cn) cn.value = order.customerName;
-    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = order.customerMobile || '';
-    
-    document.getElementById('onlineOrdersModal').style.display = 'none';
-    renderCart();
-    
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    if(user.merchantId && window.db) {
-        await deleteDoc(doc(db, "shops", user.merchantId, "onlineOrders", orderId));
-    }
-}
-
-// ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
-window.startBarcodeScan = function() {
-    document.getElementById('barcodeScannerModal').style.display = 'flex';
-    
-    Quagga.init({
-        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
-        decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
-    }, function(err) {
-        if (err) { console.log(err); window.showToast("Scanner failed to start", true); return; }
-        Quagga.start();
-    });
-
-    Quagga.onDetected(function(result) {
-        if(result.codeResult.code) {
-            const code = result.codeResult.code;
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.play().catch(e=>{});
-            window.stopBarcodeScan();
-            
-            let foundProd = null, foundVar = null;
-            allProducts.forEach(p => {
-                const v = p.variants.find(vx => vx.barcode === code);
-                if(v) { foundProd = p; foundVar = v; }
-            });
-
-            if(foundProd && foundVar) {
-                window.openAddToCartWizard(foundProd.id);
-                const varIdx = foundProd.variants.findIndex(v => v.id === foundVar.id);
-                if(varIdx > -1) {
-                    configState.selectedVarIdx = varIdx;
-                    window.wizardSelectVariant(foundVar.id);
-                }
-            } else {
-                window.showToast("Product not found in inventory", true);
-            }
-        }
-    });
-}
-
-window.stopBarcodeScan = function() {
-    Quagga.stop();
-    document.getElementById('barcodeScannerModal').style.display = 'none';
-}
-
-initBilling(); // Start the app
-</script>
-</body>
-</html>
+        <div style="text-align:center; margin-top:20px; font-size:10px
