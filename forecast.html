@@ -7,9 +7,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script type="module" src="bharatpos.js"></script>
- <link rel="stylesheet" href="bharatpos.css">
+  <link rel="stylesheet" href="bharatpos.css">
 <style>
     /* --- HEADER --- */
     .header {
@@ -86,6 +86,15 @@
 
     /* --- TIME STAMP BADGE --- */
     .time-badge { font-size: 11px; opacity: 0.8; margin-top: 5px; display: block; font-family: var(--font-body); }
+
+    /* --- HEADER SWITCHER --- */
+    .header-switcher {
+        background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+        color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px;
+        font-weight: 600; outline: none; cursor: pointer; margin-bottom: 8px;
+        font-family: var(--font-body); backdrop-filter: blur(4px);
+    }
+    .header-switcher option { color: var(--slate-900); background: white; }
 </style>
 </head>
 <body>
@@ -96,30 +105,32 @@
             <h1 style="margin:0; font-size:22px; display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-brain" style="color: #a5b4fc;"></i> DemandMitra AI
             </h1>
-            <p style="margin:5px 0 0; opacity:0.8; font-size:13px;">Real-Time Inventory Forecasting</p>
+            <p style="margin:5px 0 0; opacity:0.8; font-size:13px; font-family:var(--font-body);">Real-Time Inventory Forecasting</p>
         </div>
         <div style="text-align:right;">
+            <select id="shopSwitcher" class="header-switcher" style="display:none;"></select><br>
             <span id="lastUpdated" class="time-badge">No data yet</span>
-            <span onclick="window.clearAICache()" style="font-size:10px; text-decoration:underline; cursor:pointer; color:#a5b4fc;"><i class="fa-solid fa-rotate-right"></i> Reset AI</span>
+            <span onclick="window.clearAICache()" style="font-size:10px; text-decoration:underline; cursor:pointer; color:#a5b4fc; font-family:var(--font-body);"><i class="fa-solid fa-rotate-right"></i> Reset AI</span>
         </div>
     </div>
   </div>
 
   <div class="container">
 
-    <div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
+    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items:center;">
+      <a href="dashboard.html" style="color:var(--slate-500); text-decoration:none; font-size:20px;"><i class="fa-solid fa-arrow-left"></i></a>
       <button onclick="window.generateBulkForecasts()" style="
         background: linear-gradient(135deg, #4f46e5, #7c3aed);
         color: white; border: none; padding: 12px 24px;
         border-radius: 30px; font-weight: 700; cursor: pointer;
         box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-        display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+        display: flex; align-items: center; gap: 8px; transition: 0.2s; font-family:var(--font-body);">
         <i class="fa-solid fa-bolt"></i> Analyze All Products
       </button>
     </div>
 
     <div class="controls" id="productChips">
-      <div style="padding:10px; color:#64748b; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Syncing products from cloud...</div>
+      <div style="padding:10px; color:#64748b; font-size: 13px; font-family:var(--font-body);"><i class="fa-solid fa-spinner fa-spin"></i> Loading local database...</div>
     </div>
 
     <div class="card" style="position:relative; min-height: 350px;">
@@ -130,8 +141,8 @@
       </div>
       
       <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
-        <b id="chartTitle" style="font-size:18px; color: #1e293b;">Select a Product</b>
-        <span id="trendBadge" style="font-size:11px; padding:6px 12px; border-radius:20px; background:#f1f5f9; color: #475569; font-weight:700;">--</span>
+        <b id="chartTitle" style="font-size:18px; color: #1e293b; font-family:var(--font-head);">Select a Product</b>
+        <span id="trendBadge" style="font-size:11px; padding:6px 12px; border-radius:20px; background:#f1f5f9; color: #475569; font-weight:800; font-family:var(--font-body);">--</span>
       </div>
       
       <div style="position: relative; height: 250px; width: 100%;">
@@ -140,12 +151,12 @@
 
       <div class="insight-row">
         <div class="stat-box" id="boxStock" style="border-left-color: #3b82f6;">
-          <div style="font-size:11px; color:#64748b; font-weight: 700;">CURRENT STOCK</div>
-          <div style="font-size:24px; font-weight:800; color: #1e293b;" id="valStock">--</div>
+          <div style="font-size:11px; color:#64748b; font-weight: 800;">CURRENT STOCK</div>
+          <div style="font-size:24px; font-weight:800; color: #1e293b; font-family:'JetBrains Mono';" id="valStock">--</div>
         </div>
         <div class="stat-box" id="boxPred" style="border-left-color: #10b981;">
-          <div style="font-size:11px; color:#64748b; font-weight: 700;">PREDICTED (7 DAYS)</div>
-          <div style="font-size:24px; font-weight:800; color: #1e293b;" id="valPred">--</div>
+          <div style="font-size:11px; color:#64748b; font-weight: 800;">PREDICTED (7 DAYS)</div>
+          <div style="font-size:24px; font-weight:800; color: #1e293b; font-family:'JetBrains Mono';" id="valPred">--</div>
         </div>
       </div>
 
@@ -153,9 +164,9 @@
         <div style="display: flex; gap: 10px;">
             <i class="fa-solid fa-lightbulb" style="color: #d97706; font-size: 18px; margin-top: 2px;"></i>
             <div style="flex: 1;">
-                <b style="color: #b45309;">AI Recommendation:</b> 
-                <span id="aiReason" style="color: #78350f; font-size: 14px; line-height: 1.5; display: block; margin-top: 4px;">--</span>
-                <div id="aiQuantityBadge" style="margin-top: 10px; display: inline-block; background: #fee2e2; color: #b91c1c; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 13px; border: 1px solid #f87171;">
+                <b style="color: #b45309; font-family:var(--font-head);">AI Recommendation:</b> 
+                <span id="aiReason" style="color: #78350f; font-size: 14px; line-height: 1.5; display: block; margin-top: 4px; font-family:var(--font-body);">--</span>
+                <div id="aiQuantityBadge" style="margin-top: 10px; display: inline-block; background: #fee2e2; color: #b91c1c; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 13px; border: 1px solid #f87171; font-family:var(--font-body);">
                     Target Restock: -- Units
                 </div>
             </div>
@@ -171,78 +182,128 @@
   </div>
 
 <script type="module">
-  // 🟢 1. IMPORT FIREBASE SDK
   import { db } from "./bharatpos.js";
   import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   let myChart = null;
   let currentProduct = null;
   
-  // Cloud synced data caches
-  let cloudProducts = [];
-  let cloudSales = [];
+  // Enterprise State
+  window.enterpriseProducts = [];
+  window.enterpriseSales = [];
+  window.currentBranch = 'all';
 
-  // PERMANENT CACHE: Load from LocalStorage on startup
-  let forecastCache = JSON.parse(localStorage.getItem('bharatpos_ai_cache') || '{}'); 
+  // Async Bridge Cache
+  window.forecastCache = {};
 
-  document.addEventListener("DOMContentLoaded", () => {
-    loadCloudData();
-    updateLastTime();
-  });
-
-  // 🟢 2. FETCH REAL-TIME DATA FROM FIREBASE (Singularity Model Compatible)
-  async function loadCloudData() {
-      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-      if(!user.merchantId) {
-          document.getElementById('productChips').innerHTML = `<div style="padding:10px; color:#ef4444;">Please login to sync data.</div>`;
-          return;
-      }
-
-      try {
-          // Fetch Products
-          const prodSnap = await getDocs(collection(db, "shops", user.merchantId, "products"));
-          cloudProducts = prodSnap.docs.map(d => d.data());
-
-          // Fetch Sales for historical analysis
-          const salesSnap = await getDocs(collection(db, "shops", user.merchantId, "sales"));
-          cloudSales = salesSnap.docs.map(d => d.data());
-
-          renderProductChips();
-
-          // AUTO-LOAD first cached item if available
-          const cachedKeys = Object.keys(forecastCache);
-          if(cachedKeys.length > 0) {
-              const firstProdName = cachedKeys[0];
-              const pObj = cloudProducts.find(p => p.name === firstProdName);
-              if(pObj) {
-                  let totalStock = 0;
-                  (pObj.variants||[]).forEach(v => {
-                      const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
-                      totalStock += (Number(v.stock)||0) * bq;
-                  });
-                  window.analyzeProduct(firstProdName, totalStock);
-              }
-          }
-
-      } catch (e) {
-          console.error("Firebase Sync Error", e);
-          document.getElementById('productChips').innerHTML = `<div style="padding:10px; color:#ef4444;">Failed to sync cloud data. Using offline cache if available.</div>`;
-      }
+  window.escapeHtml = function(str) { 
+      return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
   }
 
-  function renderProductChips() {
-    if(cloudProducts.length === 0) {
-      document.getElementById('productChips').innerHTML = `<div style="padding:10px; color: #64748b;">No products found in cloud database. Add items in Products Page first.</div>`;
+  document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Load Permanent Cache
+      window.forecastCache = await window.dbGet('bharatpos_ai_cache', '{}');
+      window.updateLastTime();
+
+      // 2. Load Enterprise Data via Async Bridge
+      let eProds = await window.dbGet('bharatpos_enterprise_products', 'null');
+      if(eProds === null) eProds = await window.dbGet('bharatpos_products', '[]');
+      window.enterpriseProducts = eProds;
+
+      let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
+      if(eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
+      window.enterpriseSales = eSales;
+
+      // 3. Multi-Branch UI
+      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+      if(typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
+          const shops = await window.loadOwnedShops(user.mobile || user.phone);
+          if(shops && shops.length > 1) {
+              const switcher = document.getElementById('shopSwitcher');
+              if(switcher) {
+                  switcher.style.display = 'inline-block';
+                  switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
+                      shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)}</option>`).join('');
+                  
+                  window.currentBranch = user.merchantId;
+                  switcher.value = user.merchantId;
+                  
+                  switcher.addEventListener('change', (e) => {
+                      window.currentBranch = e.target.value;
+                      window.renderProductChips();
+                  });
+              }
+          } else {
+              window.currentBranch = user.merchantId || 'all';
+          }
+      } else {
+          window.currentBranch = user.merchantId || 'all';
+      }
+
+      window.renderProductChips();
+
+      // Background Cloud Sync (Silent)
+      if (user.merchantId && db && navigator.onLine) {
+          try {
+              let shopsToFetch = [{ merchantId: user.merchantId }];
+              if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
+                  const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
+                  if (fetchedShops && fetchedShops.length > 0) shopsToFetch = fetchedShops;
+              }
+
+              let allProds = [];
+              let allSales = [];
+
+              const fetchPromises = shopsToFetch.map(async (shop) => {
+                  if(!shop.merchantId) return;
+                  try {
+                      const pSnap = await getDocs(collection(db, "shops", shop.merchantId, "products"));
+                      pSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allProds.push(data); });
+
+                      const sSnap = await getDocs(collection(db, "shops", shop.merchantId, "sales"));
+                      sSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allSales.push(data); });
+                  } catch(e){}
+              });
+              
+              await Promise.all(fetchPromises);
+              
+              if(allProds.length > 0) {
+                  window.enterpriseProducts = allProds;
+                  await window.dbSave('bharatpos_enterprise_products', allProds);
+              }
+              if(allSales.length > 0) {
+                  window.enterpriseSales = allSales;
+                  await window.dbSave('bharatpos_enterprise_sales', allSales);
+              }
+              
+              window.renderProductChips(false); // Silent re-render
+          } catch(e) {}
+      }
+  });
+
+  window.getFilteredProducts = function() {
+      if(window.currentBranch === 'all') return window.enterpriseProducts;
+      return window.enterpriseProducts.filter(p => p._branchId === window.currentBranch || p.merchantId === window.currentBranch);
+  }
+
+  window.getFilteredSales = function() {
+      if(window.currentBranch === 'all') return window.enterpriseSales;
+      return window.enterpriseSales.filter(s => s._branchId === window.currentBranch || s.merchantId === window.currentBranch);
+  }
+
+  window.renderProductChips = function(autoSelect = true) {
+    const fProds = window.getFilteredProducts();
+    const container = document.getElementById('productChips');
+    
+    if(fProds.length === 0) {
+      container.innerHTML = `<div style="padding:10px; color: #64748b; font-family:var(--font-body);">No products found in this branch. Add items in Inventory first.</div>`;
       return;
     }
 
-    const container = document.getElementById('productChips');
-    // Filter to unique product names to avoid clutter
-    const uniqueNames = [...new Set(cloudProducts.map(p => p.name))];
+    const uniqueNames = [...new Set(fProds.map(p => p.name))];
     
     container.innerHTML = uniqueNames.map(name => {
-        // Calculate total stock across all variants
-        const pObj = cloudProducts.find(p => p.name === name);
+        const pObj = fProds.find(p => p.name === name);
         let totalStock = 0;
         if (pObj && pObj.variants) {
             pObj.variants.forEach(v => {
@@ -250,43 +311,61 @@
                 totalStock += (Number(v.stock)||0) * bq;
             });
         }
-        return `<div class="chip" onclick="window.analyzeProduct('${name.replace(/'/g, "\\'")}', ${totalStock})">${name}</div>`;
+        return `<div class="chip" onclick="window.analyzeProduct('${window.escapeHtml(name).replace(/'/g, "\\'")}', ${totalStock})">${window.escapeHtml(name)}</div>`;
     }).join('');
 
-    if(Object.keys(forecastCache).length === 0) {
-        document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
+    if(autoSelect) {
+        if(Object.keys(window.forecastCache).length === 0) {
+            document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
+        } else {
+            const cachedKeys = Object.keys(window.forecastCache);
+            const availableCached = cachedKeys.find(k => uniqueNames.includes(k));
+            if(availableCached) {
+                const pObj = fProds.find(p => p.name === availableCached);
+                let totalStock = 0;
+                if (pObj && pObj.variants) {
+                    pObj.variants.forEach(v => {
+                        const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
+                        totalStock += (Number(v.stock)||0) * bq;
+                    });
+                }
+                window.analyzeProduct(availableCached, totalStock);
+            }
+        }
     }
   }
 
-  function saveToMemory() {
-      localStorage.setItem('bharatpos_ai_cache', JSON.stringify(forecastCache));
+  window.saveToMemory = async function() {
+      await window.dbSave('bharatpos_ai_cache', window.forecastCache);
       const now = new Date().toLocaleString('en-IN');
       localStorage.setItem('bharatpos_ai_time', now);
       document.getElementById('lastUpdated').innerText = "Updated: " + now;
   }
 
-  function updateLastTime() {
+  window.updateLastTime = function() {
       const time = localStorage.getItem('bharatpos_ai_time');
       if(time) document.getElementById('lastUpdated').innerText = "Updated: " + time;
   }
 
-  window.clearAICache = function() {
+  window.clearAICache = async function() {
       if(!confirm("Clear all AI predictions?")) return;
-      localStorage.removeItem('bharatpos_ai_cache');
+      window.forecastCache = {};
+      await window.dbSave('bharatpos_ai_cache', window.forecastCache);
       localStorage.removeItem('bharatpos_ai_time');
       location.reload();
   }
 
   // --- BULK ACTION ---
   window.generateBulkForecasts = async function() {
-    const uniqueNames = [...new Set(cloudProducts.map(p => p.name))];
-    if(uniqueNames.length === 0) return alert("No products synced from cloud to analyze!");
+    const fProds = window.getFilteredProducts();
+    const uniqueNames = [...new Set(fProds.map(p => p.name))];
+    if(uniqueNames.length === 0) return alert("No products to analyze!");
 
     document.getElementById('loadingOverlay').style.display = 'flex';
     document.getElementById('loadingText').innerText = `⚡ AI is processing ${uniqueNames.length} products...`;
 
     const bulkPayload = uniqueNames.map(name => {
-      const pObj = cloudProducts.find(p => p.name === name);
+      const pObj = fProds.find(p => p.name === name);
       let totalStock = 0;
       if (pObj && pObj.variants) {
           pObj.variants.forEach(v => {
@@ -297,12 +376,11 @@
       return {
         productName: name,
         currentStock: totalStock,
-        history: calculateSalesHistory(name)
+        history: window.calculateSalesHistory(name)
       };
     });
 
     try {
-      // Calls your Render AI Microservice
       const url = window.buildUrl ? window.buildUrl('/api/predict-demand-bulk') : 'https://server-xy7s.onrender.com/api/predict-demand-bulk';
       const res = await fetch(url, {
         method: 'POST',
@@ -314,14 +392,14 @@
 
       if(data.success && data.predictions) {
         data.predictions.forEach(prediction => {
-            forecastCache[prediction.productName] = prediction;
+            window.forecastCache[prediction.productName] = prediction;
         });
         
-        saveToMemory();
+        await window.saveToMemory();
         alert("✅ Analysis Complete & Saved!");
         
-        if(currentProduct) {
-             const pObj = cloudProducts.find(p => p.name === currentProduct);
+        if(currentProduct && uniqueNames.includes(currentProduct)) {
+             const pObj = fProds.find(p => p.name === currentProduct);
              let totalStock = 0;
              if (pObj && pObj.variants) {
                  pObj.variants.forEach(v => {
@@ -331,7 +409,7 @@
              }
              window.analyzeProduct(currentProduct, totalStock);
         } else if(uniqueNames.length > 0) {
-             const pObj = cloudProducts.find(p => p.name === uniqueNames[0]);
+             const pObj = fProds.find(p => p.name === uniqueNames[0]);
              let totalStock = 0;
              if (pObj && pObj.variants) {
                  pObj.variants.forEach(v => {
@@ -365,17 +443,15 @@
     document.getElementById('aiMsgBox').style.display = 'none';
     document.getElementById('restockBtn').style.display = 'none';
 
-    const history = calculateSalesHistory(name);
+    const history = window.calculateSalesHistory(name);
 
-    // 1. CHECK PERMANENT CACHE FIRST
-    if (forecastCache[name]) {
-        const cachedPred = forecastCache[name];
-        renderChart(history, cachedPred.predicted_sales);
-        updateInsights(cachedPred, currentStock);
+    if (window.forecastCache[name]) {
+        const cachedPred = window.forecastCache[name];
+        window.renderChart(history, cachedPred.predicted_sales);
+        window.updateInsights(cachedPred, currentStock);
         return; 
     }
 
-    // 2. FETCH NEW IF NOT IN CACHE
     document.getElementById('loadingText').innerText = `✨ Analyzing ${name}...`;
     document.getElementById('loadingOverlay').style.display = 'flex';
     
@@ -384,7 +460,6 @@
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Emulate bulk payload format for backend compatibility
         body: JSON.stringify({ products: [{ productName: name, history: history, currentStock: currentStock }] })
       });
 
@@ -392,11 +467,11 @@
       
       if(data.success && data.predictions && data.predictions.length > 0) {
         const pred = data.predictions[0];
-        forecastCache[name] = pred;
-        saveToMemory(); 
+        window.forecastCache[name] = pred;
+        await window.saveToMemory(); 
         
-        renderChart(history, pred.predicted_sales);
-        updateInsights(pred, currentStock);
+        window.renderChart(history, pred.predicted_sales);
+        window.updateInsights(pred, currentStock);
       }
 
     } catch (e) {
@@ -406,13 +481,13 @@
     }
   }
 
-  // --- SALES HISTORY CALCULATION (From Cloud Sales - Singularity Model Compatible) ---
-  function calculateSalesHistory(productName) {
+  window.calculateSalesHistory = function(productName) {
     const dailyCounts = Array(14).fill(0); 
     const today = new Date();
     today.setHours(0,0,0,0);
+    const fSales = window.getFilteredSales();
 
-    cloudSales.forEach(bill => {
+    fSales.forEach(bill => {
       if(!bill.items) return;
       const billDate = new Date(bill.date);
       billDate.setHours(0,0,0,0);
@@ -420,7 +495,6 @@
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
       if(diffDays < 14) {
-        // Find if this product was sold in this bill
         const items = bill.items.filter(i => i.name === productName || (i.name && i.name.includes(productName)));
         items.forEach(item => {
             const index = 13 - diffDays; 
@@ -434,7 +508,7 @@
   }
 
   // --- RENDER FUNCTIONS ---
-  function renderChart(pastData, futureData) {
+  window.renderChart = function(pastData, futureData) {
     const ctx = document.getElementById('demandChart').getContext('2d');
     if(myChart) myChart.destroy();
 
@@ -446,7 +520,7 @@
 
     const pastDataset = [...pastData, ...Array(7).fill(null)];
     const futureDataset = [...Array(14).fill(null), ...futureData];
-    futureDataset[13] = pastData[13]; // Connect lines at "today"
+    futureDataset[13] = pastData[13]; 
 
     myChart = new Chart(ctx, {
       type: 'line',
@@ -486,7 +560,7 @@
     });
   }
 
-  function updateInsights(pred, stock) {
+  window.updateInsights = function(pred, stock) {
     const totalPredicted = pred.predicted_sales.reduce((a,b)=>a+b, 0);
     document.getElementById('valPred').innerText = Math.round(totalPredicted);
     
@@ -503,15 +577,11 @@
     
     if(pred.restock_recommendation === "Yes" || (totalPredicted > stock)) {
       btn.style.display = 'flex';
-      const needed = Math.max(1, Math.round(totalPredicted - stock)); // Suggest at least 1 if recommended
+      const needed = Math.max(1, Math.round(totalPredicted - stock));
       
       document.getElementById('aiQuantityBadge').innerText = `Target Restock: ${needed} Units Minimum`;
       document.getElementById('aiQuantityBadge').style.display = 'inline-block';
       
-      // 🟢 SYNCHRONIZED FIX: 
-      // The AI calculated 'needed' amount refers to the base quantity if it's loose, 
-      // or pcs if it's normal. 
-      // We pass this directly to products.html, which will apply it to the first variant.
       btn.innerHTML = `<i class="fa-solid fa-box-open"></i> AUTO-FILL INVENTORY (+${needed})`;
       btn.onclick = () => {
           localStorage.setItem("temp_add_stock", needed);
