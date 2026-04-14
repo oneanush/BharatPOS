@@ -1593,4 +1593,164 @@ window.generateInvoice = function(sale) {
                 Split: Cash: ₹${sale.split.cash} | Online: ₹${sale.split.online} | Udhaar: ₹${sale.split.udhaar}
             </div>` : ''}
         </div>
-        <div style="text-align:center; margin-top:20px; font-size:10px
+        <div style="text-align:center; margin-top:20px; font-size:10px;">Thank you for visiting!</div>
+    `;
+
+    const invPaper = document.getElementById('invoicePaper');
+    if(invPaper) invPaper.innerHTML = html;
+    document.getElementById('invoiceModal').style.display = 'flex';
+}
+
+// ─── HELD CARTS & ONLINE ORDERS ───────────────────────────────────────────────
+window.holdCurrentCart = async function() {
+    if(cart.length === 0) return window.showToast("Cart empty");
+    heldCarts.push({
+        id: `hold_${Date.now()}`,
+        time: new Date().toLocaleTimeString(),
+        cust: currentCustomer,
+        items: [...cart],
+        discount: parseFloat(document.getElementById('cartDiscountInput').value) || 0
+    });
+    
+    await window.dbSave('bharatpos_held_carts', heldCarts);
+    
+    cart = []; currentCustomer = {name:'', phone:''}; 
+    const cn = document.getElementById('custNameInput'); if(cn) cn.value = ''; 
+    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = '';
+    const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = '';
+    renderCart();
+    window.showToast("Cart held securely.");
+}
+
+window.showHeldCarts = function() {
+    const list = document.getElementById('heldCartsList');
+    if(!list) return;
+    if(heldCarts.length === 0) {
+        list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No held carts.</div>";
+    } else {
+        list.innerHTML = heldCarts.map((h, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--border); border-radius:10px;">
+                <div>
+                    <div style="font-weight:700; font-size:13px;">${escapeHtml(h.cust.name || 'Walk-in')}</div>
+                    <div style="font-size:11px; color:var(--text-muted);">${h.items.length} items • ${h.time}</div>
+                </div>
+                <button class="btn btn-outline" style="padding:6px 12px; font-size:11px;" data-hidx="${i}">Restore</button>
+            </div>
+        `).join('');
+    }
+    document.getElementById('heldCartsModal').style.display = 'flex';
+}
+
+window.restoreHeldCart = async function(idx) {
+    const h = heldCarts[idx];
+    cart = [...h.items];
+    currentCustomer = {...h.cust};
+    const cn = document.getElementById('custNameInput'); if(cn) cn.value = currentCustomer.name;
+    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = currentCustomer.phone;
+    const cd = document.getElementById('cartDiscountInput'); if(cd) cd.value = h.discount || '';
+    
+    heldCarts.splice(idx, 1);
+    await window.dbSave('bharatpos_held_carts', heldCarts);
+    document.getElementById('heldCartsModal').style.display = 'none';
+    renderCart();
+}
+
+window.showOnlineOrders = function() {
+    const list = document.getElementById('onlineOrdersList');
+    if(!list) return;
+    if(onlineOrders.length === 0) {
+        list.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No active online orders.</div>";
+    } else {
+        list.innerHTML = onlineOrders.map(o => `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:15px; background:#F8FAFC;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="font-weight:700; font-size:14px;"><i class="fa-solid fa-mobile-screen"></i> ${escapeHtml(o.customerName)}</span>
+                    <span style="font-weight:800; color:var(--success);">₹${o.totalAmount}</span>
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">
+                    ${(o.items||[]).map(i => `${i.qty}x ${escapeHtml(i.name)}`).join(', ')}
+                </div>
+                <button class="btn btn-primary" style="width:100%; font-size:12px; padding:10px;" data-oid="${o.orderId}">Load into Cart</button>
+            </div>
+        `).join('');
+    }
+    document.getElementById('onlineOrdersModal').style.display = 'flex';
+}
+
+window.loadOnlineOrderToCart = async function(orderId) {
+    const order = onlineOrders.find(o => o.orderId === orderId);
+    if(!order) return;
+
+    if(cart.length > 0) await window.holdCurrentCart();
+    
+    cart = order.items.map(i => {
+        const p = allProducts.find(prod => prod.id === i.prodId);
+        const uPrice = p ? (p.priceType === 'inclusive' ? i.price : i.price) : i.price; 
+        return {
+            id: i.variantId || 'unknown', prodId: i.prodId, name: i.name, variant: i.variant || '1 pcs', brand: '',
+            qty: i.qty, unitPrice: uPrice, unitLabel: 'unit', total: i.qty * uPrice, 
+            hsn: p?.hsn||'', gstRate: p?.gstRate||0, priceType: p?.priceType||'inclusive'
+        };
+    });
+    
+    currentCustomer = { name: order.customerName, phone: order.customerMobile || '' };
+    const cn = document.getElementById('custNameInput'); if(cn) cn.value = order.customerName;
+    const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = order.customerMobile || '';
+    
+    document.getElementById('onlineOrdersModal').style.display = 'none';
+    renderCart();
+    
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if(user.merchantId && window.db) {
+        await deleteDoc(doc(db, "shops", user.merchantId, "onlineOrders", orderId));
+    }
+}
+
+// ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
+window.startBarcodeScan = function() {
+    document.getElementById('barcodeScannerModal').style.display = 'flex';
+    
+    Quagga.init({
+        inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
+        decoder: { readers: ["ean_reader", "upc_reader", "code_128_reader"] }
+    }, function(err) {
+        if (err) { console.log(err); window.showToast("Scanner failed to start", true); return; }
+        Quagga.start();
+    });
+
+    Quagga.onDetected(function(result) {
+        if(result.codeResult.code) {
+            const code = result.codeResult.code;
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(e=>{});
+            window.stopBarcodeScan();
+            
+            let foundProd = null, foundVar = null;
+            allProducts.forEach(p => {
+                const v = p.variants.find(vx => vx.barcode === code);
+                if(v) { foundProd = p; foundVar = v; }
+            });
+
+            if(foundProd && foundVar) {
+                window.openAddToCartWizard(foundProd.id);
+                const varIdx = foundProd.variants.findIndex(v => v.id === foundVar.id);
+                if(varIdx > -1) {
+                    configState.selectedVarIdx = varIdx;
+                    window.wizardSelectVariant(foundVar.id);
+                }
+            } else {
+                window.showToast("Product not found in inventory", true);
+            }
+        }
+    });
+}
+
+window.stopBarcodeScan = function() {
+    Quagga.stop();
+    document.getElementById('barcodeScannerModal').style.display = 'none';
+}
+
+initBilling(); // Start the app
+</script>
+</body>
+</html>
