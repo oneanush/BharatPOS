@@ -152,7 +152,8 @@
     @media(max-width: 900px) { .mobile-cart-fab { display: flex; } }
 
     /* --- MODALS --- */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s; }
+    .modal-overlay.show { opacity: 1; }
     @media(min-width: 768px) { .modal-overlay { align-items: center; } }
     .modal-box { background: #FFFFFF; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; overflow: hidden; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     @media(min-width: 768px) { .modal-box { border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); } }
@@ -202,9 +203,10 @@
     }
 
     /* SCANNERS */
-    #barcodeScannerModal { z-index: 10000; }
+    #barcodeScannerModal { z-index: 11000; background:rgba(0,0,0,0.9); }
     #quaggaPreview { width: 100%; height: 250px; background: #000; border-radius: 12px; overflow: hidden; position: relative; }
     .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 12px #10B981; animation: laser 2s infinite; }
+    @keyframes laser { 0% { top:0; opacity:0; } 10% { opacity:1; } 90% { opacity:1; } 100% { top:100%; opacity:0; } }
 
     /* Product Info Specifics */
     .info-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
@@ -219,6 +221,8 @@
     import './bharatpos.js';
     window.injectLayout('billing'); // Dynamically injects secure, centralized Navigation
 </script>
+
+<datalist id="custSearchList"></datalist>
 
 <div class="pos-container">
     
@@ -479,7 +483,6 @@
 </div>
 <style>@keyframes laser { 0% { top:0; opacity:0; } 10% { opacity:1; } 90% { opacity:1; } 100% { top:100%; opacity:0; } }</style>
 
-
 <script type="module">
 import { db } from "./bharatpos.js";
 import { doc, collection, runTransaction, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -678,6 +681,7 @@ function bindAllEvents() {
             }).slice(0, 5);
 
             if(matches.length > 0) {
+                // XSS Defense applied
                 drop.innerHTML = matches.map(c => {
                     const phoneVal = c.phone || c.mobile || '';
                     return `<div class="cust-option" data-name="${escapeHtml(c.name)}" data-phone="${escapeHtml(phoneVal)}"><span>${escapeHtml(c.name)}</span><span style="color:var(--text-muted);">${escapeHtml(phoneVal)}</span></div>`;
@@ -709,7 +713,7 @@ function bindAllEvents() {
     }
 
     // Wizard Flow Events
-    document.getElementById('btnCloseConf')?.addEventListener('click', () => { document.getElementById('addToCartModal').style.display='none'; });
+    document.getElementById('btnCloseConf')?.addEventListener('click', () => { window.hideModal('addToCartModal'); });
     document.getElementById('btnConfBack')?.addEventListener('click', window.wizardBack);
     document.getElementById('confVariantGrid')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-step');
@@ -807,7 +811,7 @@ function bindAllEvents() {
     });
     
     // Partial Math
-    document.getElementById('btnClosePartial')?.addEventListener('click', () => document.getElementById('partialPayModal').style.display='none');
+    document.getElementById('btnClosePartial')?.addEventListener('click', () => window.hideModal('partialPayModal'));
     const pcCash = document.getElementById('payCash'), pcOnline = document.getElementById('payOnline'), pcUdhaar = document.getElementById('payUdhaar');
     
     const recalcPartial = (source) => {
@@ -853,21 +857,21 @@ function bindAllEvents() {
         if(u > 0 && !currentCustomer.name) return window.showToast("Customer required for Partial Udhaar", true);
 
         partialSplitData = { cash: c, online: o, udhaar: u, total: grand };
-        document.getElementById('partialPayModal').style.display = 'none';
+        window.hideModal('partialPayModal');
         window.showToast("Mix Payment Saved");
     });
 
     // Held Carts
     document.getElementById('btnHoldCart')?.addEventListener('click', window.holdCurrentCart);
     document.getElementById('btnViewHeld')?.addEventListener('click', window.showHeldCarts);
-    document.getElementById('btnCloseHeld')?.addEventListener('click', () => document.getElementById('heldCartsModal').style.display='none');
+    document.getElementById('btnCloseHeld')?.addEventListener('click', () => window.hideModal('heldCartsModal'));
     document.getElementById('heldCartsList')?.addEventListener('click', (e) => {
         const idx = e.target.closest('[data-hidx]')?.getAttribute('data-hidx');
         if(idx !== undefined && e.target.tagName === 'BUTTON') window.restoreHeldCart(idx);
     });
 
     // Online Orders
-    document.getElementById('btnCloseOnline')?.addEventListener('click', () => document.getElementById('onlineOrdersModal').style.display='none');
+    document.getElementById('btnCloseOnline')?.addEventListener('click', () => window.hideModal('onlineOrdersModal'));
     document.getElementById('onlineOrdersList')?.addEventListener('click', (e) => {
         const id = e.target.closest('[data-oid]')?.getAttribute('data-oid');
         if(id && e.target.tagName === 'BUTTON') window.loadOnlineOrderToCart(id);
@@ -875,7 +879,7 @@ function bindAllEvents() {
 
     // Invoice
     document.getElementById('btnCloseInvoice')?.addEventListener('click', () => {
-        document.getElementById('invoiceModal').style.display='none';
+        window.hideModal('invoiceModal');
         cart = []; currentCustomer = {name:'', phone:''}; 
         const cn = document.getElementById('custNameInput'); if(cn) cn.value = ''; 
         const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = '';
@@ -905,7 +909,7 @@ function bindAllEvents() {
     });
 
     // Product Info Modal
-    document.getElementById('btnCloseInfo')?.addEventListener('click', () => document.getElementById('productInfoModal').style.display='none');
+    document.getElementById('btnCloseInfo')?.addEventListener('click', () => window.hideModal('productInfoModal'));
 
     // Scanner
     document.getElementById('btnOpenBarcode')?.addEventListener('click', window.startBarcodeScan);
@@ -914,7 +918,7 @@ function bindAllEvents() {
     // Modals Background Clicks
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay && e.target.id !== 'barcodeScannerModal' && e.target.id !== 'invoiceModal') overlay.style.display = 'none';
+            if (e.target === overlay && e.target.id !== 'barcodeScannerModal' && e.target.id !== 'invoiceModal') window.hideModal(overlay.id);
         });
     });
 }
@@ -998,7 +1002,6 @@ function renderProductGrid() {
 
     grid.innerHTML = filtered.map(p => {
         const vCount = (p.variants||[]).length;
-        const vBase = p.variants?.[0] || {price: 0, stock: 0};
         const displayStock = getProductTotalStockInfo(p);
         
         let badges = '';
@@ -1128,7 +1131,7 @@ window.openProductInfo = function(prodId) {
 
     const infoVarList = document.getElementById('infoVariantsList');
     if(infoVarList) {
-        infoVarList.innerHTML = prod.variants.map(v => {
+        infoVarList.innerHTML = (prod.variants||[]).map(v => {
             const uPrice = getUnitPrice(prod, v);
             const uLabel = getUnitLabel(prod, v);
             const sInfo = getVariantStockInfo(prod, v);
@@ -1155,7 +1158,7 @@ window.openProductInfo = function(prodId) {
         }).join('');
     }
 
-    document.getElementById('productInfoModal').style.display = 'flex';
+    window.showModal('productInfoModal');
 }
 
 // ─── HIGH-SPEED WIZARD & MATH ─────────────────────────────────────────────────
@@ -1172,7 +1175,7 @@ window.openAddToCartWizard = function(prodId) {
         configState.selectedVariant = prod.variants[0];
         window.checkBrandStep();
     }
-    document.getElementById('addToCartModal').style.display = 'flex';
+    window.showModal('addToCartModal');
 }
 
 window.wizardRenderVariants = function() {
@@ -1377,7 +1380,7 @@ window.confirmAddToCart = async function() {
         });
     }
 
-    document.getElementById('addToCartModal').style.display = 'none';
+    window.hideModal('addToCartModal');
     renderCart();
     
     if(window.innerWidth <= 900) {
@@ -1396,7 +1399,7 @@ window.openPartialPayment = function() {
     const pCash = document.getElementById('payCash'); if(pCash) pCash.value = grand.toFixed(2);
     const pOnl = document.getElementById('payOnline'); if(pOnl) pOnl.value = '';
     const pUdh = document.getElementById('payUdhaar'); if(pUdh) pUdh.value = '';
-    document.getElementById('partialPayModal').style.display = 'flex';
+    window.showModal('partialPayModal');
 }
 
 window.processCheckout = async function(method, split = null) {
@@ -1509,7 +1512,7 @@ window.processCheckout = async function(method, split = null) {
         sales.push(saleDoc);
         await window.dbSave('bharatpos_sales', sales);
 
-        document.getElementById('partialPayModal').style.display = 'none';
+        window.hideModal('partialPayModal');
         window.generateInvoice(saleDoc); 
         renderProductGrid();
 
@@ -1598,7 +1601,7 @@ window.generateInvoice = function(sale) {
 
     const invPaper = document.getElementById('invoicePaper');
     if(invPaper) invPaper.innerHTML = html;
-    document.getElementById('invoiceModal').style.display = 'flex';
+    window.showModal('invoiceModal');
 }
 
 // ─── HELD CARTS & ONLINE ORDERS ───────────────────────────────────────────────
@@ -1638,7 +1641,7 @@ window.showHeldCarts = function() {
             </div>
         `).join('');
     }
-    document.getElementById('heldCartsModal').style.display = 'flex';
+    window.showModal('heldCartsModal');
 }
 
 window.restoreHeldCart = async function(idx) {
@@ -1651,7 +1654,7 @@ window.restoreHeldCart = async function(idx) {
     
     heldCarts.splice(idx, 1);
     await window.dbSave('bharatpos_held_carts', heldCarts);
-    document.getElementById('heldCartsModal').style.display = 'none';
+    window.hideModal('heldCartsModal');
     renderCart();
 }
 
@@ -1674,7 +1677,7 @@ window.showOnlineOrders = function() {
             </div>
         `).join('');
     }
-    document.getElementById('onlineOrdersModal').style.display = 'flex';
+    window.showModal('onlineOrdersModal');
 }
 
 window.loadOnlineOrderToCart = async function(orderId) {
@@ -1697,7 +1700,7 @@ window.loadOnlineOrderToCart = async function(orderId) {
     const cn = document.getElementById('custNameInput'); if(cn) cn.value = order.customerName;
     const cp = document.getElementById('custPhoneInput'); if(cp) cp.value = order.customerMobile || '';
     
-    document.getElementById('onlineOrdersModal').style.display = 'none';
+    window.hideModal('onlineOrdersModal');
     renderCart();
     
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
@@ -1708,7 +1711,7 @@ window.loadOnlineOrderToCart = async function(orderId) {
 
 // ─── QUAGGA BARCODE ENGINE ───────────────────────────────────────────────────
 window.startBarcodeScan = function() {
-    document.getElementById('barcodeScannerModal').style.display = 'flex';
+    window.showModal('barcodeScannerModal');
     
     Quagga.init({
         inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#quaggaPreview'), constraints: { facingMode: "environment", advanced: [{ focusMode: "continuous" }] } },
@@ -1747,10 +1750,11 @@ window.startBarcodeScan = function() {
 
 window.stopBarcodeScan = function() {
     Quagga.stop();
-    document.getElementById('barcodeScannerModal').style.display = 'none';
+    window.hideModal('barcodeScannerModal');
 }
 
-initBilling(); // Start the app
+// Ensure init is called
+initBilling();
 </script>
 </body>
 </html>
