@@ -20,11 +20,15 @@
     /* --- HEADER --- */
     .header { background: var(--primary-gradient); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 24px 24px; box-shadow: 0 10px 25px rgba(25, 118, 210, 0.2); position: sticky; top: 0; z-index: 100; }
     .header h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-family: var(--font-head); }
-    .header-actions { display: flex; gap: 10px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    
+    .shop-switcher { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; outline: none; cursor: pointer; max-width: 160px; transition: 0.2s; font-family: var(--font-body); text-overflow: ellipsis; white-space: nowrap; backdrop-filter: blur(4px);}
+    .shop-switcher option { color: var(--slate-900); background: white; }
+    
     .nav-btn { background: rgba(255,255,255,0.15); color: white; text-decoration: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 6px; cursor: pointer; font-family: var(--font-body); }
     .nav-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
     
-    .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; font-family: var(--font-body); }
     
     /* --- PODIUM --- */
     .podium-box { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin-bottom: 40px; margin-top: 10px; min-height: 200px;}
@@ -49,7 +53,7 @@
     .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 15px; flex-wrap: wrap; }
     .search-wrapper { position: relative; flex: 1; min-width: 250px; }
     .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-    .search-inp { padding: 14px 14px 14px 42px; border: 1.5px solid var(--border); border-radius: 30px; width: 100%; box-shadow: var(--shadow-card); outline: none; transition: 0.2s; font-size: 14px; font-family: var(--font-body); background: #f9f9f9; color: var(--text-main);}
+    .search-inp { padding: 14px 14px 14px 42px; border: 1.5px solid var(--border); border-radius: 30px; width: 100%; box-shadow: var(--shadow-card); outline: none; transition: 0.2s; font-size: 14px; font-family: var(--font-body); background: #f9f9f9; color: var(--text-main); box-sizing: border-box;}
     .search-inp:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-glow); }
     .magic-btn { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; border: none; padding: 14px 24px; border-radius: 30px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); transition: 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;}
     .magic-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); }
@@ -97,7 +101,7 @@
 
     /* MOBILE RESPONSIVE */
     @media(max-width: 600px) {
-        .header { padding: 16px 20px; }
+        .header { padding: 16px 20px; flex-wrap: wrap; gap: 10px;}
         .input-wrapper { flex-direction: column; }
         .action-bar { flex-direction: column; align-items: stretch; }
         .magic-btn { justify-content: center; }
@@ -117,6 +121,8 @@
 <div class="header">
     <h1><i class="fa-solid fa-gem"></i> Bharat CRM</h1>
     <div class="header-actions">
+        <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
+        
         <button class="nav-btn" onclick="window.syncCloudData()" id="syncBtn">
             <i class="fa-solid fa-rotate"></i> Sync
         </button>
@@ -185,11 +191,11 @@
     import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // --- UX UTILS ---
-    const formatMoney = (n) => '₹' + Number(n).toLocaleString('en-IN');
-    const safeParse = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } };
-
+    window.formatMoney = (n) => '₹' + Number(n).toLocaleString('en-IN');
+    
     window.showToast = function(msg, type='info') {
         const container = document.getElementById('toastArea');
+        if(!container) return;
         const el = document.createElement('div');
         el.className = 'toast';
         const icon = type === 'success' ? '<i class="fa-solid fa-check-circle" style="color:var(--success)"></i>' : '<i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary)"></i>';
@@ -201,23 +207,61 @@
             setTimeout(() => el.remove(), 300);
         }, 4000);
     }
+    
+    window.escapeHtml = function(str) { 
+        return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
+    }
 
     // --- STATE ---
-    let customersList = [];
-    let rawSales = [];
+    window.customersList = [];
+    window.enterpriseSales = [];
+    window.currentBranch = 'all';
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadOfferSetting();
-        // Instantly load local cache
-        rawSales = safeParse('bharatpos_sales');
-        analyzeData(rawSales);
+    document.addEventListener("DOMContentLoaded", async () => {
+        window.loadOfferSetting();
         
-        // Silently sync cloud data to ensure accuracy
-        setTimeout(() => { window.syncCloudData(true); }, 500);
+        // Multi-Branch Setup
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
+
+        if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
+            const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
+            if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
+        }
+
+        const switcher = document.getElementById('shopSwitcher');
+        if (shops.length > 1 && switcher) {
+            switcher.style.display = 'inline-block';
+            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
+                shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)}</option>`).join('');
+            
+            window.currentBranch = user.merchantId;
+            switcher.value = user.merchantId;
+            
+            switcher.addEventListener('change', (e) => {
+                window.currentBranch = e.target.value;
+                window.analyzeData();
+            });
+        } else if (switcher) {
+            window.currentBranch = user.merchantId || 'all';
+        }
+
+        // Instantly load local cache via Async Bridge
+        let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
+        if(eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
+        window.enterpriseSales = eSales;
+        
+        window.analyzeData();
+        
+        // Silently sync cloud data
+        if (user.merchantId && db && navigator.onLine) {
+            setTimeout(() => { window.syncCloudData(true, shops); }, 500);
+        }
     });
 
     window.loadOfferSetting = function() {
-        document.getElementById('offerInput').value = localStorage.getItem('bharatpos_offer_text') || "📢 Top 3 Champions get a Special Gift!";
+        const inp = document.getElementById('offerInput');
+        if(inp) inp.value = localStorage.getItem('bharatpos_offer_text') || "📢 Top 3 Champions get a Special Gift!";
     }
     
     window.saveOffer = function() {
@@ -227,8 +271,8 @@
         window.showToast("Offer text updated successfully!", "success");
     }
 
-    // 🟢 FIREBASE SYNC LOGIC
-    window.syncCloudData = async function(isSilent = false) {
+    // 🟢 FIREBASE SYNC LOGIC (Multi-Branch)
+    window.syncCloudData = async function(isSilent = false, shopsArray = null) {
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         const btn = document.getElementById('syncBtn');
         
@@ -240,17 +284,33 @@
         if(btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing`;
 
         try {
-            const salesRef = collection(db, "shops", user.merchantId, "sales");
-            const snap = await getDocs(salesRef);
-            
-            const fetchedSales = snap.docs.map(d => d.data());
-            
-            if(fetchedSales.length > 0) {
-                rawSales = fetchedSales;
-                localStorage.setItem('bharatpos_sales', JSON.stringify(rawSales));
-                analyzeData(rawSales);
-                if(!isSilent) window.showToast("CRM Cloud Sync Complete!", "success");
+            let shops = shopsArray;
+            if(!shops) {
+                shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
+                if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
+                    const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
+                    if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
+                }
             }
+
+            let allSales = [];
+            const fetchPromises = shops.map(async (shop) => {
+                if(!shop.merchantId) return;
+                try {
+                    const salesSnap = await getDocs(collection(db, "shops", shop.merchantId, "sales"));
+                    salesSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allSales.push(data); });
+                } catch(e) {}
+            });
+            
+            await Promise.all(fetchPromises);
+            
+            allSales.sort((a,b) => new Date(b.date) - new Date(a.date));
+            window.enterpriseSales = allSales;
+            await window.dbSave('bharatpos_enterprise_sales', window.enterpriseSales);
+            
+            window.analyzeData();
+            if(!isSilent) window.showToast("CRM Cloud Sync Complete!", "success");
+            
         } catch(e) {
             console.error("Firebase sync failed", e);
             if(!isSilent) window.showToast("Cloud sync failed. Using local data.", "info");
@@ -260,10 +320,12 @@
     }
 
     // --- CRM INTELLIGENCE ENGINE ---
-    function analyzeData(salesArray) {
+    window.analyzeData = function() {
         const custMap = {};
+        
+        const fSales = window.currentBranch === 'all' ? window.enterpriseSales : window.enterpriseSales.filter(s => s._branchId === window.currentBranch || s.merchantId === window.currentBranch);
 
-        salesArray.forEach(s => {
+        fSales.forEach(s => {
             let name = (s.customerName || s.customer || "Walk-in").trim();
             let phone = (s.phone || "").trim();
             
@@ -295,10 +357,10 @@
             }
         });
 
-        customersList = Object.values(custMap).map(c => {
+        window.customersList = Object.values(custMap).map(c => {
             const days = Math.floor((new Date() - new Date(c.lastVisit)) / 86400000);
             let tier = 'Bronze', status = 'Active';
-            let tierColor = '#94a3b8'; // default bronze/gray
+            let tierColor = '#94a3b8'; 
             
             if(c.totalSpent >= 5000) { tier = 'Platinum 💎'; tierColor = '#0ea5e9'; }
             else if(c.totalSpent >= 2000) { tier = 'Gold 🏆'; tierColor = '#f59e0b'; }
@@ -312,16 +374,17 @@
             return { ...c, tier, tierColor, status, days };
         });
 
-        customersList.sort((a,b) => b.totalSpent - a.totalSpent);
+        window.customersList.sort((a,b) => b.totalSpent - a.totalSpent);
         
-        renderPodium();
+        window.renderPodium();
         window.renderCustomers();
     }
 
     window.renderCustomers = function(query = '') {
         const grid = document.getElementById('customerGrid');
+        if(!grid) return;
         
-        const displayList = customersList.map((c, index) => ({...c, originalIndex: index}))
+        const displayList = window.customersList.map((c, index) => ({...c, originalIndex: index}))
             .filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query));
 
         if(displayList.length === 0) { 
@@ -336,54 +399,56 @@
             return `
             <div class="cust-card" onclick="window.openProfile(${c.originalIndex})"> 
                 <div class="c-info">
-                    <h3>${c.name}</h3>
-                    ${c.phone ? `<div class="phone"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${c.phone}</div>` : ''}
+                    <h3>${window.escapeHtml(c.name)}</h3>
+                    ${c.phone ? `<div class="phone"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${window.escapeHtml(c.phone)}</div>` : ''}
                     <div class="tags">
                         <span class="tag" style="background:rgba(0,0,0,0.05); color:${c.tierColor}">${c.tier}</span>
                         <span class="tag" style="background:${statusColor}; color:${statusTextColor}">${c.status}</span>
                     </div>
                 </div>
                 <div style="text-align: right;">
-                    <div class="c-total">${formatMoney(c.totalSpent)}</div>
+                    <div class="c-total">${window.formatMoney(c.totalSpent)}</div>
                     <div class="c-visits">${c.visits} Visit${c.visits>1?'s':''}</div>
                 </div>
             </div>
         `}).join('');
     }
 
-    function renderPodium() {
+    window.renderPodium = function() {
         const podium = document.getElementById('podiumArea');
-        if(customersList.length === 0) { podium.style.display = 'none'; return; }
+        if(!podium) return;
+        
+        if(window.customersList.length === 0) { podium.style.display = 'none'; return; }
         
         podium.style.display = 'flex';
 
         // Safe array extraction to prevent crashes if < 3 customers exist
         let top = [];
-        if(customersList.length >= 3) { top = [customersList[1], customersList[0], customersList[2]]; }
-        else if (customersList.length === 2) { top = [customersList[1], customersList[0]]; }
-        else { top = [customersList[0]]; }
+        if(window.customersList.length >= 3) { top = [window.customersList[1], window.customersList[0], window.customersList[2]]; }
+        else if (window.customersList.length === 2) { top = [window.customersList[1], window.customersList[0]]; }
+        else { top = [window.customersList[0]]; }
 
-        const styles = customersList.length >= 3 ? ['rank-2', 'rank-1', 'rank-3'] : (customersList.length === 2 ? ['rank-2', 'rank-1'] : ['rank-1']);
-        const emojis = customersList.length >= 3 ? ['🥈', '👑', '🥉'] : (customersList.length === 2 ? ['🥈', '👑'] : ['👑']);
+        const styles = window.customersList.length >= 3 ? ['rank-2', 'rank-1', 'rank-3'] : (window.customersList.length === 2 ? ['rank-2', 'rank-1'] : ['rank-1']);
+        const emojis = window.customersList.length >= 3 ? ['🥈', '👑', '🥉'] : (window.customersList.length === 2 ? ['🥈', '👑'] : ['👑']);
 
         podium.innerHTML = top.map((c,i) => `
-            <div class="podium-card ${styles[i]}" onclick="window.openProfile(${c.name === customersList[0].name ? 0 : (c.name === customersList[1]?.name ? 1 : 2)})" style="cursor:pointer;">
+            <div class="podium-card ${styles[i]}" onclick="window.openProfile(${c.name === window.customersList[0].name ? 0 : (c.name === window.customersList[1]?.name ? 1 : 2)})" style="cursor:pointer;">
                 <div class="crown">${emojis[i]}</div>
-                <span class="p-name">${c.name}</span>
-                <span class="p-amt">${formatMoney(c.totalSpent)}</span>
+                <span class="p-name">${window.escapeHtml(c.name)}</span>
+                <span class="p-amt">${window.formatMoney(c.totalSpent)}</span>
             </div>
         `).join('');
     }
 
     // --- 360 PROFILE LOGIC ---
     window.openProfile = function(index) {
-        const c = customersList[index];
+        const c = window.customersList[index];
         if(!c) return;
 
         document.getElementById('mName').innerText = c.name;
         document.getElementById('mAvatar').innerText = c.name.charAt(0).toUpperCase();
         document.getElementById('mTier').innerText = c.tier;
-        document.getElementById('mSpend').innerText = formatMoney(c.totalSpent);
+        document.getElementById('mSpend').innerText = window.formatMoney(c.totalSpent);
 
         // Progress Calculation
         let nextGoal = 500;
@@ -393,7 +458,7 @@
 
         const pct = Math.min((c.totalSpent / nextGoal)*100, 100);
         document.getElementById('mProgress').style.width = pct + "%";
-        document.getElementById('mNextGoal').innerText = "Goal: " + formatMoney(nextGoal);
+        document.getElementById('mNextGoal').innerText = "Goal: " + window.formatMoney(nextGoal);
         
         let msg = "Unlock Silver Status at ₹500";
         if(c.totalSpent >= 500) msg = "Unlock Gold Status at ₹2000";
@@ -416,7 +481,7 @@
         if(sortedProds.length > 0) {
             favDiv.innerHTML = sortedProds.map(([n, q]) => `
                 <div class="fav-item">
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">${n}</span> 
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">${window.escapeHtml(n)}</span> 
                     <div class="fav-badge">${q}</div>
                 </div>
             `).join('');
@@ -432,26 +497,30 @@
         
         histEl.innerHTML = sortedHistory.map(h => {
             const isUdhaar = h.paymentMode === 'Udhaar' && !h.isPaid;
+            const branchTag = window.currentBranch === 'all' && h._branchId ? `<div style="font-size:9px; color:var(--blue-600); background:var(--blue-50); padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block;">${h._branchId.slice(-4)}</div>` : '';
+
             return `
             <div class="t-item">
                 <div>
                     <div style="font-weight:700; color:var(--text-main); font-size:14px;">Bill #${h.id || h.invoiceNo}</div>
                     <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">${new Date(h.date).toLocaleString('en-IN', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+                    ${branchTag}
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-weight:800; font-family:'JetBrains Mono'; color: ${isUdhaar ? 'var(--danger)' : 'var(--text-main)'};">${formatMoney(h.amount || h.total)}</div>
+                    <div style="font-weight:800; font-family:'JetBrains Mono'; color: ${isUdhaar ? 'var(--danger)' : 'var(--text-main)'};">${window.formatMoney(h.amount || h.total)}</div>
                     ${isUdhaar ? '<div style="font-size:10px; color:var(--danger); font-weight:700; margin-top:2px;">UNPAID</div>' : ''}
                 </div>
             </div>`
         }).join('');
 
         const modal = document.getElementById('profileModal');
-        modal.classList.add('modal-active');
+        if(modal) modal.classList.add('modal-active');
     }
 
     window.closeModal = function(forceClose = false, e = null) { 
         if(forceClose || !e || e.target.id === 'profileModal' || !e.target) {
-            document.getElementById('profileModal').classList.remove('modal-active');
+            const m = document.getElementById('profileModal');
+            if(m) m.classList.remove('modal-active');
         }
     }
 
@@ -464,7 +533,7 @@
         btn.disabled = true;
 
         setTimeout(() => {
-            const riskCount = customersList.filter(c => c.status.includes('Risk')).length;
+            const riskCount = window.customersList.filter(c => c.status.includes('Risk')).length;
             window.showToast(`AI deployed successfully! Sent "We Miss You" SMS to ${riskCount} At-Risk customers.`, "success");
             
             btn.innerHTML = origText;
