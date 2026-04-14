@@ -14,14 +14,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script type="module" src="bharatpos.js"></script>
-<link rel="stylesheet" href="bharatpos.css">
-<style>
+  <link rel="stylesheet" href="bharatpos.css">
+  <style>
     /* ═══════════════════════════════════════════════════════════
        LAYOUT & CARDS (Fluid Shrinkable)
     ═══════════════════════════════════════════════════════════ */
     .container { 
         width: 100%; max-width: 1200px; margin: 28px auto; padding: 0 20px; 
-        display: flex; flex-direction: column; gap: 24px; transition: all 0.3s ease; 
+        display: flex; flex-direction: column; gap: 24px; transition: all 0.3s ease; font-family: var(--font-body);
     }
     
     .kpi-grid { 
@@ -29,11 +29,12 @@
         gap: 16px; transition: all 0.3s ease;
     }
     
-    /* Background, border, and shadow for kpi-card are handled by bharatpos.css global rule */
     .kpi-card { 
+        background: var(--white); border: 1.5px solid var(--blue-100); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
         padding: 20px; position: relative; overflow: hidden; transition: transform var(--trans); 
     }
-    .kpi-card:hover { transform: translateY(-3px); }
+    .kpi-card:hover { transform: translateY(-3px); border-color: var(--blue-200); box-shadow: 0 10px 25px rgba(25,118,210,0.1);}
+    
     .kpi-label { 
         font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; 
         color: var(--slate-500); font-weight: 700; display: flex; 
@@ -48,8 +49,7 @@
     /* ═══════════════════════════════════════════════════════════
        REPORT PANEL
     ═══════════════════════════════════════════════════════════ */
-    /* Background, border, and shadow for report-card are handled by bharatpos.css global rule */
-    .report-card { overflow: hidden; transition: 0.3s ease; }
+    .report-card { background: var(--white); border: 1.5px solid var(--blue-100); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; transition: 0.3s ease; }
     .report-header { 
         padding: 20px 24px; border-bottom: 1.5px solid var(--blue-100); display: flex; 
         justify-content: space-between; align-items: center; background: #f9f9f9; 
@@ -64,7 +64,7 @@
         background: var(--white); border: 1.5px solid var(--blue-200); color: var(--slate-900); 
         padding: 8px 12px; border-radius: var(--radius-input); font-size: 12px; 
         font-family: var(--font-body); font-weight: 700; outline: none; cursor: pointer; 
-        transition: var(--trans); width: 100%; max-width: 140px;
+        transition: var(--trans); width: 100%; max-width: 140px; box-sizing: border-box;
     }
     .date-input:focus { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
 
@@ -174,13 +174,13 @@
     }
 
     /* ═══════════════════════════════════════════════════════════
-       EXPORT MODAL ACTIONS
+       EXPORT MODAL ACTIONS & BUTTONS
     ═══════════════════════════════════════════════════════════ */
-    .export-actions { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px;}
+    .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .btn-action { 
         padding: 14px; border-radius: var(--radius-input); border: none; font-weight: 800; 
         cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; 
-        font-size: 13.5px; color: white; font-family: var(--font-body); transition: var(--trans); 
+        font-size: 13px; color: white; font-family: var(--font-body); transition: var(--trans); 
         box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 0.04em;
     }
     .btn-action:active { transform: scale(0.97); }
@@ -188,16 +188,27 @@
     .btn-excel:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16,185,129,0.3); }
     .btn-pdf { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .btn-pdf:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(239,68,68,0.3); }
-</style>
+
+    .btn { padding: 10px 16px; border-radius: var(--radius-input); font-weight: 800; font-size: 13px; border: none; cursor: pointer; transition: var(--trans); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-body); text-transform: uppercase;}
+    .btn-primary { background: var(--primary-gradient); color: white; box-shadow: 0 4px 12px rgba(25,118,210,0.25); }
+    .btn-primary:hover { background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(25,118,210,0.35); }
+    .btn-outline { background: var(--white); border: 1.5px solid var(--blue-200); color: var(--blue-600); }
+    .btn-outline:hover { background: var(--blue-50); border-color: var(--blue-400); transform: translateY(-2px); }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s ease;}
+    .modal-overlay.show { opacity: 1; }
+    .modal-content { background: var(--white); width: 100%; max-width: 450px; border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1.5px solid var(--blue-100);}
+    .modal-overlay.show .modal-content { transform: scale(1); }
+  </style>
 </head>
 
-<body>
+<body class="lang-en">
   
   <div id="menuOverlay" class="menu-overlay"></div>
   <div id="sideMenu" class="side-menu">
     <button id="btnCloseMenu" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
-    <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:40px; margin-top:10px;">
-        Bharat<span style="color:var(--accent);">POS</span>
+    <div style="font-size:22px; font-weight:800; color:var(--slate-900); margin-bottom:40px; margin-top:10px; font-family: var(--font-head);">
+        Bharat<span style="color:var(--blue-600);">POS</span>
     </div>
     <div class="side-menu-links">
         <a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> Command Center</a>
@@ -206,16 +217,16 @@
         <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
         <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> Finance HQ</a>
         <a href="customers.html"><i class="fa-solid fa-users"></i> Bharat CRM</a>
-        <a href="reports.html" class="active-link" style="background:rgba(59, 130, 246, 0.1);"><i class="fa-solid fa-file-invoice-dollar"></i> Audit & Reports</a>
-        <a href="forecast.html"><i class="fa-solid fa-brain" style="color:var(--accent);"></i> DemandMitra AI</a>
+        <a href="reports.html" class="active-link" style="background:var(--blue-50); color:var(--blue-600); border-color:var(--blue-200);"><i class="fa-solid fa-file-invoice-dollar"></i> Audit & Reports</a>
+        <a href="forecast.html"><i class="fa-solid fa-brain"></i> DemandMitra AI</a>
         <a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a>
     </div>
   </div>
 
-  <nav class="navbar">
-    <div class="brand">
-      <button class="menu-btn" id="btnOpenMenu" style="color:var(--text-main);"><i class="fa-solid fa-bars"></i></button>
-      <div class="brand-logo-wrap"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+  <nav class="navbar" style="display: flex; align-items: center; justify-content: space-between; padding: 0 15px; height: 64px; background: var(--white); border-bottom: 2px solid var(--blue-200); flex-shrink: 0; z-index: 100; width: 100%; box-shadow: 0 4px 15px rgba(25,118,210,0.05);">
+    <div class="brand" style="font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--slate-900); font-family: var(--font-head);">
+      <button class="menu-btn" id="btnOpenMenu" style="background: var(--blue-50); border: 1.5px solid var(--blue-200); color: var(--blue-600); width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fa-solid fa-bars"></i></button>
+      <div class="brand-logo-wrap" style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #059669, #047857); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(5,150,105,0.25);"><i class="fa-solid fa-file-invoice-dollar" style="color: #fff; font-size: 14px;"></i></div>
       Bharat<span>POS</span>
     </div>
   </nav>
@@ -226,25 +237,25 @@
         <div class="kpi-label">Net Collected <i class="fa-solid fa-money-bill-wave" style="color:var(--success);"></i></div>
         <div class="kpi-value" id="kpiNetRev">₹0</div>
         <div class="kpi-border" style="background: var(--success);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">Cash + Online Only</div>
+        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">Cash + Online Only</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total GST Collected <i class="fa-solid fa-receipt" style="color:var(--warning);"></i></div>
         <div class="kpi-value" id="kpiGST">₹0</div>
         <div class="kpi-border" style="background: var(--warning);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">CGST + SGST</div>
+        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">CGST + SGST</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Gross Sales <i class="fa-solid fa-chart-line" style="color:var(--primary);"></i></div>
+        <div class="kpi-label">Gross Sales <i class="fa-solid fa-chart-line" style="color:var(--blue-600);"></i></div>
         <div class="kpi-value" id="kpiGrossRev">₹0</div>
-        <div class="kpi-border" style="background: var(--primary);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">Includes Pending Udhaar</div>
+        <div class="kpi-border" style="background: var(--blue-600);"></div>
+        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">Includes Pending Udhaar</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total Bills <i class="fa-solid fa-hashtag" style="color:var(--purple);"></i></div>
         <div class="kpi-value" id="kpiBills">0</div>
         <div class="kpi-border" style="background: var(--purple);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" class="kpi-sub">In selected period</div>
+        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">In selected period</div>
       </div>
     </div>
 
@@ -253,23 +264,23 @@
         <div class="report-title-group">
             <div class="report-title">📊 Daily Aggregates</div>
             
-            <select id="filterBranch" class="date-input" style="display:none; font-weight:800; color:var(--primary); border-color:var(--primary); background:var(--primary-soft);">
+            <select id="filterBranch" class="date-input" style="display:none; font-weight:800; color:var(--blue-600); border-color:var(--blue-200); background:var(--blue-50);">
                 <option value="all">🌍 All Branches</option>
             </select>
 
             <div class="date-filter-group">
                 <input type="date" id="startDate" class="date-input">
-                <span style="color:var(--text-muted); font-size:12px; font-weight:700;">TO</span>
+                <span style="color:var(--slate-500); font-size:12px; font-weight:800;">TO</span>
                 <input type="date" id="endDate" class="date-input">
             </div>
             
             <div id="syncStatus" class="sync-status"><span class="sync-dot"></span> <span id="syncText">Syncing...</span></div>
         </div>
         <div style="display:flex; gap:10px;">
-            <button class="btn btn-outline" id="btnToggleCompact" title="Toggle Compact View">
+            <button class="btn btn-outline" id="btnToggleCompact" title="Toggle Compact View" style="padding: 10px 14px;">
                 <i class="fa-solid fa-compress"></i>
             </button>
-            <button class="btn btn-primary" onclick="document.getElementById('exportModal').style.display='flex'">
+            <button class="btn btn-primary" onclick="window.showModal('exportModal')">
                 <i class="fa-solid fa-download"></i> Export
             </button>
         </div>
@@ -294,11 +305,11 @@
 
   <div id="exportModal" class="modal-overlay">
       <div class="modal-content">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px dashed var(--border); padding-bottom:10px;">
-              <h3 style="margin:0; font-size:18px; color:var(--text-main); font-weight:800;">📥 Export Reports</h3>
-              <button onclick="document.getElementById('exportModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1.5px dashed var(--blue-100); padding-bottom:12px;">
+              <h3 style="margin:0; font-size:18px; color:var(--slate-900); font-weight:800; font-family:var(--font-head);">📥 Export Reports</h3>
+              <button onclick="window.hideModal('exportModal')" style="background:none; border:none; color:var(--slate-400); font-size:24px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
           </div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.5;">
+          <p style="font-size:13px; color:var(--slate-500); margin-bottom:20px; line-height:1.5; font-weight:600;">
               Export your aggregated daily summaries. The date range and branch filter selected on the main screen will be applied.
           </p>
           <div class="export-actions">
@@ -316,34 +327,66 @@ window.db = db;
 window.allSales = [];
 
 // --- UTILS ---
-function formatCurrency(n){ return '₹' + Number(n || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+window.formatCurrency = function(n){ return '₹' + Number(n || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
 
-function animateValue(obj, start, end, duration, isCurrency=false) {
+window.animateValue = function(obj, start, end, duration, isCurrency=false) {
   if(!obj) return;
   let startTimestamp = null;
   const step = (timestamp) => {
     if (!startTimestamp) startTimestamp = timestamp;
     const progress = Math.min((timestamp - startTimestamp) / duration, 1);
     const val = (progress * (end - start) + start);
-    obj.innerHTML = isCurrency ? formatCurrency(val) : Math.floor(val);
+    obj.innerHTML = isCurrency ? window.formatCurrency(val) : Math.floor(val);
     if (progress < 1) { window.requestAnimationFrame(step); }
   };
   window.requestAnimationFrame(step);
 }
 
+// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
+window.showModal = function(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.style.display = 'flex';
+        setTimeout(() => m.classList.add('show'), 10);
+    }
+}
+
+window.hideModal = function(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.classList.remove('show');
+        setTimeout(() => m.style.display = 'none', 300);
+    }
+}
+
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
-    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
-    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+    window.bindEvents();
     
-    document.getElementById('btnExportExcel').addEventListener('click', window.exportExcel);
-    document.getElementById('btnExportPDF').addEventListener('click', window.exportPDF);
+    // Set default dates for report modal
+    const today = new Date();
+    const endEl = document.getElementById('endDate');
+    if(endEl) endEl.valueAsDate = today;
+    const startEl = document.getElementById('startDate');
+    if(startEl) startEl.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    window.loadSalesFromCloud();
+});
+
+window.bindEvents = function() {
+    document.getElementById('btnOpenMenu')?.addEventListener('click', window.toggleMenu);
+    document.getElementById('btnCloseMenu')?.addEventListener('click', window.toggleMenu);
+    document.getElementById('menuOverlay')?.addEventListener('click', window.toggleMenu);
+    
+    document.getElementById('btnExportExcel')?.addEventListener('click', window.exportExcel);
+    document.getElementById('btnExportPDF')?.addEventListener('click', window.exportPDF);
 
     // Compact Mode Toggle
-    document.getElementById('btnToggleCompact').addEventListener('click', () => {
+    document.getElementById('btnToggleCompact')?.addEventListener('click', () => {
         document.body.classList.toggle('compact-mode');
         const icon = document.querySelector('#btnToggleCompact i');
+        if(!icon) return;
+
         if(document.body.classList.contains('compact-mode')) {
             icon.className = 'fa-solid fa-expand';
             localStorage.setItem('reports_compact', 'true');
@@ -355,36 +398,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if(localStorage.getItem('reports_compact') === 'true') {
         document.body.classList.add('compact-mode');
-        document.querySelector('#btnToggleCompact i').className = 'fa-solid fa-expand';
+        const icon = document.querySelector('#btnToggleCompact i');
+        if(icon) icon.className = 'fa-solid fa-expand';
     }
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) overlay.style.display = 'none';
+            if (e.target === overlay) window.hideModal(overlay.id);
         });
     });
 
-    const today = new Date();
     const startInput = document.getElementById('startDate');
     const endInput = document.getElementById('endDate');
     
-    endInput.valueAsDate = today;
-    startInput.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    startInput.addEventListener('change', window.renderReports);
-    endInput.addEventListener('change', window.renderReports);
-
-    loadSalesFromCloud();
-});
-
-function toggleMenu() {
-    document.getElementById('sideMenu').classList.toggle('open');
-    const overlay = document.getElementById('menuOverlay');
-    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+    if(startInput) startInput.addEventListener('change', window.renderReports);
+    if(endInput) endInput.addEventListener('change', window.renderReports);
 }
 
-// ─── MULTI-BRANCH DATA ENGINE ────────────────────────────────────────────────
-async function loadSalesFromCloud() {
+window.toggleMenu = function() {
+    document.getElementById('sideMenu')?.classList.toggle('open');
+    const overlay = document.getElementById('menuOverlay');
+    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+}
+
+// ─── MULTI-BRANCH DATA ENGINE (ASYNC BRIDGE) ─────────────────────────────────
+window.loadSalesFromCloud = async function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mobile = user.mobile || user.phone;
 
@@ -396,17 +434,22 @@ async function loadSalesFromCloud() {
     }
 
     const branchFilter = document.getElementById('filterBranch');
-    if (shops.length > 1) {
+    if (shops.length > 1 && branchFilter) {
         branchFilter.style.display = 'inline-block';
         branchFilter.innerHTML = '<option value="all">🌍 All Branches</option>' + 
             shops.map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
         branchFilter.addEventListener('change', window.renderReports);
     }
 
-    window.allSales = JSON.parse(localStorage.getItem('bharatpos_enterprise_sales') || localStorage.getItem('bharatpos_sales') || '[]');
+    // Load from Async Bridge
+    let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
+    if (eSales === null) {
+        eSales = await window.dbGet('bharatpos_sales', '[]');
+    }
+    window.allSales = eSales;
     if(window.allSales.length > 0) window.renderReports();
 
-    if (window.db && navigator.onLine) {
+    if (user && user.merchantId && typeof user.merchantId === 'string' && user.merchantId.trim() !== '' && window.db && navigator.onLine) {
         try {
             let allEnterpriseSales = [];
             
@@ -429,7 +472,7 @@ async function loadSalesFromCloud() {
             allEnterpriseSales.sort((a, b) => new Date(b.date) - new Date(a.date));
             window.allSales = allEnterpriseSales;
             
-            localStorage.setItem('bharatpos_enterprise_sales', JSON.stringify(window.allSales));
+            await window.dbSave('bharatpos_enterprise_sales', window.allSales);
             
             window.renderReports();
         } catch (e) {
@@ -439,14 +482,19 @@ async function loadSalesFromCloud() {
 }
 
 // --- DATA PROCESSING (Singularity + Splits + Multi-Branch) ---
-function groupSalesByDate() {
+window.groupSalesByDate = function() {
   const sales = window.allSales || [];
   const grouped = {};
   
-  const startD = new Date(document.getElementById('startDate').value); startD.setHours(0,0,0,0);
-  const endD = new Date(document.getElementById('endDate').value); endD.setHours(23,59,59,999);
+  const startEl = document.getElementById('startDate');
+  const endEl = document.getElementById('endDate');
+  if(!startEl || !endEl) return grouped;
+
+  const startD = new Date(startEl.value); startD.setHours(0,0,0,0);
+  const endD = new Date(endEl.value); endD.setHours(23,59,59,999);
   
-  const branchFilter = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : 'all';
+  const bf = document.getElementById('filterBranch');
+  const branchFilter = bf ? bf.value : 'all';
 
   sales.forEach(sale => {
     if(branchFilter !== 'all' && sale._branchId !== branchFilter && sale.merchantId !== branchFilter) return;
@@ -500,6 +548,7 @@ function groupSalesByDate() {
 
 window.toggleDetails = function(dateId) {
   const detailRow = document.getElementById('details-' + dateId);
+  if(!detailRow) return;
   const isHidden = getComputedStyle(detailRow).display === 'none';
   document.querySelectorAll('.details-row').forEach(row => { row.classList.remove('active'); row.style.display = 'none'; });
   if(isHidden) {
@@ -510,7 +559,7 @@ window.toggleDetails = function(dateId) {
 
 // --- MAIN RENDER ---
 window.renderReports = function(){
-  const data = groupSalesByDate();
+  const data = window.groupSalesByDate();
   const tableBody = document.getElementById('salesHistoryBody');
   if(!tableBody) return;
   const sortedDates = Object.keys(data).sort().reverse();
@@ -528,13 +577,13 @@ window.renderReports = function(){
     if(d.netCollected > maxDailyNet) maxDailyNet = d.netCollected;
   });
 
-  animateValue(document.getElementById('kpiNetRev'), 0, totalNet, 1000, true);
-  animateValue(document.getElementById('kpiGrossRev'), 0, totalGross, 1000, true);
-  animateValue(document.getElementById('kpiGST'), 0, totalTax, 1000, true);
-  animateValue(document.getElementById('kpiBills'), 0, totalBills, 1000);
+  window.animateValue(document.getElementById('kpiNetRev'), 0, totalNet, 1000, true);
+  window.animateValue(document.getElementById('kpiGrossRev'), 0, totalGross, 1000, true);
+  window.animateValue(document.getElementById('kpiGST'), 0, totalTax, 1000, true);
+  window.animateValue(document.getElementById('kpiBills'), 0, totalBills, 1000);
 
   if(sortedDates.length === 0){
-      tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; color:var(--text-muted); font-weight:600;">No sales records found for this period.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; color:var(--slate-500); font-weight:700;">No sales records found for this period.</td></tr>';
       return;
   }
 
@@ -553,24 +602,24 @@ window.renderReports = function(){
       const friendlyDate = (date === today) ? "Today" : dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
 
       return `
-        <tr class="sale-row" onclick="toggleDetails('${dateId}')">
+        <tr class="sale-row" onclick="window.toggleDetails('${dateId}')">
           <td>
-            <div style="font-weight:800; color:var(--text-main); font-size:15px;">${friendlyDate}</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:700;">${date}</div>
+            <div style="font-weight:800; color:var(--slate-900); font-size:14px; font-family:var(--font-head);">${friendlyDate}</div>
+            <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:700;">${date}</div>
           </td>
           <td class="text-right">${rowData.bills}</td>
           <td class="text-right">${rowData.itemsCount}</td>
-          <td class="text-right" style="color:var(--text-muted); font-family:'JetBrains Mono';">₹${rowData.gross.toFixed(2)}</td>
-          <td class="text-right" style="color:var(--warning); font-family:'JetBrains Mono';">₹${rowData.tax.toFixed(2)}</td>
+          <td class="text-right" style="color:var(--slate-500); font-family:'JetBrains Mono'; font-weight:700;">₹${rowData.gross.toFixed(2)}</td>
+          <td class="text-right" style="color:var(--warning); font-family:'JetBrains Mono'; font-weight:700;">₹${rowData.tax.toFixed(2)}</td>
           <td class="text-right" style="position:relative;">
             <div class="trend-bg" style="width:${barWidth * 0.7}px"></div> 
-            <span class="money-cell">${formatCurrency(rowData.netCollected)}</span>
+            <span class="money-cell">${window.formatCurrency(rowData.netCollected)}</span>
           </td>
         </tr>
         <tr id="details-${dateId}" class="details-row">
           <td colspan="6" style="padding:0; background:transparent;">
              <div class="details-content">
-                <div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--primary); font-weight:800; margin-bottom:12px;">Items Breakdown</div>
+                <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--blue-600); font-weight:800; margin-bottom:12px;">Items Breakdown</div>
                 <div class="product-grid">${productsHtml}</div>
              </div>
           </td>
@@ -579,12 +628,12 @@ window.renderReports = function(){
 
   tableBody.innerHTML = historyHtml;
   
-  handleAISnapshot(data, totalNet, totalGross, totalTax);
+  window.handleAISnapshot(data, totalNet, totalGross, totalTax);
 }
 
 // --- EXPORT LOGIC ---
 window.exportExcel = function() {
-    const data = groupSalesByDate();
+    const data = window.groupSalesByDate();
     const sortedDates = Object.keys(data).sort().reverse();
     if(sortedDates.length === 0) return alert("No data to export.");
 
@@ -608,11 +657,11 @@ window.exportExcel = function() {
     XLSX.utils.book_append_sheet(wb, ws, "Daily_Audit");
     XLSX.writeFile(wb, `BharatPOS_Daily_Audit_${Date.now()}.xlsx`);
     
-    document.getElementById('exportModal').style.display = 'none';
+    window.hideModal('exportModal');
 }
 
 window.exportPDF = function() {
-    const data = groupSalesByDate();
+    const data = window.groupSalesByDate();
     const sortedDates = Object.keys(data).sort().reverse();
     if(sortedDates.length === 0) return alert("No data to export.");
 
@@ -657,18 +706,17 @@ window.exportPDF = function() {
     });
     
     doc.save(`Daily_Audit_${Date.now()}.pdf`);
-    document.getElementById('exportModal').style.display = 'none';
+    window.hideModal('exportModal');
 }
 
-
 // --- AI & FIREBASE SYNC LOGIC ---
-function hashStringDjb2(str) {
+window.hashStringDjb2 = function(str) {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) { hash = ((hash << 5) + hash) + str.charCodeAt(i); hash = hash & 0xFFFFFFFF; }
   return (hash >>> 0).toString(16);
 }
 
-function updateSyncStatus(status) {
+window.updateSyncStatus = function(status) {
     const el = document.getElementById('syncStatus');
     const txt = document.getElementById('syncText');
     if(!el || !txt) return;
@@ -679,34 +727,37 @@ function updateSyncStatus(status) {
     } else if (status === 'success') {
         el.classList.add('sync-active');
         const dot = document.querySelector('.sync-dot');
-        if(dot) dot.style.background = '#10b981';
+        if(dot) dot.style.background = '#0d9488';
         txt.innerText = "AI Up to Date";
         setTimeout(() => el.classList.remove('sync-active'), 3000);
     } else if (status === 'error') {
         el.classList.add('sync-active');
         const dot = document.querySelector('.sync-dot');
-        if(dot) dot.style.background = '#ef4444';
+        if(dot) dot.style.background = '#dc2626';
         txt.innerText = "Sync Failed";
     }
 }
 
-async function handleAISnapshot(data, totalNet, totalGross, totalTax) {
+window.handleAISnapshot = async function(data, totalNet, totalGross, totalTax) {
   try {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if (!user.merchantId) return;
 
-    const snapshot = getReportsSnapshot(data, totalNet, totalGross, totalTax, user);
+    const snapshot = window.getReportsSnapshot(data, totalNet, totalGross, totalTax, user);
     
     const contentToHash = JSON.stringify({ revenue: snapshot.net_collected_revenue, history: snapshot.daily_history });
-    const snapshotHash = hashStringDjb2(contentToHash);
+    const snapshotHash = window.hashStringDjb2(contentToHash);
     const lastHash = localStorage.getItem('bharatpos_last_sent_reports_snapshot_hash');
 
     if (lastHash !== snapshotHash) {
-       updateSyncStatus('syncing');
+       window.updateSyncStatus('syncing');
 
-       const firebasePromise = updateDoc(doc(db, "shops", user.merchantId), {
-           auditData: snapshot
-       }).catch(e => console.error("Firebase Audit Sync failed:", e));
+       let firebasePromise = Promise.resolve();
+       if(window.db) {
+           firebasePromise = updateDoc(doc(window.db, "shops", user.merchantId), {
+               auditData: snapshot
+           }).catch(e => console.error("Firebase Audit Sync failed:", e));
+       }
 
        const consultUrl = window.buildUrl ? window.buildUrl('/ai-business-consult') : 'https://server-xy7s.onrender.com/ai-business-consult';
        const renderPromise = fetch(consultUrl, { 
@@ -719,15 +770,15 @@ async function handleAISnapshot(data, totalNet, totalGross, totalTax) {
 
        if (renderRes.status === 'fulfilled' && renderRes.value.ok) {
            localStorage.setItem('bharatpos_last_sent_reports_snapshot_hash', snapshotHash);
-           updateSyncStatus('success');
+           window.updateSyncStatus('success');
        } else {
-           updateSyncStatus('error');
+           window.updateSyncStatus('error');
        }
     }
-  } catch(e) { console.error("Snapshot Error", e); updateSyncStatus('error'); }
+  } catch(e) { console.error("Snapshot Error", e); window.updateSyncStatus('error'); }
 }
 
-function getReportsSnapshot(groupedData, netTotal, grossTotal, taxTotal, user) {
+window.getReportsSnapshot = function(groupedData, netTotal, grossTotal, taxTotal, user) {
   const dates = Object.keys(groupedData).sort().reverse();
   
   const dateEntries = dates.map(date => {
