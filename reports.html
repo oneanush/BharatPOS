@@ -448,22 +448,38 @@ window.loadSalesFromCloud = async function() {
     const shopSwitcher = document.getElementById('shopSwitcher');
 
     if (shops.length > 1) {
+        const optionsHtml = '<option value="all">🌍 All Branches</option>' + 
+            shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
+
         if (branchFilter) {
             branchFilter.style.display = 'inline-block';
-            branchFilter.innerHTML = '<option value="all">🌍 All Branches</option>' + 
-                shops.map(s => `<option value="${s.merchantId}">${window.escapeHtml(s.shopName)}</option>`).join('');
-            branchFilter.addEventListener('change', window.renderReports);
+            branchFilter.innerHTML = optionsHtml;
+            branchFilter.value = user.merchantId; // Default to active branch
+            branchFilter.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if(shopSwitcher) shopSwitcher.value = val;
+                
+                if (val === 'all' || val === user.merchantId) {
+                    window.renderReports();
+                } else if (window.switchActiveShop) {
+                    window.switchActiveShop(val);
+                }
+            });
         }
         
         if (shopSwitcher) {
             shopSwitcher.style.display = 'inline-block';
-            shopSwitcher.innerHTML = shops.map(s => 
-                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                    ${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
-                </option>`
-            ).join('');
+            shopSwitcher.innerHTML = optionsHtml;
+            shopSwitcher.value = user.merchantId; // Default to active branch
             shopSwitcher.addEventListener('change', (e) => {
-                if(window.switchActiveShop) window.switchActiveShop(e.target.value);
+                const val = e.target.value;
+                if(branchFilter) branchFilter.value = val;
+                
+                if (val === 'all' || val === user.merchantId) {
+                    window.renderReports();
+                } else if (window.switchActiveShop) {
+                    window.switchActiveShop(val);
+                }
             });
         }
     }
@@ -520,8 +536,11 @@ window.groupSalesByDate = function() {
   const startD = new Date(startEl.value); startD.setHours(0,0,0,0);
   const endD = new Date(endEl.value); endD.setHours(23,59,59,999);
   
+  let branchFilter = 'all';
+  const ss = document.getElementById('shopSwitcher');
   const bf = document.getElementById('filterBranch');
-  const branchFilter = bf ? bf.value : 'all';
+  if(ss && ss.style.display !== 'none') branchFilter = ss.value;
+  else if(bf && bf.style.display !== 'none') branchFilter = bf.value;
 
   sales.forEach(sale => {
     if(branchFilter !== 'all' && sale._branchId !== branchFilter && sale.merchantId !== branchFilter) return;
@@ -705,8 +724,18 @@ window.exportPDF = function() {
     doc.setFontSize(10); 
     doc.setTextColor(100, 100, 100);
     
-    const branchFilter = document.getElementById('filterBranch');
-    const filterText = branchFilter && branchFilter.value !== 'all' ? branchFilter.options[branchFilter.selectedIndex].text : 'All Branches';
+    let branchFilter = 'all';
+    let filterText = 'All Branches';
+    const ss = document.getElementById('shopSwitcher');
+    const bf = document.getElementById('filterBranch');
+    
+    if(ss && ss.style.display !== 'none') {
+        branchFilter = ss.value;
+        filterText = ss.options[ss.selectedIndex].text.replace('⭐','').trim();
+    } else if (bf && bf.style.display !== 'none') {
+        branchFilter = bf.value;
+        filterText = bf.options[bf.selectedIndex].text.replace('⭐','').trim();
+    }
 
     doc.text(`Business Name: ${shopName} (${filterText})`, 14, 22);
     doc.text(`Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}`, 14, 27);
