@@ -597,7 +597,7 @@ window.applyShopDetails = function() {
   const shopPhoneEls = document.querySelectorAll(".shop-phone");
   shopNameEls.forEach(el => { if (name) el.textContent = name; });
   shopPhoneEls.forEach(el => { if (phone) el.textContent = phone; });
-}
+};
 
 (async function initBharatPOS(){
   // Apply visual configurations immediately
