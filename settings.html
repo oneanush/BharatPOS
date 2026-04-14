@@ -6,16 +6,20 @@
   <title>Settings - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script type="module" src="bharatpos.js"></script>
-<link rel="stylesheet" href="bharatpos.css">
-<style>
+  <link rel="stylesheet" href="bharatpos.css">
+  
+  <style>
     /* ═══════════════════════════════════════════════════════════
        LAYOUT & PANELS
     ═══════════════════════════════════════════════════════════ */
-    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; transition: var(--trans); }
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; transition: var(--trans); font-family: var(--font-body); }
     
     .settings-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
     @media(min-width: 768px) { .settings-grid { grid-template-columns: 1.5fr 1fr; align-items: start; } }
@@ -73,27 +77,6 @@
     }
 
     /* ═══════════════════════════════════════════════════════════
-       SWITCH TOGGLES
-    ═══════════════════════════════════════════════════════════ */
-    .setting-row { 
-        display: flex; justify-content: space-between; align-items: center; 
-        padding: 16px 0; border-bottom: 1.5px solid var(--blue-50); transition: var(--trans);
-    }
-    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .setting-info h4 { margin: 0 0 4px 0; font-size: 14px; font-weight: 700; color: var(--slate-900); font-family: var(--font-body); }
-    .setting-info p { margin: 0; font-size: 12px; color: var(--slate-500); font-weight: 500; line-height: 1.4; max-width: 250px; font-family: var(--font-body);}
-    
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;}
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background: var(--slate-400); transition: .3s; border-radius: 24px; }
-    .slider:before { 
-        position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; 
-        background: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    input:checked + .slider { background: var(--success); }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    /* ═══════════════════════════════════════════════════════════
        FILE UPLOAD (QR)
     ═══════════════════════════════════════════════════════════ */
     .qr-upload-box { 
@@ -109,6 +92,23 @@
     .qr-file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 
     /* ═══════════════════════════════════════════════════════════
+       MAP LOCATION
+    ═══════════════════════════════════════════════════════════ */
+    .map-container {
+        width: 100%; height: 250px; border-radius: var(--radius-input); 
+        background: #e2e8f0; border: 1.5px solid var(--blue-200); 
+        margin-top: 10px; overflow: hidden; position: relative; z-index: 1;
+    }
+    .map-overlay-btn {
+        position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+        background: var(--white); border: 1px solid var(--blue-200); color: var(--blue-600);
+        padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+        z-index: 400; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transition: var(--trans); font-family: var(--font-body);
+    }
+    .map-overlay-btn:hover { background: var(--blue-50); transform: translateX(-50%) translateY(-2px); }
+
+    /* ═══════════════════════════════════════════════════════════
        CUSTOM BUTTONS & OVERRIDES
     ═══════════════════════════════════════════════════════════ */
     .btn-danger-solid { 
@@ -120,15 +120,15 @@
     }
     .btn-danger-solid:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3) !important; transform: translateY(-1px) !important; }
     .btn-outline { width: 100%; justify-content: center; }
-</style>
+  </style>
 </head>
 <body>
 
 <div id="menuOverlay" class="menu-overlay"></div>
 <div id="sideMenu" class="side-menu">
   <button id="btnCloseMenu" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
-  <div style="font-size:22px; font-weight:800; color:#fff; margin-bottom:40px; margin-top:10px;">
-      Bharat<span style="color:var(--accent);">POS</span>
+  <div style="font-size:22px; font-weight:800; color:var(--slate-900); margin-bottom:40px; margin-top:10px; font-family: var(--font-head);">
+      Bharat<span style="color:var(--blue-600);">POS</span>
   </div>
   <div class="side-menu-links">
       <a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> Command Center</a>
@@ -142,9 +142,9 @@
   </div>
 </div>
 
-<nav class="navbar">
+<nav class="navbar" style="border-radius: 0 0 20px 20px; max-width:1400px; margin:0 auto; width: calc(100% - 20px);">
   <div style="display:flex; align-items:center; gap:15px;">
-      <button class="menu-btn" id="btnOpenMenu" style="color:var(--text-main);"><i class="fa-solid fa-bars"></i></button>
+      <button class="menu-btn" id="btnOpenMenu"><i class="fa-solid fa-bars"></i></button>
       <div class="brand">
         <div class="brand-logo-wrap" style="background:linear-gradient(135deg, #64748B, #475569);"><i class="fa-solid fa-gear"></i></div>
         Bharat<span>POS</span>
@@ -152,9 +152,7 @@
   </div>
   
   <div class="nav-actions">
-      <select id="shopSwitcher" class="shop-switcher">
-          <option value="" disabled>Loading...</option>
-      </select>
+      <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
   </div>
 </nav>
 
@@ -203,9 +201,17 @@
                       <input type="text" id="shopGstin" class="form-input" placeholder="e.g. 22AAAAA0000A1Z5" style="text-transform: uppercase;">
                   </div>
 
-                  <div class="form-group full-width">
+                  <div class="form-group full-width" style="margin-bottom:0;">
                       <label class="form-label">Complete Address</label>
                       <input type="text" id="shopAddress" class="form-input" placeholder="Shop No, Street, City, Pincode">
+                  </div>
+                  
+                  <div class="form-group full-width" style="margin-top: 10px;">
+                      <label class="form-label"><i class="fa-solid fa-location-dot" style="color:var(--danger);"></i> Map Location (GPS)</label>
+                      <div style="font-size:11px; color:var(--slate-500); margin-bottom:8px;">Drag map to adjust shop location, or click the button to acquire GPS signal.</div>
+                      <div id="shopMap" class="map-container">
+                          <button type="button" id="btnAcquireGPS" class="map-overlay-btn"><i class="fa-solid fa-crosshairs"></i> Get Current Location</button>
+                      </div>
                   </div>
               </div>
 
@@ -228,10 +234,10 @@
                   </label>
               </div>
               
-              <button id="btnReset" class="btn btn-danger" style="margin-top: 15px;">
+              <button id="btnReset" class="btn btn-danger-solid" style="margin-top: 15px; width: 100%; background: linear-gradient(135deg, #f97316, #d97706) !important; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.2) !important;">
                   <i class="fa-solid fa-triangle-exclamation"></i> Factory Reset (Clear Local Cache)
               </button>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">
+              <div style="font-size: 11px; color: var(--slate-500); margin-top: 10px; text-align: center; font-weight:600;">
                   Resetting clears your offline cache. Ensure you have internet to re-sync from the cloud.
               </div>
           </div>
@@ -251,57 +257,6 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 24px;">
-          
-          <div class="panel">
-              <div class="panel-header">
-                  <div class="panel-icon" style="background:rgba(16, 185, 129, 0.1); color:var(--success);"><i class="fa-solid fa-toggle-on"></i></div>
-                  <h2 class="panel-title">Global Features</h2>
-              </div>
-
-              <div class="setting-row">
-                  <div class="setting-info">
-                      <h4>Enable GST Billing</h4>
-                      <p>Calculates CGST & SGST on invoices automatically.</p>
-                  </div>
-                  <label class="switch">
-                      <input type="checkbox" id="toggleGst">
-                      <span class="slider"></span>
-                  </label>
-              </div>
-
-              <div class="setting-row">
-                  <div class="setting-info">
-                      <h4>Advanced Product Details</h4>
-                      <p>Turn on fields for Barcode, Expiry Date, and Brands.</p>
-                  </div>
-                  <label class="switch">
-                      <input type="checkbox" id="toggleAdv">
-                      <span class="slider"></span>
-                  </label>
-              </div>
-
-              <div class="setting-row">
-                  <div class="setting-info">
-                      <h4>Sell By Weight (Loose)</h4>
-                      <p>Enables Kg/g/L units and decimal calculations.</p>
-                  </div>
-                  <label class="switch">
-                      <input type="checkbox" id="toggleLoose">
-                      <span class="slider"></span>
-                  </label>
-              </div>
-
-              <div class="setting-row">
-                  <div class="setting-info">
-                      <h4>Batch Tracking</h4>
-                      <p>Useful for Pharmacy or FMCG to track lot numbers.</p>
-                  </div>
-                  <label class="switch">
-                      <input type="checkbox" id="toggleBatch">
-                      <span class="slider"></span>
-                  </label>
-              </div>
-          </div>
 
           <div class="panel">
               <div class="panel-header">
@@ -315,7 +270,7 @@
                   <p>Tap or Drop your Shop's PhonePe/Paytm/GPay QR code here</p>
                   <img id="upiQRImg" alt="Your UPI QR">
               </div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">
+              <div style="font-size: 11px; color: var(--slate-500); margin-top: 10px; text-align: center; font-weight:600;">
                   This QR will be displayed to customers when paying online.
               </div>
           </div>
@@ -326,12 +281,12 @@
 </div>
 
 <div id="deleteAccountModal" class="modal-overlay">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px dashed var(--border); padding-bottom:10px;">
-            <h3 style="margin:0; font-size:18px; color:var(--danger); font-weight:800;">⚠️ Delete Account</h3>
-            <button onclick="document.getElementById('deleteAccountModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+    <div class="modal-box" style="border-radius:24px; padding:24px; max-width:400px; transform:scale(1);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1.5px dashed var(--blue-100); padding-bottom:10px;">
+            <h3 style="margin:0; font-size:18px; color:var(--danger); font-weight:800; font-family:var(--font-head);">⚠️ Delete Account</h3>
+            <button id="btnCloseDelete" style="background:none; border:none; color:var(--slate-400); font-size:24px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.5;">
+        <p style="font-size:13px; color:var(--slate-600); margin-bottom:20px; line-height:1.5; font-weight:600;">
             This action cannot be undone. All your products, sales, and customer data will be permanently deleted from the cloud.
         </p>
         <div class="form-group" style="margin-bottom: 20px;">
@@ -345,11 +300,18 @@
 </div>
 
 <div id="toast">✅ Action Successful</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
 <script type="module">
 import { db } from "./bharatpos.js";
-import { doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 window.db = db;
+
+// State for Map
+let mapInstance = null;
+let mapMarker = null;
 
 // ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
 function showModal(id) {
@@ -371,70 +333,71 @@ function hideModal(id) {
 document.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     loadProfileData();
-    loadToggles();
     loadQR();
-    if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); 
+    initMap();
+    
+    // Load Multi-Branch
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    if(typeof window.loadOwnedShops === 'function') {
+        window.loadOwnedShops(user.mobile || user.phone).then(shops => {
+            if(shops && shops.length > 1) {
+                const switcher = document.getElementById('shopSwitcher');
+                if(switcher) {
+                    switcher.style.display = 'inline-block';
+                    switcher.innerHTML = shops.map(s => 
+                        `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
+                            ${s.shopName} ${s.isMain ? '⭐' : ''}
+                        </option>`
+                    ).join('');
+                    switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
+                }
+            }
+        });
+    }
 });
 
 function bindEvents() {
     // Menu
-    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
-    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
-    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+    document.getElementById('btnOpenMenu')?.addEventListener('click', toggleMenu);
+    document.getElementById('btnCloseMenu')?.addEventListener('click', toggleMenu);
+    document.getElementById('menuOverlay')?.addEventListener('click', toggleMenu);
     
-    // Shop Switcher
-    document.getElementById('shopSwitcher').addEventListener('change', (e) => window.switchActiveShop(e.target.value));
-
     // Buttons
-    document.getElementById('btnSaveProfile').addEventListener('click', saveProfile);
-    document.getElementById('btnReset').addEventListener('click', factoryReset);
-    document.getElementById('btnExport').addEventListener('click', exportData);
-    document.getElementById('fileImport').addEventListener('change', importData);
-    document.getElementById('qrUpload').addEventListener('change', handleQRUpload);
+    document.getElementById('btnSaveProfile')?.addEventListener('click', saveProfile);
+    document.getElementById('btnReset')?.addEventListener('click', factoryReset);
+    document.getElementById('btnExport')?.addEventListener('click', exportData);
+    document.getElementById('fileImport')?.addEventListener('change', importData);
+    document.getElementById('qrUpload')?.addEventListener('change', handleQRUpload);
 
     // Account Security
-    document.getElementById('btnLogout').addEventListener('click', handleLogout);
-    document.getElementById('btnDeleteAccountTrigger').addEventListener('click', openDeleteModal);
-    document.getElementById('deleteConfirmInput').addEventListener('input', handleDeleteValidation);
-    document.getElementById('btnConfirmDelete').addEventListener('click', handleAccountDeletion);
+    document.getElementById('btnLogout')?.addEventListener('click', handleLogout);
+    document.getElementById('btnDeleteAccountTrigger')?.addEventListener('click', () => {
+        document.getElementById('deleteConfirmInput').value = '';
+        document.getElementById('btnConfirmDelete').disabled = true;
+        showModal('deleteAccountModal');
+    });
+    document.getElementById('deleteConfirmInput')?.addEventListener('input', (e) => {
+        document.getElementById('btnConfirmDelete').disabled = e.target.value !== 'DELETE';
+    });
+    document.getElementById('btnConfirmDelete')?.addEventListener('click', handleAccountDeletion);
+    document.getElementById('btnCloseDelete')?.addEventListener('click', () => hideModal('deleteAccountModal'));
     
-    // Fix inline HTML close button for Delete Modal securely
-    const closeDeleteBtn = document.querySelector('#deleteAccountModal .modal-content > div > button');
-    if(closeDeleteBtn) {
-        closeDeleteBtn.removeAttribute('onclick');
-        closeDeleteBtn.addEventListener('click', () => hideModal('deleteAccountModal'));
-    }
-    
-    // Safe Modal Overlay closing
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) hideModal(overlay.id);
         });
     });
-
-    // Toggles
-    const toggles = [
-        { id: 'toggleGst', key: 'bharatpos_gst_mode' },
-        { id: 'toggleAdv', key: 'cfg_adv_fields' },
-        { id: 'toggleLoose', key: 'cfg_loose' },
-        { id: 'toggleBatch', key: 'cfg_batch' }
-    ];
-    toggles.forEach(t => {
-        document.getElementById(t.id).addEventListener('change', (e) => {
-            localStorage.setItem(t.key, e.target.checked);
-            showToast("Settings Updated");
-        });
-    });
 }
 
 function toggleMenu() {
-    document.getElementById('sideMenu').classList.toggle('open');
+    document.getElementById('sideMenu')?.classList.toggle('open');
     const overlay = document.getElementById('menuOverlay');
-    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
 }
 
 function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
+    if(!t) return;
     t.innerText = msg; t.style.background = isError ? 'var(--danger)' : 'var(--success)';
     t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
 }
@@ -443,37 +406,42 @@ function showToast(msg, isError = false) {
 function loadProfileData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     
-    document.getElementById('shopName').value = user.shopName || localStorage.getItem('shopName') || '';
-    document.getElementById('shopPhone').value = user.mobile || user.phone || localStorage.getItem('shopPhone') || '';
-    document.getElementById('merchantId').value = user.merchantId || '';
-    document.getElementById('shopCat').value = user.category || 'GROCERY';
-    document.getElementById('shopAddress').value = user.address || localStorage.getItem('shopAddress') || '';
+    const sName = document.getElementById('shopName'); if(sName) sName.value = user.shopName || localStorage.getItem('shopName') || '';
+    const sPhone = document.getElementById('shopPhone'); if(sPhone) sPhone.value = user.mobile || user.phone || localStorage.getItem('shopPhone') || '';
+    const mId = document.getElementById('merchantId'); if(mId) mId.value = user.merchantId || '';
+    const sCat = document.getElementById('shopCat'); if(sCat) sCat.value = user.category || 'GROCERY';
+    const sAdd = document.getElementById('shopAddress'); if(sAdd) sAdd.value = user.address || localStorage.getItem('shopAddress') || '';
     
     const gstin = localStorage.getItem('cfg_gstin') || user.gstin || '';
-    document.getElementById('shopGstin').value = gstin;
+    const sGst = document.getElementById('shopGstin'); if(sGst) sGst.value = gstin;
 }
 
 async function saveProfile() {
     const btn = document.getElementById('btnSaveProfile');
+    if(!btn) return;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`; btn.disabled = true;
 
     try {
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         if (!user.merchantId) throw new Error("No active merchant ID found.");
 
-        // Grab values (Mobile and MerchantID are NOT grabbed to prevent overwriting)
         const newName = document.getElementById('shopName').value.trim();
         const newCat = document.getElementById('shopCat').value;
         const newAddress = document.getElementById('shopAddress').value.trim();
         const newGstin = document.getElementById('shopGstin').value.trim().toUpperCase();
 
-        // Update User Object
         user.shopName = newName;
         user.category = newCat;
         user.address = newAddress;
         user.gstin = newGstin;
 
-        // Save to Local Storage
+        // Also save coords if map has them
+        if (mapMarker) {
+            const pos = mapMarker.getLatLng();
+            user.lat = pos.lat;
+            user.lng = pos.lng;
+        }
+
         localStorage.setItem('bharatpos_user', JSON.stringify(user));
         localStorage.setItem('shopName', newName);
         localStorage.setItem('shopAddress', newAddress);
@@ -482,21 +450,22 @@ async function saveProfile() {
         // 🟢 FIREBASE SYNC: Update Profile Node safely
         if (window.db) {
             const shopRef = doc(db, "shops", user.merchantId);
-            await setDoc(shopRef, { 
-                profile: { 
-                    shopName: newName, 
-                    category: newCat, 
-                    address: newAddress, 
-                    gstin: newGstin,
-                    mobile: user.mobile || user.phone,
-                    isBranch: user.isBranch || false,
-                    parentId: user.parentId || null
-                } 
-            }, { merge: true });
+            const payload = {
+                shopName: newName, 
+                category: newCat, 
+                address: newAddress, 
+                gstin: newGstin,
+                mobile: user.mobile || user.phone,
+                isBranch: user.isBranch || false,
+                parentId: user.parentId || null
+            };
+            if(user.lat) payload.lat = user.lat;
+            if(user.lng) payload.lng = user.lng;
+            
+            await setDoc(shopRef, { profile: payload }, { merge: true });
         }
 
         showToast("Profile Saved Successfully!");
-        if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher(); 
     } catch (e) {
         console.error(e);
         showToast("Failed to sync profile to cloud.", true);
@@ -505,20 +474,65 @@ async function saveProfile() {
     }
 }
 
-// ─── TOGGLES & QR ─────────────────────────────────────────────────────────────
-function loadToggles() {
-    document.getElementById('toggleGst').checked = localStorage.getItem('bharatpos_gst_mode') === 'true';
-    document.getElementById('toggleAdv').checked = localStorage.getItem('cfg_adv_fields') === 'true';
-    document.getElementById('toggleLoose').checked = localStorage.getItem('cfg_loose') === 'true';
-    document.getElementById('toggleBatch').checked = localStorage.getItem('cfg_batch') === 'true';
+// ─── MAP LOGIC ─────────────────────────────────────────────────────────────
+async function initMap() {
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    let lat = 20.5937, lng = 78.9629, zoom = 5; // Default Center India
+
+    // Check Cloud for Coords if not in local
+    if(user.merchantId && window.db && (!user.lat || !user.lng)) {
+        try {
+            const docSnap = await getDoc(doc(db, "shops", user.merchantId));
+            if(docSnap.exists() && docSnap.data().profile?.lat) {
+                lat = docSnap.data().profile.lat;
+                lng = docSnap.data().profile.lng;
+                zoom = 15;
+            }
+        } catch(e){}
+    } else if (user.lat && user.lng) {
+        lat = user.lat; lng = user.lng; zoom = 15;
+    }
+
+    mapInstance = L.map('shopMap', { zoomControl: false }).setView([lat, lng], zoom);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
+    
+    if(zoom === 15) {
+        mapMarker = L.marker([lat, lng]).addTo(mapInstance).bindPopup('<b>Your Shop</b>').openPopup();
+    }
+
+    // Map Click to drop Pin
+    mapInstance.on('click', function(e) {
+        if(mapMarker) mapInstance.removeLayer(mapMarker);
+        mapMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapInstance);
+        showToast("Pin dropped. Don't forget to Save Profile.");
+    });
+
+    // GPS Auto-Locate
+    document.getElementById('btnAcquireGPS')?.addEventListener('click', () => {
+        mapInstance.locate({setView: true, maxZoom: 16});
+        showToast("Acquiring GPS Signal...");
+    });
+
+    mapInstance.on('locationfound', function(e) {
+        if(mapMarker) mapInstance.removeLayer(mapMarker);
+        mapMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapInstance);
+        showToast("GPS Location found.");
+    });
+    
+    mapInstance.on('locationerror', function(e) {
+        showToast("Could not access GPS. Please ensure location is enabled.", true);
+    });
 }
 
+// ─── QR ─────────────────────────────────────────────────────────────
 function loadQR() {
     const qrData = localStorage.getItem('upiQR');
     if (qrData) {
         const img = document.getElementById('upiQRImg');
-        img.src = qrData;
-        img.style.display = 'block';
+        if(img) {
+            img.src = qrData;
+            img.style.display = 'block';
+        }
     }
 }
 
@@ -530,22 +544,24 @@ function handleQRUpload(event) {
         const base64 = e.target.result;
         localStorage.setItem('upiQR', base64);
         const img = document.getElementById('upiQRImg');
-        img.src = base64;
-        img.style.display = 'block';
+        if(img) {
+            img.src = base64;
+            img.style.display = 'block';
+        }
         showToast("UPI QR Saved!");
     };
     reader.readAsDataURL(file);
 }
 
 // ─── DATA MANAGEMENT ──────────────────────────────────────────────────────────
-function exportData() {
+async function exportData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const payload = {
         meta: { merchantId: user.merchantId, exportDate: new Date().toISOString() },
         profile: user,
-        products: JSON.parse(localStorage.getItem('bharatpos_products') || '[]'),
-        sales: JSON.parse(localStorage.getItem('bharatpos_sales') || '[]'),
-        customers: JSON.parse(localStorage.getItem('bharatpos_customers') || '[]')
+        products: await window.dbGet('bharatpos_products', '[]'),
+        sales: await window.dbGet('bharatpos_sales', '[]'),
+        customers: await window.dbGet('bharatpos_customers', '[]')
     };
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
@@ -564,12 +580,12 @@ function importData(event) {
     if (!confirm("Importing data will overwrite your current local database. Proceed?")) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            if (data.products) localStorage.setItem('bharatpos_products', JSON.stringify(data.products));
-            if (data.sales) localStorage.setItem('bharatpos_sales', JSON.stringify(data.sales));
-            if (data.customers) localStorage.setItem('bharatpos_customers', JSON.stringify(data.customers));
+            if (data.products) await window.dbSave('bharatpos_products', data.products);
+            if (data.sales) await window.dbSave('bharatpos_sales', data.sales);
+            if (data.customers) await window.dbSave('bharatpos_customers', data.customers);
             
             showToast("Data Imported Successfully! Reloading...");
             setTimeout(() => window.location.reload(), 1500);
@@ -580,13 +596,14 @@ function importData(event) {
     reader.readAsText(file);
 }
 
-function factoryReset() {
+async function factoryReset() {
     const code = prompt("DANGER: This will wipe your local offline cache. Type 'RESET' to confirm:");
     if (code === 'RESET') {
         const user = localStorage.getItem('bharatpos_user'); 
         const shops = localStorage.getItem(`bharatpos_shops_${JSON.parse(user || '{}').mobile}`);
         
         localStorage.clear();
+        if(typeof localforage !== 'undefined') await localforage.clear();
         
         if(user) localStorage.setItem('bharatpos_user', user);
         if(shops) localStorage.setItem(`bharatpos_shops_${JSON.parse(user || '{}').mobile}`, shops);
@@ -606,16 +623,6 @@ function handleLogout() {
     }
 }
 
-function openDeleteModal() {
-    document.getElementById('deleteConfirmInput').value = '';
-    document.getElementById('btnConfirmDelete').disabled = true;
-    showModal('deleteAccountModal');
-}
-
-function handleDeleteValidation(e) {
-    document.getElementById('btnConfirmDelete').disabled = e.target.value !== 'DELETE';
-}
-
 async function handleAccountDeletion() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return;
@@ -626,12 +633,11 @@ async function handleAccountDeletion() {
 
     try {
         if(window.db) {
-            // Delete the main shop profile document from Firestore
             await deleteDoc(doc(db, "shops", user.merchantId));
         }
         
-        // Wipe everything locally
         localStorage.clear();
+        if(typeof localforage !== 'undefined') await localforage.clear();
         
         alert("Your account and shop data have been permanently deleted.");
         window.location.href = 'index.html'; 
