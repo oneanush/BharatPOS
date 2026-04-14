@@ -1,5 +1,5 @@
 // ==========================================================
-// --- MASTER DATABASE BRIDGE ---
+// --- 🟢 MASTER DATABASE BRIDGE (IndexedDB + LocalStorage) ---
 // ==========================================================
 window.dbSave = async function(key, data) {
     try {
@@ -36,8 +36,164 @@ window.dbGet = async function(key, defaultValue = '[]') {
     }
 };
 
+
 // ==========================================================
-// 🟢 1. FIREBASE SDK INITIALIZATION
+// --- 🛠️ CENTRALIZED GLOBAL UTILITIES ---
+// ==========================================================
+window.uid = function(prefix='id'){ return prefix + Date.now() + '-' + Math.floor(Math.random()*90000); };
+window.formatCurrency = function(n){ return '₹' + Number(n || 0).toFixed(2); };
+
+window.escapeHtml = function(str) { 
+    return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; 
+};
+const escapeHTML = window.escapeHtml; // Alias for backward compatibility
+
+window.showToast = function(msg, isError = false) {
+    const t = document.getElementById('toast');
+    if(!t) return;
+    t.innerText = msg; 
+    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
+    t.classList.add('show'); 
+    setTimeout(() => t.classList.remove('show'), 3000);
+};
+
+window.showModal = function(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.style.display = 'flex';
+        setTimeout(() => m.classList.add('show'), 10);
+    }
+};
+
+window.hideModal = function(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.classList.remove('show');
+        setTimeout(() => m.style.display = 'none', 300);
+    }
+};
+
+
+// ==========================================================
+// --- 🌐 I18N (INTERNATIONALIZATION) ENGINE ---
+// ==========================================================
+const i18nDictionary = {
+    "nav_dashboard":    { "en": "Dashboard",          "hinglish": "Dashboard",         "hi": "डैशबोर्ड" },
+    "nav_billing":      { "en": "Billing",            "hinglish": "Bill Banao",        "hi": "बिल बनाओ" },
+    "nav_inventory":    { "en": "Inventory",          "hinglish": "Dukaan Ka Samaan",  "hi": "दुकान का सामान" },
+    "nav_sales":        { "en": "Sales Ledger",       "hinglish": "Sales Record",      "hi": "सेल्स रिकॉर्ड" },
+    "nav_finance":      { "en": "Finance HQ",         "hinglish": "Hisab Kitab",       "hi": "हिसाब किताब" },
+    "nav_crm":          { "en": "Bharat CRM",         "hinglish": "Grahak (Customers)","hi": "ग्राहक" },
+    "nav_ai":           { "en": "DemandMitra AI",     "hinglish": "AI Forecast",       "hi": "AI भविष्यवाणी" },
+    "nav_settings":     { "en": "Settings",           "hinglish": "Settings",          "hi": "सेटिंग्स" },
+    "top_pos_btn":      { "en": "Open POS",           "hinglish": "Bill Banao",        "hi": "बिल बनाओ" }
+};
+
+window.applyTranslations = function() {
+    const lang = localStorage.getItem('app_lang') || 'en';
+    
+    // 1. Swap data-i18n elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18nDictionary[key] && i18nDictionary[key][lang]) {
+            el.innerText = i18nDictionary[key][lang];
+        }
+    });
+
+    // 2. Handle the old hardcoded tri-lingual spans (Fallback to prevent breaking current pages)
+    document.body.className = `lang-${lang}`;
+};
+
+
+// ==========================================================
+// --- 🏗️ CENTRALIZED UI INJECTOR (Solves HTML Duplication) ---
+// ==========================================================
+window.toggleMenu = function() {
+    document.getElementById('sideMenu')?.classList.toggle('open');
+    const overlay = document.getElementById('menuOverlay');
+    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+};
+
+window.injectLayout = function(activePageCode) {
+    // 1. Construct Sidebar HTML
+    const getActive = (code) => activePageCode === code ? 'active-link' : '';
+    
+    const sidebarHtml = `
+      <div id="menuOverlay" class="menu-overlay" onclick="window.toggleMenu()"></div>
+      <div id="sideMenu" class="side-menu">
+        <div class="side-menu-brand">
+          <div class="side-menu-brand-text">Bharat<span>POS</span></div>
+          <button onclick="window.toggleMenu()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+        </div>
+        <div class="side-menu-links">
+          <a href="dashboard.html" class="${getActive('dashboard')}"><i class="fa-solid fa-house"></i> <span data-i18n="nav_dashboard">Dashboard</span></a>
+          <a href="billing.html" class="${getActive('billing')}"><i class="fa-solid fa-file-invoice"></i> <span data-i18n="nav_billing">Billing</span></a>
+          <a href="products.html" class="${getActive('products')}"><i class="fa-solid fa-box-open"></i> <span data-i18n="nav_inventory">Inventory</span></a>
+          <a href="sales.html" class="${getActive('sales')}"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_sales">Sales Ledger</span></a>
+          <a href="my_dukkan.html" class="${getActive('finance')}"><i class="fa-solid fa-wallet"></i> <span data-i18n="nav_finance">Finance HQ</span></a>
+          <a href="customers.html" class="${getActive('crm')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_crm">Bharat CRM</span></a>
+          <a href="forecast.html" class="${getActive('forecast')}"><i class="fa-solid fa-brain"></i> <span data-i18n="nav_ai">DemandMitra AI</span></a>
+          <a href="settings.html" class="${getActive('settings')}"><i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span></a>
+        </div>
+      </div>
+    `;
+
+    // 2. Construct Navbar HTML
+    let iconClass = 'fa-cash-register';
+    let pageTitle = 'Dashboard';
+    
+    if(activePageCode === 'billing') { iconClass = 'fa-file-invoice'; pageTitle = 'Point of Sale'; }
+    if(activePageCode === 'products') { iconClass = 'fa-boxes-stacked'; pageTitle = 'Inventory'; }
+    if(activePageCode === 'sales') { iconClass = 'fa-chart-line'; pageTitle = 'Sales Ledger'; }
+    
+    const navbarHtml = `
+      <nav class="navbar">
+        <div class="brand">
+          <button onclick="window.toggleMenu()" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+          <div class="brand-logo-wrap"><i class="fa-solid ${iconClass}"></i></div>
+          <div class="nav-breadcrumb">
+            <span>BharatPOS</span> <span style="color:var(--border-hover);">/</span> 
+            <strong><span data-i18n="nav_${activePageCode}">${pageTitle}</span></strong>
+          </div>
+        </div>
+        <div class="nav-actions">
+          <select id="globalShopSwitcher" class="shop-switcher" style="display:none;"></select>
+          <button id="globalLangToggle" class="btn btn-outline btn-icon-only" style="font-weight:800; padding:6px 10px; border-radius:8px;">A/अ</button>
+          ${activePageCode !== 'billing' ? `
+          <button onclick="window.location.href='billing.html'" class="btn btn-success" style="padding:8px 16px;font-size:13px;width:auto;">
+            <i class="fa-solid fa-cash-register"></i> <span data-i18n="top_pos_btn">Open POS</span>
+          </button>` : `
+          <div id="btnOnlineOrders" class="bell-icon" title="Online Orders">
+              <i class="fa-solid fa-bell"></i><div class="bell-badge" id="onlineBadge">0</div>
+          </div>`}
+        </div>
+      </nav>
+      <div id="toast">✅ Action Successful</div>
+    `;
+
+    // 3. Inject into Body
+    document.body.insertAdjacentHTML('afterbegin', navbarHtml);
+    document.body.insertAdjacentHTML('afterbegin', sidebarHtml);
+
+    // 4. Bind Global Nav Events
+    const langBtn = document.getElementById('globalLangToggle');
+    if(langBtn) {
+        langBtn.addEventListener('click', () => {
+            const langs = ['en', 'hinglish', 'hi'];
+            let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
+            currentIdx = (currentIdx + 1) % langs.length;
+            localStorage.setItem('app_lang', langs[currentIdx]);
+            window.applyTranslations();
+        });
+    }
+
+    // Apply translations immediately upon injection
+    window.applyTranslations();
+};
+
+
+// ==========================================================
+// 🟢 FIREBASE SDK INITIALIZATION
 // ==========================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where, writeBatch, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -57,8 +213,9 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
+
 // ==========================================================
-// 🚀 2. AI MICROSERVICE ROUTING (Render.com)
+// 🚀 AI MICROSERVICE ROUTING (Render.com)
 // ==========================================================
 const API_BASE = 'https://server-xy7s.onrender.com'; 
 
@@ -72,8 +229,9 @@ window.buildUrl = function(endpoint) {
 };
 const buildUrl = window.buildUrl;
 
+
 // ==========================================================
-// 💾 3. ASYNC STORAGE KEYS & HELPERS
+// 💾 ASYNC STORAGE KEYS & BACKWARD COMPATIBILITY HELPERS
 // ==========================================================
 const LS_KEYS = {
   PRODUCTS: 'bharatpos_products',
@@ -81,19 +239,6 @@ const LS_KEYS = {
   SETTINGS: 'bharatpos_settings'
 };
 
-window.uid = function(prefix='id'){ return prefix + Date.now() + '-' + Math.floor(Math.random()*90000); }
-window.formatCurrency = function(n){ return '₹' + Number(n || 0).toFixed(2); }
-window.escapeHTML = function(str) {
-  if (str === undefined || str === null) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-const uid = window.uid;
-const formatCurrency = window.formatCurrency;
-const escapeHTML = window.escapeHTML;
-
-// --- SETTINGS CRUD ---
 window.getSettings = async function(){
   const defaults = { theme:'light', adminPw:'admin123', storeName:'BharatPOS' };
   try { return await window.dbGet(LS_KEYS.SETTINGS, JSON.stringify(defaults)); }
@@ -101,7 +246,6 @@ window.getSettings = async function(){
 }
 window.saveSettings = async function(s){ await window.dbSave(LS_KEYS.SETTINGS, s); }
 
-// --- PRODUCTS CRUD ---
 window.getProducts = async function(){
   try { return await window.dbGet(LS_KEYS.PRODUCTS, '[]'); }
   catch(e){ await window.dbSave(LS_KEYS.PRODUCTS, []); return []; }
@@ -114,19 +258,13 @@ window.saveProducts = async function(arr){
       try { pushProductsToServer(); } catch(e){ console.warn('Product push failed', e); }
   }, 900);
 }
-const getProducts = window.getProducts;
-const saveProducts = window.saveProducts;
 
-// --- SALES CRUD ---
 window.getSales = async function(){
   try { return await window.dbGet(LS_KEYS.SALES, '[]'); }
   catch(e){ await window.dbSave(LS_KEYS.SALES, []); return []; }
 }
 window.saveSales = async function(arr){ await window.dbSave(LS_KEYS.SALES, arr); }
-const getSales = window.getSales;
-const saveSales = window.saveSales;
 
-// --- CUSTOMERS CRUD ---
 window.getCustomers = async function(){
   try { return await window.dbGet('bharatpos_customers', '[]'); }
   catch(e){ await window.dbSave('bharatpos_customers', []); return []; }
@@ -140,13 +278,11 @@ window.saveCustomers = async function(arr){
       pushFullBackupToServerDebounced(); 
   }, 900);
 }
-const getCustomers = window.getCustomers;
-const saveCustomers = window.saveCustomers;
+
 
 // ==========================================================
-// ☁️ 4. FIREBASE SYNC ENGINE
+// ☁️ FIREBASE SYNC ENGINE (Legacy Uploaders)
 // ==========================================================
-
 window.pushProductsToServerDebounced = function() {
   if (typeof pushProductsToServer === 'function') {
     try { pushProductsToServer(); } catch(e){ console.warn('pushProductsToServer error', e); }
@@ -158,7 +294,7 @@ window.pushProductsToServer = async function(){
   try{
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return;
-    const products = await getProducts(); // Async Bridge
+    const products = await window.getProducts(); 
     
     const batch = writeBatch(db);
     products.forEach(p => {
@@ -169,14 +305,13 @@ window.pushProductsToServer = async function(){
     console.log('📦 Products pushed to Firestore for', user.merchantId);
   }catch(err){ console.warn('Product push failed', err); }
 }
-const pushProductsToServer = window.pushProductsToServer;
 
 window.pushCustomersToServer = async function(){
   if(window.IS_CUSTOMER_APP || window.IS_ADMIN_APP) return;
   try{
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     if(!user.merchantId) return;
-    const customers = await getCustomers(); // Async Bridge
+    const customers = await window.getCustomers(); 
     
     const batch = writeBatch(db);
     customers.forEach(c => {
@@ -187,7 +322,6 @@ window.pushCustomersToServer = async function(){
     console.log('👥 Customers pushed to Firestore for', user.merchantId);
   }catch(err){ console.warn('Customer push failed', err); }
 }
-const pushCustomersToServer = window.pushCustomersToServer;
 
 window.syncBillToServer = async function(billData) {
     if(window.IS_CUSTOMER_APP || window.IS_ADMIN_APP) return;
@@ -204,18 +338,16 @@ window.syncBillToServer = async function(billData) {
         await setDoc(billRef, billData);
         
         const batch = writeBatch(db);
-        const allProducts = await getProducts(); // Async Bridge
+        const allProducts = await window.getProducts(); 
         billData.items.forEach(cartItem => {
             const pRef = doc(db, "shops", userSettings.merchantId, "products", cartItem.id);
             const localP = allProducts.find(p => p.id === cartItem.id);
             if(localP) batch.update(pRef, { stock: localP.stock });
         });
         await batch.commit();
-
         console.log("✅ Bill & Stock synced to Firestore");
     } catch (error) { console.warn("⚠️ Firestore Sync Failed (Offline Mode):", error); }
 }
-const syncBillToServer = window.syncBillToServer;
 
 window.registerOrUpdateMerchantProfile = async function(){
   try{
@@ -236,11 +368,12 @@ window.registerOrUpdateMerchantProfile = async function(){
     const shopRef = doc(db, "shops", user.merchantId);
     await setDoc(shopRef, { profile: payload, merchantId: user.merchantId }, { merge: true });
     
-    try { await pushProductsToServer(); } catch(e){}
-    try { await pushCustomersToServer(); } catch(e){}
-    try { await pushFullBackupToServer(); } catch(e){}
+    try { await window.pushProductsToServer(); } catch(e){}
+    try { await window.pushCustomersToServer(); } catch(e){}
+    try { await window.pushFullBackupToServer(); } catch(e){}
   }catch(e){ console.warn('Profile update failed', e); }
 }
+
 
 // --- ASYNC FULL BACKUP ---
 window.gatherFullLocalBackup = async function() {
@@ -274,9 +407,8 @@ let _fullBackupTimer = null;
 window.pushFullBackupToServerDebounced = function(delay = 1000) {
   if(window.IS_CUSTOMER_APP || window.IS_ADMIN_APP) return;
   try { if (_fullBackupTimer) clearTimeout(_fullBackupTimer); } catch(e){}
-  _fullBackupTimer = setTimeout(() => { pushFullBackupToServer().catch(()=>{}); }, delay);
+  _fullBackupTimer = setTimeout(() => { window.pushFullBackupToServer().catch(()=>{}); }, delay);
 }
-const pushFullBackupToServerDebounced = window.pushFullBackupToServerDebounced;
 
 window.pushFullBackupToServer = async function() {
   if(window.IS_CUSTOMER_APP || window.IS_ADMIN_APP) return;
@@ -290,10 +422,10 @@ window.pushFullBackupToServer = async function() {
     console.log('🔁 Full backup pushed to Firestore for', user.merchantId);
   } catch (err) { console.warn('Full backup failed', err); }
 }
-const pushFullBackupToServer = window.pushFullBackupToServer;
+
 
 // ==========================================================
-// 🏢 5. STRICT MULTI-BRANCH ENGINE (Hub & Spoke)
+// 🏢 STRICT MULTI-BRANCH ENGINE (Hub & Spoke)
 // ==========================================================
 window.loadOwnedShops = async function(mobileNum) {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
@@ -341,8 +473,8 @@ window.switchActiveShop = async function(targetMerchantId) {
     
     const savedMobile = user.mobile || user.phone;
     
-    if (typeof pushFullBackupToServer === 'function') { 
-        try { await pushFullBackupToServer(); } catch(e){} 
+    if (typeof window.pushFullBackupToServer === 'function') { 
+        try { await window.pushFullBackupToServer(); } catch(e){} 
     }
 
     try {
@@ -353,6 +485,12 @@ window.switchActiveShop = async function(targetMerchantId) {
             await localforage.removeItem('bharatpos_customers');
             await localforage.removeItem('bill_items');
             await localforage.removeItem('bharatpos_ai_cache');
+            
+            // Wipe Enterprise Master Caches to force refresh on switch
+            await localforage.removeItem('bharatpos_enterprise_sales');
+            await localforage.removeItem('bharatpos_enterprise_products');
+            await localforage.removeItem('bharatpos_enterprise_pos');
+            await localforage.removeItem('bharatpos_enterprise_expenses');
         }
 
         const shopRef = doc(db, "shops", targetMerchantId);
@@ -399,121 +537,30 @@ window.switchActiveShop = async function(targetMerchantId) {
     }
 }
 
-// ==========================================================
-// 📦 6. PRODUCT / INVENTORY FUNCTIONS
-// ==========================================================
-window.addProduct = async function() {
-  const nameEl = document.getElementById('productName');
-  const priceEl = document.getElementById('productPrice');
-  const stockEl = document.getElementById('productStock');
-  const taxEl = document.getElementById('productTax');
-  const catEl = document.getElementById('productCategory');
-  const barcodeEl = document.getElementById('productBarcode');
-  const qtyEl = document.getElementById('productQuantity'); 
-
-  if (!nameEl || !priceEl || !stockEl || !catEl) { alert('Product form missing fields'); return; }
-
-  const name = nameEl.value.trim();
-  const price = parseFloat(priceEl.value);
-  const stock = parseInt(stockEl.value);
-  const taxPercent = parseFloat(taxEl?.value) || 0;
-  const category = catEl.value.trim() || 'General';
-  const barcode = barcodeEl?.value.trim() || '';
-  const quantity = qtyEl?.value.trim() || ''; 
-
-  if (!name || isNaN(price) || isNaN(stock)) { alert('Enter valid product info'); return; }
-
-  const products = await getProducts(); // Async bridge
-  const existing = products.find(p => p.name.toLowerCase() === name.toLowerCase());
-
-  if (existing) {
-    existing.stock = (existing.stock || 0) + stock;
-    existing.price = Number(price);
-    existing.taxPercent = Number(taxPercent);
-    existing.category = category || existing.category;
-    existing.barcode = barcode || existing.barcode;
-    existing.quantity = quantity || existing.quantity; 
-  } else {
-    products.push({ id: uid('p'), name, price, stock, taxPercent, category, barcode, quantity });
-  }
-
-  await saveProducts(products); // Async bridge
-
-  nameEl.value = ''; priceEl.value = ''; stockEl.value = ''; taxEl.value = ''; catEl.value = '';
-  if (barcodeEl) barcodeEl.value = '';
-  if (qtyEl) qtyEl.value = '';
-
-  if (typeof window.renderCategoryFilters === 'function') await window.renderCategoryFilters();
-  if (typeof window._renderProductGrid === 'function') await window._renderProductGrid();
-}
-
-window.renderCategoryFilters = async function(){
-  const products = await getProducts();
-  const categories = [...new Set(products.map(p => p.category || 'General'))];
-  const filterBox = document.getElementById("categoryFilters");
-  if(!filterBox) return;
-  filterBox.innerHTML = `<button onclick="filterByCategory('all')">All</button>` +
-    categories.map(c => `<button onclick="filterByCategory('${c}')">${c}</button>`).join("");
-}
-
-window.filterByCategory = async function(cat){
-  const products = await getProducts();
-  const filtered = cat === 'all' ? products : products.filter(p => p.category === cat);
-  const productList = document.getElementById('productList');
-  if(!productList) return;
-  productList.innerHTML = filtered.map(p=>{
-    const qty = Number(p.stock||0);
-    const disabled = qty <= 0 ? 'disabled' : '';
-    return `<button class="prod-btn" data-id="${p.id}" ${disabled}>
-              <div class="prod-name">${escapeHTML(p.name)}</div>
-              <div class="small" style="color:#0b5ed7;font-weight:bold;">${p.quantity || ''}</div>
-              <div class="prod-qty">×${qty}</div>
-            </button>`;
-  }).join('');
-  if(typeof window.attachProductGridHandlers === 'function') window.attachProductGridHandlers();
-}
-
-window.updateProduct = async function(id, data){
-  const products = await getProducts();
-  const i = products.findIndex(p=>p.id===id);
-  if(i===-1) return false;
-  products[i] = {...products[i], ...data};
-  await saveProducts(products);
-  return true;
-}
-
-window.deleteProduct = async function(pid){
-  let products = await getProducts();
-  products = products.filter(p=>p.id!==pid);
-  await saveProducts(products);
-  return products;
-}
 
 // ==========================================================
-// 🛒 7. CHECKOUT & BILLING LOGIC
+// 🛒 CORE CHECKOUT & BILLING LOGIC
 // ==========================================================
 window.genInvoiceNo = function(){ return 'INV' + Date.now().toString().slice(-8); }
 window.todayISO = function(){ return new Date().toISOString(); }
-const genInvoiceNo = window.genInvoiceNo;
-const todayISO = window.todayISO;
 
 window.checkoutCart = async function(cartItems, customer='Walk-in', paymentMode='cash', discount=0){
   if(!cartItems || !Array.isArray(cartItems) || cartItems.length===0) throw new Error('Cart empty');
 
-  const products = await getProducts();
+  const products = await window.getProducts();
   cartItems.forEach(it=>{
     const p = products.find(x=>x.id===it.id);
     if(p){ p.stock = Math.max(0, (Number(p.stock)||0) - Number(it.qty||0)); }
   });
-  await saveProducts(products);
+  await window.saveProducts(products);
 
   const subtotal = cartItems.reduce((s,it)=> s + (Number(it.price||0) * Number(it.qty||0)), 0);
   const taxSum = cartItems.reduce((s,it)=> s + ((Number(it.price||0) * Number(it.qty||0)) * Number(it.taxPercent||0)/100), 0);
   const total = subtotal + taxSum - Number(discount||0);
 
   const sale = {
-    invoiceNo: genInvoiceNo(),
-    date: todayISO(),
+    invoiceNo: window.genInvoiceNo(),
+    date: window.todayISO(),
     customer,
     items: cartItems.map(it=>({ 
       id: it.id, name: it.name, price: Number(it.price), qty: Number(it.qty), taxPercent: Number(it.taxPercent||0),
@@ -522,336 +569,18 @@ window.checkoutCart = async function(cartItems, customer='Walk-in', paymentMode=
     subtotal, taxAmount: taxSum, discount: Number(discount||0), total, paymentMode
   };
 
-  const sales = await getSales();
+  const sales = await window.getSales();
   sales.push(sale);
-  await saveSales(sales);
- 
-  pushFullBackupToServerDebounced();
+  await window.saveSales(sales);
+  
+  window.pushFullBackupToServerDebounced();
   return sale;
 }
-const checkoutCart = window.checkoutCart;
 
-(async function billingEverything(){
-  if(!window.location.href.includes('billing_legacy.html')) return;
-
-  let billItems = await window.dbGet('bill_items', '[]');
-  window.cart = billItems;
-
-  const syncToStorage = async () => {
-    await window.dbSave('bill_items', billItems);
-    window.cart = billItems; 
-  };
-  
-  const loadFromStorage = async () => { 
-      billItems = await window.dbGet('bill_items', '[]'); 
-      window.cart = billItems; 
-  };
-
-  window.addToBill = async function(id){
-    const products = await getProducts();
-    const product = products.find(p => p.id === id);
-    if(!product) return;
-
-    let item = billItems.find(b => b.id === id);
-    if(item){
-      if(Number(product.stock||0) && item.qty >= Number(product.stock)){
-        alert('Stock limit reached for ' + product.name);
-        return;
-      }
-      item.qty += 1;
-    } else {
-      billItems.push({
-        id: product.id, name: product.name, price: Number(product.price||0), qty: 1,
-        taxPercent: Number(product.taxPercent||0), unit: product.quantity || '' 
-      });
-    }
-    await syncToStorage();
-    await renderCart();
-  };
-
-  async function renderCart(){
-    await loadFromStorage();
-    const container = document.getElementById('cartList');
-    if(!container) return;
-
-    if(!billItems.length){
-      container.innerHTML = '<div class="small">Cart empty</div>';
-      document.getElementById('grandTotal').innerText='Total: ₹0';
-      return;
-    }
-
-    let subtotal=0, taxTotal=0;
-    let html = '<table style="width:100%"><tr><th>Item</th><th>Qty</th><th>Price</th><th>Tax</th><th>Total</th><th>Action</th></tr>';
-
-    billItems.forEach((it,i)=>{
-      const price = Number(it.price||0);
-      const qty = Number(it.qty||0);
-      const tax = price*qty*(Number(it.taxPercent||0)/100);
-      const total = price*qty + tax;
-      subtotal += price*qty;
-      taxTotal += tax;
-
-      const unitLabel = it.unit ? `<span class="small" style="color:#0b5ed7">${it.unit}</span> ` : '';
-
-      html += `<tr>
-        <td>${escapeHTML(it.name)} <br>${unitLabel}</td>
-        <td>${qty}</td>
-        <td>₹${price.toFixed(2)}</td>
-        <td>₹${tax.toFixed(2)}</td>
-        <td>₹${total.toFixed(2)}</td>
-        <td style="min-width:120px">
-          <button class="cart-inc" data-index="${i}">+</button>
-          <button class="cart-dec" data-index="${i}">-</button>
-          <button class="cart-remove" data-index="${i}" style="background:#dc3545;color:#fff">X</button>
-        </td>
-      </tr>`;
-    });
-
-    html += '</table>';
-    container.innerHTML = html;
-
-    const discount = Number(document.getElementById('discount')?.value||0);
-    const grand = subtotal + taxTotal - discount;
-    document.getElementById('grandTotal').innerText= `Total: ₹${grand.toFixed(2)}`;
-
-    container.querySelectorAll('.cart-inc').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const i = Number(btn.dataset.index);
-        if(!billItems[i]) return;
-        billItems[i].qty += 1;
-        await syncToStorage(); await renderCart();
-      };
-    });
-    container.querySelectorAll('.cart-dec').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const i = Number(btn.dataset.index);
-        if(!billItems[i]) return;
-        billItems[i].qty -= 1;
-        if(billItems[i].qty <= 0) billItems.splice(i,1);
-        await syncToStorage(); await renderCart();
-      };
-    });
-    container.querySelectorAll('.cart-remove').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const i = Number(btn.dataset.index);
-        if(!billItems[i]) return;
-        billItems.splice(i,1);
-        await syncToStorage(); await renderCart();
-      };
-    });
-  }
-  window.renderCart = renderCart;
-
-  let activeCategory = null;
-  let searchQuery = '';
-
-  async function renderProductGrid(){
-    const productList = document.getElementById('productList');
-    if(!productList) return;
-
-    let products = await getProducts();
-    if(activeCategory) products = products.filter(p=>p.category === activeCategory);
-    if(searchQuery) {
-      const q = searchQuery.toLowerCase();
-      products = products.filter(p => (p.name || '').toLowerCase().startsWith(q));
-    }
-
-    if(!products.length){ productList.innerHTML='<div class="small">No products</div>'; return; }
-
-    productList.innerHTML = products.map(p=>{
-      const qty = Number(p.stock||0), disabled = qty<=0?'disabled':'';
-      const unitDisplay = p.quantity ? `<div style="font-size:10px;font-weight:bold;color:#0b5ed7">${p.quantity}</div>` : '';
-      return `<button class="prod-btn" ${disabled} data-id="${p.id}">
-                <div class="prod-name">${escapeHTML(p.name)}</div>
-                ${unitDisplay}
-                <div class="prod-qty">×${qty}</div>
-              </button>`;
-    }).join('');
-
-    productList.querySelectorAll('.prod-btn').forEach(btn=>{
-      const pid = btn.dataset.id;
-      btn.onclick = ()=>window.addToBill(pid);
-    });
-  }
-  window._renderProductGrid = renderProductGrid;
-
-  window.filterCategory = async function(cat){
-    activeCategory = cat==='All'?null:cat;
-    await renderProductGrid();
-  };
-
-  function debounce(fn, wait){
-    let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait); };
-  }
-
-  async function renderSearchResults(query){
-    const resultsBox = document.getElementById('searchResults');
-    if(!resultsBox) return;
-    const q = (query || '').trim().toLowerCase();
-    if(!q){ resultsBox.innerHTML = ''; resultsBox.style.display = 'none'; return; }
-
-    const products = await getProducts();
-    const matches = products.filter(p => {
-      const name = (p.name || '').toLowerCase();
-      const barcode = String(p.barcode || '').toLowerCase();
-      return name.startsWith(q) || barcode.startsWith(q);
-    }).slice(0, 8);
-
-    if(!matches.length){
-      resultsBox.innerHTML = `<div class="small" style="padding:8px">No matches</div>`;
-      resultsBox.style.display = 'block';
-      return;
-    }
-
-    const html = matches.map(p=>{
-      const price = Number(p.price||0);
-      const stock = Number(p.stock||0);
-      return `<div class="search-result">
-        <div class="info">
-          <div class="title">${escapeHTML(p.name || 'Unnamed')}</div>
-          <div class="meta">Price: ₹${price.toFixed(2)} • Stock: ${stock}</div>
-        </div>
-        <div>
-          <button class="search-add-btn" data-id="${p.id}">Add</button>
-        </div>
-      </div>`;
-    }).join('');
-
-    resultsBox.innerHTML = html;
-    resultsBox.style.display = 'block';
-
-    resultsBox.querySelectorAll('.search-add-btn').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const id = btn.dataset.id;
-        if(!id) return;
-        if (typeof window.addToBill === 'function') {
-          await window.addToBill(id);
-          btn.textContent = 'Added';
-          btn.disabled = true;
-          setTimeout(()=>{ btn.textContent = 'Add'; btn.disabled = false; }, 600);
-        }
-      };
-    });
-  }
-
-  const debouncedRenderSearchResults = debounce(renderSearchResults, 160);
-
-  const searchInput = document.getElementById('productSearch');
-  if(searchInput){
-    searchInput.addEventListener('input', async ()=>{
-      searchQuery = searchInput.value.trim();
-      await renderProductGrid(); 
-      debouncedRenderSearchResults(searchQuery);
-    });
-
-    searchInput.addEventListener('keydown', async (e)=>{
-      if (e.key === 'Enter') {
-        const q = searchInput.value.trim().toLowerCase();
-        if (!q) return;
-        const products = await getProducts();
-        const matches = products.filter(p => {
-          const name = (p.name || '').toLowerCase();
-          const barcode = String(p.barcode || '').toLowerCase();
-          return name.startsWith(q) || barcode.startsWith(q);
-        });
-        if (matches && matches.length) {
-          if (typeof window.addToBill === 'function') {
-            await window.addToBill(matches[0].id);
-          } else {
-            localStorage.setItem('temp_add_product_id', matches[0].id);
-            window.location.href = 'billing.html';
-          }
-          e.preventDefault();
-        }
-      } else if (e.key === 'Escape') {
-        const resultsBox = document.getElementById('searchResults');
-        if (resultsBox) { resultsBox.innerHTML = ''; resultsBox.style.display = 'none'; }
-      }
-    });
-
-    document.addEventListener('click', (ev) => {
-      const resultsBox = document.getElementById('searchResults');
-      if (!resultsBox || resultsBox.style.display === 'none') return;
-      const target = ev.target;
-      const isInsideSearch = target === searchInput || searchInput.contains(target);
-      const isInsideResults = resultsBox.contains(target);
-      if (!isInsideSearch && !isInsideResults) {
-        resultsBox.innerHTML = '';
-        resultsBox.style.display = 'none';
-      }
-    });
-  }
-})();
 
 // ==========================================================
-// 🎯 8. UNIVERSAL BARCODE & UTILS
+// 🏁 SYSTEM INIT & THEME APPLIER
 // ==========================================================
-document.addEventListener('DOMContentLoaded', () => {
-  const barcodeInput = document.getElementById('barcodeInput');
-  if (!barcodeInput) return;
-
-  barcodeInput.addEventListener('keypress', async function (e) {
-    if (e.key !== 'Enter') return;
-    const code = barcodeInput.value.trim();
-    if (!code) return;
-
-    try {
-      const products = await getProducts();
-      const found = products.find(p => String(p.barcode) === String(code));
-      if (found) {
-        if (typeof window.addToBill === 'function') {
-          await window.addToBill(found.id);
-        } else {
-          localStorage.setItem('temp_add_product_id', found.id);
-          window.location.href = 'billing.html';
-        }
-      } else {
-        localStorage.setItem('temp_new_barcode', String(code));
-        window.location.href = 'products.html';
-      }
-    } catch (err) {
-      console.error('Barcode processing error', err);
-      localStorage.setItem('temp_new_barcode', String(code));
-      window.location.href = 'products.html';
-    } finally {
-      barcodeInput.value = '';
-    }
-  });
-});
-
-window.attachProductGridHandlers = function() {
-  const productList = document.getElementById('productList');
-  if (!productList) return;
-  productList.querySelectorAll('.prod-btn').forEach(btn=>{
-    const pid = btn.dataset.id;
-    btn.onclick = ()=>window.addToBill(pid);
-  });
-}
-const attachProductGridHandlers = window.attachProductGridHandlers;
-
-window.applyShopDetails = function() {
-  const name = localStorage.getItem("shopName");
-  const phone = localStorage.getItem("shopPhone");
-
-  const shopNameEls = document.querySelectorAll(".shop-name");
-  const shopPhoneEls = document.querySelectorAll(".shop-phone");
-
-  shopNameEls.forEach(el => { if (name) el.textContent = name; });
-  shopPhoneEls.forEach(el => { if (phone) el.textContent = phone; });
-}
-document.addEventListener("DOMContentLoaded", window.applyShopDetails);
-
-window.loadUPIQR = function() {
-  const qr = localStorage.getItem("upiQR");
-  if (qr) {
-    const el = document.getElementById("upiQRImg");
-    if(el) el.src = qr;
-    const sec = document.getElementById("upiSection");
-    if(sec) sec.style.display = "block";
-  }
-}
-document.addEventListener("DOMContentLoaded", window.loadUPIQR);
-
 window.toggleTheme = function() {
   const isDark = document.body.classList.toggle("dark");
   localStorage.setItem("theme", isDark ? "dark" : "light");
@@ -860,156 +589,27 @@ window.applyTheme = function() {
   const theme = localStorage.getItem("theme");
   if (theme === "dark") { document.body.classList.add("dark"); }
 }
-document.addEventListener("DOMContentLoaded", window.applyTheme);
 
-window.exportAll = async function(){
-  const payload = { settings: await getSettings(), products: await getProducts(), sales: await getSales() };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'BharatPOS_export_'+Date.now()+'.json';
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+window.applyShopDetails = function() {
+  const name = localStorage.getItem("shopName");
+  const phone = localStorage.getItem("shopPhone");
+  const shopNameEls = document.querySelectorAll(".shop-name");
+  const shopPhoneEls = document.querySelectorAll(".shop-phone");
+  shopNameEls.forEach(el => { if (name) el.textContent = name; });
+  shopPhoneEls.forEach(el => { if (phone) el.textContent = phone; });
 }
 
-window.importAllFile = function(file, callback){
-  const reader = new FileReader();
-  reader.onload = async function(e){
-    try{
-      const obj = JSON.parse(e.target.result);
-      if(obj.settings) await saveSettings(obj.settings);
-      if(obj.products) await saveProducts(obj.products);
-      if(obj.sales) await saveSales(obj.sales);
-      callback && callback(null,'Imported');
-
-      try { pushProductsToServer(); } catch(e){}
-      try { pushCustomersToServer(); } catch(e){}
-    }catch(err){ callback && callback(err); }
-  };
-  reader.readAsText(file);
-}
-
-window.addEventListener('storage', (e) => {
-  if (!e) return;
-  if (e.key === 'bharatpos_last_import') {
-    console.log('BharatPOS: import detected -> reloading to sync data.');
-    location.reload();
-  }
-});
-
-// ==========================================================
-// ✅ 9. COMPLETE SALE FUNCTION
-// ==========================================================
-window.completeSale = async function() {
-    let cart = window.cart;
-    if (!cart || cart.length === 0) {
-        try { cart = await window.dbGet('bill_items', '[]'); } catch (e) {}
-    }
-    if (!cart || cart.length === 0) { alert('Cart empty'); return; }
-
-    const customer = document.getElementById('custName')?.value.trim();
-    const phone = document.getElementById('custPhone')?.value.trim();
-    const discount = Number(document.getElementById('discount')?.value || 0);
-    const payModeEl = document.querySelector('input[name="payMode"]:checked');
-    const paymentMode = payModeEl ? payModeEl.value : 'Cash';
-
-    if (paymentMode === 'Udhaar') {
-        if (!customer || customer.length < 3) {
-            alert("⚠️ For Udhaar, Customer Name is mandatory!");
-            document.getElementById('custName').focus(); return;
-        }
-        if (!phone || phone.length < 10) {
-            alert("⚠️ For Udhaar, valid Phone Number is mandatory!");
-            document.getElementById('custPhone').focus(); return;
-        }
-    }
-
-    const sale = await checkoutCart(cart, customer || 'Walk-in', paymentMode, discount);
-
-    if (phone) {
-      try {
-        const customers = await getCustomers();
-        const exists = customers.find(c => c.phone === phone);
-        if (!exists) {
-          const newCust = { id: uid('c'), name: customer || '', phone, lastSeen: new Date().toISOString() };
-          customers.push(newCust);
-          await saveCustomers(customers); 
-        } else {
-          exists.lastSeen = new Date().toISOString();
-          await saveCustomers(customers);
-        }
-      } catch(e) { console.warn('Customer add failed', e); }
-    }
-
-    const billForServer = {
-        id: sale.invoiceNo,
-        date: sale.date,
-        customerName: customer || "Walk-in",
-        phone: phone || "",
-        amount: sale.total,
-        items: sale.items,
-        paymentMode: paymentMode,
-        isPaid: paymentMode !== 'Udhaar'
-    };
-
-    if (typeof syncBillToServer === 'function') {
-        syncBillToServer(billForServer);
-    } else if (typeof window.syncBillToServer === 'function') {
-        window.syncBillToServer(billForServer);
-    }
-
-    if (paymentMode === 'Udhaar') {
-        const ledgerEntry = { ...billForServer, isPaid: false };
-        const ledger = await window.dbGet('bharatpos_ledger', '[]');
-        ledger.push(ledgerEntry);
-        await window.dbSave('bharatpos_ledger', ledger);
-    }
-
-    window.cart = [];
-    await window.dbSave('bill_items', []);
-    
-    if (window.renderCart) await window.renderCart();
-    if (typeof window._renderProductGrid === 'function') await window._renderProductGrid();
-
-    const modal = document.getElementById('invoiceModal');
-    const content = document.getElementById('invoiceContent');
-    if (content) {
-        const statusBadge = paymentMode === 'Udhaar' 
-            ? `<div style="background:#dc3545; color:#fff; padding:5px; text-align:center; font-weight:bold; margin-bottom:10px;">⚠️ PAYMENT PENDING (UDHAAR)</div>` 
-            : '';
-
-        content.innerHTML = `
-            <h3>🛰️ Bharat POS</h3>
-            ${statusBadge}
-            <div><b>Invoice:</b> ${sale.invoiceNo}</div> 
-            <div><b>Date:</b> ${new Date(sale.date).toLocaleString()}</div>
-            <div><b>Customer:</b> ${sale.customer}</div>
-            <table style="width:100%;margin-top:8px;border-collapse:collapse">
-                <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-                ${sale.items.map(it => `<tr><td>${escapeHTML(it.name)}</td><td>${it.qty}</td><td>₹${it.price.toFixed(2)}</td><td>₹${(it.price * it.qty).toFixed(2)}</td></tr>`).join('')}
-            </table>
-            <div style="text-align:right;margin-top:8px"><b>Grand Total: ₹${sale.total.toFixed(2)}</b></div>
-        `;
-    }
-    if (modal) modal.classList.remove('hidden');
-
-    if (paymentMode === 'Udhaar' && phone) {
-        if (confirm("Send Udhaar record to customer via WhatsApp?")) {
-            const msg = `Hello ${customer}, you have a pending amount of ₹${sale.total.toFixed(2)} at BharatPOS. Invoice: ${sale.invoiceNo}. Please pay soon.`;
-            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-    }
-};
-
-// ==========================================================
-// 🏁 10. SYSTEM INIT
-// ==========================================================
 (async function initBharatPOS(){
-  // Initialize defaults if they do not exist
-  if((await window.dbGet(LS_KEYS.SETTINGS, null)) === null) await saveSettings(await window.getSettings());
-  if((await window.dbGet(LS_KEYS.PRODUCTS, null)) === null) await saveProducts([]);
-  if((await window.dbGet(LS_KEYS.SALES, null)) === null) await saveSales([]);
+  // Apply visual configurations immediately
   window.applyTheme();
+  document.addEventListener("DOMContentLoaded", window.applyShopDetails);
 
-  // On startup try to push any existing data
-  try { setTimeout(()=> { pushProductsToServer(); pushCustomersToServer(); }, 1200); } catch(e){}
-  try { setTimeout(()=> { pushFullBackupToServerDebounced(); }, 2000); } catch(e){}
+  // Initialize defaults if they do not exist
+  if((await window.dbGet(LS_KEYS.SETTINGS, null)) === null) await window.saveSettings(await window.getSettings());
+  if((await window.dbGet(LS_KEYS.PRODUCTS, null)) === null) await window.saveProducts([]);
+  if((await window.dbGet(LS_KEYS.SALES, null)) === null) await window.saveSales([]);
+
+  // On startup try to push any existing data silently
+  try { setTimeout(()=> { window.pushProductsToServer(); window.pushCustomersToServer(); }, 1200); } catch(e){}
+  try { setTimeout(()=> { window.pushFullBackupToServerDebounced(); }, 2000); } catch(e){}
 })();
