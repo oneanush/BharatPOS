@@ -264,28 +264,28 @@
     <div class="toolbar">
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchBar" placeholder="Search Customer, Phone or Invoice No..." autocomplete="off">
+        <input type="text" id="searchBar" class="form-input" placeholder="Search Customer, Phone or Invoice No..." autocomplete="off">
       </div>
       
       <div class="filters">
-          <select id="filterBranch" class="form-select filter-highlight" style="display:none; font-weight:800;">
+          <select id="filterBranch" class="form-select filter-highlight" style="display:none; font-weight:800; width: auto;">
               <option value="all">🌍 All Branches</option>
           </select>
 
-          <select id="filterDate" class="form-select">
+          <select id="filterDate" class="form-select" style="width: auto;">
               <option value="all">All Time</option>
               <option value="today">Today</option>
               <option value="7days">Last 7 Days</option>
               <option value="month">This Month</option>
           </select>
-          <select id="filterMode" class="form-select">
+          <select id="filterMode" class="form-select" style="width: auto;">
               <option value="all">All Modes</option>
               <option value="Cash">Cash</option>
               <option value="Online">Online/UPI</option>
               <option value="Partial">Partial/Mix</option>
               <option value="Udhaar">Udhaar</option>
           </select>
-          <button id="btnOpenReport" class="btn btn-primary">
+          <button id="btnOpenReport" class="btn btn-primary" style="width: auto;">
             <i class="fa-solid fa-file-export"></i> Reports
           </button>
       </div>
@@ -315,7 +315,7 @@
 </div>
 
 <div id="reportModal" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-box" style="max-width: 400px; border-radius: 20px;">
         <div class="modal-header">
             <h3 style="margin:0; font-size:16px; font-weight:800;"><i class="fa-solid fa-calendar-days" style="color:var(--primary);"></i> Export Audit Reports</h3>
             <button id="btnCloseReport" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
@@ -325,8 +325,8 @@
                 Note: Export will respect the Branch filter selected on the main screen.
             </div>
             <div class="date-row">
-                <div class="form-group"><label>Start Date</label><input type="date" id="startDate" class="form-input"></div>
-                <div class="form-group"><label>End Date</label><input type="date" id="endDate" class="form-input"></div>
+                <div class="form-group"><label class="form-label">Start Date</label><input type="date" id="startDate" class="form-input"></div>
+                <div class="form-group"><label class="form-label">End Date</label><input type="date" id="endDate" class="form-input"></div>
             </div>
 
             <div class="export-actions">
@@ -360,68 +360,78 @@ window.db = db;
 // ─── STATE ───────────────────────────────────────────────────────────────────
 window.allSales = [];
 
+// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
+window.showModal = function(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.style.display = 'flex';
+        setTimeout(() => m.classList.add('show'), 10);
+    }
+}
+
+window.hideModal = function(id) {
+    const m = document.getElementById(id);
+    if(m) {
+        m.classList.remove('show');
+        setTimeout(() => m.style.display = 'none', 300);
+    }
+}
+
 // ─── INITIALIZATION ───────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-    bindEvents();
+    window.bindEvents();
     
     // Set default dates for report modal
     const today = new Date();
-    document.getElementById('endDate').valueAsDate = today;
-    document.getElementById('startDate').valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endEl = document.getElementById('endDate');
+    if(endEl) endEl.valueAsDate = today;
+    const startEl = document.getElementById('startDate');
+    if(startEl) startEl.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    loadSalesFromCloud();
+    window.loadSalesFromCloud();
 });
 
-function bindEvents() {
-    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
-    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
-    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+window.bindEvents = function() {
+    document.getElementById('btnOpenMenu')?.addEventListener('click', window.toggleMenu);
+    document.getElementById('btnCloseMenu')?.addEventListener('click', window.toggleMenu);
+    document.getElementById('menuOverlay')?.addEventListener('click', window.toggleMenu);
 
-    document.getElementById('searchBar').addEventListener('input', window.renderSales);
-    document.getElementById('filterDate').addEventListener('change', window.renderSales);
-    document.getElementById('filterMode').addEventListener('change', window.renderSales);
+    document.getElementById('searchBar')?.addEventListener('input', window.renderSales);
+    document.getElementById('filterDate')?.addEventListener('change', window.renderSales);
+    document.getElementById('filterMode')?.addEventListener('change', window.renderSales);
   
-document.getElementById('btnOpenReport').addEventListener('click', () => { 
-      const m = document.getElementById('reportModal'); m.style.display='flex'; setTimeout(()=> m.classList.add('show'), 10); 
-  });
-  document.getElementById('btnCloseReport').addEventListener('click', () => { 
-      const m = document.getElementById('reportModal'); m.classList.remove('show'); setTimeout(()=> m.style.display='none', 300); 
-  });
-  document.getElementById('btnCloseInvoice').addEventListener('click', () => { 
-      const m = document.getElementById('invoiceModal'); m.classList.remove('show'); setTimeout(()=> m.style.display='none', 300); 
-  });
-  
-  
-  document.getElementById('btnPrintInvoice').addEventListener('click', () => window.print());
+    document.getElementById('btnOpenReport')?.addEventListener('click', () => window.showModal('reportModal'));
+    document.getElementById('btnCloseReport')?.addEventListener('click', () => window.hideModal('reportModal'));
+    
+    document.getElementById('btnCloseInvoice')?.addEventListener('click', () => window.hideModal('invoiceModal'));
+    document.getElementById('btnPrintInvoice')?.addEventListener('click', () => window.print());
 
-    document.getElementById('btnExportExcel').addEventListener('click', window.exportExcel);
-    document.getElementById('btnExportPDF').addEventListener('click', window.exportPDF);
-    document.getElementById('btnSendCA').addEventListener('click', window.sendToCA);
+    document.getElementById('btnExportExcel')?.addEventListener('click', window.exportExcel);
+    document.getElementById('btnExportPDF')?.addEventListener('click', window.exportPDF);
+    document.getElementById('btnSendCA')?.addEventListener('click', window.sendToCA);
 
-   document.querySelectorAll('.modal-overlay').forEach(overlay => {
-      overlay.addEventListener('click', (e) => {
-          if (e.target === overlay && e.target.id !== 'invoiceModal') {
-              overlay.classList.remove('show'); 
-              setTimeout(()=> overlay.style.display='none', 300);
-          }
-      });
-  });
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay && e.target.id !== 'invoiceModal') window.hideModal(overlay.id);
+        });
+    });
 }
 
-function toggleMenu() {
-    document.getElementById('sideMenu').classList.toggle('open');
+window.toggleMenu = function() {
+    document.getElementById('sideMenu')?.classList.toggle('open');
     const overlay = document.getElementById('menuOverlay');
-    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
 }
 
-function showToast(msg, isError = false) {
+window.showToast = function(msg, isError = false) {
     const t = document.getElementById('toast');
+    if(!t) return;
     t.innerText = msg; t.style.background = isError ? 'var(--danger)' : 'var(--success)';
     t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ─── MULTI-BRANCH DATA ENGINE ────────────────────────────────────────────────
-async function loadSalesFromCloud() {
+// ─── MULTI-BRANCH DATA ENGINE (ASYNC BRIDGE) ─────────────────────────────────
+window.loadSalesFromCloud = async function() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mobile = user.mobile || user.phone;
 
@@ -435,27 +445,30 @@ async function loadSalesFromCloud() {
 
     // 2. Setup Multi-Branch UI Filter
     const branchFilter = document.getElementById('filterBranch');
-    if (shops.length > 1) {
+    if (shops.length > 1 && branchFilter) {
         branchFilter.style.display = 'inline-block';
         branchFilter.innerHTML = '<option value="all">🌍 All Branches</option>' + 
-            shops.map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
+            shops.map(s => `<option value="${s.merchantId}">${window.escapeHtml(s.shopName)}</option>`).join('');
         branchFilter.addEventListener('change', window.renderSales);
     }
 
-    // 3. Quick load from local cache to prevent blank screen
-    window.allSales = JSON.parse(localStorage.getItem('bharatpos_enterprise_sales') || localStorage.getItem('bharatpos_sales') || '[]');
+    // 3. Quick load from local cache via ASYNC Bridge
+    let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
+    if (eSales === null) {
+        eSales = await window.dbGet('bharatpos_sales', '[]');
+    }
+    window.allSales = eSales;
     if(window.allSales.length > 0) window.renderSales();
 
-    // 4. Fetch Master Enterprise Data
-    if (window.db && navigator.onLine) {
+    // 4. Fetch Master Enterprise Data with STRICT Null Checks
+    if (user && user.merchantId && typeof user.merchantId === 'string' && user.merchantId.trim() !== '' && window.db && navigator.onLine) {
         try {
             let allEnterpriseSales = [];
             
-            // Map over all shops and fetch their sales subcollections concurrently
             const fetchPromises = shops.map(async (shop) => {
                 if(!shop.merchantId) return;
                 try {
-                    const salesRef = collection(db, "shops", shop.merchantId, "sales");
+                    const salesRef = collection(window.db, "shops", shop.merchantId, "sales");
                     const snap = await getDocs(salesRef);
                     snap.forEach(doc => {
                         let data = doc.data();
@@ -472,10 +485,10 @@ async function loadSalesFromCloud() {
             allEnterpriseSales.sort((a, b) => new Date(b.date) - new Date(a.date));
             window.allSales = allEnterpriseSales;
             
-            // Cache the enterprise view
-            localStorage.setItem('bharatpos_enterprise_sales', JSON.stringify(window.allSales));
-            
+            // Save using ASYNC Bridge
+            await window.dbSave('bharatpos_enterprise_sales', window.allSales);
             window.renderSales();
+
         } catch (e) {
             console.warn("Enterprise Fetch Error", e);
         }
@@ -483,7 +496,7 @@ async function loadSalesFromCloud() {
 }
 
 // ─── TAX & MATH HELPERS ───────────────────────────────────────────────────────
-function calculateSaleTaxes(sale) {
+window.calculateSaleTaxes = function(sale) {
     let taxable = 0, totalTax = 0, totalAmount = 0;
     
     (sale.items || []).forEach(item => {
@@ -513,11 +526,16 @@ function calculateSaleTaxes(sale) {
 }
 
 // ─── FILTERING, METRICS, & RENDERING ──────────────────────────────────────────
-function getFilteredSales() {
-    const term = document.getElementById('searchBar').value.toLowerCase().trim();
-    const dateFilter = document.getElementById('filterDate').value;
-    const modeFilter = document.getElementById('filterMode').value;
-    const branchFilter = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : 'all';
+window.getFilteredSales = function() {
+    const sBar = document.getElementById('searchBar');
+    const dFilter = document.getElementById('filterDate');
+    const mFilter = document.getElementById('filterMode');
+    const bFilter = document.getElementById('filterBranch');
+
+    const term = sBar ? sBar.value.toLowerCase().trim() : '';
+    const dateFilter = dFilter ? dFilter.value : 'all';
+    const modeFilter = mFilter ? mFilter.value : 'all';
+    const branchFilter = bFilter ? bFilter.value : 'all';
 
     const today = new Date(); today.setHours(0,0,0,0);
     const sevDaysAgo = new Date(); sevDaysAgo.setDate(sevDaysAgo.getDate() - 7);
@@ -546,13 +564,12 @@ function getFilteredSales() {
     });
 }
 
-function calculateMetrics(filteredList) {
+window.calculateMetrics = function(filteredList) {
     const today = new Date(); today.setHours(0,0,0,0);
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     let tSales = 0, mSales = 0, totalGst = 0, pendingUdhaar = 0;
 
-    // Use ONLY the filtered list so KPIs update dynamically when you switch branches
     filteredList.forEach(s => {
         const d = new Date(s.date);
         const total = Number(s.total || s.amount || 0);
@@ -563,22 +580,27 @@ function calculateMetrics(filteredList) {
         if(s.split && Number(s.split.udhaar) > 0) pendingUdhaar += Number(s.split.udhaar);
         else if(s.paymentMethod === 'Udhaar' || s.paymentMode === 'Udhaar') pendingUdhaar += total;
 
-        const taxes = calculateSaleTaxes(s);
+        const taxes = window.calculateSaleTaxes(s);
         totalGst += taxes.totalTax;
     });
 
-    document.getElementById('kpiToday').innerText = `₹${tSales.toFixed(2)}`;
-    document.getElementById('kpiMonth').innerText = `₹${mSales.toFixed(2)}`;
-    document.getElementById('kpiGst').innerText = `₹${totalGst.toFixed(2)}`;
-    document.getElementById('kpiUdhaar').innerText = `₹${pendingUdhaar.toFixed(2)}`;
+    const kT = document.getElementById('kpiToday'); if(kT) kT.innerText = `₹${tSales.toFixed(2)}`;
+    const kM = document.getElementById('kpiMonth'); if(kM) kM.innerText = `₹${mSales.toFixed(2)}`;
+    const kG = document.getElementById('kpiGst'); if(kG) kG.innerText = `₹${totalGst.toFixed(2)}`;
+    const kU = document.getElementById('kpiUdhaar'); if(kU) kU.innerText = `₹${pendingUdhaar.toFixed(2)}`;
+}
+
+window.escapeHtml = function(str) { 
+    return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
 }
 
 window.renderSales = function() {
-    const filtered = getFilteredSales();
-    calculateMetrics(filtered);
+    const filtered = window.getFilteredSales();
+    window.calculateMetrics(filtered);
 
     const tBody = document.getElementById('salesTableBody');
     const mGrid = document.getElementById('salesMobileGrid');
+    if(!tBody || !mGrid) return;
 
     if(filtered.length === 0) {
         tBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">No sales records found matching your filters.</td></tr>`;
@@ -590,7 +612,7 @@ window.renderSales = function() {
     let mobileHtml = '';
 
     filtered.forEach(s => {
-        const invId = s.id || s.invoiceNo;
+        const invId = s.id || s.invoiceNo || '';
         const total = Number(s.total || s.amount || 0).toFixed(2);
         
         const dObj = new Date(s.date);
@@ -599,7 +621,7 @@ window.renderSales = function() {
         
         const custName = s.customerName || s.customer || 'Walk-in';
         const custPhone = s.customerPhone || s.phone || '';
-        const custDisplay = custPhone ? `${custName}<br><small style="color:var(--text-muted);">${custPhone}</small>` : custName;
+        const custDisplay = custPhone ? `${window.escapeHtml(custName)}<br><small style="color:var(--text-muted);">${window.escapeHtml(custPhone)}</small>` : window.escapeHtml(custName);
 
         const pMode = s.paymentMethod || s.paymentMode || 'Cash';
         let badgeClass = 'pay-cash'; let icon = 'fa-money-bill-wave';
@@ -608,7 +630,7 @@ window.renderSales = function() {
         if(pMode === 'Partial') { badgeClass = 'pay-partial'; icon = 'fa-calculator'; }
 
         const badgeHtml = `<span class="pay-badge ${badgeClass}"><i class="fa-solid ${icon}"></i> ${pMode}</span>`;
-        const branchDisplay = s._branchName ? `<div class="branch-badge">${s._branchName}</div>` : `<div class="branch-badge" style="color:var(--text-muted);">Main</div>`;
+        const branchDisplay = s._branchName ? `<div class="branch-badge">${window.escapeHtml(s._branchName)}</div>` : `<div class="branch-badge" style="color:var(--text-muted); background: var(--bg-input);">Main</div>`;
 
         desktopHtml += `
         <tr>
@@ -638,13 +660,13 @@ window.renderSales = function() {
                 </div>
                 <div style="text-align:right;">
                     ${badgeHtml}
-                    <div style="margin-top:4px;">${branchDisplay}</div>
+                    <div style="margin-top:6px;">${branchDisplay}</div>
                 </div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <div class="m-cust">${custName}</div>
-                    ${custPhone ? `<div style="font-size:11px; color:var(--text-muted);">${custPhone}</div>` : ''}
+                    <div class="m-cust">${window.escapeHtml(custName)}</div>
+                    ${custPhone ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${window.escapeHtml(custPhone)}</div>` : ''}
                 </div>
                 <div class="m-amt">₹${total}</div>
             </div>
@@ -659,18 +681,20 @@ window.renderSales = function() {
 }
 
 // ─── REPORTS & EXPORTS ────────────────────────────────────────────────────────
-function getReportDataRange() {
-    const startInput = document.getElementById('startDate').value;
-    const endInput = document.getElementById('endDate').value;
-    const branchFilter = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : 'all';
+window.getReportDataRange = function() {
+    const sEl = document.getElementById('startDate');
+    const eEl = document.getElementById('endDate');
+    const startInput = sEl ? sEl.value : '';
+    const endInput = eEl ? eEl.value : '';
+    
+    const bFilter = document.getElementById('filterBranch');
+    const branchFilter = bFilter ? bFilter.value : 'all';
 
-    // 1. Filter by Branch first
     let data = window.allSales;
     if(branchFilter !== 'all') {
         data = data.filter(s => s._branchId === branchFilter);
     }
     
-    // 2. Filter by Date from Modal
     if(!startInput || !endInput) return data;
     
     const s = new Date(startInput); s.setHours(0,0,0,0);
@@ -683,12 +707,12 @@ function getReportDataRange() {
 }
 
 window.exportExcel = function() {
-    const data = getReportDataRange();
-    if(!data.length) return showToast("No sales in selected range.", true);
+    const data = window.getReportDataRange();
+    if(!data.length) return window.showToast("No sales in selected range.", true);
     
     let rows = [];
     data.forEach(s => {
-        const t = calculateSaleTaxes(s);
+        const t = window.calculateSaleTaxes(s);
         rows.push({
             "Date": new Date(s.date).toLocaleDateString(),
             "Time": new Date(s.date).toLocaleTimeString(),
@@ -715,12 +739,12 @@ window.exportExcel = function() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sales_Ledger");
     XLSX.writeFile(wb, `BharatPOS_Sales_${Date.now()}.xlsx`);
-    showToast("Excel Exported!");
+    window.showToast("Excel Exported!");
 }
 
 window.exportPDF = function() {
-    const data = getReportDataRange();
-    if(!data.length) return showToast("No sales in selected range.", true);
+    const data = window.getReportDataRange();
+    if(!data.length) return window.showToast("No sales in selected range.", true);
     
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4'); 
@@ -735,7 +759,8 @@ window.exportPDF = function() {
     doc.setFontSize(10); 
     doc.setTextColor(100, 100, 100);
     
-    const branchFilter = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : 'all';
+    const bFilter = document.getElementById('filterBranch');
+    const branchFilter = bFilter ? bFilter.value : 'all';
     const filterText = branchFilter === 'all' ? 'All Branches' : 'Specific Branch';
     doc.text(`Business Name: ${shopName} (${filterText})`, 14, 22);
     
@@ -745,7 +770,7 @@ window.exportPDF = function() {
     let grandTotal = 0, grandTax = 0;
     
     const tableData = data.map(s => {
-        const t = calculateSaleTaxes(s);
+        const t = window.calculateSaleTaxes(s);
         grandTotal += t.total; grandTax += t.totalTax;
         return [
             new Date(s.date).toLocaleDateString(),
@@ -775,29 +800,33 @@ window.exportPDF = function() {
     doc.text(`Total Tax Collected: Rs ${grandTax.toFixed(2)}`, 14, finalY + 7);
     
     doc.save(`Sales_Ledger_${Date.now()}.pdf`);
-    showToast("PDF Exported!");
+    window.showToast("PDF Exported!");
 }
 
 window.sendToCA = function() {
-    const data = getReportDataRange();
-    if(!data.length) return showToast("No data in range.", true);
+    const data = window.getReportDataRange();
+    if(!data.length) return window.showToast("No data in range.", true);
     
     let totalSale = 0, totalTax = 0;
     data.forEach(s => {
-        const t = calculateSaleTaxes(s);
+        const t = window.calculateSaleTaxes(s);
         totalSale += t.total; totalTax += t.totalTax;
     });
     
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const shopGstin = localStorage.getItem('cfg_gstin') || localStorage.getItem('bharatpos_gstin') || user.gstin;
 
-    const branchFilter = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : 'all';
+    const bFilter = document.getElementById('filterBranch');
+    const branchFilter = bFilter ? bFilter.value : 'all';
     const filterText = branchFilter === 'all' ? 'All Branches' : 'Specific Branch';
+
+    const startInput = document.getElementById('startDate') ? document.getElementById('startDate').value : '';
+    const endInput = document.getElementById('endDate') ? document.getElementById('endDate').value : '';
 
     let msg = `*GST Report for CA*%0A`;
     msg += `Shop: ${user.shopName || 'Enterprise'} (${filterText})%0A`;
     msg += `GSTIN: ${shopGstin || 'N/A'}%0A`;
-    msg += `Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}%0A`;
+    msg += `Period: ${startInput} to ${endInput}%0A`;
     msg += `Total Sales: ₹${totalSale.toFixed(2)}%0A`;
     msg += `Total GST Collected: ₹${totalTax.toFixed(2)}%0A%0A`;
     msg += `(Please find the attached Excel/PDF file for detailed invoice breakdown)`;
@@ -861,15 +890,15 @@ window.viewFormalInvoice = function(invId) {
 
     const html = `
         <div class="inv-header">
-            <h2 style="margin:0; font-size:18px;">${displayShopName}</h2>
-            <div style="font-size:11px;">${user.address || ''}</div>
+            <h2 style="margin:0; font-size:18px;">${window.escapeHtml(displayShopName)}</h2>
+            <div style="font-size:11px;">${window.escapeHtml(user.address) || ''}</div>
             ${shopGstin ? `<div style="font-size:11px;">GSTIN: ${shopGstin}</div>` : ''}
             <div style="margin-top:10px; font-weight:bold; font-size:14px; letter-spacing:1px;">TAX INVOICE</div>
         </div>
         <div style="margin-bottom:10px; border-bottom:1px solid #000; padding-bottom:5px;">
             <div class="inv-row"><span>Inv No: ${(sale.id || sale.invoiceNo).slice(-6)}</span><span>Date: ${new Date(sale.date).toLocaleDateString()}</span></div>
             <div class="inv-row">
-                <span>To: ${sale.customerName || sale.customer || 'Walk-in'} ${sale.customerPhone || sale.phone ? `(${sale.customerPhone || sale.phone})` : ''}</span>
+                <span>To: ${window.escapeHtml(sale.customerName || sale.customer || 'Walk-in')} ${sale.customerPhone || sale.phone ? `(${window.escapeHtml(sale.customerPhone || sale.phone)})` : ''}</span>
                 <span>Mode: ${pMode}</span>
             </div>
         </div>
@@ -897,8 +926,11 @@ window.viewFormalInvoice = function(invId) {
         <div style="text-align:center; margin-top:20px; font-size:10px; font-weight:bold;">Thank you for visiting!</div>
     `;
     
-    document.getElementById('invoicePaper').innerHTML = html;
-    document.getElementById('invoiceModal').style.display = 'flex';
+    const paper = document.getElementById('invoicePaper');
+    if(paper) {
+        paper.innerHTML = html;
+        window.showModal('invoiceModal');
+    }
 }
 
 window.printInvoice = function(invId) {
