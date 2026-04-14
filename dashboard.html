@@ -11,12 +11,10 @@
   <link rel="stylesheet" href="bharatpos.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-  <script type="module" src="bharatpos.js"></script>
   <style>
-    /* --- NAVBAR --- */
+    /* --- NAVBAR OVERRIDES FOR DASHBOARD --- */
     .navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; position: sticky; top: 0; z-index: 100; border-radius: 0 0 20px 20px; margin: 0 auto 20px auto; max-width: 1400px; width: calc(100% - 20px); background: var(--white); border-bottom: 2px solid var(--blue-200); box-shadow: 0 4px 20px rgba(25,118,210,0.05); gap: 10px;}
     .brand { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--slate-900); white-space: nowrap; font-family: var(--font-head);}
-    .brand-icon { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--blue-600); box-shadow: 0 4px 10px rgba(25,118,210,0.15); }
     .menu-btn { background: var(--blue-50); border: 1.5px solid var(--blue-200); color: var(--blue-600); width: 36px; height: 36px; border-radius: 10px; cursor: pointer; transition: var(--trans); display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
     .menu-btn:hover { background: var(--blue-100); color: var(--blue-700); transform: translateY(-2px);}
     
@@ -175,190 +173,824 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
-<body>
+<body class="lang-en">
 
-<div id="menuOverlay" class="menu-overlay"></div>
-<div id="sideMenu" class="side-menu">
-  <div class="side-menu-brand">
-    <div class="side-menu-brand-text">Bharat<span>POS</span></div>
-    <button id="btnCloseMenu" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; line-height:1;">&times;</button>
-  </div>
-  <div class="side-menu-links">
-    <a href="dashboard.html" class="active-link"><i class="fa-solid fa-chart-pie"></i> Main Dashboard</a>
-    <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> Bill</a>
-    <a href="products.html"><i class="fa-solid fa-box-open"></i> Inventory / Stock</a>
-    <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
-    <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> Finance HQ</a>
-    <a href="customers.html"><i class="fa-solid fa-users"></i> Bharat CRM</a>
-    <a href="reports.html"><i class="fa-solid fa-file-invoice-dollar"></i> Audit & Reports</a>
-    <a href="forecast.html"><i class="fa-solid fa-brain"></i> DemandMitra AI</a>
-  </div>
-</div>
+<script type="module">
+    import { db } from "./bharatpos.js";
+    import { collection, getDocs, doc, getDoc, setDoc, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-<nav class="navbar glass-panel" style="border-radius: 0 0 24px 24px; border-top: none; margin: 0 auto 20px auto; max-width:1400px; width: calc(100% - 20px);">
-  <div class="brand">
-    <button class="menu-btn" id="btnOpenMenu"><i class="fa-solid fa-bars"></i></button>
-    <img src="logo.png" class="brand-icon" alt="Logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%231976D2\'/><text x=\'50\' y=\'65\' font-family=\'Arial\' font-size=\'40\' fill=\'white\' text-anchor=\'middle\'>B</text></svg>'">
-    <span style="display:none; @media(min-width:480px){display:inline;}">BharatPOS</span>
-  </div>
-  
-  <div class="nav-actions">
-    <select id="shopSwitcher" class="shop-switcher">
-      <option value="all">🌍 All Branches</option>
-    </select>
-    <button id="btnAddBranchNav" class="btn-nav primary" title="Add New Branch"><i class="fa-solid fa-plus"></i></button>
-    <button id="btnViewMap" class="btn-nav" title="View Map" style="display:none;"><i class="fa-solid fa-map-location-dot"></i></button>
-    <button class="btn-bill-nav" onclick="window.location.href='billing.html'"><i class="fa-solid fa-file-invoice"></i> Bill</button>
-  </div>
-</nav>
+    // 1. INJECT UI
+    window.injectLayout('dashboard');
 
-<div class="container" id="mainDashboard">
-    
-    <div class="header-row">
-        <div>
-            <h1 class="welcome-title" id="greetingDisplay">Main Dashboard</h1>
-            <div class="welcome-sub" id="dateDisplay">Loading...</div>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <select id="kpiTimeFilter" class="shop-switcher" style="background: var(--primary); color: white; border: none; font-weight:800; padding: 8px 16px;">
-                <option value="today">📅 Today</option>
-                <option value="month">📅 This Month</option>
-                <option value="all">📅 All Time</option>
-            </select>
-        </div>
-    </div>
+    // 2. RESTORE CUSTOM DASHBOARD NAVBAR BUTTONS
+    const navActions = document.querySelector('.nav-actions');
+    if(navActions) {
+        const defaultPos = navActions.querySelector('.btn-success');
+        if(defaultPos) defaultPos.remove(); 
 
-    <div style="margin-bottom: 10px;">
-        <button onclick="window.location.href='billing.html'" class="giant-bill-btn">
-            <i class="fa-solid fa-cash-register" style="font-size: 20px;"></i> Naya Bill Banao (Create Bill)
-        </button>
-    </div>
+        navActions.insertAdjacentHTML('beforeend', `
+            <button id="btnAddBranchNav" class="btn-nav primary" title="Add New Branch"><i class="fa-solid fa-plus"></i></button>
+            <button id="btnViewMap" class="btn-nav" title="View Map" style="display:none;"><i class="fa-solid fa-map-location-dot"></i></button>
+            <button class="btn-bill-nav" onclick="window.location.href='billing.html'"><i class="fa-solid fa-file-invoice"></i> <span data-i18n="nav_billing">Bill</span></button>
+        `);
+    }
 
-    <div class="kpi-grid">
-        <div class="kpi-card glass-panel">
-            <div class="kpi-icon c-green"><i class="fa-solid fa-money-bill-wave"></i></div>
-            <div class="kpi-details">
-                <h4>Kamai (Earnings)</h4>
-                <div class="value" id="kpiRev">₹0</div>
-            </div>
-        </div>
-        <div class="kpi-card glass-panel">
-            <div class="kpi-icon c-blue"><i class="fa-solid fa-receipt"></i></div>
-            <div class="kpi-details">
-                <h4>Parchiyan (Bills)</h4>
-                <div class="value" id="kpiBills">0</div>
-            </div>
-        </div>
-        <div class="kpi-card glass-panel">
-            <div class="kpi-icon c-purple"><i class="fa-solid fa-box-open"></i></div>
-            <div class="kpi-details">
-                <h4>Samaan Bika (Items)</h4>
-                <div class="value" id="kpiItems">0</div>
-            </div>
-        </div>
-        <div class="kpi-card glass-panel clickable" id="btnOpenUdhaar">
-            <div class="kpi-icon c-red"><i class="fa-solid fa-book-open"></i></div>
-            <div class="kpi-details">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h4>Baki Udhaar (Total)</h4>
-                    <i class="fa-solid fa-arrow-right" style="color:var(--danger); font-size:10px;"></i>
-                </div>
-                <div class="value" id="kpiUdhaar">₹0</div>
-            </div>
-        </div>
-    </div>
+    // 3. ENCAPSULATED STATE
+    let enterpriseSales = [];
+    let enterpriseProducts = [];
+    let currentBranch = 'all'; 
+    let mapInstance = null;
+    let mapMarker = null;
 
-    <div class="widget-grid" id="widgetContainer">
+    const escapeHtml = window.escapeHtml || function(str) { return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setGreeting();
+        initDragAndDrop();
+        logAudit("System Boot", "Main Dashboard initialized.");
         
-        <div class="widget glass-panel" draggable="true" id="w-sales">
-            <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-chart-line" style="color:var(--primary);"></i> 7-Day Sales Trend</h3>
-                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
-            </div>
-            <div class="w-content" style="overflow:hidden;">
-                <div class="bar-chart-container" id="salesChartBox"></div>
-            </div>
-        </div>
+        // Global Shop Switcher Hook
+        const switcher = document.getElementById('globalShopSwitcher');
+        if (switcher) {
+            switcher.addEventListener('change', (e) => {
+                const val = e.target.value;
+                const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+                
+                if (val === 'all') {
+                    currentBranch = 'all';
+                    window.showToast("Showing All Branches");
+                    renderAllWidgets();
+                } else if (val !== user.merchantId && window.switchActiveShop) {
+                    window.switchActiveShop(val);
+                } else {
+                    currentBranch = val;
+                    renderAllWidgets();
+                }
+            });
+        }
 
-        <div class="widget glass-panel" draggable="true" id="w-peak">
-            <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-fire" style="color:var(--warning);"></i> Peak Business Hours</h3>
-                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
-            </div>
-            <div class="w-content" style="overflow:hidden;">
-                <div class="bar-chart-container" id="peakHoursBox"></div>
-                <div style="text-align:center; font-size:9px; font-weight:700; color:var(--text-muted); margin-top:5px;">Business Hours (9 AM - 9 PM)</div>
-            </div>
-        </div>
+        document.getElementById('kpiTimeFilter')?.addEventListener('change', () => {
+            renderKPIs(currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch));
+        });
 
-        <div class="widget glass-panel" draggable="true" id="w-po">
-            <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-file-invoice" style="color:var(--success);"></i> Low Stock (Maal Mangwayein)</h3>
-                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
-            </div>
-            <div class="w-content" id="poListBox">
+        // Re-bind Custom Nav Buttons
+        document.getElementById('btnViewMap')?.addEventListener('click', openMap);
+        document.getElementById('btnAddBranchNav')?.addEventListener('click', () => window.showModal('addBranchModal'));
+        
+        document.getElementById('btnQuickBranch')?.addEventListener('click', () => window.showModal('addBranchModal'));
+        document.getElementById('btnCloseBranchModal')?.addEventListener('click', () => window.hideModal('addBranchModal'));
+        document.getElementById('btnSubmitBranch')?.addEventListener('click', submitNewBranch);
+
+        document.getElementById('btnOpenUdhaar')?.addEventListener('click', openUdhaarSection);
+        document.getElementById('btnCloseUdhaar')?.addEventListener('click', closeUdhaarSection);
+        document.getElementById('btnCloseCustomerModal')?.addEventListener('click', () => window.hideModal('customerModal'));
+        document.getElementById('btnCloseReceipt')?.addEventListener('click', () => window.hideModal('receiptModal'));
+
+        loadEnterpriseData();
+    });
+
+    // ─── UTILS ───
+    function setGreeting() {
+        const d = new Date();
+        const el = document.getElementById('dateDisplay');
+        if(el) el.textContent = d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function formatCurrency(n) { return Number(n || 0).toLocaleString('en-IN'); }
+
+    // ─── AUDIT TRAIL LOGIC ───
+    function logAudit(action, details) {
+        let logs = JSON.parse(localStorage.getItem('bharatpos_audit') || '[]');
+        logs.unshift({
+            time: new Date().toISOString(),
+            action: action,
+            details: details,
+            user: "Admin"
+        });
+        if(logs.length > 20) logs = logs.slice(0, 20); 
+        localStorage.setItem('bharatpos_audit', JSON.stringify(logs));
+        if(document.getElementById('auditListBox')) renderAuditTrail();
+    }
+
+    // ─── ASYNC DATA LOADING ───
+    async function loadEnterpriseData() {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const mobile = user.mobile || user.phone;
+
+        let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop', lat: user.lat, lng: user.lng }];
+
+        if (typeof window.loadOwnedShops === 'function' && mobile) {
+            const fetchedShops = await window.loadOwnedShops(mobile);
+            if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
+        }
+
+        const switcher = document.getElementById('globalShopSwitcher');
+        if (shops.length > 1 && switcher) {
+            switcher.style.display = 'inline-block';
+            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
+                shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
+            switcher.value = user.merchantId;
+            currentBranch = user.merchantId; 
+        } else if (switcher) {
+            switcher.style.display = 'none';
+        }
+
+        // Await async bridge
+        let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
+        if (eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
+        enterpriseSales = eSales;
+
+        let eProds = await window.dbGet('bharatpos_enterprise_products', 'null');
+        if (eProds === null) eProds = await window.dbGet('bharatpos_products', '[]');
+        enterpriseProducts = eProds;
+        
+        if(enterpriseSales.length > 0 || enterpriseProducts.length > 0) renderAllWidgets();
+
+        if (window.db && navigator.onLine) {
+            try {
+                let tempSales = [];
+                let tempProds = [];
+
+                const fetchPromises = shops.map(async (shop) => {
+                    if(!shop.merchantId) return;
+                    try {
+                        const salesRef = collection(db, "shops", shop.merchantId, "sales");
+                        const sSnap = await getDocs(salesRef);
+                        sSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; tempSales.push(data); });
+
+                        const prodRef = collection(db, "shops", shop.merchantId, "products");
+                        const pSnap = await getDocs(prodRef);
+                        pSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; data._branchName = shop.shopName; tempProds.push(data); });
+                    } catch(e) {}
+                });
+                
+                await Promise.all(fetchPromises);
+                
+                enterpriseSales = tempSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+                enterpriseProducts = tempProds;
+                
+                await window.dbSave('bharatpos_enterprise_sales', enterpriseSales);
+                await window.dbSave('bharatpos_enterprise_products', enterpriseProducts);
+                
+                renderAllWidgets();
+            } catch (e) { console.warn("Enterprise Fetch Error", e); }
+        }
+    }
+
+    // ─── MASTER RENDERER ───
+    function renderAllWidgets() {
+        const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
+        const fProds = currentBranch === 'all' ? enterpriseProducts : enterpriseProducts.filter(p => p._branchId === currentBranch || p.merchantId === currentBranch);
+
+        const mapBtn = document.getElementById('btnViewMap');
+        if(mapBtn) {
+            if(currentBranch === 'all') mapBtn.style.display = 'none';
+            else mapBtn.style.display = 'flex';
+        }
+
+        renderKPIs(fSales);
+        renderSalesChart(fSales);
+        renderPeakHours(fSales);
+        renderPOs(fProds);
+        renderExpiry(fProds);
+        renderAuditTrail();
+    }
+
+    // ─── COMPONENT RENDERERS ───
+    function renderKPIs(sales) {
+        const tf = document.getElementById('kpiTimeFilter');
+        const timeFilter = tf ? tf.value : 'all';
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+        let tRev = 0, tBills = 0, tItems = 0, udhaar = 0;
+
+        sales.forEach(s => {
+            const dStr = new Date(s.date).toISOString().split('T')[0];
+            const dDate = new Date(s.date);
+            const total = Number(s.total || s.amount || 0);
+            const pMode = s.paymentMethod || s.paymentMode || 'Cash';
+
+            let inTimeframe = false;
+            if(timeFilter === 'today' && dStr === todayStr) inTimeframe = true;
+            else if(timeFilter === 'month' && dDate >= startOfMonth) inTimeframe = true;
+            else if(timeFilter === 'all') inTimeframe = true;
+
+            if(inTimeframe) {
+                tBills++;
+                (s.items||[]).forEach(i => tItems += Number(i.qty || 1));
+                
+                if (pMode === 'Partial' && s.split) {
+                    tRev += Number(s.split.cash || 0) + Number(s.split.online || 0);
+                } else if (pMode !== 'Udhaar') {
+                    tRev += total;
+                }
+            }
+
+            if(s.isPaid && s.settledDate) {
+                const setStr = new Date(s.settledDate).toISOString().split('T')[0];
+                const setDate = new Date(s.settledDate);
+                
+                let settledInTimeframe = false;
+                if(timeFilter === 'today' && setStr === todayStr) settledInTimeframe = true;
+                else if(timeFilter === 'month' && setDate >= startOfMonth) settledInTimeframe = true;
+                else if(timeFilter === 'all') settledInTimeframe = true;
+
+                if(settledInTimeframe && setStr !== dStr) {
+                    tRev += (pMode === 'Partial (Settled)' && s.split) ? Number(s.split.udhaar || 0) : total;
+                }
+            }
+
+            if(s.split && Number(s.split.udhaar) > 0 && !s.isPaid) udhaar += Number(s.split.udhaar);
+            else if((pMode === 'Udhaar' || s.paymentMode === 'Udhaar') && !s.isPaid) udhaar += total;
+        });
+
+        let formattedItems = tItems % 1 !== 0 ? tItems.toFixed(2).replace(/\.?0+$/, '') : tItems;
+
+        const elRev = document.getElementById('kpiRev'); if(elRev) elRev.innerText = `₹${formatCurrency(tRev)}`;
+        const elBills = document.getElementById('kpiBills'); if(elBills) elBills.innerText = formatCurrency(tBills);
+        const elItems = document.getElementById('kpiItems'); if(elItems) elItems.innerText = formatCurrency(formattedItems);
+        const elUdh = document.getElementById('kpiUdhaar'); if(elUdh) elUdh.innerText = `₹${formatCurrency(udhaar)}`;
+    }
+
+    function renderSalesChart(sales) {
+        const box = document.getElementById('salesChartBox');
+        if(!box) return;
+        const today = new Date();
+        let maxVal = 0;
+        const daysData = [];
+        
+        for(let i=6; i>=0; i--) {
+            const d = new Date(today); d.setDate(d.getDate() - i);
+            const dStr = d.toISOString().split('T')[0];
+            
+            let dayTotal = 0;
+            sales.forEach(s => {
+                const sDateStr = new Date(s.date).toISOString().split('T')[0];
+                if(sDateStr === dStr) dayTotal += Number(s.total || 0);
+            });
+            if(dayTotal > maxVal) maxVal = dayTotal;
+            daysData.push({ date: d, val: dayTotal });
+        }
+
+        box.innerHTML = daysData.map(item => {
+            const h = maxVal > 0 ? (item.val / maxVal * 100) : 5; 
+            const dateStr = item.date.toLocaleDateString('en-US',{weekday:'short'});
+            return `
+            <div class="bar-group">
+                <div class="bar" style="height:${h}%" data-val="₹${item.val.toFixed(0)}"></div>
+                <div class="bar-label">${dateStr}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderPeakHours(sales) {
+        const box = document.getElementById('peakHoursBox');
+        if(!box) return;
+        const today = new Date(); today.setHours(0,0,0,0);
+        
+        const hourCounts = new Array(13).fill(0);
+        let maxCount = 0;
+
+        sales.forEach(s => {
+            const d = new Date(s.date);
+            if(d >= today) {
+                const h = d.getHours();
+                if(h >= 9 && h <= 21) {
+                    hourCounts[h - 9]++;
+                    if(hourCounts[h - 9] > maxCount) maxCount = hourCounts[h - 9];
+                }
+            }
+        });
+
+        const labels = ['9a','','11a','','1p','','3p','','5p','','7p','','9p'];
+
+        if(maxCount === 0) {
+            box.innerHTML = `<div class="empty-state"><i class="fa-solid fa-mug-hot"></i><p>No sales today yet.</p></div>`;
+            return;
+        }
+
+        box.innerHTML = hourCounts.map((count, idx) => {
+            const h = maxCount > 0 ? (count / maxCount * 100) : 5;
+            const isPeak = (count >= maxCount * 0.8) && maxCount > 2;
+            const colorClass = isPeak ? 'bar-heat' : '';
+            
+            return `
+            <div class="bar-group">
+                <div class="bar ${colorClass}" style="height:${Math.max(5, h)}%" data-val="${count} Bills"></div>
+                <div class="bar-label">${labels[idx]}</div>
+            </div>`;
+        }).join('');
+    }
+
+    window.goToRestock = function(prodName, qty) {
+        localStorage.setItem("temp_add_stock", qty);
+        window.location.href = `products.html?restock=${encodeURIComponent(prodName)}`;
+    };
+
+    function renderPOs(products) {
+        const box = document.getElementById('poListBox');
+        if(!box) return;
+        let poList = [];
+
+        products.forEach(p => {
+            const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
+            (p.variants || []).forEach(v => {
+                let stock = Number(v.stock || 0);
+                if(p.isLoose) stock = stock * (Number(v.baseQty) || 1);
+                
+                if(stock <= threshold) {
+                    const vendor = v.brands && v.brands.length > 0 ? v.brands[0].name : 'General Supplier';
+                    const orderQty = Math.max(10, Math.round(threshold * 2)); 
+                    poList.push({ rawName: p.name, displayName: `${p.name} (${v.quantity})`, vendor, qty: orderQty, branch: p._branchName });
+                }
+            });
+        });
+
+        if(poList.length === 0) {
+            box.innerHTML = `<div class="empty-state"><i class="fa-solid fa-check-double" style="color:var(--success);"></i><p>Stock levels healthy. No POs needed.</p></div>`;
+            return;
+        }
+
+        // XSS Defense applied
+        box.innerHTML = poList.slice(0, 5).map(po => `
+            <div class="list-item">
+                <div>
+                    <div class="li-title">${escapeHtml(po.displayName)}</div>
+                    <div class="li-sub">Vendor: ${escapeHtml(po.vendor)} ${currentBranch === 'all' && po.branch ? `• Loc: ${escapeHtml(po.branch)}` : ''}</div>
                 </div>
-        </div>
-
-        <div class="widget glass-panel" draggable="true" id="w-expiry">
-            <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> Expiry Alerts (<30 Days)</h3>
-                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
+                <button onclick="window.goToRestock('${escapeHtml(po.rawName).replace(/'/g, "\\'")}', ${po.qty})" class="li-badge badge-danger btn-order-action" style="border:none;">
+                    <i class="fa-solid fa-cart-plus"></i> Order: ${po.qty}
+                </button>
             </div>
-            <div class="w-content" id="expiryListBox">
+        `).join('');
+    }
+
+    function renderExpiry(products) {
+        const box = document.getElementById('expiryListBox');
+        if(!box) return;
+        let expList = [];
+        const today = new Date();
+        const limitDate = new Date(); limitDate.setDate(today.getDate() + 30); 
+
+        products.forEach(p => {
+            (p.variants || []).forEach(v => {
+                if(v.expiryDate) {
+                    const exp = new Date(v.expiryDate);
+                    if(exp <= limitDate) {
+                        const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+                        expList.push({ name: `${p.name} (${v.quantity})`, days: diffDays, branch: p._branchName });
+                    }
+                }
+            });
+        });
+
+        expList.sort((a,b) => a.days - b.days);
+
+        if(expList.length === 0) {
+            box.innerHTML = `<div class="empty-state"><i class="fa-solid fa-shield-check" style="color:var(--success);"></i><p>No items expiring within 30 days.</p></div>`;
+            return;
+        }
+
+        // XSS Defense applied
+        box.innerHTML = expList.slice(0, 5).map(ex => {
+            let badgeClass = ex.days <= 7 ? 'badge-danger' : 'badge-warning';
+            let dayText = ex.days < 0 ? 'Expired' : (ex.days === 0 ? 'Today' : `${ex.days} Days`);
+            return `
+            <div class="list-item">
+                <div>
+                    <div class="li-title">${escapeHtml(ex.name)}</div>
+                    <div class="li-sub">${currentBranch === 'all' && ex.branch ? `Loc: ${escapeHtml(ex.branch)}` : 'Needs Attention'}</div>
                 </div>
-        </div>
+                <div class="li-badge ${badgeClass}">${dayText}</div>
+            </div>`;
+        }).join('');
+    }
 
-        <div class="widget glass-panel" draggable="true" id="w-audit">
-            <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-shield-halved" style="color:var(--purple);"></i> Activity History (Kisne kya kiya)</h3>
-                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
+    function renderAuditTrail() {
+        const box = document.getElementById('auditListBox');
+        if(!box) return;
+        let logs = JSON.parse(localStorage.getItem('bharatpos_audit') || '[]');
+        
+        if(logs.length === 0) {
+            box.innerHTML = `<div class="empty-state"><p>No recent activity.</p></div>`;
+            return;
+        }
+
+        // XSS Defense applied
+        box.innerHTML = logs.slice(0, 10).map(log => {
+            const logDate = new Date(log.time);
+            const timeStr = logDate.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+            const dateStr = logDate.toLocaleDateString('en-IN', {day:'2-digit', month:'short'});
+            return `
+            <div class="audit-item">
+                <div class="audit-time">${dateStr}, ${timeStr}</div>
+                <div class="audit-text">${escapeHtml(log.action)}: ${escapeHtml(log.details)}</div>
+                <div class="audit-user"><i class="fa-regular fa-user"></i> ${escapeHtml(log.user)}</div>
+            </div>`;
+        }).join('');
+    }
+
+    // ─── BRANCH CREATION ───
+    async function submitNewBranch() {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const shopName = document.getElementById('newBranchName').value.trim();
+        const category = document.getElementById('newBranchCat').value;
+        
+        if(!shopName) return window.showToast("Enter Branch Name", true);
+        
+        let mobileNum = user.mobile || user.phone;
+        if(!mobileNum) {
+            mobileNum = prompt("Link branch to your 10-digit Mobile Number:");
+            if(!mobileNum || mobileNum.trim().length !== 10) return window.showToast("Valid mobile number required.", true);
+            user.mobile = mobileNum.trim();
+            localStorage.setItem('bharatpos_user', JSON.stringify(user));
+        }
+
+        if(!user.merchantId || !window.db) return window.showToast("Network Error: Cannot connect to cloud.", true);
+
+        try {
+            const btn = document.getElementById('btnSubmitBranch');
+            btn.innerText = "Creating..."; btn.disabled = true;
+            
+            const branchId = `${user.merchantId}-B${Math.floor(1000 + Math.random() * 9000)}`;
+            const shopRef = doc(db, "shops", branchId);
+            
+            await setDoc(shopRef, {
+                merchantId: branchId,
+                profile: { mobile: mobileNum, shopName, category, isBranch: true, parentId: user.merchantId }
+            });
+            
+            window.showToast(`Branch '${escapeHtml(shopName)}' created successfully!`);
+            window.hideModal('addBranchModal');
+            document.getElementById('newBranchName').value = '';
+            btn.innerText = "Create Branch Shop"; btn.disabled = false;
+            
+            logAudit("Branch Created", `New branch '${shopName}' added to network.`);
+            
+            if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher();
+            setTimeout(()=> window.location.reload(), 1000);
+        } catch(e) { 
+            window.showToast("Firebase Error: Could not create branch.", true);
+            document.getElementById('btnSubmitBranch').innerText = "Create Branch Shop";
+            document.getElementById('btnSubmitBranch').disabled = false;
+        }
+    }
+
+    // ─── MAP & GPS LOGIC ───
+    window.openMap = async function() {
+        if(currentBranch === 'all') return;
+        
+        window.showModal('mapModal');
+        
+        setTimeout(async () => {
+            if(mapInstance) { mapInstance.remove(); mapInstance = null; }
+
+            let lat = 20.5937, lng = 78.9629, zoom = 5;
+            if(window.db) {
+                try {
+                    const docSnap = await getDoc(doc(db, "shops", currentBranch));
+                    if(docSnap.exists() && docSnap.data().profile?.lat) {
+                        lat = docSnap.data().profile.lat;
+                        lng = docSnap.data().profile.lng;
+                        zoom = 15;
+                    }
+                } catch(e) {}
+            }
+
+            mapInstance = L.map('shopMap', { zoomControl: false }).setView([lat, lng], zoom);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
+            
+            if(zoom === 15) {
+                mapMarker = L.marker([lat, lng]).addTo(mapInstance).bindPopup('<b>Branch Location</b>').openPopup();
+            }
+
+            const locateBtn = L.control({position: 'topright'});
+            locateBtn.onAdd = function() {
+                const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                div.innerHTML = '<button style="width:30px;height:30px;background:white;border:none;cursor:pointer;border-radius:4px;color:var(--primary);font-size:14px;box-shadow:0 2px 5px rgba(0,0,0,0.2);" title="Find My Location"><i class="fa-solid fa-crosshairs"></i></button>';
+                div.onclick = function(e){
+                    e.stopPropagation();
+                    mapInstance.locate({setView: true, maxZoom: 16});
+                    window.showToast("Acquiring GPS Signal...");
+                };
+                return div;
+            };
+            locateBtn.addTo(mapInstance);
+
+            mapInstance.on('locationfound', function(e) {
+                updatePin(e.latlng.lat, e.latlng.lng, "GPS Location found. Update shop location here?");
+            });
+
+            mapInstance.on('click', function(e) {
+                updatePin(e.latlng.lat, e.latlng.lng, "Move shop pin to this location?");
+            });
+        }, 100);
+    }
+
+    async function updatePin(lat, lng, msg) {
+        if(mapMarker) mapInstance.removeLayer(mapMarker);
+        mapMarker = L.marker([lat, lng]).addTo(mapInstance);
+        
+        if(confirm(msg)) {
+            if(currentBranch && window.db) {
+                try {
+                    const shopRef = doc(window.db, "shops", currentBranch);
+                    await updateDoc(shopRef, { "profile.lat": lat, "profile.lng": lng });
+                    
+                    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+                    if(user.merchantId === currentBranch) {
+                        user.lat = lat; user.lng = lng;
+                        localStorage.setItem('bharatpos_user', JSON.stringify(user));
+                    }
+
+                    window.showToast("Location updated successfully!");
+                    mapMarker.bindPopup('<b>Shop Location Saved</b>').openPopup();
+                    logAudit("Location Updated", `GPS Coordinates updated for branch.`);
+                } catch(e) {
+                    console.error("Location update failed", e);
+                    window.showToast("Failed to update location", true);
+                }
+            }
+        }
+    }
+
+    // ─── UDHAAR KHATA ENGINE ───
+    function getPendingUdhaarAmount(sale) {
+        if(sale.isPaid) return 0;
+        const pMode = sale.paymentMethod || sale.paymentMode;
+        if(pMode === 'Udhaar') return Number(sale.total || sale.amount || 0);
+        if(pMode === 'Partial' && sale.split) return Number(sale.split.udhaar || 0);
+        return 0;
+    }
+
+    window.openUdhaarSection = function() {
+        document.getElementById('mainDashboard').style.display = 'none';
+        document.getElementById('udhaarView').style.display = 'block';
+        window.renderUdhaarGroups();
+    }
+
+    window.closeUdhaarSection = function() {
+        document.getElementById('udhaarView').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'flex'; 
+        renderAllWidgets(); 
+    }
+
+    window.renderUdhaarGroups = function() {
+        const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
+        const container = document.getElementById('udhaarGroupList');
+        if(!container) return;
+        
+        const pending = fSales.filter(s => getPendingUdhaarAmount(s) > 0);
+
+        const totalPending = pending.reduce((acc, s) => acc + getPendingUdhaarAmount(s), 0);
+        document.getElementById('udhaarPendingTotal').innerText = `₹${formatCurrency(totalPending)}`;
+
+        if (pending.length === 0) {
+            container.innerHTML = `<div class="empty-state" style="padding-top:40px;"><i class="fa-solid fa-check-circle" style="color:var(--success); font-size:40px;"></i><p>Sab clear hai! No pending dues.</p></div>`;
+            return;
+        }
+
+        const groups = {};
+        pending.forEach(inv => {
+            const ph = inv.customerPhone || inv.phone || "Unknown";
+            const name = inv.customerName || inv.customer || "Walk-in";
+            const amt = getPendingUdhaarAmount(inv);
+            
+            if(!groups[ph]) groups[ph] = { phone: ph, name: name, total: 0, count: 0 };
+            if(groups[ph].name === "Walk-in" && name !== "Walk-in") groups[ph].name = name;
+            
+            groups[ph].total += amt;
+            groups[ph].count++;
+        });
+
+        const sortedGroups = Object.values(groups).sort((a,b) => b.total - a.total);
+
+        // XSS Defense applied
+        container.innerHTML = sortedGroups.map(g => `
+            <div class="group-card" onclick="window.openCustomerModal('${escapeHtml(g.phone)}')">
+                <div>
+                    <div class="cust-name">${escapeHtml(g.name)}</div>
+                    <div class="cust-phone"><i class="fa-solid fa-phone"></i> ${escapeHtml(g.phone)}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="debt-amt">₹${formatCurrency(g.total)}</div>
+                    <div class="debt-count">${g.count} Bills</div>
+                </div>
             </div>
-            <div class="w-content">
-                <div class="audit-log" id="auditListBox">
-                    </div>
-            </div>
-        </div>
+        `).join('');
+    }
 
-        <div class="widget glass-panel" draggable="true" id="w-links">
-            <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-bolt" style="color:var(--warning);"></i> Quick Actions</h3>
-                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
-            </div>
-            <div class="w-content" style="gap:10px; justify-content:center;">
-                <button id="btnQuickBranch" class="shop-switcher" style="width:100%; max-width:100%; padding:12px; border-color:var(--primary); color:var(--primary); font-size:13px;"><i class="fa-solid fa-code-branch"></i> Create New Branch</button>
-                <button onclick="window.location.href='products.html'" class="shop-switcher" style="width:100%; max-width:100%; padding:12px; border-color:var(--success); color:var(--success); font-size:13px;"><i class="fa-solid fa-box-open"></i> Manage Inventory</button>
-                <button onclick="window.location.href='customers.html'" class="shop-switcher" style="width:100%; max-width:100%; padding:12px; border-color:var(--purple); color:var(--purple); font-size:13px;"><i class="fa-solid fa-users"></i> CRM & Khata</button>
-            </div>
-        </div>
+    window.openCustomerModal = function(phone) {
+        const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
+        const invoices = fSales.filter(s => 
+            (s.customerPhone === phone || s.phone === phone || (phone === "Unknown" && !s.customerPhone && !s.phone)) && 
+            getPendingUdhaarAmount(s) > 0
+        );
+        
+        invoices.sort((a,b) => new Date(b.date) - new Date(a.date));
+        if(!invoices.length) return;
 
-    </div>
-</div>
+        const first = invoices[0];
+        document.getElementById('custModalName').textContent = escapeHtml(first.customerName || first.customer || "Customer");
+        document.getElementById('custModalPhone').textContent = escapeHtml(phone);
 
-<div class="container" id="udhaarView">
-    <div class="udhaar-header">
-        <button class="btn-back" id="btnCloseUdhaar"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
-        <h2 style="font-size:20px; font-weight:800; color:var(--text-main); margin:0;"><i class="fa-solid fa-book-open" style="color:var(--danger);"></i> Udhaar Khata</h2>
-    </div>
+        const listBody = document.getElementById('invoiceListBody');
+        
+        // XSS Defense applied
+        listBody.innerHTML = invoices.map(inv => {
+            const dataStr = encodeURIComponent(JSON.stringify(inv));
+            const amt = getPendingUdhaarAmount(inv);
+            const invId = inv.id || inv.invoiceNo || '???';
+            const pMode = inv.paymentMethod || inv.paymentMode;
 
-    <div class="total-dues-card">
-      <div>
-        <div class="dues-label">Total Pending Collection</div>
-        <div class="dues-amount" id="udhaarPendingTotal">₹0</div>
-      </div>
-      <i class="fa-solid fa-hand-holding-dollar" style="font-size:36px; color:var(--danger); opacity:0.8;"></i>
-    </div>
+            return `
+            <div class="inv-item">
+                <div class="inv-info">
+                    <h4>#${escapeHtml(invId.slice(-8))}</h4>
+                    <p>${new Date(inv.date).toLocaleDateString()} • <span style="color:var(--warning);">${escapeHtml(pMode)}</span></p>
+                    ${currentBranch === 'all' ? `<p style="margin-top:2px; color:var(--blue-600); font-weight:700;">Branch: ${escapeHtml(inv._branchName || 'Main')}</p>` : ''}
+                </div>
+                <div class="inv-action">
+                    <div class="inv-price">₹${formatCurrency(amt)}</div>
+                    <button class="btn-view" onclick="window.openReceipt('${dataStr}')">Settle Bill</button>
+                </div>
+            </div>`;
+        }).join('');
 
-    <div id="udhaarGroupList" style="padding-bottom:40px;">
-      <div style="text-align:center; padding:30px; color:var(--text-muted);">Loading...</div>
-    </div>
-</div>
+        window.showModal('customerModal');
+    }
+
+    window.openReceipt = function(dataStr) {
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const inv = JSON.parse(decodeURIComponent(dataStr));
+        const pendingAmt = getPendingUdhaarAmount(inv);
+        const invId = inv.id || inv.invoiceNo;
+
+        // XSS Defense applied
+        document.getElementById('rec-shop').innerText = inv._branchName || user.shopName || "BHARAT POS";
+        document.getElementById('rec-id').innerText = "INV: " + invId.slice(-8);
+        document.getElementById('rec-date').innerText = new Date(inv.date).toLocaleString();
+        document.getElementById('rec-name').innerText = inv.customerName || inv.customer || 'Walk-in';
+        document.getElementById('rec-phone').innerText = inv.customerPhone || inv.phone || '';
+        
+        const tbody = document.getElementById('rec-items');
+        tbody.innerHTML = (inv.items || []).map(i => {
+            const qtyPrint = i.isLoose ? `${parseFloat(i.qty).toFixed(3)} ${escapeHtml(i.unitLabel||'kg')}` : `${i.qty}`;
+            const amt = i.total || (i.price * i.qty);
+            return `<tr><td>${escapeHtml(i.name)} <div style="font-size:9px; color:#555;">${escapeHtml(i.variant||'')}</div></td><td style="text-align:center">${qtyPrint}</td><td style="text-align:right">${amt.toFixed(2)}</td></tr>`;
+        }).join('');
+
+        document.getElementById('rec-full-total').innerText = `₹${Number(inv.total || inv.amount || 0).toFixed(2)}`;
+        
+        if(inv.split) {
+            document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>Cash: ₹${inv.split.cash} | Online: ₹${inv.split.online}</span>`;
+        } else {
+            document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>₹0.00</span>`;
+        }
+
+        document.getElementById('rec-due').innerText = `₹${formatCurrency(pendingAmt)}`;
+
+        const payBtn = document.getElementById('btnSettle');
+        payBtn.onclick = () => window.settleDebt(invId, inv._branchId || inv.merchantId);
+
+        window.showModal('receiptModal');
+    }
+
+    // 🌟 FIRESTORE ATOMIC TRANSACTION FOR DEBT SETTLEMENT 🌟
+    window.settleDebt = async function(id, saleBranchId) {
+        if(!confirm("Mark this pending amount as PAID (Cash Received)?")) return;
+
+        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+        const targetBranch = saleBranchId || user.merchantId;
+        
+        const index = enterpriseSales.findIndex(s => (s.id === id || s.invoiceNo === id));
+
+        if(index > -1) {
+            const s = enterpriseSales[index];
+            const pendingAmt = getPendingUdhaarAmount(s);
+            
+            s.isPaid = true;
+            s.settledDate = new Date().toISOString();
+            
+            if(s.paymentMethod === 'Partial' && s.split) {
+                s.split.cash = Number(s.split.cash || 0) + pendingAmt;
+                s.paymentMethod = "Partial (Settled)";
+            } else {
+                s.paymentMode = "Cash (Settled)"; 
+                s.paymentMethod = "Cash (Settled)";
+            }
+            
+            await window.dbSave('bharatpos_enterprise_sales', enterpriseSales);
+
+            if (targetBranch === user.merchantId) {
+                const localSales = await window.dbGet('bharatpos_sales', '[]');
+                const lIndex = localSales.findIndex(ls => (ls.id === id || ls.invoiceNo === id));
+                if (lIndex > -1) {
+                    localSales[lIndex] = { ...localSales[lIndex], isPaid: true, settledDate: s.settledDate, paymentMethod: s.paymentMethod, paymentMode: s.paymentMode };
+                    if(s.split) localSales[lIndex].split = s.split;
+                    await window.dbSave('bharatpos_sales', localSales);
+                }
+            }
+
+            window.showToast("✅ Payment Recorded Successfully!");
+            window.hideModal('receiptModal');
+            window.hideModal('customerModal');
+            
+            logAudit("Udhaar Settled", `Invoice ${id.slice(-8)} settled for ₹${pendingAmt}.`);
+            
+            renderAllWidgets();
+            if(document.getElementById('udhaarView').style.display === 'block') window.renderUdhaarGroups();
+            
+            if(targetBranch && window.db) {
+                try {
+                    // Force Atomic Update
+                    await runTransaction(window.db, async (transaction) => {
+                        const saleRef = doc(window.db, "shops", targetBranch, "sales", id);
+                        transaction.update(saleRef, {
+                            isPaid: true,
+                            settledDate: s.settledDate,
+                            paymentMethod: s.paymentMethod,
+                            paymentMode: s.paymentMode,
+                            split: s.split || null
+                        });
+                    });
+                } catch(e) { console.error("Firebase Udhaar Update Failed:", e); }
+            }
+        } else {
+            alert("Error: Invoice not found.");
+        }
+    }
+
+    // ─── HTML5 DRAG & DROP WIDGETS ───
+    function initDragAndDrop() {
+        const container = document.getElementById('widgetContainer');
+        if(!container) return;
+        let draggedItem = null;
+
+        const savedOrder = JSON.parse(localStorage.getItem('dashboard_layout') || 'null');
+        if(savedOrder) {
+            savedOrder.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) container.appendChild(el);
+            });
+        }
+
+        container.addEventListener('dragstart', (e) => {
+            const widget = e.target.closest('.widget');
+            if(!widget) return;
+            draggedItem = widget;
+            setTimeout(() => widget.classList.add('dragging'), 0);
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        container.addEventListener('dragend', (e) => {
+            const widget = e.target.closest('.widget');
+            if(!widget) return;
+            widget.classList.remove('dragging');
+            document.querySelectorAll('.widget').forEach(w => w.classList.remove('widget-over'));
+            draggedItem = null;
+            
+            const currentOrder = [...container.querySelectorAll('.widget')].map(w => w.id);
+            localStorage.setItem('dashboard_layout', JSON.stringify(currentOrder));
+            logAudit("Layout Changed", "User rearranged dashboard widgets.");
+        });
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault(); 
+            const targetWidget = e.target.closest('.widget');
+            if(targetWidget && targetWidget !== draggedItem) {
+                targetWidget.classList.add('widget-over');
+            }
+        });
+
+        container.addEventListener('dragleave', (e) => {
+            const targetWidget = e.target.closest('.widget');
+            if(targetWidget) targetWidget.classList.remove('widget-over');
+        });
+
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const targetWidget = e.target.closest('.widget');
+            if(targetWidget && targetWidget !== draggedItem) {
+                targetWidget.classList.remove('widget-over');
+                const allWidgets = [...container.querySelectorAll('.widget')];
+                const draggedIdx = allWidgets.indexOf(draggedItem);
+                const targetIdx = allWidgets.indexOf(targetWidget);
+                
+                if(draggedIdx < targetIdx) targetWidget.after(draggedItem);
+                else targetWidget.before(draggedItem);
+            }
+        });
+    }
+</script>
 
 <div id="addBranchModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title"><i class="fa-solid fa-store" style="color:var(--primary);"></i> Add New Branch</h3>
-            <button class="btn-close" id="btnCloseBranchModal"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-content" style="max-width: 400px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-store" style="color:var(--primary);"></i> Add New Branch</h3>
+            <button onclick="window.hideModal('addBranchModal')" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="form-group">
             <label>Branch Name / Location</label>
@@ -381,10 +1013,10 @@
 </div>
 
 <div id="mapModal" class="modal-overlay">
-    <div class="modal-content" style="max-width:600px;">
-        <div class="modal-header">
-            <h3 class="modal-title"><i class="fa-solid fa-location-dot" style="color:var(--danger);"></i> Branch Location</h3>
-            <button class="btn-close" onclick="closeMap()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-content" style="max-width:600px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-family:var(--font-head);"><i class="fa-solid fa-location-dot" style="color:var(--danger);"></i> Branch Location</h3>
+            <button onclick="window.closeMap()" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div id="shopMap"></div>
         <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 12px; font-weight:600;">
@@ -394,20 +1026,20 @@
 </div>
 
 <div id="customerModal" class="modal-overlay">
-    <div class="modal-content" style="max-width:480px;">
-      <div class="modal-header">
+    <div class="modal-content" style="max-width:480px; background: white; border-radius: var(--radius-lg); padding: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <div>
-          <h3 style="margin:0; font-size:16px; color:var(--text-main); font-weight:800;" id="custModalName">Customer</h3>
+          <h3 style="margin:0; font-size:16px; color:var(--text-main); font-weight:800; font-family:var(--font-head);" id="custModalName">Customer</h3>
           <div style="color:var(--text-muted); font-size:11px; margin-top:4px; font-weight:600;" id="custModalPhone">Phone</div>
         </div>
-        <button id="btnCloseCustomerModal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+        <button id="btnCloseCustomerModal" style="background:none; border:none; font-size:20px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div id="invoiceListBody" style="max-height: 50vh; overflow-y: auto; padding-right:5px; margin-top:10px;"></div>
     </div>
 </div>
 
 <div id="receiptModal" class="modal-overlay" style="z-index: 6000;">
-    <div class="modal-content" style="max-width:360px; background:#f8fafc; padding:15px;">
+    <div class="modal-content" style="max-width:360px; background:#f8fafc; padding:15px; border-radius: var(--radius-lg);">
       <div class="receipt-content">
         <div style="text-align:center; margin-bottom:12px; border-bottom:1px dashed #000; padding-bottom:10px;">
           <h3 style="margin:0; font-size:14px; font-family:'Inter', sans-serif; font-weight:800;" id="rec-shop">BHARAT POS</h3>
@@ -434,840 +1066,13 @@
         </div>
       </div>
       <div style="display:flex; gap:8px; margin-top:12px;">
-          <button id="btnSettle" class="btn-settle" style="padding:10px; font-size:12px;">✅ Receive Cash</button>
-          <button id="btnCloseReceipt" class="btn-settle" style="background:#e2e8f0; color:#333; box-shadow:none; padding:10px; font-size:12px;">Close</button>
+          <button id="btnSettle" class="btn-settle" style="flex:1; padding:10px; font-size:12px;">✅ Receive Cash</button>
+          <button id="btnCloseReceipt" class="btn-settle" style="flex:1; background:#e2e8f0; color:#333; box-shadow:none; padding:10px; font-size:12px;">Close</button>
       </div>
     </div>
 </div>
 
 <div id="toast">✅ Action Successful</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script type="module">
-import { db } from "./bharatpos.js";
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-window.db = db;
-
-// --- STATE ---
-let enterpriseSales = [];
-let enterpriseProducts = [];
-let currentBranch = 'all'; // UI Filter state
-let mapInstance = null;
-let mapMarker = null;
-
-// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
-function showModal(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.style.display = 'flex';
-        setTimeout(() => m.classList.add('show'), 10);
-    }
-}
-
-function hideModal(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.classList.remove('show');
-        setTimeout(() => m.style.display = 'none', 300);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    setGreeting();
-    initDragAndDrop();
-    logAudit("System Boot", "Main Dashboard initialized.");
-    
-    // Global Shop Switcher
-    document.getElementById('shopSwitcher').addEventListener('change', (e) => {
-        const val = e.target.value;
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        
-        if (val === 'all') {
-            currentBranch = 'all';
-            showToast("Showing All Branches");
-            renderAllWidgets();
-        } else if (val !== user.merchantId) {
-            if(window.switchActiveShop) {
-                window.switchActiveShop(val);
-            }
-        } else {
-            currentBranch = val;
-            renderAllWidgets();
-        }
-    });
-
-    document.getElementById('kpiTimeFilter').addEventListener('change', () => {
-        renderKPIs(currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch));
-    });
-
-    document.getElementById('btnOpenMenu').addEventListener('click', toggleMenu);
-    document.getElementById('btnCloseMenu').addEventListener('click', toggleMenu);
-    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
-
-    document.getElementById('btnViewMap').addEventListener('click', openMap);
-    
-    // Add Branch Modals
-    document.getElementById('btnAddBranchNav').addEventListener('click', () => showModal('addBranchModal'));
-    document.getElementById('btnQuickBranch').addEventListener('click', () => showModal('addBranchModal'));
-    document.getElementById('btnCloseBranchModal').addEventListener('click', () => hideModal('addBranchModal'));
-    document.getElementById('btnSubmitBranch').addEventListener('click', submitNewBranch);
-
-    // Udhaar Section
-    document.getElementById('btnOpenUdhaar').addEventListener('click', openUdhaarSection);
-    document.getElementById('btnCloseUdhaar').addEventListener('click', closeUdhaarSection);
-    document.getElementById('btnCloseCustomerModal').addEventListener('click', () => hideModal('customerModal'));
-    document.getElementById('btnCloseReceipt').addEventListener('click', () => hideModal('receiptModal'));
-
-    // Global Modal Close
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if(e.target.classList.contains('modal-overlay')) hideModal(e.target.id);
-        });
-    });
-
-    loadEnterpriseData();
-});
-
-// ─── UTILS ───
-function setGreeting() {
-    const d = new Date();
-    document.getElementById('dateDisplay').textContent = d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-}
-
-function showToast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function toggleMenu() {
-    document.getElementById('sideMenu').classList.toggle('open');
-    const overlay = document.getElementById('menuOverlay');
-    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-}
-
-function formatCurrency(n) { return Number(n || 0).toLocaleString('en-IN'); }
-
-// ─── AUDIT TRAIL LOGIC ───
-function logAudit(action, details) {
-    let logs = JSON.parse(localStorage.getItem('bharatpos_audit') || '[]');
-    logs.unshift({
-        time: new Date().toISOString(),
-        action: action,
-        details: details,
-        user: "Admin"
-    });
-    if(logs.length > 20) logs = logs.slice(0, 20); 
-    localStorage.setItem('bharatpos_audit', JSON.stringify(logs));
-    if(document.getElementById('auditListBox')) renderAuditTrail();
-}
-
-// ─── ASYNC DATA LOADING ───
-async function loadEnterpriseData() {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const mobile = user.mobile || user.phone;
-
-    let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop', lat: user.lat, lng: user.lng }];
-
-    if (typeof window.loadOwnedShops === 'function' && mobile) {
-        const fetchedShops = await window.loadOwnedShops(mobile);
-        if (fetchedShops && fetchedShops.length > 0) {
-            shops = fetchedShops;
-            
-            const switcher = document.getElementById('shopSwitcher');
-            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
-                shops.map(s => `<option value="${s.merchantId}">${s.shopName}</option>`).join('');
-            
-            switcher.value = user.merchantId;
-            currentBranch = user.merchantId; 
-        }
-    }
-
-    // Await the new async bridge
-    let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
-    if (eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
-    enterpriseSales = eSales;
-
-    let eProds = await window.dbGet('bharatpos_enterprise_products', 'null');
-    if (eProds === null) eProds = await window.dbGet('bharatpos_products', '[]');
-    enterpriseProducts = eProds;
-    
-    if(enterpriseSales.length > 0 || enterpriseProducts.length > 0) renderAllWidgets();
-
-    if (window.db && navigator.onLine) {
-        try {
-            let tempSales = [];
-            let tempProds = [];
-
-            const fetchPromises = shops.map(async (shop) => {
-                if(!shop.merchantId) return;
-                try {
-                    const salesRef = collection(db, "shops", shop.merchantId, "sales");
-                    const sSnap = await getDocs(salesRef);
-                    sSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; tempSales.push(data); });
-
-                    const prodRef = collection(db, "shops", shop.merchantId, "products");
-                    const pSnap = await getDocs(prodRef);
-                    pSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; data._branchName = shop.shopName; tempProds.push(data); });
-                } catch(e) {}
-            });
-            
-            await Promise.all(fetchPromises);
-            
-            enterpriseSales = tempSales.sort((a, b) => new Date(b.date) - new Date(a.date));
-            enterpriseProducts = tempProds;
-            
-            // Save using the async bridge
-            await window.dbSave('bharatpos_enterprise_sales', enterpriseSales);
-            await window.dbSave('bharatpos_enterprise_products', enterpriseProducts);
-            
-            renderAllWidgets();
-        } catch (e) {
-            console.warn("Enterprise Fetch Error", e);
-        }
-    }
-}
-
-// ─── MASTER RENDERER ───
-function renderAllWidgets() {
-    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
-    const fProds = currentBranch === 'all' ? enterpriseProducts : enterpriseProducts.filter(p => p._branchId === currentBranch || p.merchantId === currentBranch);
-
-    const mapBtn = document.getElementById('btnViewMap');
-    if(currentBranch === 'all') mapBtn.style.display = 'none';
-    else mapBtn.style.display = 'flex';
-
-    renderKPIs(fSales);
-    renderSalesChart(fSales);
-    renderPeakHours(fSales);
-    renderPOs(fProds);
-    renderExpiry(fProds);
-    renderAuditTrail();
-}
-
-// ─── COMPONENT RENDERERS ───
-function renderKPIs(sales) {
-    const timeFilter = document.getElementById('kpiTimeFilter').value;
-    const today = new Date(); today.setHours(0,0,0,0);
-    const todayStr = new Date().toISOString().split('T')[0];
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    let tRev = 0, tBills = 0, tItems = 0, udhaar = 0;
-
-    sales.forEach(s => {
-        const dStr = new Date(s.date).toISOString().split('T')[0];
-        const dDate = new Date(s.date);
-        const total = Number(s.total || s.amount || 0);
-        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
-
-        let inTimeframe = false;
-        if(timeFilter === 'today' && dStr === todayStr) inTimeframe = true;
-        else if(timeFilter === 'month' && dDate >= startOfMonth) inTimeframe = true;
-        else if(timeFilter === 'all') inTimeframe = true;
-
-        if(inTimeframe) {
-            tBills++;
-            (s.items||[]).forEach(i => tItems += Number(i.qty || 1));
-            
-            if (pMode === 'Partial' && s.split) {
-                tRev += Number(s.split.cash || 0) + Number(s.split.online || 0);
-            } else if (pMode !== 'Udhaar') {
-                tRev += total;
-            }
-        }
-
-        if(s.isPaid && s.settledDate) {
-            const setStr = new Date(s.settledDate).toISOString().split('T')[0];
-            const setDate = new Date(s.settledDate);
-            
-            let settledInTimeframe = false;
-            if(timeFilter === 'today' && setStr === todayStr) settledInTimeframe = true;
-            else if(timeFilter === 'month' && setDate >= startOfMonth) settledInTimeframe = true;
-            else if(timeFilter === 'all') settledInTimeframe = true;
-
-            if(settledInTimeframe && setStr !== dStr) {
-                tRev += (pMode === 'Partial (Settled)' && s.split) ? Number(s.split.udhaar || 0) : total;
-            }
-        }
-
-        if(s.split && Number(s.split.udhaar) > 0 && !s.isPaid) udhaar += Number(s.split.udhaar);
-        else if((pMode === 'Udhaar' || s.paymentMode === 'Udhaar') && !s.isPaid) udhaar += total;
-    });
-
-    let formattedItems = tItems % 1 !== 0 ? tItems.toFixed(2).replace(/\.?0+$/, '') : tItems;
-
-    document.getElementById('kpiRev').innerText = `₹${formatCurrency(tRev)}`;
-    document.getElementById('kpiBills').innerText = formatCurrency(tBills);
-    document.getElementById('kpiItems').innerText = formatCurrency(formattedItems);
-    document.getElementById('kpiUdhaar').innerText = `₹${formatCurrency(udhaar)}`;
-}
-
-function renderSalesChart(sales) {
-    const box = document.getElementById('salesChartBox');
-    const today = new Date();
-    let maxVal = 0;
-    const daysData = [];
-    
-    for(let i=6; i>=0; i--) {
-        const d = new Date(today); d.setDate(d.getDate() - i);
-        const dStr = d.toISOString().split('T')[0];
-        
-        let dayTotal = 0;
-        sales.forEach(s => {
-            const sDateStr = new Date(s.date).toISOString().split('T')[0];
-            if(sDateStr === dStr) dayTotal += Number(s.total || 0);
-        });
-        if(dayTotal > maxVal) maxVal = dayTotal;
-        daysData.push({ date: d, val: dayTotal });
-    }
-
-    box.innerHTML = daysData.map(item => {
-        const h = maxVal > 0 ? (item.val / maxVal * 100) : 5; 
-        const dateStr = item.date.toLocaleDateString('en-US',{weekday:'short'});
-        return `
-        <div class="bar-group">
-            <div class="bar" style="height:${h}%" data-val="₹${item.val.toFixed(0)}"></div>
-            <div class="bar-label">${dateStr}</div>
-        </div>`;
-    }).join('');
-}
-
-function renderPeakHours(sales) {
-    const box = document.getElementById('peakHoursBox');
-    const today = new Date(); today.setHours(0,0,0,0);
-    
-    const hourCounts = new Array(13).fill(0);
-    let maxCount = 0;
-
-    sales.forEach(s => {
-        const d = new Date(s.date);
-        if(d >= today) {
-            const h = d.getHours();
-            if(h >= 9 && h <= 21) {
-                hourCounts[h - 9]++;
-                if(hourCounts[h - 9] > maxCount) maxCount = hourCounts[h - 9];
-            }
-        }
-    });
-
-    const labels = ['9a','','11a','','1p','','3p','','5p','','7p','','9p'];
-
-    if(maxCount === 0) {
-        box.innerHTML = `<div class="empty-state"><i class="fa-solid fa-mug-hot"></i><p>No sales today yet.</p></div>`;
-        return;
-    }
-
-    box.innerHTML = hourCounts.map((count, idx) => {
-        const h = maxCount > 0 ? (count / maxCount * 100) : 5;
-        const isPeak = (count >= maxCount * 0.8) && maxCount > 2;
-        const colorClass = isPeak ? 'bar-heat' : '';
-        
-        return `
-        <div class="bar-group">
-            <div class="bar ${colorClass}" style="height:${Math.max(5, h)}%" data-val="${count} Bills"></div>
-            <div class="bar-label">${labels[idx]}</div>
-        </div>`;
-    }).join('');
-}
-
-window.goToRestock = function(prodName, qty) {
-    localStorage.setItem("temp_add_stock", qty);
-    window.location.href = `products.html?restock=${encodeURIComponent(prodName)}`;
-};
-
-function renderPOs(products) {
-    const box = document.getElementById('poListBox');
-    let poList = [];
-
-    products.forEach(p => {
-        const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
-        (p.variants || []).forEach(v => {
-            let stock = Number(v.stock || 0);
-            if(p.isLoose) stock = stock * (Number(v.baseQty) || 1);
-            
-            if(stock <= threshold) {
-                const vendor = v.brands && v.brands.length > 0 ? v.brands[0].name : 'General Supplier';
-                const orderQty = Math.max(10, Math.round(threshold * 2)); 
-                poList.push({ rawName: p.name, displayName: `${p.name} (${v.quantity})`, vendor, qty: orderQty, branch: p._branchName });
-            }
-        });
-    });
-
-    if(poList.length === 0) {
-        box.innerHTML = `<div class="empty-state"><i class="fa-solid fa-check-double" style="color:var(--success);"></i><p>Stock levels healthy. No POs needed.</p></div>`;
-        return;
-    }
-
-    box.innerHTML = poList.slice(0, 5).map(po => `
-        <div class="list-item">
-            <div>
-                <div class="li-title">${po.displayName}</div>
-                <div class="li-sub">Vendor: ${po.vendor} ${currentBranch === 'all' ? `• Loc: ${po.branch}` : ''}</div>
-            </div>
-            <button onclick="window.goToRestock('${po.rawName.replace(/'/g, "\\'")}', ${po.qty})" class="li-badge badge-danger btn-order-action border-none">
-                <i class="fa-solid fa-cart-plus"></i> Order: ${po.qty}
-            </button>
-        </div>
-    `).join('');
-}
-
-function renderExpiry(products) {
-    const box = document.getElementById('expiryListBox');
-    let expList = [];
-    const today = new Date();
-    const limitDate = new Date(); limitDate.setDate(today.getDate() + 30); 
-
-    products.forEach(p => {
-        (p.variants || []).forEach(v => {
-            if(v.expiryDate) {
-                const exp = new Date(v.expiryDate);
-                if(exp <= limitDate) {
-                    const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
-                    expList.push({ name: `${p.name} (${v.quantity})`, days: diffDays, branch: p._branchName });
-                }
-            }
-        });
-    });
-
-    expList.sort((a,b) => a.days - b.days);
-
-    if(expList.length === 0) {
-        box.innerHTML = `<div class="empty-state"><i class="fa-solid fa-shield-check" style="color:var(--success);"></i><p>No items expiring within 30 days.</p></div>`;
-        return;
-    }
-
-    box.innerHTML = expList.slice(0, 5).map(ex => {
-        let badgeClass = ex.days <= 7 ? 'badge-danger' : 'badge-warning';
-        let dayText = ex.days < 0 ? 'Expired' : (ex.days === 0 ? 'Today' : `${ex.days} Days`);
-        return `
-        <div class="list-item">
-            <div>
-                <div class="li-title">${ex.name}</div>
-                <div class="li-sub">${currentBranch === 'all' ? `Loc: ${ex.branch}` : 'Needs Attention'}</div>
-            </div>
-            <div class="li-badge ${badgeClass}">${dayText}</div>
-        </div>`;
-    }).join('');
-}
-
-function renderAuditTrail() {
-    const box = document.getElementById('auditListBox');
-    let logs = JSON.parse(localStorage.getItem('bharatpos_audit') || '[]');
-    
-    if(logs.length === 0) {
-        box.innerHTML = `<div class="empty-state"><p>Koi activity nahi (No recent activity).</p></div>`;
-        return;
-    }
-
-    box.innerHTML = logs.slice(0, 10).map(log => {
-        const logDate = new Date(log.time);
-        const timeStr = logDate.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
-        const dateStr = logDate.toLocaleDateString('en-IN', {day:'2-digit', month:'short'});
-        return `
-        <div class="audit-item">
-            <div class="audit-time">${dateStr}, ${timeStr}</div>
-            <div class="audit-text">${log.action}: ${log.details}</div>
-            <div class="audit-user"><i class="fa-regular fa-user"></i> ${log.user}</div>
-        </div>`;
-    }).join('');
-}
-
-// ─── BRANCH CREATION ───
-async function submitNewBranch() {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const shopName = document.getElementById('newBranchName').value.trim();
-    const category = document.getElementById('newBranchCat').value;
-    
-    if(!shopName) return showToast("Enter Branch Name", true);
-    
-    let mobileNum = user.mobile || user.phone;
-    if(!mobileNum) {
-        mobileNum = prompt("Link branch to your 10-digit Mobile Number:");
-        if(!mobileNum || mobileNum.trim().length !== 10) return showToast("Valid mobile number required.", true);
-        user.mobile = mobileNum.trim();
-        localStorage.setItem('bharatpos_user', JSON.stringify(user));
-    }
-
-    if(!user.merchantId || !window.db) return showToast("Network Error: Cannot connect to cloud.", true);
-
-    try {
-        const btn = document.getElementById('btnSubmitBranch');
-        btn.innerText = "Creating..."; btn.disabled = true;
-        
-        const branchId = `${user.merchantId}-B${Math.floor(1000 + Math.random() * 9000)}`;
-        const shopRef = doc(db, "shops", branchId);
-        
-        await setDoc(shopRef, {
-            merchantId: branchId,
-            profile: { mobile: mobileNum, shopName, category, isBranch: true, parentId: user.merchantId }
-        });
-        
-        showToast(`Branch '${shopName}' created successfully!`);
-        hideModal('addBranchModal');
-        document.getElementById('newBranchName').value = '';
-        btn.innerText = "Create Branch Shop"; btn.disabled = false;
-        
-        logAudit("Branch Created", `New branch '${shopName}' added to network.`);
-        
-        if(typeof window.initShopSwitcher === 'function') window.initShopSwitcher();
-        setTimeout(()=> window.location.reload(), 1000);
-    } catch(e) { 
-        showToast("Firebase Error: Could not create branch.", true);
-        document.getElementById('btnSubmitBranch').innerText = "Create Branch Shop";
-        document.getElementById('btnSubmitBranch').disabled = false;
-    }
-}
-
-// ─── MAP & GPS LOGIC ───
-window.openMap = async function() {
-    if(currentBranch === 'all') return;
-    
-    showModal('mapModal');
-    
-    setTimeout(async () => {
-        if(mapInstance) { mapInstance.remove(); mapInstance = null; }
-
-        let lat = 20.5937, lng = 78.9629, zoom = 5;
-        if(window.db) {
-            try {
-                const docSnap = await getDoc(doc(db, "shops", currentBranch));
-                if(docSnap.exists() && docSnap.data().profile?.lat) {
-                    lat = docSnap.data().profile.lat;
-                    lng = docSnap.data().profile.lng;
-                    zoom = 15;
-                }
-            } catch(e) {}
-        }
-
-        mapInstance = L.map('shopMap', { zoomControl: false }).setView([lat, lng], zoom);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
-        
-        if(zoom === 15) {
-            mapMarker = L.marker([lat, lng]).addTo(mapInstance).bindPopup('<b>Branch Location</b>').openPopup();
-        }
-
-        const locateBtn = L.control({position: 'topright'});
-        locateBtn.onAdd = function() {
-            const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-            div.innerHTML = '<button style="width:30px;height:30px;background:white;border:none;cursor:pointer;border-radius:4px;color:var(--primary);font-size:14px;box-shadow:0 2px 5px rgba(0,0,0,0.2);" title="Find My Location"><i class="fa-solid fa-crosshairs"></i></button>';
-            div.onclick = function(e){
-                e.stopPropagation();
-                mapInstance.locate({setView: true, maxZoom: 16});
-                showToast("Acquiring GPS Signal...");
-            };
-            return div;
-        };
-        locateBtn.addTo(mapInstance);
-
-        mapInstance.on('locationfound', function(e) {
-            updatePin(e.latlng.lat, e.latlng.lng, "GPS Location found. Update shop location here?");
-        });
-
-        mapInstance.on('click', function(e) {
-            updatePin(e.latlng.lat, e.latlng.lng, "Move shop pin to this location?");
-        });
-    }, 100);
-}
-
-window.closeMap = function() { hideModal('mapModal'); }
-
-async function updatePin(lat, lng, msg) {
-    if(mapMarker) mapInstance.removeLayer(mapMarker);
-    mapMarker = L.marker([lat, lng]).addTo(mapInstance);
-    
-    if(confirm(msg)) {
-        if(currentBranch && window.db) {
-            try {
-                const shopRef = doc(window.db, "shops", currentBranch);
-                await updateDoc(shopRef, { "profile.lat": lat, "profile.lng": lng });
-                
-                const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-                if(user.merchantId === currentBranch) {
-                    user.lat = lat; user.lng = lng;
-                    localStorage.setItem('bharatpos_user', JSON.stringify(user));
-                }
-
-                showToast("Location updated successfully!");
-                mapMarker.bindPopup('<b>Shop Location Saved</b>').openPopup();
-                logAudit("Location Updated", `GPS Coordinates updated for branch.`);
-            } catch(e) {
-                console.error("Location update failed", e);
-                showToast("Failed to update location", true);
-            }
-        }
-    }
-}
-
-// ─── UDHAAR KHATA ENGINE ──────────────────────────────────────────────────────
-function getPendingUdhaarAmount(sale) {
-    if(sale.isPaid) return 0;
-    const pMode = sale.paymentMethod || sale.paymentMode;
-    if(pMode === 'Udhaar') return Number(sale.total || sale.amount || 0);
-    if(pMode === 'Partial' && sale.split) return Number(sale.split.udhaar || 0);
-    return 0;
-}
-
-window.openUdhaarSection = function() {
-    document.getElementById('mainDashboard').style.display = 'none';
-    document.getElementById('udhaarView').style.display = 'block';
-    window.renderUdhaarGroups();
-}
-
-window.closeUdhaarSection = function() {
-    document.getElementById('udhaarView').style.display = 'none';
-    document.getElementById('mainDashboard').style.display = 'flex'; 
-    renderAllWidgets(); 
-}
-
-window.renderUdhaarGroups = function() {
-    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
-    const container = document.getElementById('udhaarGroupList');
-    const pending = fSales.filter(s => getPendingUdhaarAmount(s) > 0);
-
-    const totalPending = pending.reduce((acc, s) => acc + getPendingUdhaarAmount(s), 0);
-    document.getElementById('udhaarPendingTotal').innerText = `₹${formatCurrency(totalPending)}`;
-
-    if (pending.length === 0) {
-        container.innerHTML = `<div class="empty-state" style="padding-top:40px;"><i class="fa-solid fa-check-circle" style="color:var(--success); font-size:40px;"></i><p>Sab clear hai! No pending dues.</p></div>`;
-        return;
-    }
-
-    const groups = {};
-    pending.forEach(inv => {
-        const ph = inv.customerPhone || inv.phone || "Unknown";
-        const name = inv.customerName || inv.customer || "Walk-in";
-        const amt = getPendingUdhaarAmount(inv);
-        
-        if(!groups[ph]) groups[ph] = { phone: ph, name: name, total: 0, count: 0 };
-        if(groups[ph].name === "Walk-in" && name !== "Walk-in") groups[ph].name = name;
-        
-        groups[ph].total += amt;
-        groups[ph].count++;
-    });
-
-    const sortedGroups = Object.values(groups).sort((a,b) => b.total - a.total);
-
-    container.innerHTML = sortedGroups.map(g => `
-        <div class="group-card" onclick="window.openCustomerModal('${g.phone}')">
-            <div>
-                <div class="cust-name">${g.name}</div>
-                <div class="cust-phone"><i class="fa-solid fa-phone"></i> ${g.phone}</div>
-            </div>
-            <div style="text-align:right;">
-                <div class="debt-amt">₹${formatCurrency(g.total)}</div>
-                <div class="debt-count">${g.count} Bills</div>
-            </div>
-        </div>
-    `).join('');
-}
-
-window.openCustomerModal = function(phone) {
-    const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
-    const invoices = fSales.filter(s => 
-        (s.customerPhone === phone || s.phone === phone || (phone === "Unknown" && !s.customerPhone && !s.phone)) && 
-        getPendingUdhaarAmount(s) > 0
-    );
-    
-    invoices.sort((a,b) => new Date(b.date) - new Date(a.date));
-    if(!invoices.length) return;
-
-    const first = invoices[0];
-    document.getElementById('custModalName').textContent = first.customerName || first.customer || "Customer";
-    document.getElementById('custModalPhone').textContent = phone;
-
-    const listBody = document.getElementById('invoiceListBody');
-    listBody.innerHTML = invoices.map(inv => {
-        const dataStr = encodeURIComponent(JSON.stringify(inv));
-        const amt = getPendingUdhaarAmount(inv);
-        const invId = inv.id || inv.invoiceNo || '???';
-        const pMode = inv.paymentMethod || inv.paymentMode;
-
-        return `
-        <div class="inv-item">
-            <div class="inv-info">
-                <h4>#${invId.slice(-8)}</h4>
-                <p>${new Date(inv.date).toLocaleDateString()} • <span style="color:var(--warning);">${pMode}</span></p>
-                ${currentBranch === 'all' ? `<p style="margin-top:2px; color:var(--blue-600); font-weight:700;">Branch: ${inv._branchName || 'Main'}</p>` : ''}
-            </div>
-            <div class="inv-action">
-                <div class="inv-price">₹${formatCurrency(amt)}</div>
-                <button class="btn-view" onclick="window.openReceipt('${dataStr}')">Settle Bill</button>
-            </div>
-        </div>`;
-    }).join('');
-
-    showModal('customerModal');
-}
-
-window.openReceipt = function(dataStr) {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const inv = JSON.parse(decodeURIComponent(dataStr));
-    const pendingAmt = getPendingUdhaarAmount(inv);
-    const invId = inv.id || inv.invoiceNo;
-
-    document.getElementById('rec-shop').innerText = inv._branchName || user.shopName || "BHARAT POS";
-    document.getElementById('rec-id').innerText = "INV: " + invId.slice(-8);
-    document.getElementById('rec-date').innerText = new Date(inv.date).toLocaleString();
-    document.getElementById('rec-name').innerText = inv.customerName || inv.customer || 'Walk-in';
-    document.getElementById('rec-phone').innerText = inv.customerPhone || inv.phone || '';
-    
-    const tbody = document.getElementById('rec-items');
-    tbody.innerHTML = (inv.items || []).map(i => {
-        const qtyPrint = i.isLoose ? `${parseFloat(i.qty).toFixed(3)} ${i.unitLabel||'kg'}` : `${i.qty}`;
-        const amt = i.total || (i.price * i.qty);
-        return `<tr><td>${i.name} <div style="font-size:9px; color:#555;">${i.variant||''}</div></td><td style="text-align:center">${qtyPrint}</td><td style="text-align:right">${amt.toFixed(2)}</td></tr>`;
-    }).join('');
-
-    document.getElementById('rec-full-total').innerText = `₹${Number(inv.total || inv.amount || 0).toFixed(2)}`;
-    
-    if(inv.split) {
-        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>Cash: ₹${inv.split.cash} | Online: ₹${inv.split.online}</span>`;
-    } else {
-        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>₹0.00</span>`;
-    }
-
-    document.getElementById('rec-due').innerText = `₹${formatCurrency(pendingAmt)}`;
-
-    const payBtn = document.getElementById('btnSettle');
-    payBtn.onclick = () => window.settleDebt(invId, inv._branchId || inv.merchantId);
-
-    showModal('receiptModal');
-}
-
-window.settleDebt = async function(id, saleBranchId) {
-    if(!confirm("Mark this pending amount as PAID (Cash Received)?")) return;
-
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const targetBranch = saleBranchId || user.merchantId;
-    
-    const index = enterpriseSales.findIndex(s => (s.id === id || s.invoiceNo === id));
-
-    if(index > -1) {
-        const s = enterpriseSales[index];
-        const pendingAmt = getPendingUdhaarAmount(s);
-        
-        s.isPaid = true;
-        s.settledDate = new Date().toISOString();
-        
-        if(s.paymentMethod === 'Partial' && s.split) {
-            s.split.cash = Number(s.split.cash || 0) + pendingAmt;
-            s.paymentMethod = "Partial (Settled)";
-        } else {
-            s.paymentMode = "Cash (Settled)"; 
-            s.paymentMethod = "Cash (Settled)";
-        }
-        
-        await window.dbSave('bharatpos_enterprise_sales', enterpriseSales);
-
-        if (targetBranch === user.merchantId) {
-            const localSales = await window.dbGet('bharatpos_sales', '[]');
-            const lIndex = localSales.findIndex(ls => (ls.id === id || ls.invoiceNo === id));
-            if (lIndex > -1) {
-                localSales[lIndex].isPaid = true;
-                localSales[lIndex].settledDate = s.settledDate;
-                if(localSales[lIndex].paymentMethod === 'Partial' && localSales[lIndex].split) {
-                    localSales[lIndex].split.cash += pendingAmt;
-                    localSales[lIndex].paymentMethod = "Partial (Settled)";
-                } else {
-                    localSales[lIndex].paymentMode = "Cash (Settled)";
-                    localSales[lIndex].paymentMethod = "Cash (Settled)";
-                }
-                await window.dbSave('bharatpos_sales', localSales);
-            }
-        }
-
-        showToast("✅ Payment Recorded Successfully!");
-        hideModal('receiptModal');
-        hideModal('customerModal');
-        
-        logAudit("Udhaar Settled", `Invoice ${id.slice(-8)} settled for ₹${pendingAmt}.`);
-        
-        renderAllWidgets();
-        if(document.getElementById('udhaarView').style.display === 'block') window.renderUdhaarGroups();
-        
-        if(targetBranch && window.db) {
-            try {
-                const saleRef = doc(db, "shops", targetBranch, "sales", id);
-                let updateData = { isPaid: true, settledDate: s.settledDate };
-
-                if(s.split) {
-                    updateData.paymentMethod = "Partial (Settled)";
-                    updateData.split = s.split;
-                } else {
-                    updateData.paymentMode = "Cash (Settled)";
-                    updateData.paymentMethod = "Cash (Settled)";
-                }
-                await updateDoc(saleRef, updateData);
-            } catch(e) { console.error("Firebase Udhaar Update Failed:", e); }
-        }
-    } else {
-        alert("Error: Invoice not found.");
-    }
-}
-
-// ─── HTML5 DRAG & DROP WIDGETS ───
-function initDragAndDrop() {
-    const container = document.getElementById('widgetContainer');
-    let draggedItem = null;
-
-    const savedOrder = JSON.parse(localStorage.getItem('dashboard_layout') || 'null');
-    if(savedOrder) {
-        savedOrder.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) container.appendChild(el);
-        });
-    }
-
-    container.addEventListener('dragstart', (e) => {
-        const widget = e.target.closest('.widget');
-        if(!widget) return;
-        draggedItem = widget;
-        setTimeout(() => widget.classList.add('dragging'), 0);
-        e.dataTransfer.effectAllowed = 'move';
-    });
-
-    container.addEventListener('dragend', (e) => {
-        const widget = e.target.closest('.widget');
-        if(!widget) return;
-        widget.classList.remove('dragging');
-        document.querySelectorAll('.widget').forEach(w => w.classList.remove('widget-over'));
-        draggedItem = null;
-        
-        const currentOrder = [...container.querySelectorAll('.widget')].map(w => w.id);
-        localStorage.setItem('dashboard_layout', JSON.stringify(currentOrder));
-        logAudit("Layout Changed", "User rearranged dashboard widgets.");
-    });
-
-    container.addEventListener('dragover', (e) => {
-        e.preventDefault(); 
-        const targetWidget = e.target.closest('.widget');
-        if(targetWidget && targetWidget !== draggedItem) {
-            targetWidget.classList.add('widget-over');
-        }
-    });
-
-    container.addEventListener('dragleave', (e) => {
-        const targetWidget = e.target.closest('.widget');
-        if(targetWidget) targetWidget.classList.remove('widget-over');
-    });
-
-    container.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const targetWidget = e.target.closest('.widget');
-        if(targetWidget && targetWidget !== draggedItem) {
-            targetWidget.classList.remove('widget-over');
-            const allWidgets = [...container.querySelectorAll('.widget')];
-            const draggedIdx = allWidgets.indexOf(draggedItem);
-            const targetIdx = allWidgets.indexOf(targetWidget);
-            
-            if(draggedIdx < targetIdx) targetWidget.after(draggedItem);
-            else targetWidget.before(draggedItem);
-        }
-    });
-}
-</script>
 </body>
 </html>
