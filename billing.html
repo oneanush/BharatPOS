@@ -1512,6 +1512,24 @@ window.processCheckout = async function(method, split = null) {
         sales.push(saleDoc);
         await window.dbSave('bharatpos_sales', sales);
 
+        // 🛡️ FIX: INSTANTLY UPDATE ENTERPRISE CACHES FOR DASHBOARD
+        const eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
+        if(eSales !== null) {
+            saleDoc._branchId = user.merchantId; 
+            eSales.unshift(saleDoc);
+            await window.dbSave('bharatpos_enterprise_sales', eSales);
+        }
+        
+        const eProds = await window.dbGet('bharatpos_enterprise_products', 'null');
+        if(eProds !== null) {
+            uniqueProdIds.forEach(pid => {
+                const localP = allProducts.find(p => p.id === pid);
+                const eIdx = eProds.findIndex(p => p.id === pid && (p._branchId === user.merchantId || p.merchantId === user.merchantId));
+                if(localP && eIdx > -1) eProds[eIdx].variants = localP.variants;
+            });
+            await window.dbSave('bharatpos_enterprise_products', eProds);
+        }
+
         window.hideModal('partialPayModal');
         window.generateInvoice(saleDoc); 
         renderProductGrid();
