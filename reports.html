@@ -9,77 +9,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-  <script type="module" src="bharatpos.js"></script>
-  <link rel="stylesheet" href="bharatpos.css">
+
   <style>
     /* ═══════════════════════════════════════════════════════════
-       LAYOUT & CARDS (Fluid Shrinkable)
+       REPORT SPECIFIC LAYOUT & CARDS
     ═══════════════════════════════════════════════════════════ */
-    .container { 
-        width: 100%; max-width: 1200px; margin: 28px auto; padding: 0 20px; 
-        display: flex; flex-direction: column; gap: 24px; transition: all 0.3s ease; font-family: var(--font-body);
-    }
-    
-    .nav-actions { display: flex; gap: 10px; align-items: center; }
-    .shop-switcher { background: #f9f9f9; border: 1.5px solid var(--blue-200); color: var(--slate-900); padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; outline: none; cursor: pointer; max-width: 160px; transition: 0.2s; font-family: var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
-    .shop-switcher:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.1); }
-
-    .kpi-grid { 
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-        gap: 16px; transition: all 0.3s ease;
-    }
-    
-    .kpi-card { 
-        background: var(--white); border: 1.5px solid var(--blue-100); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
-        padding: 20px; position: relative; overflow: hidden; transition: transform var(--trans); 
-    }
-    .kpi-card:hover { transform: translateY(-3px); border-color: var(--blue-200); box-shadow: 0 10px 25px rgba(25,118,210,0.1);}
-    
-    .kpi-label { 
-        font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; 
-        color: var(--slate-500); font-weight: 700; display: flex; 
-        justify-content: space-between; transition: 0.3s ease; font-family: var(--font-body);
-    }
-    .kpi-value { 
-        font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; 
-        color: var(--slate-900); margin-top: 10px; letter-spacing: -1px; transition: 0.3s ease;
-    }
+    .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700; display: flex; justify-content: space-between; transition: 0.3s ease; font-family: var(--font-body); }
+    .kpi-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 10px; letter-spacing: -1px; transition: 0.3s ease; }
     .kpi-border { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; }
 
-    /* ═══════════════════════════════════════════════════════════
-       REPORT PANEL
-    ═══════════════════════════════════════════════════════════ */
-    .report-card { background: var(--white); border: 1.5px solid var(--blue-100); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; transition: 0.3s ease; }
-    .report-header { 
-        padding: 20px 24px; border-bottom: 1.5px solid var(--blue-100); display: flex; 
-        justify-content: space-between; align-items: center; background: #f9f9f9; 
-        flex-wrap: wrap; gap: 15px; transition: 0.3s ease; border-radius: var(--radius-card) var(--radius-card) 0 0;
-    }
-    .report-title-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-    .report-title { font-size: 16px; font-weight: 800; color: var(--slate-900); font-family: var(--font-head); margin: 0;}
+    .report-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; transition: 0.3s ease; }
+    .report-header { padding: 20px 24px; border-bottom: 1.5px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; flex-wrap: wrap; gap: 15px; transition: 0.3s ease; border-radius: var(--radius-card) var(--radius-card) 0 0; }
     
-    /* Date Filters */
-    .date-filter-group { display: flex; align-items: center; gap: 8px; }
-    .date-input { 
-        background: var(--white); border: 1.5px solid var(--blue-200); color: var(--slate-900); 
-        padding: 8px 12px; border-radius: var(--radius-input); font-size: 12px; 
-        font-family: var(--font-body); font-weight: 700; outline: none; cursor: pointer; 
-        transition: var(--trans); width: 100%; max-width: 140px; box-sizing: border-box;
-    }
-    .date-input:focus { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
+    .report-title-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex: 1; }
+    .report-title { font-size: 16px; font-weight: 800; color: var(--text-main); font-family: var(--font-head); margin: 0; white-space: nowrap;}
+    
+    /* Date Filters - Mobile Responsive */
+    .date-filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .date-input { background: var(--white); border: 1.5px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font-body); font-weight: 700; outline: none; cursor: pointer; transition: var(--trans); width: 100%; max-width: 140px; box-sizing: border-box; }
+    .date-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
 
     /* Sync Indicator */
-    .sync-status { 
-        font-size: 11px; padding: 6px 12px; border-radius: 20px; background: var(--white); 
-        border: 1.5px solid var(--blue-100); color: var(--slate-500); display: flex; 
-        align-items: center; gap: 6px; font-weight: 700; opacity: 0; transition: opacity 0.3s; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02); font-family: var(--font-body);
-    }
-    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--slate-500); }
+    .sync-status { font-size: 11px; padding: 6px 12px; border-radius: 20px; background: var(--white); border: 1.5px solid var(--border); color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-weight: 700; opacity: 0; transition: opacity 0.3s; box-shadow: var(--shadow-sm); font-family: var(--font-body); white-space: nowrap;}
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
     .sync-active { opacity: 1; }
     .sync-active .sync-dot { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulseDot 1s infinite; }
     @keyframes pulseDot { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
@@ -89,49 +50,23 @@
     ═══════════════════════════════════════════════════════════ */
     .table-responsive { overflow-x: auto; width: 100%; }
     table { width: 100%; border-collapse: collapse; min-width: 650px; }
-    th { 
-        text-align: left; padding: 16px 20px; color: var(--slate-500); font-size: 11px; 
-        text-transform: uppercase; letter-spacing: 1px; border-bottom: 1.5px solid var(--blue-200); 
-        font-weight: 800; white-space: nowrap; background: var(--white); transition: 0.3s ease; 
-        font-family: var(--font-body);
-    }
-    td { 
-        padding: 16px 20px; color: var(--slate-900); font-size: 14px; 
-        border-bottom: 1px solid #e0e7ef; vertical-align: middle; font-weight: 600; 
-        transition: 0.3s ease; font-family: var(--font-body);
-    }
+    th { text-align: left; padding: 16px 20px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1.5px solid var(--border); font-weight: 800; white-space: nowrap; background: var(--white); transition: 0.3s ease; font-family: var(--font-body); }
+    td { padding: 16px 20px; color: var(--text-main); font-size: 14px; border-bottom: 1px solid #e0e7ef; vertical-align: middle; font-weight: 600; transition: 0.3s ease; font-family: var(--font-body); }
     .text-right { text-align: right; }
     
     .sale-row { cursor: pointer; transition: background var(--trans); position: relative; background: var(--white);}
-    .sale-row:hover { background: var(--blue-50); }
+    .sale-row:hover { background: var(--bg-input); }
     
-    .trend-bg { 
-        position: absolute; right: 0; top: 15%; height: 70%; background: var(--blue-100); 
-        z-index: 0; pointer-events: none; border-radius: 4px 0 0 4px; transition: width 1s ease-out; 
-        width: 0; opacity: 0.6;
-    }
-    .money-cell { 
-        font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--success); 
-        position: relative; z-index: 1; transition: 0.3s ease;
-    }
+    .trend-bg { position: absolute; right: 0; top: 15%; height: 70%; background: var(--border); z-index: 0; pointer-events: none; border-radius: 4px 0 0 4px; transition: width 1s ease-out; width: 0; opacity: 0.6; }
+    .money-cell { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--success); position: relative; z-index: 1; transition: 0.3s ease; }
     
     .details-row { display: none; background: #F8FAFC; box-shadow: inset 0 4px 10px rgba(0,0,0,0.02); }
     .details-row.active { display: table-row; }
-    .details-content { 
-        padding: 20px; border-left: 4px solid var(--blue-600); 
-        animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); transition: 0.3s ease;
-    }
+    .details-content { padding: 20px; border-left: 4px solid var(--primary); animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); transition: 0.3s ease; }
     
     .product-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .product-chip { 
-        background: var(--white); border: 1.5px solid var(--blue-100); padding: 8px 14px; 
-        border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; 
-        color: var(--slate-900); font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.3s ease;
-    }
-    .chip-qty { 
-        background: var(--blue-50); color: var(--blue-600); font-size: 11px; 
-        font-weight: 800; padding: 2px 8px; border-radius: 10px; 
-    }
+    .product-chip { background: var(--white); border: 1.5px solid var(--border); padding: 8px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-main); font-weight: 700; box-shadow: var(--shadow-sm); transition: 0.3s ease; }
+    .chip-qty { background: var(--bg-input); color: var(--primary); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
     /* ═══════════════════════════════════════════════════════════
@@ -150,119 +85,97 @@
     body.compact-mode .product-chip { padding: 5px 10px; font-size: 11px; }
 
     /* ═══════════════════════════════════════════════════════════
-       MOBILE LIST FALLBACK
+       MOBILE RESPONSIVE FALLBACK (Completely Fixed)
     ═══════════════════════════════════════════════════════════ */
     @media (max-width: 768px) {
       .kpi-grid { grid-template-columns: 1fr 1fr; }
       .kpi-grid .kpi-card:last-child { grid-column: span 2; }
+      
+      /* Make header stack nicely */
+      .report-header { flex-direction: column; align-items: stretch; }
+      .report-title-group { flex-direction: column; align-items: stretch; }
+      .date-filter-group { display: grid; grid-template-columns: 1fr auto 1fr; width: 100%; }
+      .date-input { max-width: 100%; }
+      
+      .table-responsive { overflow: visible; }
       thead { display: none; }
+      table, tbody { display: block; width: 100%; }
+
       .sale-row { 
-          display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 15px; 
-          margin-bottom: 8px; background: var(--white); border-radius: 12px; 
-          border: 1.5px solid var(--blue-100); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+          display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; 
+          margin-bottom: 12px; background: var(--white); border-radius: 12px; 
+          border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);
       }
-      td { padding: 0; border: none; display: block; background: transparent !important;}
-      td:nth-child(1) { grid-column: 1; font-weight: 800; font-size: 15px; margin-bottom: 4px; color: var(--slate-900);}
-      td:nth-child(6) { grid-column: 2; text-align: right; font-size: 16px; font-weight: 800; color: var(--success); }
-      td:nth-child(2) { grid-column: 1; font-size: 12px; color: var(--slate-500); }
-      td:nth-child(2)::before { content: "Bills: "; }
-      td:nth-child(3) { grid-column: 2; text-align: right; font-size: 12px; color: var(--slate-500); }
-      td:nth-child(3)::before { content: "Items: "; }
-      td:nth-child(4) { display: none; }
-      td:nth-child(5) { display: none; }
-      .details-row.active { display: block; }
-      .details-content { 
-          padding: 15px; border-radius: 0 0 12px 12px; border-left: none; 
-          border-top: 4px solid var(--blue-600); background: #F8FAFC;
-      }
+      
+      td { padding: 0; border: none; display: flex; flex-direction: column; background: transparent !important; text-align: left !important;}
+      
+      /* 1. Date (Top Left) */
+      td:nth-child(1) { grid-column: 1 / span 2; border-bottom: 1px dashed var(--border); padding-bottom: 10px; margin-bottom: 5px;}
+      
+      /* 2. Bills & Items (Mid Left) */
+      td:nth-child(2) { grid-column: 1; font-size: 12px; color: var(--text-muted); }
+      td:nth-child(2)::before { content: "Total Bills"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 2px;}
+      
+      td:nth-child(3) { grid-column: 2; font-size: 12px; color: var(--text-muted); }
+      td:nth-child(3)::before { content: "Items Sold"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 2px;}
+      
+      /* 3. Gross & GST (Bottom Left) */
+      td:nth-child(4) { grid-column: 1; font-size: 13px; font-weight: 700; color: var(--text-main); }
+      td:nth-child(4)::before { content: "Gross Sales"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;}
+      
+      td:nth-child(5) { grid-column: 2; font-size: 13px; font-weight: 700; color: var(--warning); }
+      td:nth-child(5)::before { content: "GST Collected"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;}
+
+      /* 4. Net Collected (Full Bottom) */
+      td:nth-child(6) { grid-column: 1 / span 2; margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--border); align-items: flex-end;}
+      td:nth-child(6)::before { content: "Net Collected"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--success); margin-bottom: 2px;}
+      td:nth-child(6) .money-cell { font-size: 20px; }
+      td:nth-child(6) .trend-bg { display: none; } /* Hide progress bar on mobile to save space */
+
+      .details-row.active { display: block; margin-top: -12px; margin-bottom: 12px; }
+      .details-content { padding: 15px; border-radius: 0 0 12px 12px; border-left: none; border-top: 4px solid var(--primary); background: var(--bg-input); border-left: 1.5px solid var(--border); border-right: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); }
     }
 
     /* ═══════════════════════════════════════════════════════════
-       EXPORT MODAL ACTIONS & BUTTONS
+       EXPORT MODAL ACTIONS
     ═══════════════════════════════════════════════════════════ */
     .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;}
-    .btn-action { 
-        padding: 14px; border-radius: var(--radius-input); border: none; font-weight: 800; 
-        cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; 
-        font-size: 13.5px; color: white; font-family: var(--font-body); transition: var(--trans); 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 0.04em;
-    }
+    .btn-action { padding: 14px; border-radius: var(--radius-sm); border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; color: white; font-family: var(--font-body); transition: var(--trans); box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 0.04em; }
     .btn-action:active { transform: scale(0.97); }
     .btn-excel { background: linear-gradient(135deg, #10b981, #059669); }
     .btn-excel:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16,185,129,0.3); }
     .btn-pdf { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .btn-pdf:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(239,68,68,0.3); }
-
-    .btn { padding: 10px 16px; border-radius: var(--radius-input); font-weight: 800; font-size: 13px; border: none; cursor: pointer; transition: var(--trans); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-body); text-transform: uppercase;}
-    .btn-primary { background: var(--primary-gradient); color: white; box-shadow: 0 4px 12px rgba(25,118,210,0.25); }
-    .btn-primary:hover { background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(25,118,210,0.35); }
-    .btn-outline { background: var(--white); border: 1.5px solid var(--blue-200); color: var(--blue-600); }
-    .btn-outline:hover { background: var(--blue-50); border-color: var(--blue-400); transform: translateY(-2px); }
-
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s ease;}
-    .modal-overlay.show { opacity: 1; }
-    .modal-content { background: var(--white); width: 100%; max-width: 450px; border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1.5px solid var(--blue-100);}
-    .modal-overlay.show .modal-content { transform: scale(1); }
   </style>
 </head>
 
 <body class="lang-en">
   
-  <div id="menuOverlay" class="menu-overlay"></div>
-  <div id="sideMenu" class="side-menu">
-    <button id="btnCloseMenu" style="background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; position:absolute; right:15px; top:15px;">&times;</button>
-    <div style="font-size:22px; font-weight:800; color:var(--slate-900); margin-bottom:40px; margin-top:10px; font-family: var(--font-head);">
-        Bharat<span style="color:var(--blue-600);">POS</span>
-    </div>
-    <div class="side-menu-links">
-        <a href="dashboard.html"><i class="fa-solid fa-chart-pie"></i> Command Center</a>
-        <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> Bill Banao</a>
-        <a href="products.html"><i class="fa-solid fa-box-open"></i> Inventory / Stock</a>
-        <a href="sales.html"><i class="fa-solid fa-chart-line"></i> Sales Ledger</a>
-        <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> Finance HQ</a>
-        <a href="customers.html"><i class="fa-solid fa-users"></i> Bharat CRM</a>
-        <a href="reports.html" class="active-link" style="background:var(--blue-50); color:var(--blue-600); border-color:var(--blue-200);"><i class="fa-solid fa-file-invoice-dollar"></i> Audit & Reports</a>
-        <a href="forecast.html"><i class="fa-solid fa-brain"></i> DemandMitra AI</a>
-        <a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a>
-    </div>
-  </div>
-
-  <nav class="navbar" style="display: flex; align-items: center; justify-content: space-between; padding: 0 15px; height: 64px; background: var(--white); border-bottom: 2px solid var(--blue-200); flex-shrink: 0; z-index: 100; width: 100%; box-shadow: 0 4px 15px rgba(25,118,210,0.05);">
-    <div class="brand" style="font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--slate-900); font-family: var(--font-head);">
-      <button class="menu-btn" id="btnOpenMenu" style="background: var(--blue-50); border: 1.5px solid var(--blue-200); color: var(--blue-600); width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fa-solid fa-bars"></i></button>
-      <div class="brand-logo-wrap" style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #059669, #047857); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(5,150,105,0.25);"><i class="fa-solid fa-file-invoice-dollar" style="color: #fff; font-size: 14px;"></i></div>
-      Bharat<span>POS</span>
-    </div>
-    <div class="nav-actions">
-        <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
-    </div>
-  </nav>
-
   <div class="container">
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">Net Collected <i class="fa-solid fa-money-bill-wave" style="color:var(--success);"></i></div>
         <div class="kpi-value" id="kpiNetRev">₹0</div>
         <div class="kpi-border" style="background: var(--success);"></div>
-        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">Cash + Online Only</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">Cash + Online Only</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total GST Collected <i class="fa-solid fa-receipt" style="color:var(--warning);"></i></div>
         <div class="kpi-value" id="kpiGST">₹0</div>
         <div class="kpi-border" style="background: var(--warning);"></div>
-        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">CGST + SGST</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">CGST + SGST</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Gross Sales <i class="fa-solid fa-chart-line" style="color:var(--blue-600);"></i></div>
+        <div class="kpi-label">Gross Sales <i class="fa-solid fa-chart-line" style="color:var(--primary);"></i></div>
         <div class="kpi-value" id="kpiGrossRev">₹0</div>
-        <div class="kpi-border" style="background: var(--blue-600);"></div>
-        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">Includes Pending Udhaar</div>
+        <div class="kpi-border" style="background: var(--primary);"></div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">Includes Pending Udhaar</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total Bills <i class="fa-solid fa-hashtag" style="color:var(--purple);"></i></div>
         <div class="kpi-value" id="kpiBills">0</div>
         <div class="kpi-border" style="background: var(--purple);"></div>
-        <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:600;" class="kpi-sub">In selected period</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">In selected period</div>
       </div>
     </div>
 
@@ -271,23 +184,23 @@
         <div class="report-title-group">
             <div class="report-title">📊 Daily Aggregates</div>
             
-            <select id="filterBranch" class="date-input" style="display:none; font-weight:800; color:var(--blue-600); border-color:var(--blue-200); background:var(--blue-50);">
+            <select id="filterBranch" class="date-input" style="display:none; font-weight:800; color:var(--primary); border-color:var(--border); background:var(--bg-input);">
                 <option value="all">🌍 All Branches</option>
             </select>
 
             <div class="date-filter-group">
                 <input type="date" id="startDate" class="date-input">
-                <span style="color:var(--slate-500); font-size:12px; font-weight:800;">TO</span>
+                <span style="color:var(--text-muted); font-size:12px; font-weight:800;">TO</span>
                 <input type="date" id="endDate" class="date-input">
             </div>
             
             <div id="syncStatus" class="sync-status"><span class="sync-dot"></span> <span id="syncText">Syncing...</span></div>
         </div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; justify-content: flex-end;">
             <button class="btn btn-outline" id="btnToggleCompact" title="Toggle Compact View" style="padding: 10px 14px;">
                 <i class="fa-solid fa-compress"></i>
             </button>
-            <button class="btn btn-primary" onclick="window.showModal('exportModal')">
+            <button class="btn btn-primary" id="btnOpenExportModal">
                 <i class="fa-solid fa-download"></i> Export
             </button>
         </div>
@@ -311,12 +224,12 @@
   </div>
 
   <div id="exportModal" class="modal-overlay">
-      <div class="modal-content">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1.5px dashed var(--blue-100); padding-bottom:12px;">
-              <h3 style="margin:0; font-size:18px; color:var(--slate-900); font-weight:800; font-family:var(--font-head);">📥 Export Reports</h3>
-              <button onclick="window.hideModal('exportModal')" style="background:none; border:none; color:var(--slate-400); font-size:24px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1.5px dashed var(--border); padding-bottom:12px;">
+              <h3 style="margin:0; font-size:18px; color:var(--text-main); font-weight:800; font-family:var(--font-head);">📥 Export Reports</h3>
+              <button id="btnCloseExportModal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
           </div>
-          <p style="font-size:13px; color:var(--slate-500); margin-bottom:20px; line-height:1.5; font-weight:600;">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.5; font-weight:600;">
               Export your aggregated daily summaries. The date range and branch filter selected on the main screen will be applied.
           </p>
           <div class="export-actions">
@@ -326,540 +239,7 @@
       </div>
   </div>
 
-<script type="module">
-import { db } from "./bharatpos.js";
-import { doc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <script type="module" src="./js/pages/reports.js"></script>
 
-window.db = db;
-window.allSales = [];
-
-// --- UTILS ---
-window.escapeHtml = function(str) { 
-    return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
-}
-
-window.formatCurrency = function(n){ return '₹' + Number(n || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
-
-window.animateValue = function(obj, start, end, duration, isCurrency=false) {
-  if(!obj) return;
-  let startTimestamp = null;
-  const step = (timestamp) => {
-    if (!startTimestamp) startTimestamp = timestamp;
-    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    const val = (progress * (end - start) + start);
-    obj.innerHTML = isCurrency ? window.formatCurrency(val) : Math.floor(val);
-    if (progress < 1) { window.requestAnimationFrame(step); }
-  };
-  window.requestAnimationFrame(step);
-}
-
-// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
-window.showModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.style.display = 'flex';
-        setTimeout(() => m.classList.add('show'), 10);
-    }
-}
-
-window.hideModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.classList.remove('show');
-        setTimeout(() => m.style.display = 'none', 300);
-    }
-}
-
-// --- INIT ---
-document.addEventListener("DOMContentLoaded", () => {
-    window.bindEvents();
-    
-    // Set default dates for report modal
-    const today = new Date();
-    const endEl = document.getElementById('endDate');
-    if(endEl) endEl.valueAsDate = today;
-    const startEl = document.getElementById('startDate');
-    if(startEl) startEl.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    window.loadSalesFromCloud();
-});
-
-window.bindEvents = function() {
-    document.getElementById('btnOpenMenu')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('btnCloseMenu')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('menuOverlay')?.addEventListener('click', window.toggleMenu);
-    
-    document.getElementById('btnExportExcel')?.addEventListener('click', window.exportExcel);
-    document.getElementById('btnExportPDF')?.addEventListener('click', window.exportPDF);
-
-    // Compact Mode Toggle
-    document.getElementById('btnToggleCompact')?.addEventListener('click', () => {
-        document.body.classList.toggle('compact-mode');
-        const icon = document.querySelector('#btnToggleCompact i');
-        if(!icon) return;
-
-        if(document.body.classList.contains('compact-mode')) {
-            icon.className = 'fa-solid fa-expand';
-            localStorage.setItem('reports_compact', 'true');
-        } else {
-            icon.className = 'fa-solid fa-compress';
-            localStorage.setItem('reports_compact', 'false');
-        }
-    });
-
-    if(localStorage.getItem('reports_compact') === 'true') {
-        document.body.classList.add('compact-mode');
-        const icon = document.querySelector('#btnToggleCompact i');
-        if(icon) icon.className = 'fa-solid fa-expand';
-    }
-
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) window.hideModal(overlay.id);
-        });
-    });
-
-    const startInput = document.getElementById('startDate');
-    const endInput = document.getElementById('endDate');
-    
-    if(startInput) startInput.addEventListener('change', window.renderReports);
-    if(endInput) endInput.addEventListener('change', window.renderReports);
-}
-
-window.toggleMenu = function() {
-    document.getElementById('sideMenu')?.classList.toggle('open');
-    const overlay = document.getElementById('menuOverlay');
-    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-}
-
-// ─── MULTI-BRANCH DATA ENGINE (ASYNC BRIDGE) ─────────────────────────────────
-window.loadSalesFromCloud = async function() {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const mobile = user.mobile || user.phone;
-
-    let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
-
-    if (typeof window.loadOwnedShops === 'function' && mobile) {
-        const fetchedShops = await window.loadOwnedShops(mobile);
-        if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
-    }
-
-    const branchFilter = document.getElementById('filterBranch');
-    const shopSwitcher = document.getElementById('shopSwitcher');
-
-    if (shops.length > 1) {
-        const optionsHtml = '<option value="all">🌍 All Branches</option>' + 
-            shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
-
-        if (branchFilter) {
-            branchFilter.style.display = 'inline-block';
-            branchFilter.innerHTML = optionsHtml;
-            branchFilter.value = user.merchantId; // Default to active branch
-            branchFilter.addEventListener('change', (e) => {
-                const val = e.target.value;
-                if(shopSwitcher) shopSwitcher.value = val;
-                
-                if (val === 'all' || val === user.merchantId) {
-                    window.renderReports();
-                } else if (window.switchActiveShop) {
-                    window.switchActiveShop(val);
-                }
-            });
-        }
-        
-        if (shopSwitcher) {
-            shopSwitcher.style.display = 'inline-block';
-            shopSwitcher.innerHTML = optionsHtml;
-            shopSwitcher.value = user.merchantId; // Default to active branch
-            shopSwitcher.addEventListener('change', (e) => {
-                const val = e.target.value;
-                if(branchFilter) branchFilter.value = val;
-                
-                if (val === 'all' || val === user.merchantId) {
-                    window.renderReports();
-                } else if (window.switchActiveShop) {
-                    window.switchActiveShop(val);
-                }
-            });
-        }
-    }
-
-    // Load from Async Bridge
-    let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
-    if (eSales === null) {
-        eSales = await window.dbGet('bharatpos_sales', '[]');
-    }
-    window.allSales = eSales;
-    if(window.allSales.length > 0) window.renderReports();
-
-    if (user && user.merchantId && typeof user.merchantId === 'string' && user.merchantId.trim() !== '' && window.db && navigator.onLine) {
-        try {
-            let allEnterpriseSales = [];
-            
-            const fetchPromises = shops.map(async (shop) => {
-                if(!shop.merchantId) return;
-                try {
-                    const salesRef = collection(db, "shops", shop.merchantId, "sales");
-                    const snap = await getDocs(salesRef);
-                    snap.forEach(doc => {
-                        let data = doc.data();
-                        data._branchId = shop.merchantId;
-                        data._branchName = shop.shopName;
-                        allEnterpriseSales.push(data);
-                    });
-                } catch(e) { console.warn(`Failed fetching sales for branch: ${shop.shopName}`); }
-            });
-            
-            await Promise.all(fetchPromises);
-            
-            allEnterpriseSales.sort((a, b) => new Date(b.date) - new Date(a.date));
-            window.allSales = allEnterpriseSales;
-            
-            await window.dbSave('bharatpos_enterprise_sales', window.allSales);
-            
-            window.renderReports();
-        } catch (e) {
-            console.warn("Enterprise Fetch Error", e);
-        }
-    }
-}
-
-// --- DATA PROCESSING (Singularity + Splits + Multi-Branch) ---
-window.groupSalesByDate = function() {
-  const sales = window.allSales || [];
-  const grouped = {};
-  
-  const startEl = document.getElementById('startDate');
-  const endEl = document.getElementById('endDate');
-  if(!startEl || !endEl) return grouped;
-
-  const startD = new Date(startEl.value); startD.setHours(0,0,0,0);
-  const endD = new Date(endEl.value); endD.setHours(23,59,59,999);
-  
-  let branchFilter = 'all';
-  const ss = document.getElementById('shopSwitcher');
-  const bf = document.getElementById('filterBranch');
-  if(ss && ss.style.display !== 'none') branchFilter = ss.value;
-  else if(bf && bf.style.display !== 'none') branchFilter = bf.value;
-
-  sales.forEach(sale => {
-    if(branchFilter !== 'all' && sale._branchId !== branchFilter && sale.merchantId !== branchFilter) return;
-
-    const saleDateObj = new Date(sale.date);
-    if(saleDateObj < startD || saleDateObj > endD) return;
-
-    let rawDate = sale.date || new Date().toISOString();
-    const d = rawDate.substring(0, 10); 
-    if(!grouped[d]) grouped[d] = { gross: 0, netCollected: 0, tax: 0, bills: 0, itemsCount: 0, products: {} };
-    
-    const pMode = sale.paymentMethod || sale.paymentMode || 'Cash';
-    let collected = 0;
-    let gross = Number(sale.total || sale.amount || 0);
-
-    if (pMode === 'Partial' && sale.split) {
-        collected = Number(sale.split.cash || 0) + Number(sale.split.online || 0);
-    } else if (pMode !== 'Udhaar') {
-        collected = gross;
-    }
-
-    if(sale.isPaid && sale.settledDate) {
-        const setStr = new Date(sale.settledDate).toISOString().substring(0, 10);
-        if(setStr === d && rawDate.substring(0,10) !== d) {
-            collected += (pMode === 'Partial' && sale.split) ? Number(sale.split.udhaar) : gross;
-        }
-    }
-
-    let tax = 0;
-    (sale.items || []).forEach(item => {
-       let amt = Number(item.total || (item.price * item.qty) || 0);
-       if(item.gstRate && Number(item.gstRate) > 0) {
-           if(item.priceType === 'inclusive') tax += amt - (amt / (1 + (Number(item.gstRate)/100)));
-           else tax += amt * (Number(item.gstRate)/100);
-       }
-       
-       const q = Number(item.qty || 1);
-       grouped[d].itemsCount += q;
-       
-       const displayName = `${window.escapeHtml(item.name)} ${item.variant ? `(${window.escapeHtml(item.variant)})` : ''}`;
-       grouped[d].products[displayName] = (grouped[d].products[displayName] || 0) + q;
-    });
-
-    grouped[d].gross += gross;
-    grouped[d].netCollected += collected;
-    grouped[d].tax += tax;
-    grouped[d].bills++;
-  });
-  return grouped;
-}
-
-window.toggleDetails = function(dateId) {
-  const detailRow = document.getElementById('details-' + dateId);
-  if(!detailRow) return;
-  const isHidden = getComputedStyle(detailRow).display === 'none';
-  document.querySelectorAll('.details-row').forEach(row => { row.classList.remove('active'); row.style.display = 'none'; });
-  if(isHidden) {
-    if(window.innerWidth < 768) { detailRow.style.display = 'block'; } else { detailRow.style.display = 'table-row'; }
-    setTimeout(() => detailRow.classList.add('active'), 10);
-  }
-}
-
-// --- MAIN RENDER ---
-window.renderReports = function(){
-  const data = window.groupSalesByDate();
-  const tableBody = document.getElementById('salesHistoryBody');
-  if(!tableBody) return;
-  const sortedDates = Object.keys(data).sort().reverse();
-  
-  let totalNet = 0, totalGross = 0, totalTax = 0, totalBills = 0, totalItems = 0;
-  let maxDailyNet = 0;
-
-  sortedDates.forEach(date => {
-    const d = data[date];
-    totalNet += d.netCollected;
-    totalGross += d.gross;
-    totalTax += d.tax;
-    totalBills += d.bills;
-    totalItems += d.itemsCount;
-    if(d.netCollected > maxDailyNet) maxDailyNet = d.netCollected;
-  });
-
-  window.animateValue(document.getElementById('kpiNetRev'), 0, totalNet, 1000, true);
-  window.animateValue(document.getElementById('kpiGrossRev'), 0, totalGross, 1000, true);
-  window.animateValue(document.getElementById('kpiGST'), 0, totalTax, 1000, true);
-  window.animateValue(document.getElementById('kpiBills'), 0, totalBills, 1000);
-
-  if(sortedDates.length === 0){
-      tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; color:var(--slate-500); font-weight:700;">No sales records found for this period.</td></tr>';
-      return;
-  }
-
-  const historyHtml = sortedDates.map((date, index) => {
-      const rowData = data[date];
-      const dateId = date.replace(/-/g, ''); 
-      const barWidth = maxDailyNet > 0 ? (rowData.netCollected / maxDailyNet) * 100 : 0;
-      
-      const productEntries = Object.entries(rowData.products).sort((a,b)=>b[1]-a[1]);
-      let productsHtml = productEntries.length > 0 
-          ? productEntries.map(([name, qty]) => `<div class="product-chip"><span>${name}</span><div class="chip-qty">${qty}</div></div>`).join('') 
-          : '<span style="color:var(--text-muted); font-size:12px;">No item details</span>';
-      
-      const dateObj = new Date(date);
-      const today = new Date().toISOString().split('T')[0];
-      const friendlyDate = (date === today) ? "Today" : dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
-
-      return `
-        <tr class="sale-row" onclick="window.toggleDetails('${dateId}')">
-          <td>
-            <div style="font-weight:800; color:var(--slate-900); font-size:14px; font-family:var(--font-head);">${friendlyDate}</div>
-            <div style="font-size:11px; color:var(--slate-500); margin-top:4px; font-weight:700;">${date}</div>
-          </td>
-          <td class="text-right">${rowData.bills}</td>
-          <td class="text-right">${rowData.itemsCount}</td>
-          <td class="text-right" style="color:var(--slate-500); font-family:'JetBrains Mono'; font-weight:700;">₹${rowData.gross.toFixed(2)}</td>
-          <td class="text-right" style="color:var(--warning); font-family:'JetBrains Mono'; font-weight:700;">₹${rowData.tax.toFixed(2)}</td>
-          <td class="text-right" style="position:relative;">
-            <div class="trend-bg" style="width:${barWidth * 0.7}px"></div> 
-            <span class="money-cell">${window.formatCurrency(rowData.netCollected)}</span>
-          </td>
-        </tr>
-        <tr id="details-${dateId}" class="details-row">
-          <td colspan="6" style="padding:0; background:transparent;">
-             <div class="details-content">
-                <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--blue-600); font-weight:800; margin-bottom:12px;">Items Breakdown</div>
-                <div class="product-grid">${productsHtml}</div>
-             </div>
-          </td>
-        </tr>`;
-  }).join('');
-
-  tableBody.innerHTML = historyHtml;
-  
-  window.handleAISnapshot(data, totalNet, totalGross, totalTax);
-}
-
-// --- EXPORT LOGIC ---
-window.exportExcel = function() {
-    const data = window.groupSalesByDate();
-    const sortedDates = Object.keys(data).sort().reverse();
-    if(sortedDates.length === 0) return alert("No data to export.");
-
-    let rows = [];
-    sortedDates.forEach(date => {
-        const d = data[date];
-        rows.push({
-            "Date": date,
-            "Total Bills": d.bills,
-            "Items Sold": d.itemsCount,
-            "Gross Sales": d.gross.toFixed(2),
-            "GST Collected": d.tax.toFixed(2),
-            "Net Collected": d.netCollected.toFixed(2)
-        });
-    });
-
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch: 15}, {wch: 12}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}];
-    
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Daily_Audit");
-    XLSX.writeFile(wb, `BharatPOS_Daily_Audit_${Date.now()}.xlsx`);
-    
-    window.hideModal('exportModal');
-}
-
-window.exportPDF = function() {
-    const data = window.groupSalesByDate();
-    const sortedDates = Object.keys(data).sort().reverse();
-    if(sortedDates.length === 0) return alert("No data to export.");
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4'); 
-    
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const shopName = user.shopName || "BharatPOS Merchant";
-    
-    doc.setFontSize(16); 
-    doc.setTextColor(25, 118, 210);
-    doc.text("DAILY AUDIT REPORT", 14, 15);
-    
-    doc.setFontSize(10); 
-    doc.setTextColor(100, 100, 100);
-    
-    let branchFilter = 'all';
-    let filterText = 'All Branches';
-    const ss = document.getElementById('shopSwitcher');
-    const bf = document.getElementById('filterBranch');
-    
-    if(ss && ss.style.display !== 'none') {
-        branchFilter = ss.value;
-        filterText = ss.options[ss.selectedIndex].text.replace('⭐','').trim();
-    } else if (bf && bf.style.display !== 'none') {
-        branchFilter = bf.value;
-        filterText = bf.options[bf.selectedIndex].text.replace('⭐','').trim();
-    }
-
-    doc.text(`Business Name: ${shopName} (${filterText})`, 14, 22);
-    doc.text(`Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}`, 14, 27);
-    
-    const tableData = sortedDates.map(date => {
-        const d = data[date];
-        return [
-            date,
-            d.bills.toString(),
-            d.itemsCount.toString(),
-            d.gross.toFixed(2),
-            d.tax.toFixed(2),
-            d.netCollected.toFixed(2)
-        ];
-    });
-
-    doc.autoTable({
-        head: [['Date', 'Bills', 'Items', 'Gross (Rs)', 'GST (Rs)', 'Net Collected (Rs)']],
-        body: tableData,
-        startY: 35,
-        theme: 'grid',
-        headStyles: { fillColor: [25, 118, 210], textColor: [255, 255, 255] },
-        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right', fontStyle: 'bold' } }
-    });
-    
-    doc.save(`Daily_Audit_${Date.now()}.pdf`);
-    window.hideModal('exportModal');
-}
-
-// --- AI & FIREBASE SYNC LOGIC ---
-window.hashStringDjb2 = function(str) {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) { hash = ((hash << 5) + hash) + str.charCodeAt(i); hash = hash & 0xFFFFFFFF; }
-  return (hash >>> 0).toString(16);
-}
-
-window.updateSyncStatus = function(status) {
-    const el = document.getElementById('syncStatus');
-    const txt = document.getElementById('syncText');
-    if(!el || !txt) return;
-    
-    if (status === 'syncing') {
-        el.classList.add('sync-active');
-        txt.innerText = "Syncing with AI...";
-    } else if (status === 'success') {
-        el.classList.add('sync-active');
-        const dot = document.querySelector('.sync-dot');
-        if(dot) dot.style.background = '#0d9488';
-        txt.innerText = "AI Up to Date";
-        setTimeout(() => el.classList.remove('sync-active'), 3000);
-    } else if (status === 'error') {
-        el.classList.add('sync-active');
-        const dot = document.querySelector('.sync-dot');
-        if(dot) dot.style.background = '#dc2626';
-        txt.innerText = "Sync Failed";
-    }
-}
-
-window.handleAISnapshot = async function(data, totalNet, totalGross, totalTax) {
-  try {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    if (!user.merchantId) return;
-
-    const snapshot = window.getReportsSnapshot(data, totalNet, totalGross, totalTax, user);
-    
-    const contentToHash = JSON.stringify({ revenue: snapshot.net_collected_revenue, history: snapshot.daily_history });
-    const snapshotHash = window.hashStringDjb2(contentToHash);
-    const lastHash = localStorage.getItem('bharatpos_last_sent_reports_snapshot_hash');
-
-    if (lastHash !== snapshotHash) {
-       window.updateSyncStatus('syncing');
-
-       let firebasePromise = Promise.resolve();
-       if(window.db) {
-           firebasePromise = updateDoc(doc(window.db, "shops", user.merchantId), {
-               auditData: snapshot
-           }).catch(e => console.error("Firebase Audit Sync failed:", e));
-       }
-
-       const consultUrl = window.buildUrl ? window.buildUrl('/ai-business-consult') : 'https://server-xy7s.onrender.com/ai-business-consult';
-       const renderPromise = fetch(consultUrl, { 
-           method: 'POST', 
-           headers: { 'Content-Type': 'application/json' }, 
-           body: JSON.stringify({ snapshot: snapshot, user_prompt: "System Update" }) 
-       });
-
-       const [fbRes, renderRes] = await Promise.allSettled([firebasePromise, renderPromise]);
-
-       if (renderRes.status === 'fulfilled' && renderRes.value.ok) {
-           localStorage.setItem('bharatpos_last_sent_reports_snapshot_hash', snapshotHash);
-           window.updateSyncStatus('success');
-       } else {
-           window.updateSyncStatus('error');
-       }
-    }
-  } catch(e) { console.error("Snapshot Error", e); window.updateSyncStatus('error'); }
-}
-
-window.getReportsSnapshot = function(groupedData, netTotal, grossTotal, taxTotal, user) {
-  const dates = Object.keys(groupedData).sort().reverse();
-  
-  const dateEntries = dates.map(date => {
-    const d = groupedData[date];
-    const products = Object.entries(d.products || {}).map(([name, qty])=>({ name, qty: Number(qty) })).slice(0, 10);
-    return { 
-        date, 
-        net_collected: Number(d.netCollected || 0), 
-        gross_sales: Number(d.gross || 0),
-        tax_collected: Number(d.tax || 0),
-        bills: Number(d.bills || 0), 
-        total_items: Number(d.itemsCount || 0),
-        top_products: products 
-    };
-  });
-
-  return { 
-      type: "aggregated_audit_report", 
-      generated_at: new Date().toISOString(), 
-      net_collected_revenue: Number(netTotal || 0), 
-      gross_sales_revenue: Number(grossTotal || 0),
-      total_gst_collected: Number(taxTotal || 0),
-      daily_history: dateEntries 
-  };
-}
-</script>
 </body>
 </html>
