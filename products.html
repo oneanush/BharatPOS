@@ -9,118 +9,49 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-  <script src="quagga.js"></script>
+  <script src="libs/quagga.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script type="module" src="bharatpos.js"></script>
-  <link rel="stylesheet" href="bharatpos.css">
 
   <style>
-    /* ═══════════════════════════════════════════════════════════
-       TRI-LINGUAL DISPLAY LOGIC
-    ═══════════════════════════════════════════════════════════ */
-    body.lang-en .lang-hinglish, body.lang-en .lang-hi { display: none !important; }
-    body.lang-hinglish .lang-en, body.lang-hinglish .lang-hi { display: none !important; }
-    body.lang-hi .lang-en, body.lang-hi .lang-hinglish { display: none !important; }
-
-    /* ═══════════════════════════════════════════════════════════
-       LAYOUT & PANELS (SaaS Flat Theme)
-    ═══════════════════════════════════════════════════════════ */
-    .main-container { 
-        max-width: 1400px; margin: 28px auto; padding: 0 15px; 
-        display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; 
-        transition: all var(--trans); font-family: var(--font-body);
-    }
+    /* PAGE-SPECIFIC STYLES (Inventory Grids & Variant Engine) */
+    .main-container { max-width: 1400px; margin: 28px auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; transition: all var(--trans); font-family: var(--font-body); }
     @media(min-width: 1024px) { .main-container { grid-template-columns: 420px 1fr; } }
     
-    .panel { 
-        background: var(--white); border: 1.5px solid var(--blue-100); 
-        border-radius: var(--radius-card); padding: 24px; 
-        box-shadow: var(--shadow-card); position: relative;
-    }
-
-    .panel-header { 
-        display: flex; justify-content: space-between; align-items: center; 
-        margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1.5px solid var(--blue-100); 
-    }
-    .panel-title { 
-        font-size: 16px; font-weight: 800; color: var(--slate-900); 
-        display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--font-head);
-    }
-    .panel-title-icon { 
-        width: 36px; height: 36px; border-radius: 10px; display: flex; 
-        align-items: center; justify-content: center; font-size: 16px; 
-    }
-    .panel-title-icon.blue { background: var(--blue-50); color: var(--blue-600); }
+    .panel { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-card); position: relative; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1.5px solid var(--border); }
+    .panel-title { font-size: 16px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--font-head); }
+    .panel-title-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .panel-title-icon.blue { background: var(--blue-50); color: var(--primary); }
     .panel-title-icon.teal { background: var(--success-soft); color: var(--success); }
 
-    /* ═══════════════════════════════════════════════════════════
-       FORMS & TOGGLES
-    ═══════════════════════════════════════════════════════════ */
-    .form-group { margin-bottom: 16px; position: relative; }
-    .form-input, .form-select { 
-        width: 100%; background: #f9f9f9; border: 1.5px solid var(--blue-200); 
-        color: var(--slate-900); padding: 12px 14px; border-radius: var(--radius-input); 
-        font-size: 14px; font-weight: 600; outline: none; font-family: var(--font-body); transition: var(--trans);
-    }
-    .form-input:focus, .form-select:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
-    .floating-label { position: absolute; left: 14px; top: 12px; color: var(--slate-400); font-size: 13px; font-weight: 600; pointer-events: none; transition: var(--trans); background: transparent; }
-    .form-input:focus ~ .floating-label, .form-input:not(:placeholder-shown) ~ .floating-label { top: -8px; left: 10px; font-size: 11px; font-weight: 800; color: var(--blue-600); background: #fff; padding: 0 4px; }
-    .form-input::placeholder { color: transparent; }
-
-    .tier-toggle { 
-        width: 100%; background: #f9f9f9; border: 1.5px solid var(--blue-100); 
-        padding: 14px 16px; border-radius: var(--radius-input); display: flex; 
-        justify-content: space-between; align-items: center; color: var(--slate-900); 
-        font-weight: 700; cursor: pointer; transition: var(--trans); margin-bottom: 16px; 
-        font-size: 14px; font-family: var(--font-body); 
-    }
-    .tier-toggle:hover { background: var(--blue-50); border-color: var(--blue-400); color: var(--blue-600);}
-    
-    .tier-content { 
-        display: none; padding: 18px; background: var(--white); 
-        border: 1.5px solid var(--blue-100); border-radius: var(--radius-input); 
-        margin-bottom: 16px; animation: slideDown 0.25s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-    }
+    .tier-toggle { width: 100%; background: #f9f9f9; border: 1.5px solid var(--border); padding: 14px 16px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: 700; cursor: pointer; transition: var(--trans); margin-bottom: 16px; font-size: 14px; }
+    .tier-toggle:hover { background: var(--blue-50); border-color: var(--primary); color: var(--primary);}
+    .tier-content { display: none; padding: 18px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 16px; animation: slideDown 0.25s ease; box-shadow: var(--shadow-sm); }
     .tier-content.active { display: block; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Variant Engine Classes */
-    .variant-box { 
-        background: #f9f9f9; border: 1.5px solid var(--blue-200); 
-        border-radius: var(--radius-input); padding: 18px; margin-bottom: 16px; 
-        position: relative; transition: var(--trans); 
-    }
-    .variant-box:focus-within { border-color: var(--blue-600); background: var(--white); box-shadow: 0 4px 15px rgba(25,118,210,0.05);}
+    .variant-box { background: #f9f9f9; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 16px; position: relative; transition: var(--trans); }
+    .variant-box:focus-within { border-color: var(--primary); background: var(--white); box-shadow: 0 4px 15px var(--primary-glow);}
     .variant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     
-    .btn-remove-var { 
-        position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; 
-        width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--white); 
-        display: flex; align-items: center; justify-content: center; cursor: pointer; 
-        font-size: 10px; box-shadow: 0 4px 10px rgba(220,38,38,0.3); transition: transform 0.2s; 
-    }
+    .btn-remove-var { position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; box-shadow: 0 4px 10px rgba(220,38,38,0.3); transition: transform 0.2s; }
     .btn-remove-var:hover { transform: scale(1.15); background: #b91c1c; }
     
-    .adv-only-field { display: none; margin-top:12px; border-top: 1.5px dashed var(--blue-200); padding-top:16px;}
+    .adv-only-field { display: none; margin-top:12px; border-top: 1.5px dashed var(--border); padding-top:16px;}
     .loose-only-field { display: none; margin-top:12px; }
     .show-adv .adv-only-field { display: block; }
     .show-loose .loose-only-field { display: block; }
 
-    /* Custom Buttons */
-    .btn { padding: 12px 20px; border-radius: var(--radius-input); font-weight: 800; font-size: 14px; border: none; cursor: pointer; transition: var(--trans); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;}
-    .btn:active { transform: scale(0.97); }
-    .btn-primary { background: var(--primary-gradient); color: white; box-shadow: 0 4px 15px rgba(25,118,210,0.25); width: 100%;}
-    .btn-primary:hover { background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(25,118,210,0.35); }
-    .btn-outline { background: var(--white); border: 1.5px solid var(--blue-200); color: var(--blue-600); font-weight: 800; }
-    .btn-outline:hover { background: var(--blue-50); border-color: var(--blue-400); transform: translateY(-2px); }
-    .btn-scan { background: var(--blue-50); border: 1.5px solid var(--blue-200); color: var(--blue-600); font-weight: 800; box-shadow: none;}
-    .btn-scan:hover { background: var(--blue-100); border-color: var(--blue-400); transform: translateY(-2px); }
-    .btn-dashed { background: transparent; border: 1.5px dashed var(--blue-400); color: var(--blue-600); font-weight: 700; box-shadow: none; width: 100%;}
+    .btn-scan { background: var(--blue-50); border: 1.5px solid var(--border); color: var(--primary); font-weight: 800; box-shadow: none;}
+    .btn-scan:hover { background: var(--blue-100); border-color: var(--primary); transform: translateY(-2px); }
+    .btn-dashed { background: transparent; border: 1.5px dashed var(--primary); color: var(--primary); font-weight: 700; box-shadow: none; width: 100%;}
     .btn-dashed:hover { background: var(--blue-50); transform: translateY(-2px); }
-    .btn-icon-only { padding: 10px; width: auto; border-radius: var(--radius-input); }
 
-    /* Switch Component */
     .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; inset: 0; background: var(--slate-400); transition: .3s; border-radius: 24px; }
@@ -128,159 +59,55 @@
     input:checked + .slider { background: var(--success); }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* ═══════════════════════════════════════════════════════════
-       COMPRESSED INVENTORY LIST (The requested fix)
-    ═══════════════════════════════════════════════════════════ */
-    .inventory-toggle-btn {
-        width: 100%; padding: 18px; border-radius: var(--radius-card); 
-        background: linear-gradient(135deg, #0f172a, #334155); color: white; 
-        border: none; font-size: 16px; font-weight: 800; cursor: pointer; 
-        box-shadow: 0 6px 20px rgba(15,23,42,0.25); display: flex; align-items: center; 
-        justify-content: center; gap: 10px; transition: var(--trans); 
-        font-family: var(--font-body); letter-spacing: 0.04em; text-transform: uppercase;
-    }
+    .inventory-toggle-btn { width: 100%; padding: 18px; border-radius: var(--radius-card); background: linear-gradient(135deg, #0f172a, #334155); color: white; border: none; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(15,23,42,0.25); display: flex; align-items: center; justify-content: center; gap: 10px; transition: var(--trans); font-family: var(--font-body); letter-spacing: 0.04em; text-transform: uppercase; }
     .inventory-toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(15,23,42,0.35); }
-    .inventory-toggle-btn:active { transform: scale(0.98); }
     
     #inventoryWrapper { display: none; margin-top: 24px; animation: slideDown 0.3s ease; }
     #inventoryWrapper.show { display: block; }
 
-    /* ═══════════════════════════════════════════════════════════
-       FILTER ENGINE
-    ═══════════════════════════════════════════════════════════ */
-    .filter-engine { 
-        background: #f9f9f9; padding: 18px; border-radius: var(--radius-card); 
-        border: 1.5px solid var(--blue-100); margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
-    }
-    .tier-tabs { display: flex; gap: 10px; border-bottom: 1.5px solid var(--blue-100); padding-bottom: 14px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
-    .tab-btn { 
-        padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; 
-        border: 1.5px solid transparent; background: transparent; color: var(--slate-500); 
-        cursor: pointer; transition: var(--trans); white-space: nowrap; font-family: var(--font-body);
-    }
-    .tab-btn.active { background: var(--blue-600); color: white; box-shadow: 0 4px 12px rgba(25,118,210,0.25); }
+    .filter-engine { background: #f9f9f9; padding: 18px; border-radius: var(--radius-card); border: 1.5px solid var(--border); margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+    .tier-tabs { display: flex; gap: 10px; border-bottom: 1.5px solid var(--border); padding-bottom: 14px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+    .tab-btn { padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; border: 1.5px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: var(--trans); white-space: nowrap; font-family: var(--font-body); }
+    .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px var(--primary-glow); }
     .branch-filters { display: flex; gap: 12px; margin-bottom: 14px; }
-    .branch-select { flex: 1; padding: 12px; border-radius: var(--radius-input); border: 1.5px solid var(--blue-200); background: var(--white); font-size: 13px; color: var(--slate-900); font-weight: 600; outline: none; font-family: var(--font-body); transition: var(--trans);}
-    .branch-select:focus { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(25,118,210,0.1);}
     
     .deep-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .action-chip { 
-        padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; 
-        cursor: pointer; border: 1.5px solid var(--blue-200); background: var(--white); 
-        color: var(--slate-500); transition: var(--trans); font-family: var(--font-body);
-    }
-    .action-chip.active { background: var(--blue-50); border-color: var(--blue-600); color: var(--blue-600); }
+    .action-chip { padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1.5px solid var(--border); background: var(--white); color: var(--text-muted); transition: var(--trans); font-family: var(--font-body); }
+    .action-chip.active { background: var(--blue-50); border-color: var(--primary); color: var(--primary); }
 
-    /* ═══════════════════════════════════════════════════════════
-       INVENTORY GRID
-    ═══════════════════════════════════════════════════════════ */
     .search-box-wide { position: relative; width: 100%; margin-bottom: 15px; }
-    .search-box-wide i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 14px; pointer-events: none; }
-    .search-box-wide input { width: 100%; padding: 14px 14px 14px 42px; background: #f9f9f9; border: 1.5px solid var(--blue-200); border-radius: var(--radius-input); font-size: 14px; font-weight: 600; font-family: var(--font-body); outline: none; transition: var(--trans); color: var(--slate-900); }
-    .search-box-wide input:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); }
+    .search-box-wide i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 14px; pointer-events: none; }
+    .search-box-wide input { width: 100%; padding: 14px 14px 14px 42px; background: #f9f9f9; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; outline: none; transition: var(--trans); color: var(--text-main); }
+    .search-box-wide input:focus { border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 3px var(--primary-glow); }
 
-    .inventory-grid { 
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-        gap: 16px; max-height: 820px; overflow-y: auto; padding-right: 5px; padding-bottom: 24px;
-    }
-    .inventory-grid::-webkit-scrollbar { width: 6px; }
-    .inventory-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    .inventory-grid::-webkit-scrollbar-thumb { background: var(--blue-200); border-radius: 4px; }
-
-    .sku-card { 
-        background: var(--white); border: 1.5px solid var(--blue-100); 
-        border-radius: var(--radius-card); padding: 20px; display: flex; 
-        flex-direction: column; justify-content: space-between; transition: var(--trans); 
-        cursor: pointer; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-    }
-    .sku-card:hover { border-color: var(--blue-400); box-shadow: 0 10px 25px rgba(25,118,210,0.1); transform: translateY(-3px); }
-    
+    .sku-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-card); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; transition: var(--trans); cursor: pointer; position: relative; box-shadow: var(--shadow-sm); }
+    .sku-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-3px); }
     .sku-header { margin-bottom: 12px; padding-right: 24px; display: flex; gap: 14px; align-items: flex-start; }
-    .bulk-cb { width: 20px; height: 20px; cursor: pointer; accent-color: var(--blue-600); margin-top:2px; flex-shrink: 0;}
-    .sku-name { font-size: 16px; font-weight: 800; color: var(--slate-900); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--font-head); }
-    .sku-cat { 
-        display: inline-block; margin-top: 8px; margin-left: 34px; font-size: 11px; 
-        color: var(--blue-600); font-weight: 800; text-transform: uppercase; 
-        letter-spacing: 0.5px; background: var(--blue-50); padding: 4px 10px; border-radius: 6px; 
-    }
-    
-    .sku-tier { 
-        position: absolute; top: 16px; right: 16px; width: 26px; height: 26px; 
-        border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-        font-size: 11px; font-weight: 800; color: white; font-family: var(--font-body);
-    }
+    .bulk-cb { width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary); margin-top:2px; flex-shrink: 0;}
+    .sku-name { font-size: 16px; font-weight: 800; color: var(--text-main); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--font-head); }
+    .sku-cat { display: inline-block; margin-top: 8px; margin-left: 34px; font-size: 11px; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: var(--blue-50); padding: 4px 10px; border-radius: 6px; }
+    .sku-tier { position: absolute; top: 16px; right: 16px; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: white; font-family: var(--font-body); }
     .tier-a { background: var(--success); } .tier-b { background: var(--warning); } .tier-c { background: var(--slate-400); }
-    
-    .sku-variant-label { font-size: 12px; color: var(--slate-500); margin: 8px 0 12px 34px; font-weight: 600; }
-    
-    .sku-stats { 
-        display: flex; justify-content: space-between; align-items: center; 
-        background: #f9f9f9; padding: 12px 14px; border-radius: var(--radius-input); 
-        border: 1.5px solid #e0e7ef; margin-bottom: 0; 
-    }
+    .sku-variant-label { font-size: 12px; color: var(--text-muted); margin: 8px 0 12px 34px; font-weight: 600; }
+    .sku-stats { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid #e0e7ef; margin-bottom: 0; }
     .sku-price { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--success); }
-    .sku-stock-badge { 
-        display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; 
-        color: var(--slate-700); background: var(--white); padding: 6px 12px; 
-        border-radius: 8px; border: 1.5px solid var(--blue-100); 
-    }
+    .sku-stock-badge { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: var(--text-main); background: var(--white); padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--border); }
     .sku-stock-badge.low { color: var(--danger); background: var(--danger-soft); border-color: rgba(220,38,38,0.2); }
     
-    .loading-trigger { text-align: center; padding: 24px; color: var(--slate-400); grid-column: 1/-1; font-weight: 600;}
-
-    /* ═══════════════════════════════════════════════════════════
-       BULK ACTION BAR
-    ═══════════════════════════════════════════════════════════ */
-    .bulk-action-bar { 
-        position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); 
-        background: var(--slate-900); padding: 14px 28px; border-radius: 100px; 
-        display: flex; align-items: center; gap: 18px; z-index: 9000; 
-        box-shadow: 0 15px 40px rgba(0,0,0,0.3); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        border: 2px solid rgba(255,255,255,0.1);
-    }
+    .bulk-action-bar { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); background: #0F172A; padding: 14px 28px; border-radius: 100px; display: flex; align-items: center; gap: 18px; z-index: 9000; box-shadow: 0 15px 40px rgba(0,0,0,0.3); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 2px solid rgba(255,255,255,0.1); }
     .bulk-action-bar.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    .bulk-info { color: white; font-weight: 600; font-size: 14px; white-space: nowrap; font-family: var(--font-body);}
+    .bulk-info { color: white; font-weight: 600; font-size: 14px; white-space: nowrap;}
     .bulk-info span { color: #60A5FA; font-weight: 800; }
-    
     .bulk-controls { display: flex; gap: 10px; align-items: center; }
-    .bulk-select, .bulk-input { 
-        background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.2); 
-        color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; 
-        outline: none; font-family: var(--font-body); font-weight: 600; transition: var(--trans);
-    }
+    .bulk-select, .bulk-input { background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.2); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; outline: none; font-weight: 600; transition: var(--trans); }
     .bulk-select:focus, .bulk-input:focus { border-color: #60A5FA; background: rgba(255,255,255,0.2);}
-    .bulk-select option { background: var(--slate-900); color: white; }
+    .bulk-select option { background: #0F172A; color: white; }
 
-    /* ═══════════════════════════════════════════════════════════
-       SCANNERS & MODALS
-    ═══════════════════════════════════════════════════════════ */
-    .scanner-box { 
-        background: var(--slate-900); border-radius: var(--radius-card); overflow: hidden; 
-        position: relative; margin-bottom: 24px; display: none; border: 3px solid var(--blue-600); 
-        box-shadow: 0 10px 30px rgba(25,118,210,0.3); 
-    }
+    .scanner-box { background: #0F172A; border-radius: var(--radius-card); overflow: hidden; position: relative; margin-bottom: 24px; display: none; border: 3px solid var(--primary); box-shadow: 0 10px 30px var(--primary-glow); }
     #cameraPreview, #quaggaPreview { width: 100%; height: 280px; object-fit: cover; }
-    .scan-laser { position: absolute; width: 100%; height: 2px; background: #10B981; box-shadow: 0 0 15px #10B981; animation: laser 2s infinite; }
-    @keyframes laser { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-
-    /* Modal overrides from global */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s ease;}
-    .modal-overlay.show { opacity: 1; }
-    .modal-box { background: var(--white); width: 100%; max-width: 500px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    .modal-overlay.show .modal-box { transform: scale(1); }
-    .modal-header { padding: 20px 24px; border-bottom: 1.5px solid var(--blue-100); display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; }
-    .modal-body { padding: 24px; overflow-y: auto; }
-
-    .detail-row { 
-        display: flex; justify-content: space-between; padding: 14px 0; 
-        border-bottom: 1.5px dashed var(--blue-100); font-size: 14px; font-family: var(--font-body);
-    }
-    .detail-row span:first-child { color: var(--slate-500); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;}
-    .detail-row span:last-child { color: var(--slate-900); font-weight: 800; text-align: right; }
     
-    #globalHintBar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--slate-900); color: #fff; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 11000; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; border: 2px solid rgba(255,255,255,0.1); white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body);}
+    #globalHintBar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0F172A; color: #fff; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 11000; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; border: 2px solid rgba(255,255,255,0.1); white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;}
     #globalHintBar.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
     datalist { display: none; }
   </style>
 </head>
@@ -295,52 +122,17 @@
 <datalist id="catList"></datalist>
 <datalist id="batchList"></datalist>
 
-<div id="menuOverlay" class="menu-overlay"></div>
-
-<div id="sideMenu" class="side-menu">
-  <div class="side-menu-brand">
-    <div class="side-menu-brand-text">Bharat<span>POS</span></div>
-    <button id="btnCloseMenu" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
-  </div>
-  <div class="side-menu-links">
-    <a href="dashboard.html"><i class="fa-solid fa-house"></i> <span class="lang-en">Dashboard</span><span class="lang-hinglish">Dashboard</span><span class="lang-hi">डैशबोर्ड</span></a>
-    <a href="billing.html"><i class="fa-solid fa-file-invoice"></i> <span class="lang-en">Billing</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span></a>
-    <a href="products.html" class="active-link"><i class="fa-solid fa-box-open"></i> <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span></a>
-    <a href="sales.html"><i class="fa-solid fa-chart-line"></i> <span class="lang-en">Sales Ledger</span><span class="lang-hinglish">Sales Record</span><span class="lang-hi">सेल्स रिकॉर्ड</span></a>
-    <a href="my_dukkan.html"><i class="fa-solid fa-wallet"></i> <span class="lang-en">Finance HQ</span><span class="lang-hinglish">Hisab Kitab</span><span class="lang-hi">हिसाब किताब</span></a>
-    <a href="customers.html"><i class="fa-solid fa-users"></i> <span class="lang-en">Bharat CRM</span><span class="lang-hinglish">Grahak (Customers)</span><span class="lang-hi">ग्राहक</span></a>
-    <a href="forecast.html"><i class="fa-solid fa-brain"></i> <span class="lang-en">DemandMitra AI</span><span class="lang-hinglish">AI Forecast</span><span class="lang-hi">AI भविष्यवाणी</span></a>
-  </div>
-</div>
-
-<nav class="navbar">
-  <div class="brand">
-    <button id="btnOpenMenu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
-    <div class="brand-logo-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
-    <div style="font-size: 15px; font-weight: 800; color: var(--slate-900);">
-      <span class="lang-en">Inventory</span><span class="lang-hinglish">Dukaan Ka Samaan</span><span class="lang-hi">दुकान का सामान</span>
-    </div>
-  </div>
-  <div class="nav-actions">
-    <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
-    <button id="btnLangToggle" class="btn-icon-only" title="Change Language">A/अ</button>
-    <button id="btnNavPos" class="btn btn-success" style="padding:8px 16px;font-size:13px;width:auto; margin-left: 5px;">
-      <i class="fa-solid fa-cash-register"></i> <span class="lang-en">POS</span><span class="lang-hinglish">Bill Banao</span><span class="lang-hi">बिल बनाओ</span>
-    </button>
-  </div>
-</nav>
-
 <div class="main-container">
 
   <div class="panel">
     <div class="panel-header">
       <h2 class="panel-title">
         <div class="panel-title-icon blue"><i class="fa-solid fa-layer-group"></i></div>
-        <span class="lang-en">Product Engine</span><span class="lang-hinglish">Naya Samaan Jodein</span><span class="lang-hi">नया सामान जोड़ें</span>
+        <span data-i18n="nav_inventory">Product Engine</span>
       </h2>
       <div style="display:flex;gap:8px;">
         <button id="btnStartScan" type="button" class="btn btn-scan btn-icon-only" data-hint="en:Auto-fill details using Camera|hinglish:Camera se photo khinch kar automatic detail bharein|hi:कैमरा से फोटो खींचकर आटोमेटिक जानकारी भरें">
-            <i class="fa-solid fa-camera-viewfinder"></i> <span style="font-size: 12px;" class="lang-en">Lens</span><span style="font-size: 12px;" class="lang-hinglish">Scan</span><span style="font-size: 12px;" class="lang-hi">स्कैन</span>
+            <i class="fa-solid fa-camera-viewfinder"></i> <span style="font-size: 12px;">Lens</span>
         </button>
         <button id="btnOpenSettings" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Form Settings (Barcode, Expiry, Batch)|hinglish:Settings: Barcode, Expiry, Batch on/off karein|hi:सेटिंग्स (बारकोड, एक्सपायरी)">
             <i class="fa-solid fa-gear"></i>
@@ -354,7 +146,7 @@
       <canvas id="captureCanvas" style="display:none;"></canvas>
       <div style="position:absolute;bottom:10px;width:100%;text-align:center;">
         <button id="btnStopScan" type="button" class="btn" style="width:auto;display:inline-flex;padding:7px 18px;font-size:12px;background:rgba(220,38,38,0.9);color:white;border-radius:8px;border:none;">
-          <i class="fa-solid fa-xmark"></i> <span class="lang-en">Stop Lens</span><span class="lang-hinglish">Band Karein</span><span class="lang-hi">बंद करें</span>
+          <i class="fa-solid fa-xmark"></i> Stop Lens
         </button>
       </div>
     </div>
@@ -362,12 +154,12 @@
     <form id="productForm">
       <div class="form-group">
         <input type="text" id="pName" class="form-input" placeholder=" " required autocomplete="off">
-        <label class="floating-label"><span class="lang-en">Product Name</span><span class="lang-hinglish">Samaan Ka Naam</span><span class="lang-hi">सामान का नाम</span></label>
+        <label class="floating-label">Product Name</label>
       </div>
 
       <div class="form-group">
         <input type="text" id="pCategory" class="form-input" list="catList" placeholder=" " autocomplete="off">
-        <label class="floating-label"><span class="lang-en">Category</span><span class="lang-hinglish">Category (Jaise: Sabji, Kirana)</span><span class="lang-hi">श्रेणी (जैसे: किराना)</span></label>
+        <label class="floating-label">Category</label>
       </div>
 
       <div id="variantEngineWrapper">
@@ -375,7 +167,7 @@
       </div>
 
       <button id="btnAddVariant" type="button" class="btn btn-dashed" style="margin-bottom:18px;font-size:13px;" data-hint="en:Add a different size, color, or weight for this item|hinglish:Samaan ka alag size ya rang jodein|hi:सामान का अलग साइज या रंग जोड़ें">
-        <i class="fa-solid fa-plus"></i> <span class="lang-en">Add Type (Color/Size/Wt)</span><span class="lang-hinglish">+ Ek Aur Type Jodein</span><span class="lang-hi">+ एक और प्रकार जोड़ें</span>
+        <i class="fa-solid fa-plus"></i> Add Type (Color/Size/Wt)
       </button>
 
       <button type="button" class="tier-toggle" id="btnToggleGst">
@@ -383,7 +175,7 @@
           <span style="width:24px;height:24px;border-radius:6px;background:var(--warning-soft);display:inline-flex;align-items:center;justify-content:center;">
             <i class="fa-solid fa-receipt" style="color:var(--warning);font-size:12px;"></i>
           </span>
-          <span class="lang-en">Level 2 — GST Config</span><span class="lang-hinglish">Level 2 — Tax & GST</span><span class="lang-hi">लेवल 2 — टैक्स और GST</span>
+          Level 2 — GST Config
         </span>
         <i class="fa-solid fa-chevron-down chevron" style="color:var(--slate-400);font-size:14px;transition:transform 0.2s;"></i>
       </button>
@@ -392,7 +184,7 @@
         <div class="variant-grid">
           <div class="form-group">
             <input type="text" id="pHSN" class="form-input" placeholder=" ">
-            <label class="floating-label"><span class="lang-en">HSN Code</span><span class="lang-hinglish">HSN Code</span><span class="lang-hi">HSN कोड</span></label>
+            <label class="floating-label">HSN Code</label>
           </div>
           <div class="form-group">
             <input type="number" id="pGSTRate" class="form-input" placeholder=" ">
@@ -401,26 +193,22 @@
         </div>
         <div class="form-group" style="margin-bottom:0;">
           <select id="pPriceType" class="form-select">
-            <option value="inclusive" class="lang-en">Inclusive (Rate includes Tax)</option>
-            <option value="inclusive" class="lang-hinglish">Inclusive (Rate mein Tax juda hai)</option>
-            <option value="inclusive" class="lang-hi">Inclusive (टैक्स शामिल है)</option>
-            <option value="exclusive" class="lang-en">Exclusive (Tax added on top)</option>
-            <option value="exclusive" class="lang-hinglish">Exclusive (Tax alag se lagega)</option>
-            <option value="exclusive" class="lang-hi">Exclusive (टैक्स अलग से)</option>
+            <option value="inclusive">Inclusive (Rate includes Tax)</option>
+            <option value="exclusive">Exclusive (Tax added on top)</option>
           </select>
-          <label class="floating-label" style="background:#fff; top:-8px; font-size:11px; color:var(--blue-600);"><span class="lang-en">Tax Calculation</span><span class="lang-hinglish">Tax Kaise Lagega</span><span class="lang-hi">टैक्स कैसे लगेगा</span></label>
+          <label class="floating-label" style="background:#fff; top:-8px; font-size:11px; color:var(--primary);">Tax Calculation</label>
         </div>
       </div>
 
-      <div id="advancedFieldsContainer" style="display:none; padding-top:15px; margin-top:10px; border-top:1.5px dashed var(--blue-100);">
-          <div style="font-size:12px; font-weight:800; color:var(--blue-600); margin-bottom:12px; text-transform:uppercase;">
-            <span class="lang-en">Advanced Global Details</span><span class="lang-hinglish">Extra Details (Sabke liye)</span><span class="lang-hi">अतिरिक्त जानकारी</span>
+      <div id="advancedFieldsContainer" style="display:none; padding-top:15px; margin-top:10px; border-top:1.5px dashed var(--border);">
+          <div style="font-size:12px; font-weight:800; color:var(--primary); margin-bottom:12px; text-transform:uppercase;">
+            Advanced Global Details
           </div>
           
-          <div class="form-group" id="looseInputContainer" style="display:none; justify-content:space-between; align-items:center; background:#f9f9f9; padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1.5px solid var(--blue-200);">
+          <div class="form-group" id="looseInputContainer" style="display:none; justify-content:space-between; align-items:center; background:#f9f9f9; padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1.5px solid var(--border);">
               <div>
-                  <div style="font-size:13px; font-weight:700; color:var(--slate-900);"><span class="lang-en">Sell By Weight / Loose</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान (वजन से)</span></div>
-                  <div style="font-size:11px; color:var(--slate-500); margin-top:2px;"><span class="lang-en">Adds internal Base Qty in Variants</span><span class="lang-hinglish">Daal, Chini, Chawal ke liye on karein</span><span class="lang-hi">दाल, चीनी के लिए चालू करें</span></div>
+                  <div style="font-size:13px; font-weight:700; color:var(--text-main);">Sell By Weight / Loose</div>
+                  <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Adds internal Base Qty in Variants</div>
               </div>
               <label class="switch">
                   <input type="checkbox" id="pIsLoose">
@@ -432,20 +220,20 @@
               <div style="display:flex; gap:10px;">
                   <div style="position:relative; flex:1;">
                       <input type="text" id="pBatchId" class="form-input" placeholder=" " list="batchList">
-                      <label class="floating-label"><i class="fa-solid fa-layer-group" style="margin-right:4px;"></i> <span class="lang-en">Batch ID (Lot No.)</span><span class="lang-hinglish">Batch Number (Lot)</span><span class="lang-hi">बैच नंबर (लॉट)</span></label>
+                      <label class="floating-label"><i class="fa-solid fa-layer-group" style="margin-right:4px;"></i> Batch ID (Lot No.)</label>
                   </div>
-                  <button type="button" id="btnAutoBatch" class="btn btn-outline" style="width:auto; padding:0 15px;"><span class="lang-en">Auto</span><span class="lang-hinglish">Apne aap</span><span class="lang-hi">ऑटो</span></button>
+                  <button type="button" id="btnAutoBatch" class="btn btn-outline" style="width:auto; padding:0 15px;">Auto</button>
               </div>
           </div>
 
           <div class="form-group" style="margin-bottom:0;">
               <input type="number" id="pReorderPoint" class="form-input" placeholder=" ">
-              <label class="floating-label"><i class="fa-solid fa-bell-concierge" style="margin-right:4px;"></i> <span class="lang-en">Min. Stock Alert Threshold</span><span class="lang-hinglish">Kitna bachne par Alert aaye?</span><span class="lang-hi">न्यूनतम स्टॉक अलर्ट</span></label>
+              <label class="floating-label"><i class="fa-solid fa-bell-concierge" style="margin-right:4px;"></i> Min. Stock Alert Threshold</label>
           </div>
       </div>
 
       <button type="submit" class="btn btn-primary" style="margin-top:20px;font-size:15px;" id="saveBtn">
-        <i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>
+        <i class="fa-solid fa-cloud-arrow-up"></i> Save to Database
       </button>
     </form>
   </div>
@@ -460,20 +248,20 @@
         <div class="panel-header">
           <h2 class="panel-title">
             <div class="panel-title-icon teal"><i class="fa-solid fa-list-check"></i></div>
-            <span class="lang-en">Inventory List</span><span class="lang-hinglish">Aapka Samaan</span><span class="lang-hi">आपका सामान</span>
+            Inventory List
           </h2>
           <div style="display:flex;gap:8px;">
-            <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--blue-600);" data-hint="en:Import products from Global Database|hinglish:Pehle se bani list se samaan jodein|hi:बनी-बनाई लिस्ट से सामान जोड़ें">
-              <i class="fa-solid fa-globe"></i> <span class="lang-en">Global DB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">ग्लोबल लिस्ट</span>
+            <button id="btnOpenMasterCatalog" type="button" class="btn btn-outline" style="padding:7px 10px;font-size:12px;width:auto;border-radius:9px;color:var(--primary);" data-hint="en:Import products from Global Database">
+              <i class="fa-solid fa-globe"></i> Global DB
             </button>
-            <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Export Inventory to Excel|hinglish:Apne samaan ki list Excel mein download karein|hi:एक्सेल में डाउनलोड करें">
-              <i class="fa-solid fa-file-export"></i> <span class="lang-en">Export</span><span class="lang-hinglish">Excel Nikalein</span><span class="lang-hi">एक्सेल निकालें</span>
+            <button id="btnExportCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Export Inventory to Excel">
+              <i class="fa-solid fa-file-export"></i> Export
             </button>
-            <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel|hinglish:Excel se naya samaan dalein|hi:एक्सेल से सामान डालें">
-              <i class="fa-solid fa-file-import"></i> <span class="lang-en">Import</span><span class="lang-hinglish">Excel Daalein</span><span class="lang-hi">एक्सेल इंपोर्ट</span>
+            <button id="btnTriggerCsv" type="button" class="btn btn-outline" style="padding:7px 12px;font-size:12px;width:auto;border-radius:9px;" data-hint="en:Import from Excel">
+              <i class="fa-solid fa-file-import"></i> Import
             </button>
             <input type="file" id="csvUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;">
-            <button id="btnSyncCloud" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Backup to Cloud|hinglish:Internet par save karein (Backup)|hi:क्लाउड पर सेव करें">
+            <button id="btnSyncCloud" type="button" class="btn btn-outline btn-icon-only" data-hint="en:Backup to Cloud">
               <i class="fa-solid fa-rotate"></i>
             </button>
           </div>
@@ -484,7 +272,7 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="searchInput" placeholder="Search SKU, barcode..." autocomplete="off">
             </div>
-            <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 12px 16px; border-radius:10px;" title="Aur Filters">
+            <button id="btnToggleFilters" class="btn btn-outline" style="width:auto; padding: 12px 16px; border-radius:10px;" title="Filters">
                 <i class="fa-solid fa-filter"></i>
             </button>
         </div>
@@ -497,45 +285,42 @@
             <button class="tab-btn" data-tier="C">Tier C</button>
           </div>
           <div class="branch-filters">
-            <select id="catTabSelect" class="branch-select"><option value="">Categories ▾</option></select>
-            <select id="batchTabSelect" class="branch-select"><option value="">Batches ▾</option></select>
+            <select id="catTabSelect" class="form-select"><option value="">Categories ▾</option></select>
+            <select id="batchTabSelect" class="form-select"><option value="">Batches ▾</option></select>
           </div>
           <div class="branch-filters">
-            <select id="filterBrand" class="branch-select"><option value="">All Brands</option></select>
-            <select id="filterTax" class="branch-select"><option value="">All Taxes (GST)</option></select>
+            <select id="filterBrand" class="form-select"><option value="">All Brands</option></select>
+            <select id="filterTax" class="form-select"><option value="">All Taxes (GST)</option></select>
           </div>
           <div class="deep-actions">
-            <button class="action-chip" data-action="LowStock"><span class="lang-en">Low Stock</span><span class="lang-hinglish">Kam Samaan</span><span class="lang-hi">कम स्टॉक</span></button>
-            <button class="action-chip" data-action="Expiring"><span class="lang-en">Expiring</span><span class="lang-hinglish">Kharab Hone Wala</span><span class="lang-hi">एक्सपायर होने वाला</span></button>
-            <button class="action-chip" data-action="Newest"><span class="lang-en">Newest</span><span class="lang-hinglish">Naya Aaya</span><span class="lang-hi">सबसे नया</span></button>
+            <button class="action-chip" data-action="LowStock">Low Stock</button>
+            <button class="action-chip" data-action="Expiring">Expiring</button>
+            <button class="action-chip" data-action="Newest">Newest</button>
           </div>
         </div>
 
-        <div class="inventory-grid" id="inventoryGrid" data-hint="en:Click checkboxes for Mass Edit|hinglish:Checkboxes se ek sath bahut saare samaan edit karein|hi:चेकबॉक्स से एक साथ बहुत सारे सामान एडिट करें">
+        <div class="inventory-grid" id="inventoryGrid" data-hint="en:Click checkboxes for Mass Edit">
           </div>
-        <div id="loadMoreTrigger" class="loading-trigger" style="display:none;">
-            <span class="lang-en">Loading more items…</span>
-            <span class="lang-hinglish">Aur samaan aa raha hai...</span>
-            <span class="lang-hi">और सामान लोड हो रहा है...</span>
+        <div id="loadMoreTrigger" style="text-align: center; padding: 24px; color: var(--text-muted); font-weight: 600; display:none;">
+            Loading more items…
         </div>
-    </div> </div>
+    </div> 
+  </div>
 
 </div>
 
 <div id="bulkActionBar" class="bulk-action-bar">
-    <div class="bulk-info"><span id="bulkCount">0</span> <span class="lang-en">selected</span><span class="lang-hinglish">chune gaye</span><span class="lang-hi">चुने गए</span></div>
+    <div class="bulk-info"><span id="bulkCount">0</span> selected</div>
     <div class="bulk-controls">
         <select id="bulkOperation" class="bulk-select">
-            <option value="" class="lang-en">Select Action...</option>
-            <option value="" class="lang-hinglish">Kya karna hai?</option>
-            <option value="" class="lang-hi">क्या करना है?</option>
+            <option value="">Select Action...</option>
             <option value="category">Change Category</option>
             <option value="tax">Update GST %</option>
             <option value="discount">Apply Discount %</option>
             <option value="delete">Delete Items</option>
         </select>
         <input type="text" id="bulkValue" class="bulk-input" placeholder="Value..." style="display:none; width:100px;">
-        <button id="btnApplyBulk" class="btn btn-primary" style="padding: 10px 16px; width: auto;"><span class="lang-en">Apply</span><span class="lang-hinglish">OK</span><span class="lang-hi">ओके</span></button>
+        <button id="btnApplyBulk" class="btn btn-primary" style="padding: 10px 16px; width: auto;">Apply</button>
         <button id="btnCancelBulk" class="btn btn-outline" style="padding: 10px 16px; width: auto; color: white; border-color: rgba(255,255,255,0.3); background:transparent;">Cancel</button>
     </div>
 </div>
@@ -543,52 +328,51 @@
 <div id="settingsModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
-      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px; font-family:var(--font-head); font-weight:800; color:var(--slate-900);">
-        <i class="fa-solid fa-gear" style="color:var(--blue-600);"></i> <span class="lang-en">Form Settings</span><span class="lang-hinglish">Form Ki Settings</span><span class="lang-hi">फॉर्म सेटिंग्स</span>
+      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px; font-family:var(--font-head); font-weight:800; color:var(--text-main);">
+        <i class="fa-solid fa-gear" style="color:var(--primary);"></i> Form Settings
       </h3>
-      <button id="btnCloseSettings" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
+      <button id="btnCloseSettings" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--border);">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Advanced Fields</span><span class="lang-hinglish">Extra Details On Karein</span><span class="lang-hi">अतिरिक्त जानकारी</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Show Barcode, Expiry, Brand.</span><span class="lang-hinglish">Barcode, Expiry, Brand form mein dikhega.</span><span class="lang-hi">बारकोड, एक्सपायरी फॉर्म में दिखेगा।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--text-main);">Enable Advanced Fields</div>
+          <div style="font-size:11px;color:var(--text-muted); margin-top:4px;">Show Barcode, Expiry, Brand.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgAdvFields"><span class="slider"></span></label>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--border);">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Sell By Weight</span><span class="lang-hinglish">Khula Samaan (Tola hua)</span><span class="lang-hi">खुला सामान</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Defines Base Unit Quantities.</span><span class="lang-hinglish">Daal, Chini ke vajan ke liye.</span><span class="lang-hi">वजन के लिए।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--text-main);">Enable Sell By Weight</div>
+          <div style="font-size:11px;color:var(--text-muted); margin-top:4px;">Defines Base Unit Quantities.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgLoose"><span class="slider"></span></label>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--blue-50);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1.5px solid var(--border);">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Batch System</span><span class="lang-hinglish">Batch Number System</span><span class="lang-hi">बैच नंबर सिस्टम</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Adds Batch ID auto-generation.</span><span class="lang-hinglish">Dawaion ke batch number ke liye.</span><span class="lang-hi">दवाइयों के बैच के लिए।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--text-main);">Enable Batch System</div>
+          <div style="font-size:11px;color:var(--text-muted); margin-top:4px;">Adds Batch ID auto-generation.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgBatch"><span class="slider"></span></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-body);"><span class="lang-en">Enable Helpful Hints</span><span class="lang-hinglish">Madad Wale Notes (Hints)</span><span class="lang-hi">मदद वाले नोट्स</span></div>
-          <div style="font-size:11px;color:var(--slate-500); margin-top:4px;"><span class="lang-en">Show short notes on hover/touch.</span><span class="lang-hinglish">Touch karne par asaan bhasha me jankari.</span><span class="lang-hi">टच करने पर आसान भाषा में जानकारी।</span></div>
+          <div style="font-weight:800;font-size:14px;color:var(--text-main);">Enable Helpful Hints</div>
+          <div style="font-size:11px;color:var(--text-muted); margin-top:4px;">Show short notes on hover/touch.</div>
         </div>
         <label class="switch"><input type="checkbox" id="cfgHints" checked><span class="slider"></span></label>
       </div>
-      
       <button id="btnRestartTutorial" class="btn btn-outline" style="margin-top:24px; width:100%;">
-          <i class="fa-solid fa-graduation-cap"></i> <span class="lang-en">Restart Tutorial</span><span class="lang-hinglish">Tutorial Wapas Dekhein</span><span class="lang-hi">ट्यूटोरियल वापस देखें</span>
+          <i class="fa-solid fa-graduation-cap"></i> Restart Tutorial
       </button>
     </div>
   </div>
 </div>
 
 <div id="barcodeScannerModal" class="modal-overlay">
-    <div class="modal-box" style="border-radius:16px; padding:20px; width:90%; max-width:400px; text-align:center; transform:none; background: var(--slate-900); color:white;">
-        <h4 style="margin-top:0; margin-bottom:15px; font-family:var(--font-head); font-size:16px;"><i class="fa-solid fa-barcode" style="color:var(--blue-400);"></i> Scan Barcode</h4>
-        <div id="quaggaPreview" style="width:100%; height:250px; background:#000; border-radius:12px; overflow:hidden; position:relative; border:2px solid var(--blue-600);">
+    <div class="modal-box" style="border-radius:16px; padding:20px; width:90%; max-width:400px; text-align:center; transform:none; background: #0F172A; color:white;">
+        <h4 style="margin-top:0; margin-bottom:15px; font-family:var(--font-head); font-size:16px;"><i class="fa-solid fa-barcode" style="color:#60A5FA;"></i> Scan Barcode</h4>
+        <div id="quaggaPreview" style="width:100%; height:250px; background:#000; border-radius:12px; overflow:hidden; position:relative; border:2px solid var(--primary);">
             <div class="scan-laser"></div>
         </div>
         <button type="button" class="btn" style="margin-top:20px; width:100%; background:rgba(255,255,255,0.1); color:white;" id="btnCancelBarcode"><i class="fa-solid fa-xmark"></i> Cancel</button>
@@ -604,35 +388,35 @@
     <div class="modal-body" style="background:#F4F8FF;">
       <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
         <span id="dTier" class="sku-tier" style="position:static;padding:6px 12px;border-radius:12px;width:auto;height:auto;">Tier A</span>
-        <span id="dCat" style="background:var(--blue-100);color:var(--blue-700);font-size:11px;font-weight:800;padding:6px 12px;border-radius:12px;text-transform:uppercase;">Category</span>
+        <span id="dCat" style="background:var(--blue-100);color:var(--primary-dark);font-size:11px;font-weight:800;padding:6px 12px;border-radius:12px;text-transform:uppercase;">Category</span>
       </div>
 
-      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid var(--blue-100);margin-bottom:16px;box-shadow:0 4px 10px rgba(0,0,0,0.02);">
-        <div style="font-size:11px;color:var(--blue-600);font-weight:800;margin-bottom:10px;text-transform:uppercase; letter-spacing:0.5px;">Accounting &amp; Tax</div>
+      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid var(--border);margin-bottom:16px;box-shadow:var(--shadow-sm);">
+        <div style="font-size:11px;color:var(--primary);font-weight:800;margin-bottom:10px;text-transform:uppercase; letter-spacing:0.5px;">Accounting &amp; Tax</div>
         <div class="detail-row"><span>HSN Code:</span><span id="dHSN">-</span></div>
         <div class="detail-row"><span>GST Rate:</span><span id="dGST">-</span></div>
         <div class="detail-row" style="border:none;padding-bottom:0;"><span>Tax Type:</span><span id="dTaxType" style="text-transform:capitalize;">-</span></div>
       </div>
 
-      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid var(--blue-100);margin-bottom:16px;box-shadow:0 4px 10px rgba(0,0,0,0.02);">
-        <div style="font-size:11px;color:var(--blue-600);font-weight:800;margin-bottom:10px;text-transform:uppercase; letter-spacing:0.5px;">Global Details</div>
+      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid var(--border);margin-bottom:16px;box-shadow:var(--shadow-sm);">
+        <div style="font-size:11px;color:var(--primary);font-weight:800;margin-bottom:10px;text-transform:uppercase; letter-spacing:0.5px;">Global Details</div>
         <div class="detail-row"><span>Batch ID:</span><span id="dBatch">-</span></div>
         <div class="detail-row"><span>Alert Threshold:</span><span id="dAlert">-</span></div>
         <div class="detail-row" style="border:none;padding-bottom:0;"><span>Added On:</span><span id="dAdded">-</span></div>
       </div>
 
-      <div style="font-size:11px;color:var(--slate-500);font-weight:800;margin-bottom:10px;text-transform:uppercase;padding-left:5px;">Variants &amp; Operations</div>
+      <div style="font-size:11px;color:var(--text-muted);font-weight:800;margin-bottom:10px;text-transform:uppercase;padding-left:5px;">Variants &amp; Operations</div>
       <div id="dVariantsList" style="display:flex;flex-direction:column;gap:10px;"></div>
 
       <div style="display:flex;gap:12px;margin-top:24px;">
-        <button id="btnEditFromModal" class="btn btn-outline" style="color:var(--blue-600);border-color:var(--blue-600);">
-          <i class="fa-solid fa-pen"></i> <span class="lang-en">Edit</span><span class="lang-hinglish">Badlein</span><span class="lang-hi">बदलें</span>
+        <button id="btnEditFromModal" class="btn btn-outline" style="color:var(--primary);border-color:var(--primary);">
+          <i class="fa-solid fa-pen"></i> Edit
         </button>
         <button id="btnTransferFromModal" class="btn btn-outline" style="color:var(--purple);border-color:var(--purple); display:none;">
-          <i class="fa-solid fa-truck-fast"></i> <span class="lang-en">Transfer</span><span class="lang-hinglish">Bhejein</span><span class="lang-hi">भेजें</span>
+          <i class="fa-solid fa-truck-fast"></i> Transfer
         </button>
         <button id="btnDeleteFromModal" class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);">
-          <i class="fa-solid fa-trash"></i> <span class="lang-en">Delete</span><span class="lang-hinglish">Hataein</span><span class="lang-hi">हटाएं</span>
+          <i class="fa-solid fa-trash"></i> Delete
         </button>
       </div>
     </div>
@@ -643,21 +427,21 @@
   <div class="modal-box">
     <div class="modal-header">
       <h3 style="margin:0;font-size:16px; font-family:var(--font-head);"><i class="fa-solid fa-truck-fast" style="color:var(--purple);"></i> Stock Transfer</h3>
-      <button id="btnCloseTransfer" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
+      <button id="btnCloseTransfer" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">To Branch</label>
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">To Branch</label>
         <select id="transferTargetBranch" class="form-select"></select>
       </div>
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">Variant / Type</label>
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">Variant / Type</label>
         <select id="transferVariant" class="form-select"></select>
       </div>
       <div class="form-group">
-        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--slate-500); margin-bottom:6px; display:block;">Quantity to Transfer</label>
+        <label class="form-label" style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:block;">Quantity to Transfer</label>
         <input type="number" step="0.001" id="transferQty" class="form-input" placeholder="Enter quantity">
-        <div id="transferCalcDisplay" style="font-size:12px; font-weight:800; color:var(--blue-600); margin-top:8px; text-align:right; min-height:16px;"></div>
+        <div id="transferCalcDisplay" style="font-size:12px; font-weight:800; color:var(--primary); margin-top:8px; text-align:right; min-height:16px;"></div>
       </div>
       <button id="btnSubmitTransfer" class="btn btn-primary" style="margin-top:10px; background:linear-gradient(135deg, var(--purple), #6D28D9); width:100%; box-shadow:0 4px 15px rgba(124, 58, 237, 0.25);">
         <i class="fa-solid fa-truck-fast"></i> Confirm Transfer
@@ -670,9 +454,9 @@
   <div class="modal-box">
     <div class="modal-header">
       <h3 style="margin:0;font-size:16px; font-family:var(--font-head);">
-        <i class="fa-solid fa-globe" style="color:var(--blue-600);"></i> <span class="lang-en">Global AI MasterDB</span><span class="lang-hinglish">Bani-Banayi List</span><span class="lang-hi">बनी-बनाई लिस्ट</span>
+        <i class="fa-solid fa-globe" style="color:var(--primary);"></i> Global AI MasterDB
       </h3>
-      <button id="btnCloseMasterCatalog" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--slate-500);"><i class="fa-solid fa-xmark"></i></button>
+      <button id="btnCloseMasterCatalog" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div class="search-box-wide" style="margin-bottom:18px;">
@@ -680,10 +464,10 @@
         <input type="text" id="masterSearchInput" placeholder="Search global products…" autocomplete="off">
       </div>
       <div id="masterDbList" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto; padding-right:4px;">
-        <div style="text-align:center;padding:30px;color:var(--slate-400); font-weight:600;">Click Fetch to load normalized data from cloud.</div>
+        <div style="text-align:center;padding:30px;color:var(--text-muted); font-weight:600;">Click Fetch to load normalized data from cloud.</div>
       </div>
       <button id="btnFetchMasterCatalog" class="btn btn-primary" style="margin-top:18px;">
-        <i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>
+        <i class="fa-solid fa-cloud-arrow-down"></i> Fetch Global Database
       </button>
     </div>
   </div>
@@ -692,1674 +476,29 @@
 <div id="welcomeTutorial" class="modal-overlay" style="z-index: 99999;">
    <div class="modal-box" style="border-radius: 24px; transform: scale(1);">
        <div style="padding: 30px; text-align: center;">
-           <div style="width: 64px; height: 64px; background: var(--blue-50); color: var(--blue-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px;">
+           <div style="width: 64px; height: 64px; background: var(--blue-50); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px;">
                <i class="fa-solid fa-graduation-cap"></i>
            </div>
-           <h2 style="margin: 0 0 12px; font-weight: 800; color: var(--slate-900); font-family:var(--font-head);">
-               <span class="lang-en">Welcome!</span><span class="lang-hinglish">Swagat Hai! (Welcome)</span><span class="lang-hi">स्वागत है!</span>
-           </h2>
-           <p style="color: var(--slate-500); font-size: 14px; margin-bottom: 24px; line-height: 1.5; font-weight: 600;">
-               <span class="lang-en">Managing inventory in BharatPOS is very easy.</span>
-               <span class="lang-hinglish">BharatPOS inventory mein samaan jodna bahut asaan hai.</span>
-               <span class="lang-hi">भारतपीओएस इन्वेंटरी में सामान जोड़ना बहुत आसान है।</span>
+           <h2 style="margin: 0 0 12px; font-weight: 800; color: var(--text-main); font-family:var(--font-head);">Welcome!</h2>
+           <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; font-weight: 600;">
+               Managing inventory in BharatPOS is very easy.
            </p>
-           
-           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--blue-100);">
-               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-camera"></i> 1. Lens AI:</strong> 
-               <span class="lang-en">Take a photo, name and price will fill automatically!</span>
-               <span class="lang-hinglish">Camera se photo khinchein, naam aur price apne aap bhar jayega!</span>
-               <span class="lang-hi">कैमरा से फोटो खींचें, नाम और मूल्य अपने आप भर जाएगा!</span>
+           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--border);">
+               <strong style="color: var(--primary); font-family:var(--font-head);"><i class="fa-solid fa-camera"></i> 1. Lens AI:</strong> Take a photo, name and price will fill automatically!
            </div>
-           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--blue-100);">
-               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-gear"></i> 2. Settings:</strong> 
-               <span class="lang-en">Turn on advanced fields (Brand, Barcode, Expiry) from the Gear icon.</span>
-               <span class="lang-hinglish">Agar Brand, Barcode ya Expiry likhna hai, toh 'Gear' icon daba kar on karein.</span>
-               <span class="lang-hi">अगर ब्रांड, बारकोड या एक्सपायरी लिखना है, तो 'गियर' आइकन दबा कर ऑन करें।</span>
+           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 12px; border: 1.5px solid var(--border);">
+               <strong style="color: var(--primary); font-family:var(--font-head);"><i class="fa-solid fa-gear"></i> 2. Settings:</strong> Turn on advanced fields (Brand, Barcode, Expiry) from the Gear icon.
            </div>
-           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 24px; border: 1.5px solid var(--blue-100);">
-               <strong style="color: var(--blue-600); font-family:var(--font-head);"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Samaan:</strong> 
-               <span class="lang-en">Click any item card to see details or edit. Use checkboxes for mass edit.</span>
-               <span class="lang-hinglish">Kisi bhi samaan ke card par click karke uski details dekhein. Checkbox se ek saath bahut saare edit karein.</span>
-               <span class="lang-hi">किसी भी सामान के कार्ड पर क्लिक करके उसकी जानकारी देखें या बदलें।</span>
+           <div style="text-align: left; background: #f9f9f9; padding: 16px; border-radius: 14px; margin-bottom: 24px; border: 1.5px solid var(--border);">
+               <strong style="color: var(--primary); font-family:var(--font-head);"><i class="fa-solid fa-pen-to-square"></i> 3. Edit Samaan:</strong> Click any item card to see details or edit. Use checkboxes for mass edit.
            </div>
-           
-           <button class="btn btn-primary" id="btnCloseTutorial">
-               <span class="lang-en">Got it 👍</span><span class="lang-hinglish">Samajh Gaya 👍</span><span class="lang-hi">समझ गया 👍</span>
-           </button>
+           <button class="btn btn-primary" id="btnCloseTutorial">Got it 👍</button>
        </div>
    </div>
 </div>
 
-<div id="toast">✅ Action Successful</div>
 <div id="globalHintBar">Hint Text Here</div>
 
-<script type="module">
-import { db } from "./bharatpos.js";
-import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-window.db = db;
-
-// ─── STATE ───────────────────────────────────────────────────────────────────
-window.allProducts = [];
-window.salesHistory = [];
-window.currentEditingId = null;
-window.currentDetailId = null;
-window.currentEditingDate = null;
-window.masterDbCache = [];
-
-window.activeTiers = new Set();
-window.activeCategory = '';
-window.activeBatch = '';
-window.filterState = { brand: '', tax: '', lowStock: false, expiring: false, newest: false, query: '' };
-
-window.currentPage = 0;
-window.pageSize = 50;
-window.currentFilteredData = [];
-window.observer = null;
-window.isInventoryVisible = true; 
-
-window.cameraStream = null;
-window.targetBarcodeInput = null;
-window.selectedBulkItems = new Set();
-
-const langs = ['en', 'hinglish', 'hi'];
-
-// ─── MODAL ANIMATION HELPERS ────────────────────────────────────────
-window.showModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.style.display = 'flex';
-        setTimeout(() => m.classList.add('show'), 10);
-    }
-}
-
-window.hideModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) {
-        m.classList.remove('show');
-        setTimeout(() => m.style.display = 'none', 300);
-    }
-}
-
-// ─── UTILITIES & HELPERS (GLOBALLY ATTACHED) ─────────────────────────────────
-window.formatStock = function(amount, unitType) {
-    const u = (unitType || '').toLowerCase();
-    if (u.includes('kg') || u.includes('g') || u.includes('l') || u.includes('ml')) {
-        return parseFloat(amount || 0).toFixed(2).replace(/\.00$/, '');
-    }
-    return Math.floor(amount || 0);
-}
-
-window.getUnitPrice = function(prod, variant) {
-    if (!prod.isLoose) return Number(variant.price);
-    const baseQty = Number(variant.baseQty) || 1;
-    return Number(variant.price) / baseQty;
-}
-
-window.getUnitLabel = function(prod, variant) {
-    if (!prod.isLoose) return 'unit';
-    return variant.baseUnit || 'unit';
-}
-
-window.getVariantStockInfo = function(p, v) {
-    if (p.isLoose) {
-        const bq = Number(v.baseQty) || 1;
-        const totalBase = (Number(v.stock) || 0) * bq;
-        return { available: totalBase, label: v.baseUnit || 'pcs', isLoose: true };
-    } else {
-        return { available: Number(v.stock) || 0, label: 'units', isLoose: false };
-    }
-}
-
-window.getProductTotalStockInfo = function(p) {
-    if (p.isLoose) {
-        let totalBase = 0;
-        let unit = p.variants[0]?.baseUnit || 'units';
-        p.variants.forEach(v => {
-            const bq = Number(v.baseQty) || 1;
-            totalBase += (Number(v.stock) || 0) * bq;
-        });
-        return `${window.formatStock(totalBase, unit)} ${unit}`;
-    } else {
-        let total = 0;
-        p.variants.forEach(v => total += Number(v.stock) || 0);
-        return `${total} in stock`;
-    }
-}
-
-window.escapeHtml = function(str) { 
-    return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
-}
-
-window.showToast = function(msg, isError = false) {
-    const t = document.getElementById('toast');
-    if(!t) return;
-    t.innerText = msg;
-    t.style.background = isError ? 'var(--danger)' : 'var(--success)';
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// ─── INITIALIZATION ───────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        window.bindAllEvents();
-        window.loadSettings();
-
-        const savedLang = localStorage.getItem('app_lang') || 'en'; 
-        document.body.className = `lang-${savedLang}`;
-
-        // Await IndexedDB Loading
-        window.allProducts = await window.dbGet('bharatpos_products', '[]');
-        window.salesHistory = await window.dbGet('bharatpos_sales', '[]');
-
-        if (window.innerWidth <= 1024) {
-            window.isInventoryVisible = false;
-        } else {
-            window.isInventoryVisible = true;
-            const wrap = document.getElementById('inventoryWrapper');
-            if(wrap) wrap.classList.add('show');
-            const txt = document.getElementById('toggleInvText');
-            if(txt) txt.innerText = "Hide Inventory List";
-        }
-
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(typeof window.loadOwnedShops === 'function') {
-            window.loadOwnedShops(user.mobile || user.phone).then(shops => {
-                if(shops && shops.length > 1) {
-                    const switcher = document.getElementById('shopSwitcher');
-                    if(switcher) {
-                        switcher.style.display = 'inline-block';
-                        const transferBtn = document.getElementById('btnTransferFromModal');
-                        if(transferBtn) transferBtn.style.display = 'inline-flex';
-                        
-                        switcher.innerHTML = shops.map(s => 
-                                `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                                    ${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
-                                </option>`
-                            ).join('');
-                        
-                        switcher.addEventListener('change', (e) => window.switchActiveShop(e.target.value));
-                    }
-                }
-            });
-        }
-
-        if(localStorage.getItem('tutorial_inventory') !== 'true') {
-            window.showModal('welcomeTutorial');
-        }
-
-        window.updateDatalists();
-        window.applyFilters(); 
-        window.setupIntersectionObserver();
-        window.addVariantUI();
-
-        const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
-        if (isGstGlobal) {
-            const tierGst = document.getElementById('tierGst');
-            if(tierGst) tierGst.classList.add('active');
-            const gstBtn = document.getElementById('btnToggleGst');
-            if(gstBtn) {
-                const chevron = gstBtn.querySelector('.chevron');
-                if (chevron) chevron.style.transform = 'rotate(180deg)';
-                gstBtn.style.background = 'var(--blue-50)';
-                gstBtn.style.borderColor = 'var(--primary)';
-                gstBtn.style.color = 'var(--primary)';
-            }
-        }
-
-        window.checkDemandMitraRouting();
-
-        // ✅ FIXED FIREBASE LISTENER (STRICT NULL CHECK)
-        if(user && user.merchantId && typeof user.merchantId === 'string' && user.merchantId.trim() !== '' && window.db) {
-            try {
-                onSnapshot(collection(window.db, "shops", user.merchantId, "onlineOrders"), (snap) => {
-                    // Just silently tracking orders in the background if they exist
-                });
-            } catch(e) {
-                console.warn("Online Orders listener failed (Offline or missing ID)", e);
-            }
-        }
-
-    } catch (err) {
-        console.error("Init Error:", err);
-        window.showToast("Initialization error. Check console.", true);
-    }
-});
-
-// ─── LIVE STOCK CALCULATION LOGIC ──────────────────────────────────────────
-window.updateLiveStockCalc = function(box) {
-    const stockInput = box.querySelector('.v-add-stock');
-    const calcDisplay = box.querySelector('.v-calc-stock');
-    if(!stockInput || !calcDisplay) return;
-
-    const stockVal = parseFloat(stockInput.value);
-    if (isNaN(stockVal)) {
-        calcDisplay.innerText = '';
-        return;
-    }
-
-    const isLooseToggle = document.getElementById('pIsLoose');
-    const isLoose = isLooseToggle ? isLooseToggle.checked : false;
-
-    if (isLoose) {
-        const baseQty = parseFloat(box.querySelector('.v-base-qty').value) || 1;
-        const baseUnit = box.querySelector('.v-base-unit').value || 'units';
-        const total = stockVal * baseQty;
-        calcDisplay.innerText = `≈ ${total.toFixed(3).replace(/\.?0+$/, '')} ${baseUnit}`;
-    } else {
-        const unitType = box.querySelector('.v-unit').value || 'units';
-        calcDisplay.innerText = `≈ ${stockVal} ${unitType}`;
-    }
-};
-
-window.updateTransferLiveCalc = function() {
-    const qtyInput = document.getElementById('transferQty').value;
-    const display = document.getElementById('transferCalcDisplay');
-    const varId = document.getElementById('transferVariant').value;
-
-    if(!qtyInput || isNaN(qtyInput) || qtyInput <= 0) {
-        display.innerText = '';
-        return;
-    }
-
-    const prod = window.allProducts.find(p => p.id === window.currentDetailId);
-    if(!prod) return;
-    const variant = prod.variants.find(v => v.id === varId);
-    if(!variant) return;
-
-    const stockVal = parseFloat(qtyInput);
-    if(prod.isLoose) {
-        const bq = Number(variant.baseQty) || 1;
-        const bu = variant.baseUnit || 'units';
-        const total = stockVal * bq;
-        display.innerText = `≈ ${total.toFixed(3).replace(/\.?0+$/, '')} ${bu}`;
-    } else {
-        display.innerText = `≈ ${stockVal} ${variant.quantity || 'pcs'}`;
-    }
-};
-
-window.syncVariantMath = function(variantBox, source) {
-    const brandStocks = Array.from(variantBox.querySelectorAll('.vb-stock'));
-    const totalStockInput = variantBox.querySelector('.v-add-stock');
-    if(brandStocks.length === 0) return;
-
-    if (source === 'brand') {
-        let sum = 0;
-        brandStocks.forEach(input => sum += (parseFloat(input.value) || 0));
-        totalStockInput.value = sum;
-    } else if (source === 'total') {
-        const targetTotal = parseFloat(totalStockInput.value) || 0;
-        let filledSum = 0;
-        let emptyInputs = [];
-        brandStocks.forEach(input => {
-            if (input.value === '') emptyInputs.push(input);
-            else filledSum += parseFloat(input.value);
-        });
-        
-        if (emptyInputs.length === 1) {
-            emptyInputs[0].value = Math.max(0, targetTotal - filledSum);
-        } else if (brandStocks.length === 1) {
-            brandStocks[0].value = targetTotal;
-        }
-    }
-};
-
-// ─── SETTINGS ────────────────────────────────────────────────────────────────
-window.loadSettings = function() {
-    const isAdv   = localStorage.getItem('cfg_adv_fields') === 'true';
-    const isBatch = localStorage.getItem('cfg_batch') === 'true';
-    const isLoose = localStorage.getItem('cfg_loose') === 'true';
-    const isHints = localStorage.getItem('cfg_hints') !== 'false';
-
-    const elAdv = document.getElementById('cfgAdvFields'); if(elAdv) elAdv.checked = isAdv;
-    const elBatch = document.getElementById('cfgBatch'); if(elBatch) elBatch.checked = isBatch;
-    const elLoose = document.getElementById('cfgLoose'); if(elLoose) elLoose.checked = isLoose;
-    const elHints = document.getElementById('cfgHints'); if(elHints) elHints.checked = isHints;
-
-    window.applySettingsUI(isAdv, isBatch, isLoose);
-}
-
-window.saveConfig = function() {
-    const isAdv   = document.getElementById('cfgAdvFields').checked;
-    const isBatch = document.getElementById('cfgBatch').checked;
-    const isLoose = document.getElementById('cfgLoose').checked;
-    const hintsToggle = document.getElementById('cfgHints');
-    const isHints = hintsToggle ? hintsToggle.checked : true;
-
-    localStorage.setItem('cfg_adv_fields', isAdv);
-    localStorage.setItem('cfg_batch',      isBatch);
-    localStorage.setItem('cfg_loose',      isLoose);
-    localStorage.setItem('cfg_hints',      isHints);
-
-    window.applySettingsUI(isAdv, isBatch, isLoose);
-    window.showToast(document.body.classList.contains('lang-hin') ? "Settings badal di gayi" : "Settings Updated");
-}
-
-window.applySettingsUI = function(isAdv, isBatch, isLoose) {
-    const advCon = document.getElementById('advancedFieldsContainer');
-    if(advCon) advCon.style.display = (isAdv || isBatch || isLoose) ? 'block' : 'none';
-    
-    const batCon = document.getElementById('batchInputContainer');
-    if(batCon) batCon.style.display = isBatch ? 'block' : 'none';
-    
-    const looseCon = document.getElementById('looseInputContainer');
-    if(looseCon) looseCon.style.display = isLoose ? 'flex' : 'none';
-    
-    const engine = document.getElementById('variantEngineWrapper');
-    if(engine) {
-        if (isAdv) engine.classList.add('show-adv'); else engine.classList.remove('show-adv');
-        if (isLoose) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
-    }
-}
-
-// ─── EVENT BINDING ENGINE ─────────────────────────────────────────────────────
-window.bindAllEvents = function() {
-    document.getElementById('btnLangToggle')?.addEventListener('click', () => {
-        let currentIdx = langs.indexOf(localStorage.getItem('app_lang') || 'en');
-        currentIdx = (currentIdx + 1) % langs.length;
-        const nextLang = langs[currentIdx];
-        document.body.className = `lang-${nextLang}`;
-        localStorage.setItem('app_lang', nextLang);
-    });
-
-    document.getElementById('btnExportCsv')?.addEventListener('click', window.handleExportCSV);
-
-    document.getElementById('btnCloseTutorial')?.addEventListener('click', () => {
-        localStorage.setItem('tutorial_inventory', 'true');
-        window.hideModal('welcomeTutorial');
-    });
-    document.getElementById('btnRestartTutorial')?.addEventListener('click', () => {
-        window.hideModal('settingsModal');
-        window.showModal('welcomeTutorial');
-    });
-
-    document.getElementById('btnToggleFilters')?.addEventListener('click', () => {
-        const area = document.getElementById('advancedFilterSection');
-        if(area) area.style.display = area.style.display === 'none' ? 'block' : 'none';
-    });
-
-    document.getElementById('btnToggleInventoryList')?.addEventListener('click', () => {
-        window.isInventoryVisible = !window.isInventoryVisible;
-        const wrapper = document.getElementById('inventoryWrapper');
-        const txt = document.getElementById('toggleInvText');
-        
-        if (window.isInventoryVisible) {
-            if(wrapper) wrapper.classList.add('show');
-            if(txt) txt.innerText = "Hide Inventory List";
-            if(window.currentFilteredData.length === 0) window.applyFilters(); 
-        } else {
-            if(wrapper) wrapper.classList.remove('show');
-            if(txt) txt.innerText = "View Inventory List";
-        }
-    });
-
-    const hintBar = document.getElementById('globalHintBar');
-    document.addEventListener('mouseover', window.handleHintEvent);
-    document.addEventListener('touchstart', window.handleHintEvent, {passive: true});
-
-    document.getElementById('btnOpenMenu')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('btnCloseMenu')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('menuOverlay')?.addEventListener('click', window.toggleMenu);
-    document.getElementById('btnNavPos')?.addEventListener('click', () => window.location.href = 'billing.html');
-
-    document.getElementById('btnToggleGst')?.addEventListener('click', function () {
-        const content = document.getElementById('tierGst');
-        const chevron = this.querySelector('.chevron');
-        if(content) content.classList.toggle('active');
-        if (content && content.classList.contains('active')) {
-            if(chevron) chevron.style.transform = 'rotate(180deg)';
-            this.style.background   = 'var(--blue-50)';
-            this.style.borderColor  = 'var(--primary)';
-            this.style.color        = 'var(--primary)';
-        } else {
-            if(chevron) chevron.style.transform = 'rotate(0deg)';
-            this.style.background   = '';
-            this.style.borderColor  = '';
-            this.style.color        = '';
-        }
-    });
-
-    document.getElementById('btnAddVariant')?.addEventListener('click', () => window.addVariantUI());
-    
-    document.getElementById('variantEngine')?.addEventListener('click', (e) => {
-        const removeBtn = e.target.closest('.btn-remove-var');
-        if (removeBtn) removeBtn.closest('.variant-box').remove();
-        
-        const addBrandBtn = e.target.closest('.btn-add-brand');
-        if (addBrandBtn) {
-            const container = e.target.closest('.variant-brands-container').querySelector('.brand-list');
-            if(container) container.insertAdjacentHTML('beforeend', window.getBrandRowHTML());
-        }
-        
-        const removeBrandBtn = e.target.closest('.btn-remove-brand');
-        if (removeBrandBtn) {
-            const row = e.target.closest('.brand-row');
-            const variantBox = row.closest('.variant-box');
-            if(row) row.remove();
-            if(variantBox) window.syncVariantMath(variantBox, 'brand'); 
-        }
-    });
-
-    document.getElementById('variantEngine')?.addEventListener('input', (e) => {
-        if (e.target.classList.contains('vb-stock')) {
-            window.syncVariantMath(e.target.closest('.variant-box'), 'brand');
-        }
-        if (e.target.classList.contains('v-add-stock')) {
-            window.syncVariantMath(e.target.closest('.variant-box'), 'total');
-        }
-        if (e.target.classList.contains('v-add-stock') || e.target.classList.contains('v-base-qty') || e.target.classList.contains('v-base-unit') || e.target.classList.contains('v-unit')) {
-            window.updateLiveStockCalc(e.target.closest('.variant-box'));
-        }
-    });
-
-    document.getElementById('productForm')?.addEventListener('submit', window.handleSaveProduct);
-    document.getElementById('btnOpenSettings')?.addEventListener('click',  () => window.showModal('settingsModal'));
-    document.getElementById('btnCloseSettings')?.addEventListener('click', () => window.hideModal('settingsModal'));
-    
-    document.getElementById('cfgAdvFields')?.addEventListener('change', window.saveConfig);
-    document.getElementById('cfgBatch')?.addEventListener('change',     window.saveConfig);
-    document.getElementById('cfgLoose')?.addEventListener('change',     window.saveConfig);
-    document.getElementById('cfgHints')?.addEventListener('change',     window.saveConfig);
-    
-    document.getElementById('pIsLoose')?.addEventListener('change', (e) => {
-        const engine = document.getElementById('variantEngineWrapper');
-        if(engine) {
-            if(e.target.checked) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
-        }
-        document.querySelectorAll('.variant-box').forEach(box => window.updateLiveStockCalc(box));
-    });
-
-    document.getElementById('btnAutoBatch')?.addEventListener('click', () => {
-        const catInput = document.getElementById('pCategory');
-        const prefix = (catInput ? catInput.value.substring(0,3).toUpperCase() : 'BAT');
-        const batchInput = document.getElementById('pBatchId');
-        if(batchInput) batchInput.value = `${prefix || 'BAT'}-${Math.floor(1000 + Math.random() * 9000)}`;
-    });
-
-    document.getElementById('btnOpenMasterCatalog')?.addEventListener('click',  () => window.showModal('masterCatalogModal'));
-    document.getElementById('btnCloseMasterCatalog')?.addEventListener('click', () => window.hideModal('masterCatalogModal'));
-    document.getElementById('btnFetchMasterCatalog')?.addEventListener('click', window.fetchMasterCatalog);
-    document.getElementById('masterSearchInput')?.addEventListener('input', window.searchMasterDB);
-    document.getElementById('masterDbList')?.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
-            const dataStr = e.target.getAttribute('data-json');
-            if (dataStr) window.importMasterProduct(JSON.parse(dataStr));
-        }
-    });
-
-    document.getElementById('btnTriggerCsv')?.addEventListener('click',  () => {
-        const f = document.getElementById('csvUpload');
-        if(f) f.click();
-    });
-    document.getElementById('csvUpload')?.addEventListener('change', window.handleBulkImport);
-    document.getElementById('btnSyncCloud')?.addEventListener('click', window.pullFreshData);
-
-    document.getElementById('tierTabs')?.addEventListener('click', (e) => {
-        if (e.target.classList.contains('tab-btn') && e.target.tagName !== 'SELECT') {
-            window.toggleTierFilter(e.target.getAttribute('data-tier'), e.target);
-        }
-    });
-    document.getElementById('catTabSelect')?.addEventListener('change', (e) => {
-        window.activeCategory = e.target.value;
-        window.updateAllTabHighlight();
-        window.applyFilters();
-    });
-    document.getElementById('batchTabSelect')?.addEventListener('change', (e) => {
-        window.activeBatch = e.target.value;
-        window.updateAllTabHighlight();
-        window.applyFilters();
-    });
-
-    document.getElementById('filterBrand')?.addEventListener('change', window.applyFilters);
-    document.getElementById('filterTax')?.addEventListener('change',   window.applyFilters);
-    document.getElementById('searchInput')?.addEventListener('input',  window.applyFilters);
-    document.querySelectorAll('.action-chip').forEach(chip => {
-        chip.addEventListener('click', (e) => window.toggleChip(e.currentTarget));
-    });
-
-    document.getElementById('inventoryGrid')?.addEventListener('click', (e) => {
-        const card = e.target.closest('.sku-card');
-        if(e.target.classList.contains('bulk-cb')) return; 
-        if (card) window.openProductDetails(card.getAttribute('data-id'));
-    });
-
-    document.getElementById('bulkOperation')?.addEventListener('change', (e) => {
-        const valInput = document.getElementById('bulkValue');
-        if(!valInput) return;
-        if (e.target.value === 'category' || e.target.value === 'tax' || e.target.value === 'discount') {
-            valInput.style.display = 'block';
-            if(e.target.value === 'discount') valInput.placeholder = "Enter %";
-            else if(e.target.value === 'tax') valInput.placeholder = "GST %";
-            else valInput.placeholder = "Category Name";
-        } else {
-            valInput.style.display = 'none';
-        }
-    });
-    document.getElementById('btnApplyBulk')?.addEventListener('click', window.executeBulkAction);
-    document.getElementById('btnCancelBulk')?.addEventListener('click', window.clearBulkSelection);
-
-    document.getElementById('btnCloseDetails')?.addEventListener('click', () => window.hideModal('productDetailsModal'));
-    document.getElementById('btnEditFromModal')?.addEventListener('click', () => {
-        window.hideModal('productDetailsModal');
-        if (window.currentDetailId) window.loadProductForEdit(window.currentDetailId);
-    });
-    document.getElementById('btnDeleteFromModal')?.addEventListener('click', () => {
-        window.hideModal('productDetailsModal');
-        if (window.currentDetailId) window.deleteProduct(window.currentDetailId);
-    });
-
-    document.getElementById('btnTransferFromModal')?.addEventListener('click', window.openTransferModal);
-    document.getElementById('btnCloseTransfer')?.addEventListener('click', () => window.hideModal('transferStockModal'));
-    document.getElementById('btnSubmitTransfer')?.addEventListener('click', window.submitStockTransfer);
-    document.getElementById('transferQty')?.addEventListener('input', window.updateTransferLiveCalc);
-    document.getElementById('transferVariant')?.addEventListener('change', window.updateTransferLiveCalc);
-
-    document.getElementById('btnStartScan')?.addEventListener('click', window.startAIScan);
-    document.getElementById('btnStopScan')?.addEventListener('click',  window.stopAIScan);
-    document.getElementById('btnCancelBarcode')?.addEventListener('click', window.stopBarcodeScan);
-
-    // Apply safe closing to ALL modals
-    document.querySelectorAll('.modal-overlay, #barcodeScannerModal').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) window.hideModal(overlay.id);
-        });
-    });
-}
-
-window.handleHintEvent = function(e) {
-    const hintBar = document.getElementById('globalHintBar');
-    if(!hintBar) return;
-    if(localStorage.getItem('cfg_hints') === 'false') return;
-    
-    const target = e.target.closest('[data-hint]');
-    if(target) {
-        const hints = target.getAttribute('data-hint').split('|');
-        let hintText = hints[0].split(':')[1]; 
-        const lang = localStorage.getItem('app_lang') || 'en';
-        
-        hints.forEach(h => {
-            const [l, text] = h.split(':');
-            if(l === lang) hintText = text;
-        });
-
-        hintBar.innerText = `💡 ${hintText}`;
-        hintBar.classList.add('show');
-        clearTimeout(window.hintTimeout);
-        window.hintTimeout = setTimeout(() => hintBar.classList.remove('show'), 3000);
-    }
-}
-
-window.toggleMenu = function() {
-    document.getElementById('sideMenu')?.classList.toggle('open');
-    const overlay = document.getElementById('menuOverlay');
-    if(overlay) overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-}
-
-window.checkDemandMitraRouting = function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const restockName = urlParams.get('restock');
-    if (restockName) {
-        const targetProd = window.allProducts.find(p => p.name === restockName);
-        if(targetProd) {
-            window.loadProductForEdit(targetProd.id);
-            const tempStock = localStorage.getItem("temp_add_stock");
-            if (tempStock) {
-                setTimeout(() => {
-                    const stockInputs = document.querySelectorAll('.v-add-stock');
-                    if (stockInputs.length > 0) {
-                        stockInputs[0].value = tempStock;
-                        window.updateLiveStockCalc(stockInputs[0].closest('.variant-box'));
-                    }
-                    localStorage.removeItem("temp_add_stock");
-                    window.showToast(`DemandMitra suggests adding ${tempStock} units.`);
-                }, 500);
-            }
-        }
-    }
-}
-
-window.handleExportCSV = function() {
-    if(window.allProducts.length === 0) return window.showToast("No products to export", true);
-    try {
-        const flattened = [];
-        window.allProducts.forEach(p => {
-            p.variants.forEach(v => {
-                let brandsStr = '';
-                if(v.brands && v.brands.length > 0) {
-                    brandsStr = v.brands.map(b => `${b.name}(${b.stock})`).join(', ');
-                }
-
-                flattened.push({
-                    Name: p.name, Category: p.category, Type: v.quantity, Price: v.price, Stock: v.stock,
-                    Brands: brandsStr, Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
-                    BaseQty: v.baseQty, BaseUnit: v.baseUnit, BatchID: p.batchId, HSN: p.hsn, GST: p.gstRate, DateAdded: p.dateAdded
-                });
-            });
-        });
-        const ws = XLSX.utils.json_to_sheet(flattened);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Inventory");
-        XLSX.writeFile(wb, `BharatPOS_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
-        window.showToast("✅ Export Successful!");
-    } catch(e) { window.showToast("Export Failed", true); }
-}
-
-window.getBrandRowHTML = function(name = '', stock = '') {
-    return `
-    <div class="brand-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
-        <div style="flex:2; position:relative;">
-            <input type="text" class="form-input vb-name" list="brandList" placeholder="Brand Name" style="padding:10px 12px; font-size:12px;" value="${name}">
-        </div>
-        <div style="flex:1; position:relative;">
-            <input type="number" step="0.001" class="form-input vb-stock" placeholder="Stock" style="padding:10px 12px; font-size:12px;" value="${stock}">
-        </div>
-        <button type="button" class="btn-remove-brand" style="background:none; border:none; color:var(--danger); cursor:pointer; padding:5px;"><i class="fa-solid fa-xmark"></i></button>
-    </div>`;
-}
-
-window.addVariantUI = function(data = null) {
-    const container = document.getElementById('variantEngine');
-    if(!container) return;
-    const div = document.createElement('div');
-    div.className = 'variant-box';
-    const uid = Math.floor(Math.random() * 10000);
-
-    let brandsHtml = '';
-    const brandsArray = data?.brands || (data?.brand ? [{name: data.brand, stock: data.stock || 0}] : []);
-    if (brandsArray.length > 0) {
-        brandsArray.forEach(b => { brandsHtml += window.getBrandRowHTML(b.name, b.stock); });
-    } else {
-        brandsHtml = window.getBrandRowHTML('', ''); 
-    }
-
-    div.innerHTML = `
-        ${container.children.length > 0 ? `<button type="button" class="btn-remove-var"><i class="fa-solid fa-xmark"></i></button>` : ''}
-        <div class="variant-grid">
-            <div class="form-group" style="margin-bottom:0;">
-                <input type="text" class="form-input v-unit" list="unitOptions" id="u_${uid}" placeholder=" " value="${data?.quantity || ''}" required>
-                <label for="u_${uid}" class="floating-label">
-                    <span class="lang-en">Type (Color, Size, ₹, Wt)</span><span class="lang-hinglish">Type (Rang, Size, Wazan)</span><span class="lang-hi">प्रकार (रंग, साइज़, वजन)</span>
-                </label>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <input type="number" step="0.001" class="form-input v-add-stock" id="s_${uid}" placeholder=" " value="${data?.stock || ''}">
-                <label for="s_${uid}" class="floating-label" style="color:var(--success);">
-                    <span class="lang-en">Total Stock</span><span class="lang-hinglish">Kul Stock</span><span class="lang-hi">कुल स्टॉक</span>
-                </label>
-                <div class="v-calc-stock" style="font-size:11px; font-weight:800; color:var(--primary); margin-top:6px; text-align:right; min-height:14px;"></div>
-            </div>
-        </div>
-        <div class="form-group" style="margin-top:10px;margin-bottom:0;">
-            <input type="number" step="0.01" class="form-input v-price" id="p_${uid}" placeholder=" " value="${data?.price || ''}" required style="font-size:17px;font-weight:800;color:var(--success);font-family:'JetBrains Mono',monospace;">
-            <label for="p_${uid}" class="floating-label">
-                <span class="lang-en">Selling Price (₹)</span><span class="lang-hinglish">Bechne Ka Daam (₹)</span><span class="lang-hi">बिक्री मूल्य (₹)</span>
-            </label>
-        </div>
-        
-        <div class="variant-brands-container adv-only-field" style="margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;">
-           <label class="floating-label" style="position:static; display:block; margin-bottom:8px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-copyright"></i> Brands & Stock List</label>
-           <div class="brand-list">${brandsHtml}</div>
-           <button type="button" class="btn btn-dashed btn-add-brand" style="padding: 6px; font-size: 11px; width:auto; display:inline-block;"><i class="fa-solid fa-plus"></i> <span class="lang-en">Add Brand</span><span class="lang-hinglish">+ Brand Jodein</span><span class="lang-hi">+ ब्रांड जोड़ें</span></button>
-        </div>
-
-        <div class="variant-grid adv-only-field">
-            <div class="form-group" style="margin-bottom:0; position:relative;">
-                <input type="text" class="form-input v-barcode" placeholder=" " value="${data?.barcode || ''}" style="font-family:'JetBrains Mono'; padding-right:40px;">
-                <button type="button" onclick="window.startBarcodeScan(this)" style="position:absolute; right:8px; top:11px; background:none; border:none; color:var(--primary); font-size:16px; cursor:pointer;"><i class="fa-solid fa-barcode"></i></button>
-                <label class="floating-label"><i class="fa-solid fa-barcode"></i> Barcode</label>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <input type="number" step="0.01" class="form-input v-cost" placeholder=" " value="${data?.costPrice || ''}">
-                <label class="floating-label"><i class="fa-solid fa-tags"></i> <span class="lang-en">Cost Price</span><span class="lang-hinglish">Kharid Ka Daam</span><span class="lang-hi">खरीद मूल्य</span></label>
-            </div>
-        </div>
-        <div class="form-group adv-only-field" style="margin-bottom:0;">
-            <input type="date" class="form-input v-expiry" placeholder=" " value="${data?.expiryDate || ''}">
-            <label class="floating-label"><i class="fa-regular fa-calendar-xmark"></i> <span class="lang-en">Expiry Date</span><span class="lang-hinglish">Expiry Date</span><span class="lang-hi">एक्सपायरी डेट</span></label>
-        </div>
-
-        <div class="form-group loose-only-field" style="margin-bottom:0;">
-            <div style="display:flex; gap:8px;">
-                <input type="number" step="0.001" class="form-input v-base-qty" placeholder=" " value="${data?.baseQty || ''}" style="flex:1;">
-                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${data?.baseUnit || 'pcs'}" style="width: 90px;">
-            </div>
-            <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> <span class="lang-en">1 Stock Contains</span><span class="lang-hinglish">1 Stock Mein Kitna</span><span class="lang-hi">1 स्टॉक में मात्रा</span></label>
-        </div>
-
-        <input type="hidden" class="v-id" value="${data?.id || ''}">
-        <input type="hidden" class="v-added" value="${data?.dateAdded || ''}">
-    `;
-    container.appendChild(div);
-    window.updateLiveStockCalc(div);
-}
-
-window.handleSaveProduct = async function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('saveBtn');
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving…`; btn.disabled = true;
-
-    try {
-        const user      = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const name      = document.getElementById('pName').value.trim();
-        const cat       = document.getElementById('pCategory').value.trim() || 'General';
-        const hsn       = document.getElementById('pHSN').value.trim();
-        const gstRate   = document.getElementById('pGSTRate').value.trim();
-        const pTypeEl   = document.getElementById('pPriceType');
-        const priceType = pTypeEl ? pTypeEl.value : 'inclusive';
-
-        const advEl = document.getElementById('cfgAdvFields');
-        const looseEl = document.getElementById('cfgLoose');
-        const batchEl = document.getElementById('cfgBatch');
-        
-        const isAdv      = advEl ? advEl.checked : false;
-        const isLooseCfg = looseEl ? looseEl.checked : false;
-        const isBatchCfg = batchEl ? batchEl.checked : false;
-
-        const pLooseEl = document.getElementById('pIsLoose');
-        const isLoose = isLooseCfg ? (pLooseEl ? pLooseEl.checked : false) : false;
-        
-        const pBatchEl = document.getElementById('pBatchId');
-        const batchId = isBatchCfg ? (pBatchEl ? pBatchEl.value.trim() : "") : "";
-        
-        const pReorderEl = document.getElementById('pReorderPoint');
-        const reorder = pReorderEl ? pReorderEl.value : '';
-        
-        const nowIso  = new Date().toISOString();
-
-        const productId = window.currentEditingId || `prod_${Date.now()}`;
-        
-        const productDoc = {
-            id: productId, name: name, category: cat, hsn: hsn, gstRate: gstRate, priceType: priceType,
-            isLoose: isLoose, batchId: batchId, reorderPoint: reorder, 
-            dateAdded: window.currentEditingDate || nowIso,
-            variants: []
-        };
-
-        const variantBoxes = document.querySelectorAll('.variant-box');
-        for (let i = 0; i < variantBoxes.length; i++) {
-            const box      = variantBoxes[i];
-            const unit     = box.querySelector('.v-unit').value.trim();
-            const price    = box.querySelector('.v-price').value;
-            const stock    = parseFloat(box.querySelector('.v-add-stock').value) || 0;
-
-            let vId        = box.querySelector('.v-id').value || `var_${Date.now()}_${i}`;
-            let vAdded     = box.querySelector('.v-added').value || nowIso;
-            
-            let vBarcode   = isAdv ? box.querySelector('.v-barcode').value : "";
-            let vExpiry    = isAdv ? box.querySelector('.v-expiry').value : "";
-            let vCost      = isAdv ? box.querySelector('.v-cost').value : "";
-            let vBaseQty   = isLoose ? box.querySelector('.v-base-qty').value : "";
-            let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "pcs";
-
-            let vBrands = [];
-            if(isAdv) {
-                const brandRows = box.querySelectorAll('.brand-row');
-                brandRows.forEach(row => {
-                    const bName = row.querySelector('.vb-name').value.trim();
-                    const bStock = parseFloat(row.querySelector('.vb-stock').value) || 0;
-                    if(bName || bStock > 0) vBrands.push({ name: bName, stock: bStock });
-                });
-            }
-
-            productDoc.variants.push({
-                id: vId, quantity: unit, price: parseFloat(price), stock: stock,
-                brands: vBrands, barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, 
-                baseQty: vBaseQty, baseUnit: vBaseUnit
-            });
-        }
-
-        if(window.currentEditingId) {
-            window.allProducts = window.allProducts.filter(p => p.id !== window.currentEditingId);
-        }
-        window.allProducts.push(productDoc);
-
-        await window.dbSave('bharatpos_products', window.allProducts);
-        window.updateDatalists();
-        window.applyFilters();
-
-        document.getElementById('productForm').reset();
-        document.getElementById('variantEngine').innerHTML = '';
-        window.addVariantUI();
-        window.currentEditingId = null;
-        window.currentEditingDate = null;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        window.showToast("✅ SKU Saved Successfully");
-
-        if (user.merchantId && window.db) {
-            try {
-                await setDoc(doc(window.db, "shops", user.merchantId, "products", productDoc.id), productDoc);
-            } catch (cloudErr) {
-                console.warn("Offline – data saved to device only.");
-            }
-        }
-    } catch (err) {
-        console.error(err);
-        window.showToast("Critical error saving data", true);
-    } finally {
-        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span class="lang-en">Save to Database</span><span class="lang-hinglish">Save Karein 💾</span><span class="lang-hi">सेव करें 💾</span>`; btn.disabled = false;
-    }
-}
-
-window.calculateABCTiers = function() {
-    const freqs = {};
-    window.salesHistory.forEach(sale => {
-        (sale.items || []).forEach(item => {
-            if (item.id) freqs[item.id] = (freqs[item.id] || 0) + (item.qty || 1);
-        });
-    });
-    return function (productId) {
-        const f = freqs[productId] || 0;
-        if (f > 20) return 'A';
-        if (f > 5)  return 'B';
-        return 'C';
-    };
-}
-
-window.updateDatalists = function() {
-    const cats = new Set(), brands = new Set(), taxes = new Set(), batches = new Set();
-    window.allProducts.forEach(p => {
-        if (p.category) cats.add(p.category);
-        if (p.gstRate)  taxes.add(p.gstRate);
-        if (p.batchId)  batches.add(p.batchId);
-        (p.variants || []).forEach(v => {
-            if(v.brands) v.brands.forEach(b => { if(b.name) brands.add(b.name); });
-        });
-    });
-
-    const cList = document.getElementById('catList'); if(cList) cList.innerHTML = Array.from(cats).map(c => `<option value="${c}">`).join('');
-    const bList = document.getElementById('brandList'); if(bList) bList.innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
-    const baList = document.getElementById('batchList'); if(baList) baList.innerHTML = Array.from(batches).map(b => `<option value="${b}">`).join('');
-
-    const cTab = document.getElementById('catTabSelect'); 
-    if(cTab) cTab.innerHTML = '<option value="">Categories ▾</option>' + Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
-        
-    const bTab = document.getElementById('batchTabSelect'); 
-    if(bTab) bTab.innerHTML = '<option value="">Batches ▾</option>' + Array.from(batches).map(b => `<option value="${b}">${b}</option>`).join('');
-
-    const fBrand = document.getElementById('filterBrand'); 
-    if(fBrand) fBrand.innerHTML = '<option value="">All Brands</option>' + Array.from(brands).map(b => `<option value="${b}">${b}</option>`).join('');
-    const fTax = document.getElementById('filterTax'); 
-    if(fTax) fTax.innerHTML = '<option value="">All Taxes (GST)</option>' + Array.from(taxes).map(t => `<option value="${t}">GST ${t}%</option>`).join('');
-}
-
-window.updateAllTabHighlight = function() {
-    const allTab = document.querySelector('[data-tier="ALL"]');
-    if(!allTab) return;
-    if(window.activeTiers.size === 0 && !window.activeCategory && !window.activeBatch) {
-        allTab.classList.add('active');
-    } else {
-        allTab.classList.remove('active');
-    }
-}
-
-window.toggleTierFilter = function(tier, btnEl) {
-    if (tier === 'ALL') {
-        window.activeTiers.clear();
-        window.activeCategory = '';
-        window.activeBatch = '';
-        const cTab = document.getElementById('catTabSelect'); if(cTab) cTab.value = '';
-        const bTab = document.getElementById('batchTabSelect'); if(bTab) bTab.value = '';
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btnEl.classList.add('active');
-    } else {
-        if (window.activeTiers.has(tier)) {
-            window.activeTiers.delete(tier);
-            btnEl.classList.remove('active');
-        } else {
-            window.activeTiers.add(tier);
-            btnEl.classList.add('active');
-        }
-        window.updateAllTabHighlight();
-    }
-    window.applyFilters();
-}
-
-window.toggleChip = function(btnEl) {
-    btnEl.classList.toggle('active');
-    const action = btnEl.getAttribute('data-action');
-    if (action === 'LowStock')  window.filterState.lowStock  = !window.filterState.lowStock;
-    if (action === 'Expiring')  window.filterState.expiring  = !window.filterState.expiring;
-    if (action === 'Newest')    window.filterState.newest    = !window.filterState.newest;
-    window.applyFilters();
-}
-
-window.applyFilters = function() {
-    if(!window.isInventoryVisible) return; 
-    
-    const getTier = window.calculateABCTiers();
-    const fb = document.getElementById('filterBrand');
-    window.filterState.brand = fb ? fb.value : '';
-    const ft = document.getElementById('filterTax');
-    window.filterState.tax   = ft ? ft.value : '';
-    const si = document.getElementById('searchInput');
-    window.filterState.query = si ? si.value.toLowerCase().trim() : '';
-
-    let filtered = window.allProducts;
-
-    if (window.activeTiers.size > 0) {
-        filtered = filtered.filter(p => p.variants.some(v => window.activeTiers.has(getTier(v.id))));
-    }
-    if (window.activeCategory) {
-        filtered = filtered.filter(p => (p.category || '').toLowerCase() === window.activeCategory.toLowerCase());
-    }
-    if (window.activeBatch) {
-        filtered = filtered.filter(p => (p.batchId || '') === window.activeBatch);
-    }
-
-    if (window.filterState.brand) {
-        filtered = filtered.filter(p => p.variants.some(v => v.brands && v.brands.some(b => b.name === window.filterState.brand)));
-    }
-    if (window.filterState.tax) {
-        filtered = filtered.filter(p => p.gstRate == window.filterState.tax);
-    }
-    
-    if (window.filterState.lowStock) {
-        filtered = filtered.filter(p => {
-            const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
-            let total = 0; p.variants.forEach(v => total += Number(v.stock||0));
-            return total <= threshold;
-        });
-    }
-    if (window.filterState.expiring) {
-        const nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1);
-        filtered = filtered.filter(p => p.variants.some(v => v.expiryDate && new Date(v.expiryDate) < nextMonth));
-    }
-
-    if (window.filterState.newest) {
-        filtered.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
-    } else if (window.filterState.query === '') {
-        filtered.sort((a, b) => (a.name||'').localeCompare(b.name||''));
-    }
-
-    if (window.filterState.query) {
-        const fuzzyReg = new RegExp(window.filterState.query.split('').join('.*'), 'i');
-        filtered = filtered.filter(p =>
-            (p.name||'').toLowerCase().includes(window.filterState.query) || fuzzyReg.test(p.name||'') ||
-            p.variants.some(v => (v.barcode || '').includes(window.filterState.query))
-        );
-    }
-
-    window.currentFilteredData = filtered;
-    window.currentPage = 0;
-    const grid = document.getElementById('inventoryGrid');
-    if(grid) grid.innerHTML = '';
-    window.renderChunk();
-}
-
-window.clearBulkSelection = function() {
-    window.selectedBulkItems.clear();
-    const bb = document.getElementById('bulkActionBar');
-    if(bb) bb.classList.remove('show');
-    const ig = document.getElementById('inventoryGrid');
-    if(ig) ig.innerHTML = '';
-    window.currentPage = 0;
-    window.renderChunk();
-}
-
-window.executeBulkAction = async function() {
-    const opEl = document.getElementById('bulkOperation');
-    const valEl = document.getElementById('bulkValue');
-    if(!opEl || !valEl) return;
-
-    const op = opEl.value;
-    const val = valEl.value.trim();
-    
-    if(!op) return window.showToast("Select an action first", true);
-    if(op !== 'delete' && !val) return window.showToast("Please enter a value", true);
-    if(!confirm(`Are you sure you want to modify ${window.selectedBulkItems.size} products?`)) return;
-
-    let modifiedIds = [];
-    let deletedIds = [];
-
-    window.allProducts = window.allProducts.filter(p => {
-        if (window.selectedBulkItems.has(p.id)) {
-            if (op === 'delete') {
-                deletedIds.push(p.id);
-                return false; 
-            } else if (op === 'category') {
-                p.category = val; modifiedIds.push(p);
-            } else if (op === 'tax') {
-                p.gstRate = val; modifiedIds.push(p);
-            } else if (op === 'discount') {
-                const discountPct = parseFloat(val) || 0;
-                p.variants.forEach(v => { v.price = (v.price - (v.price * (discountPct / 100))).toFixed(2); });
-                modifiedIds.push(p);
-            }
-        }
-        return true;
-    });
-
-    await window.dbSave('bharatpos_products', window.allProducts);
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-
-    if (user.merchantId && window.db) {
-        try {
-            let currentBatch = writeBatch(window.db);
-            let opCount = 0;
-
-            const commitBatch = async () => {
-                if(opCount > 0) { await currentBatch.commit(); currentBatch = writeBatch(window.db); opCount = 0; }
-            };
-
-            for (const id of deletedIds) { currentBatch.delete(doc(window.db, "shops", user.merchantId, "products", id)); opCount++; if (opCount >= 490) await commitBatch(); }
-            for (const p of modifiedIds) { currentBatch.set(doc(window.db, "shops", user.merchantId, "products", p.id), p); opCount++; if (opCount >= 490) await commitBatch(); }
-            await commitBatch(); 
-        } catch(e) { console.warn("Offline - bulk action saved locally only."); }
-    }
-
-    window.clearBulkSelection();
-    window.updateDatalists();
-    window.applyFilters();
-    window.showToast("✨ Bulk Action Applied Successfully");
-}
-
-window.renderChunk = function() {
-    if(!window.isInventoryVisible) return;
-
-    const grid  = document.getElementById('inventoryGrid');
-    if(!grid) return;
-
-    const start = window.currentPage * window.pageSize;
-    const end   = start + window.pageSize;
-    const chunk = window.currentFilteredData.slice(start, end);
-    const getTier = window.calculateABCTiers();
-
-    if (window.currentFilteredData.length === 0 && window.currentPage === 0) {
-        grid.innerHTML = `
-        <div style="grid-column:1/-1;text-align:center;padding:52px 20px;">
-          <div style="width:56px;height:56px;border-radius:16px;background:var(--blue-50);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
-            <i class="fa-solid fa-box-open" style="color:var(--primary);font-size:22px;"></i>
-          </div>
-          <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">
-              <span class="lang-en">No SKUs found</span><span class="lang-hinglish">Koi Samaan Nahi Mila</span><span class="lang-hi">कोई सामान नहीं मिला</span>
-          </div>
-          <div style="font-size:12px;color:var(--slate-500);font-weight:600;margin-top:5px;">
-              <span class="lang-en">Adjust filters or search.</span><span class="lang-hinglish">Search ya filter change karein.</span><span class="lang-hi">सर्च या फिल्टर बदलें।</span>
-          </div>
-        </div>`;
-        const loadTrig = document.getElementById('loadMoreTrigger');
-        if(loadTrig) loadTrig.style.display = 'none';
-        return;
-    }
-
-    const fragment = document.createDocumentFragment();
-
-    chunk.forEach(p => {
-        let totalStock = 0; p.variants.forEach(v => totalStock += Number(v.stock||0));
-        const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
-        const isLow    = totalStock <= threshold;
-        
-        const vCount   = p.variants.length;
-        const basePrice = p.variants[0].price;
-        const tier     = getTier(p.variants[0].id);
-        const formatTotalStock = window.formatStock(totalStock, p.variants[0].quantity);
-        const isChecked = window.selectedBulkItems.has(p.id) ? 'checked' : '';
-
-        let displayBrand = '';
-        if(p.variants[0].brands && p.variants[0].brands.length > 0) {
-            displayBrand = ` • ${window.escapeHtml(p.variants[0].brands[0].name)}${p.variants[0].brands.length > 1 ? ' (+More)' : ''}`;
-        }
-
-        const card = document.createElement('div');
-        card.className = 'sku-card';
-        card.setAttribute('data-id', p.id);
-
-        card.innerHTML = `
-            <div class="sku-tier tier-${tier.toLowerCase()}">${tier}</div>
-            <div>
-                <div class="sku-header">
-                    <input type="checkbox" class="bulk-cb" ${isChecked} onclick="event.stopPropagation(); window.toggleBulkItem('${p.id}', this.checked)">
-                    <h3 class="sku-name">${window.escapeHtml(p.name)}</h3>
-                </div>
-                <div class="sku-cat">${window.escapeHtml(p.category) || 'General'}</div>
-                <div class="sku-variant-label">
-                    <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
-                    ${vCount > 1 ? `${vCount} Variants` : window.escapeHtml(p.variants[0].quantity)}${displayBrand}
-                </div>
-            </div>
-            <div>
-                <div class="sku-stats">
-                    <div class="sku-price">₹${basePrice}${vCount > 1 ? '<span style="font-size:10px;opacity:0.6;"> +</span>' : ''}</div>
-                    <div class="sku-stock-badge ${isLow ? 'low' : ''}">
-                        <i class="fa-solid fa-${isLow ? 'triangle-exclamation' : 'circle-check'}"></i>
-                        ${formatTotalStock} in stock
-                    </div>
-                </div>
-            </div>
-        `;
-        fragment.appendChild(card);
-    });
-
-    grid.appendChild(fragment);
-
-    const loadTrig = document.getElementById('loadMoreTrigger');
-    if(loadTrig) {
-        if (end < window.currentFilteredData.length) {
-            loadTrig.style.display = 'block';
-        } else {
-            loadTrig.style.display = 'none';
-        }
-    }
-}
-
-window.setupIntersectionObserver = function() {
-    const trigger = document.getElementById('loadMoreTrigger');
-    if(!trigger) return;
-    window.observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && (window.currentPage * window.pageSize) < window.currentFilteredData.length) {
-            window.currentPage++;
-            window.renderChunk();
-        }
-    }, { root: null, threshold: 0.1 });
-    window.observer.observe(trigger);
-}
-
-// ─── 360 PRODUCT DETAILS MODAL ────────────────────────────────────────────────
-window.openProductDetails = function(id) {
-    const base = window.allProducts.find(p => p.id === id);
-    if (!base) return;
-
-    window.currentDetailId = id;
-    const getTier = window.calculateABCTiers();
-    const tier  = getTier(base.variants[0].id);
-
-    const dName = document.getElementById('dName'); if(dName) dName.innerText = base.name;
-    const dTier = document.getElementById('dTier'); if(dTier) { dTier.innerText = `Tier ${tier}`; dTier.className = `sku-tier tier-${tier.toLowerCase()}`; }
-    const dCat = document.getElementById('dCat'); if(dCat) dCat.innerText = base.category || 'General';
-
-    const dHsn = document.getElementById('dHSN'); if(dHsn) dHsn.innerText = base.hsn || '-';
-    const dGst = document.getElementById('dGST'); if(dGst) dGst.innerText = base.gstRate ? `${base.gstRate}%` : '-';
-    const dTaxType = document.getElementById('dTaxType'); if(dTaxType) dTaxType.innerText = base.priceType || 'inclusive';
-    const dBatch = document.getElementById('dBatch'); if(dBatch) dBatch.innerText = base.batchId || '-';
-    
-    const threshold = (base.reorderPoint !== undefined && base.reorderPoint !== '') ? base.reorderPoint : 5;
-    const dAlert = document.getElementById('dAlert'); if(dAlert) dAlert.innerText = `${threshold} Units`;
-
-    let dateAddedDisplay = '-';
-    if(base.dateAdded) {
-        const d = new Date(base.dateAdded);
-        if(!isNaN(d.getTime())) dateAddedDisplay = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    }
-    const dAdded = document.getElementById('dAdded'); if(dAdded) dAdded.innerText = dateAddedDisplay;
-
-    const vList = document.getElementById('dVariantsList');
-    if(vList) {
-        vList.innerHTML = base.variants.map(v => {
-            let details = [];
-            
-            let brandsSummary = '';
-            if(v.brands && v.brands.length > 0) {
-                brandsSummary = `<div style="font-size:10px; color:var(--slate-500); margin-top:4px; font-weight:700;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${window.escapeHtml(b.name)} (${b.stock})`).join(', ') + `</div>`;
-            }
-
-            if(v.barcode) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-barcode"></i> ${v.barcode}</span>`);
-            if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${v.expiryDate}</span>`);
-            if(v.costPrice) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-tags"></i> Cost: ₹${v.costPrice}</span>`);
-            if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${window.escapeHtml(v.baseUnit)||'pcs'}</span>`);
-            
-            let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--blue-100); font-size:11px; font-weight:700;">${details.join('')}</div>` : '';
-
-            return `
-            <div style="background:var(--white);padding:16px;border-radius:12px;border:1.5px solid var(--blue-100);box-shadow:0 2px 5px rgba(0,0,0,0.02);">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(v.quantity)}</div>
-                        ${brandsSummary}
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:16px;">₹${v.price}</div>
-                        <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${window.formatStock(v.stock, v.quantity)}</div>
-                    </div>
-                </div>
-                ${detailsHtml}
-            </div>
-            `;
-        }).join('');
-    }
-
-    window.showModal('productDetailsModal');
-}
-
-window.loadProductForEdit = function(id) {
-    const base = window.allProducts.find(p => p.id === id);
-    if (!base) return;
-
-    window.currentEditingId = base.id;
-    window.currentEditingDate = base.dateAdded;
-
-    const pName = document.getElementById('pName'); if(pName) pName.value = base.name;
-    const pCat = document.getElementById('pCategory'); if(pCat) pCat.value = base.category || '';
-    const pHsn = document.getElementById('pHSN'); if(pHsn) pHsn.value = base.hsn || '';
-    const pGst = document.getElementById('pGSTRate'); if(pGst) pGst.value = base.gstRate || '';
-    
-    if (base.priceType) { const pPt = document.getElementById('pPriceType'); if(pPt) pPt.value = base.priceType; }
-
-    const pReo = document.getElementById('pReorderPoint'); if(pReo) pReo.value = base.reorderPoint || '';
-    const pBat = document.getElementById('pBatchId'); if(pBat) pBat.value = base.batchId || '';
-    const pLoo = document.getElementById('pIsLoose'); if(pLoo) pLoo.checked = base.isLoose || false;
-
-    if (base.batchId) { const cb = document.getElementById('cfgBatch'); if(cb) cb.checked = true; }
-    if (base.isLoose) { const cl = document.getElementById('cfgLoose'); if(cl) cl.checked = true; }
-    if (base.variants.some(v => (v.brands && v.brands.length>0) || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
-        const ca = document.getElementById('cfgAdvFields'); if(ca) ca.checked = true;
-    }
-
-    const ca = document.getElementById('cfgAdvFields');
-    const cb = document.getElementById('cfgBatch');
-    const cl = document.getElementById('cfgLoose');
-    window.applySettingsUI(ca?ca.checked:false, cb?cb.checked:false, cl?cl.checked:false);
-
-    if (base.hsn || base.gstRate) {
-        const gstContent = document.getElementById('tierGst');
-        if (gstContent && !gstContent.classList.contains('active')) {
-            gstContent.classList.add('active');
-            const gstBtn = document.getElementById('btnToggleGst');
-            if(gstBtn) {
-                const chevron = gstBtn.querySelector('.chevron');
-                if (chevron) chevron.style.transform = 'rotate(180deg)';
-                gstBtn.style.background  = 'var(--blue-50)';
-                gstBtn.style.borderColor = 'var(--primary)';
-                gstBtn.style.color       = 'var(--primary)';
-            }
-        }
-    }
-
-    const eng = document.getElementById('variantEngine');
-    if(eng) eng.innerHTML = '';
-    base.variants.forEach(v => window.addVariantUI(v));
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if(pName) pName.focus();
-    
-    const isHin = document.body.classList.contains('lang-hin');
-    window.showToast(isHin ? `✏️ "${base.name}" Edit mode mein khul gaya` : `✏️ Loaded "${base.name}" for editing`);
-}
-
-window.deleteProduct = async function(id) {
-    const base = window.allProducts.find(p => p.id === id);
-    if(!base) return;
-
-    const isHin = document.body.classList.contains('lang-hin') || document.body.classList.contains('lang-hi');
-    const confirmMsg = isHin ? `Kya aap "${base.name}" ko pakka delete karna chahte hain?` : `Delete product "${base.name}"?`;
-    if (!confirm(confirmMsg)) return;
-
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    window.allProducts = window.allProducts.filter(p => p.id !== id);
-    await window.dbSave('bharatpos_products', window.allProducts);
-    window.applyFilters();
-    window.showToast(isHin ? "🗑️ Samaan delete ho gaya" : "🗑️ Deleted successfully");
-
-    if (user.merchantId && window.db) {
-        try {
-            await deleteDoc(doc(window.db, "shops", user.merchantId, "products", id));
-        } catch (e) {
-            console.warn("Delete offline mode — removed locally only.", e);
-        }
-    }
-}
-
-window.fetchMasterCatalog = async function() {
-    const btn = document.getElementById('btnFetchMasterCatalog');
-    if(!btn) return;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching…`; btn.disabled = true;
-    try {
-        if (!window.db) throw new Error("Firebase disconnected");
-        const masterRef = collection(window.db, "masterCatalog");
-        const snap      = await getDocs(masterRef);
-        window.masterDbCache   = snap.docs.map(d => d.data());
-        window.searchMasterDB();
-        window.showToast("MasterDB Synced");
-    } catch (e) {
-        console.error(e);
-        window.showToast("Failed to fetch MasterDB", true);
-    } finally {
-        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> <span class="lang-en">Fetch Global Database</span><span class="lang-hinglish">Data Internet Se Layein</span><span class="lang-hi">डेटा इंटरनेट से लाएं</span>`; btn.disabled = false;
-    }
-}
-
-window.searchMasterDB = function() {
-    const si = document.getElementById('masterSearchInput');
-    const q  = si ? si.value.toLowerCase().trim() : '';
-    const list = document.getElementById('masterDbList');
-    if(!list) return;
-
-    if (window.masterDbCache.length === 0) return;
-    const filtered = window.masterDbCache.filter(p => (p.name || '').toLowerCase().includes(q)).slice(0, 50);
-
-    list.innerHTML = filtered.map(p => `
-        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--white);padding:14px;border:1.5px solid var(--blue-100);border-radius:12px; margin-bottom:8px;">
-            <div>
-                <div style="font-weight:800;font-size:14px;color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(p.name)}</div>
-                <div style="font-size:11px;color:var(--slate-500); font-weight:700; margin-top:4px;">${window.escapeHtml(p.category) || 'Gen'} • ₹${p.price}</div>
-            </div>
-            <button class="btn btn-outline" style="padding:8px 14px;font-size:12px;width:auto;" data-json='${JSON.stringify(p).replace(/'/g, "&#39;")}'>Import</button>
-        </div>
-    `).join('');
-}
-
-window.importMasterProduct = function(p) {
-    window.hideModal('masterCatalogModal');
-    
-    const pN = document.getElementById('pName'); if(pN) pN.value = p.name || '';
-    const pC = document.getElementById('pCategory'); if(pC) pC.value = p.category || '';
-    const pH = document.getElementById('pHSN'); if(pH) pH.value = p.hsn || '';
-    const pG = document.getElementById('pGSTRate'); if(pG) pG.value = p.gstRate || '';
-    
-    const cl = document.getElementById('cfgLoose');
-    const pil = document.getElementById('pIsLoose');
-    if (cl && cl.checked && pil) {
-        pil.checked = p.isLoose || false;
-    }
-
-    const firstRow = document.querySelector('.variant-box');
-    if (firstRow) {
-        const vu = firstRow.querySelector('.v-unit'); if(vu && p.quantity) vu.value = p.quantity;
-        const vp = firstRow.querySelector('.v-price'); if(vp && p.price) vp.value = p.price;
-    }
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if(pN) pN.focus();
-    window.showToast(`Imported "${p.name}"`);
-}
-
-window.handleBulkImport = async function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-        try {
-            const grid = document.getElementById('inventoryGrid');
-            if(grid) {
-                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Parsing file…</span></div>';
-            }
-
-            const data     = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            if (jsonData.length === 0) throw new Error("File is empty");
-
-            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-            let batch = (user.merchantId && window.db) ? writeBatch(window.db) : null;
-            let opCount = 0, addedCount = 0;
-
-            for (const row of jsonData) {
-                const name = row['Name'] || row['Product Name'] || row['Item'];
-                if (!name) continue;
-
-                const skuId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                const brandStr = String(row['Brand'] || '');
-                const brandsArray = brandStr ? [{ name: brandStr, stock: parseFloat(row['Stock'] || row['Qty'] || 0) }] : [];
-
-                const productDoc = {
-                    id: skuId, name: String(name), category: String(row['Category'] || 'General'),
-                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: '',
-                    reorderPoint: String(row['Reorder Point'] || row['Min Stock'] || ''),
-                    isLoose: String(row['Loose'] || '').toLowerCase() === 'true', dateAdded: new Date().toISOString(),
-                    variants: [{
-                        id: `${skuId}_v0`,
-                        quantity: String(row['Type'] || row['Unit'] || '1 pcs'),
-                        price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
-                        stock: parseFloat(row['Stock'] || row['Qty'] || 0),
-                        brands: brandsArray, barcode: String(row['Barcode'] || ''),
-                        costPrice: String(row['CostPrice'] || row['Cost'] || ''), expiryDate: String(row['Expiry'] || ''), 
-                        baseQty: String(row['BaseQty'] || ''), baseUnit: String(row['BaseUnit'] || 'pcs')
-                    }]
-                };
-
-                window.allProducts.push(productDoc);
-                if (batch && user.merchantId) { batch.set(doc(window.db, "shops", user.merchantId, "products", skuId), productDoc); }
-                opCount++; addedCount++;
-
-                if (batch && opCount === 490) { await batch.commit(); batch = writeBatch(window.db); opCount = 0; }
-            }
-
-            if (batch && opCount > 0 && user.merchantId) await batch.commit();
-
-            await window.dbSave('bharatpos_products', window.allProducts);
-            window.updateDatalists();
-            window.applyFilters();
-            window.showToast(`✅ Imported ${addedCount} products successfully!`);
-
-        } catch (error) {
-            console.error(error);
-            window.showToast("Import failed. Ensure valid CSV/Excel format.", true);
-            window.applyFilters();
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-window.pullFreshData = async function() {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    if (!user.merchantId || !window.db) { window.showToast("No active cloud connection", true); return; }
-
-    const grid = document.getElementById('inventoryGrid');
-    if(grid) {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--slate-400);"><i class="fa-solid fa-cloud-arrow-down fa-bounce fa-2x" style="color:var(--blue-600);"></i><br><br><span style="font-weight:800; font-family:var(--font-head); color:var(--slate-900);">Syncing from Cloud…</span></div>';
-    }
-
-    try {
-        const snap  = await getDocs(collection(window.db, "shops", user.merchantId, "products"));
-        let fresh = snap.docs.map(d => d.data());
-        
-        fresh = fresh.map(p => {
-            if(!p.variants) {
-                const brandsArray = p.brand ? [{ name: p.brand, stock: p.stock || 0 }] : [];
-                return {
-                    id: p.id, name: p.name, category: p.category, hsn: p.hsn, gstRate: p.gstRate, priceType: p.priceType,
-                    isLoose: p.isLoose, batchId: p.batchId, reorderPoint: p.reorderPoint, dateAdded: p.dateAdded || new Date().toISOString(),
-                    variants: [{
-                        id: `${p.id}_v0`, quantity: p.quantity || '1 pcs', price: p.price || 0, stock: p.stock || 0,
-                        brands: brandsArray, barcode: p.barcode || '', expiryDate: p.expiryDate || '', costPrice: p.costPrice || '',
-                        baseQty: p.baseQty || '', baseUnit: p.baseUnit || 'pcs'
-                    }]
-                };
-            }
-            return p;
-        });
-
-        window.allProducts = fresh;
-        await window.dbSave('bharatpos_products', fresh);
-        window.updateDatalists();
-        window.applyFilters();
-        window.showToast("☁️ Sync complete!");
-    } catch (e) {
-        window.showToast("Sync failed", true);
-        window.applyFilters();
-    }
-}
-
-window.startAIScan = async function() {
-    const box   = document.getElementById('scannerBox');
-    const video = document.getElementById('cameraPreview');
-    if(!box || !video) return;
-    
-    box.style.display = 'block';
-    try {
-        window.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        video.srcObject = window.cameraStream;
-        setTimeout(window.captureAndSendToAI, 3000);
-    } catch (err) {
-        window.showToast("Camera access denied", true);
-        box.style.display = 'none';
-    }
-}
-
-window.stopAIScan = function() {
-    if (window.cameraStream) { window.cameraStream.getTracks().forEach(t => t.stop()); window.cameraStream = null; }
-    const box = document.getElementById('scannerBox');
-    if(box) box.style.display = 'none';
-}
-
-window.captureAndSendToAI = async function() {
-    if (!window.cameraStream) return;
-    const video  = document.getElementById("cameraPreview");
-    const canvas = document.getElementById("captureCanvas");
-    if(!video || !canvas) return;
-    
-    const ctx    = canvas.getContext("2d");
-    canvas.width  = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
-
-    window.stopAIScan();
-    window.showToast("✨ AI Lens analyzing...");
-
-    try {
-        const url  = window.buildUrl ? window.buildUrl('/ai-product-scan') : 'https://server-xy7s.onrender.com/ai-product-scan';
-        const res  = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: base64 }) });
-        const data = await res.json();
-
-        if (data && data.success && data.product) {
-            const pN = document.getElementById("pName"); if(pN && !pN.value) pN.value = data.product.name || "";
-            const pC = document.getElementById("pCategory"); if(pC && !pC.value) pC.value = data.product.category || "";
-
-            const firstVariant = document.querySelector('.variant-box');
-            if (firstVariant && data.product.price) {
-                const vP = firstVariant.querySelector('.v-price');
-                if(vP && !vP.value) vP.value = data.product.price;
-            }
-
-            const advEl = document.getElementById('cfgAdvFields');
-            if (advEl && advEl.checked && firstVariant) {
-                const bCode = firstVariant.querySelector('.v-barcode');
-                const eDate = firstVariant.querySelector('.v-expiry');
-                if (data.product.expiry_date && eDate && !eDate.value) eDate.value = data.product.expiry_date;
-                if (data.product.barcode && bCode && !bCode.value) bCode.value = data.product.barcode;
-            }
-            window.showToast("✨ AI Auto-fill complete");
-        }
-    } catch (e) {
-        window.showToast("AI Lens failed", true);
-    }
-}
-
-window.openTransferModal = function() {
-    const base = window.allProducts.find(p => p.id === window.currentDetailId);
-    if(!base) return;
-
-    const vSel = document.getElementById('transferVariant');
-    if(vSel) vSel.innerHTML = base.variants.map(v => `<option value="${v.id}">${v.quantity} (Avail: ${v.stock})</option>`).join('');
-
-    const bSel = document.getElementById('transferTargetBranch');
-    if(bSel) {
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const mobile = user.mobile || user.phone;
-        
-        const storedShopsStr = localStorage.getItem(`bharatpos_shops_${mobile}`);
-        let shops = [];
-        if (storedShopsStr) {
-            try { shops = JSON.parse(storedShopsStr); } catch(e) {}
-        }
-        
-        if(shops.length > 1) {
-            bSel.innerHTML = shops.filter(s => s.merchantId !== user.merchantId)
-                                  .map(s => `<option value="${s.merchantId}">${window.escapeHtml(s.shopName)}</option>`).join('');
-        } else {
-            bSel.innerHTML = '<option value="">No other branches found</option>';
-        }
-    }
-
-    const tQty = document.getElementById('transferQty'); if(tQty) tQty.value = '';
-    const tCalc = document.getElementById('transferCalcDisplay'); if(tCalc) tCalc.innerText = '';
-    
-    window.hideModal('productDetailsModal');
-    window.showModal('transferStockModal');
-}
-
-window.submitStockTransfer = async function() {
-    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    
-    const tTarget = document.getElementById('transferTargetBranch');
-    const tVar = document.getElementById('transferVariant');
-    const tQtyInput = document.getElementById('transferQty');
-    
-    if(!tTarget || !tVar || !tQtyInput) return;
-    
-    const targetBranch = tTarget.value;
-    const variantId = tVar.value;
-    const qty = parseFloat(tQtyInput.value);
-
-    if(!targetBranch || !variantId || isNaN(qty) || qty <= 0) return window.showToast("Invalid transfer details", true);
-
-    const btn = document.getElementById('btnSubmitTransfer');
-    if(btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Transferring...`; btn.disabled = true; }
-
-    try {
-        const pIdx = window.allProducts.findIndex(p => p.id === window.currentDetailId);
-        const prod = window.allProducts[pIdx];
-        const vIdx = prod.variants.findIndex(v => v.id === variantId);
-        const variant = prod.variants[vIdx];
-
-        if(variant.stock < qty) throw new Error("Not enough stock available.");
-
-        variant.stock -= qty;
-        
-        if(variant.brands && variant.brands.length > 0) {
-            let remaining = qty;
-            for(let b of variant.brands) {
-                if(remaining <= 0) break;
-                let deduct = Math.min(b.stock, remaining);
-                b.stock -= deduct;
-                remaining -= deduct;
-            }
-        }
-
-        await window.dbSave('bharatpos_products', window.allProducts);
-        if(window.db) await setDoc(doc(window.db, "shops", user.merchantId, "products", prod.id), prod);
-
-        if(window.db) {
-            const targetRef = doc(window.db, "shops", targetBranch, "products", prod.id);
-            const targetSnap = await getDoc(targetRef);
-
-            if(targetSnap.exists()) {
-                let targetProd = targetSnap.data();
-                let targetVar = targetProd.variants.find(v => v.id === variantId);
-                
-                if(targetVar) {
-                    targetVar.stock = (Number(targetVar.stock) || 0) + qty;
-                    if(targetVar.brands && targetVar.brands.length > 0) {
-                        targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
-                    }
-                } else {
-                    let newVar = JSON.parse(JSON.stringify(variant));
-                    newVar.stock = qty;
-                    if(newVar.brands && newVar.brands.length > 0) {
-                       newVar.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
-                    }
-                    targetProd.variants.push(newVar);
-                }
-                await setDoc(targetRef, targetProd);
-            } else {
-                let clonedProd = JSON.parse(JSON.stringify(prod));
-                clonedProd.variants.forEach(v => {
-                    if(v.id === variantId) {
-                        v.stock = qty;
-                        if(v.brands && v.brands.length > 0) {
-                           v.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
-                        }
-                    } else {
-                        v.stock = 0;
-                        if(v.brands) v.brands.forEach(b => b.stock = 0);
-                    }
-                });
-                await setDoc(targetRef, clonedProd);
-            }
-        }
-
-        window.showToast("📦 Stock Transferred Successfully!");
-        window.hideModal('transferStockModal');
-        window.applyFilters(); 
-
-    } catch (e) {
-        console.error(e);
-        window.showToast("Transfer failed: " + e.message, true);
-    } finally {
-        if(btn) { btn.innerHTML = `<i class="fa-solid fa-truck-fast"></i> Confirm Transfer`; btn.disabled = false; }
-    }
-}
-</script>
+<script type="module" src="./js/pages/products.js"></script>
 </body>
 </html>

@@ -1,0 +1,48 @@
+/* File: /css/variables.css */
+:root {
+  /* Colors */
+  --bg-body: #EAF2FF; 
+  --bg-panel: #FFFFFF; 
+  --bg-card: #FFFFFF; 
+  --bg-input: #F4F8FF;
+  
+  --border: #DBEAFE; 
+  --border-hover: #93C5FD;
+  
+  --primary: #1976D2; 
+  --primary-dark: #1565C0; 
+  --primary-glow: rgba(25,118,210,0.12); 
+  --primary-soft: rgba(25,118,210,0.08);
+  --primary-gradient: linear-gradient(135deg, #1976D2, #1565C0);
+  
+  --success: #0D9488; 
+  --success-soft: rgba(13,148,136,0.1);
+  
+  --danger: #DC2626; 
+  --danger-soft: rgba(220,38,38,0.08);
+  
+  --warning: #F59E0B; 
+  --warning-soft: rgba(245,158,11,0.1);
+  
+  --purple: #7C3AED;
+  --purple-soft: rgba(124,58,237,0.1);
+  
+  /* Typography */
+  --text-main: #0F172A; 
+  --text-muted: #64748B; 
+  --text-light: #94A3B8;
+  --font-head: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  
+  /* UI Elements */
+  --shadow-sm: 0 2px 5px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(25,118,210,0.08);
+  --shadow-card: 0 4px 20px rgba(25,118,210,0.05);
+  
+  --radius-sm: 8px; 
+  --radius-md: 12px; 
+  --radius-lg: 16px;
+  --radius-card: 16px;
+  
+  --trans: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}

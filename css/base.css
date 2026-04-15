@@ -1,0 +1,47 @@
+/* File: /css/base.css */
+* { 
+  box-sizing: border-box; 
+  outline: none; 
+  -webkit-tap-highlight-color: transparent; 
+  margin: 0; 
+  padding: 0; 
+}
+
+body { 
+  background: linear-gradient(135deg, var(--bg-body) 0%, #C7DDFF 100%); 
+  background-attachment: fixed; 
+  color: var(--text-main); 
+  font-family: var(--font-body); 
+  overflow-x: hidden; 
+  min-height: 100vh; 
+  display: flex; 
+  flex-direction: column; 
+  width: 100vw;
+}
+
+/* Global Animations */
+@keyframes slideUp { 
+  from { transform: translateY(100%); } 
+  to { transform: translateY(0); } 
+}
+@keyframes scaleUp { 
+  from { transform: scale(0.95); opacity: 0; } 
+  to { transform: scale(1); opacity: 1; } 
+}
+@keyframes fadeIn { 
+  from { opacity: 0; } 
+  to { opacity: 1; } 
+}
+@keyframes laser { 
+  0% { top:0; opacity:0; } 
+  10% { opacity:1; } 
+  90% { opacity:1; } 
+  100% { top:100%; opacity:0; } 
+}
+
+/* Print Overrides */
+@media print {
+  body * { visibility: hidden; }
+  #invoicePaper, #invoicePaper * { visibility: visible; }
+  #invoicePaper { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border: none; box-shadow: none; font-size: 10px;}
+}
