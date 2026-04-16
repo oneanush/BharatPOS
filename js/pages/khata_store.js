@@ -10,24 +10,21 @@ let activeCategory = 'ALL';
 let cart = {}; 
 let userMobile = '';
 
+// Wizard State
+let wizState = { prod: null, variant: null, brand: null, qty: 1 };
+
 export async function initStore(phone) {
     userMobile = phone;
-    
-    // Independent listener specifically for the Store tab
     window.refreshKhataStore = () => {
-        if(document.getElementById('tab-store').classList.contains('active')) {
-            loadShopCatalog(window.KhataData.activeShopId);
-        }
+        if(document.getElementById('tab-store').classList.contains('active')) loadShopCatalog(window.KhataData.activeShopId);
     };
-    
-    // Initial load
     loadShopCatalog(window.KhataData.activeShopId);
+    bindWizardEvents();
 }
 
 async function loadShopCatalog(shopId) {
     const container = document.getElementById('storeContent');
     
-    // Store does not support "ALL" logic. Force to first available shop.
     if(!shopId || shopId === 'ALL') {
         const firstShop = Object.keys(window.KhataData.shopsMap)[0];
         if(firstShop) {
@@ -41,7 +38,6 @@ async function loadShopCatalog(shopId) {
     }
 
     const shopName = window.KhataData.shopsMap[shopId]?.name || 'Local Store';
-
     container.innerHTML = `<div class="loader-screen"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:12px; font-weight:700;">Loading Catalog...</p></div>`;
     
     try {
@@ -72,7 +68,7 @@ function renderCatalogUI(container, shopId, shopName, categories) {
             .cat-chip { padding: 8px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s;}
             .cat-chip.active { background: var(--brand-primary); color: white; border-color: var(--brand-primary); box-shadow: 0 4px 10px rgba(99,102,241,0.2);}
             
-            .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px;}
+            .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding-bottom: 80px;}
             .prod-item { background: white; padding: 12px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
             .btn-add { background: #e0e7ff; color: var(--brand-primary); border: none; padding: 8px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s;}
             .btn-add:active { transform: scale(0.95); }
@@ -152,6 +148,20 @@ function renderProducts() {
 
     grid.innerHTML = filteredProducts.map(p => {
         const v = p.variants[0] || {};
+        
+        // Price per unit logic
+        let priceStr = `₹${v.price}`;
+        let unitLabel = v.quantity || 'pc';
+        if (p.isLoose) {
+            const bq = Number(v.baseQty) || 1;
+            const bu = v.baseUnit || 'kg';
+            priceStr = `₹${(v.price / bq).toFixed(2)}`;
+            unitLabel = bu;
+        }
+
+        const hasChoices = (p.variants.length > 1) || (v.brands && v.brands.length > 0);
+        const btnText = hasChoices ? 'Select Options' : '+ Add to Cart';
+
         return `
         <div class="prod-item">
             <div>
@@ -160,25 +170,118 @@ function renderProducts() {
                 <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:4px;">${Security.escapeHtml(v.quantity)}</div>
             </div>
             <div>
-                <div style="font-size:15px; font-weight:800; color:#10b981; font-family:'JetBrains Mono'; margin-top:8px;">₹${v.price}</div>
-                <button class="btn-add" data-pid="${Security.escapeHtml(p.id)}" data-vid="${Security.escapeHtml(v.id)}" data-name="${Security.escapeHtml(p.name)}" data-price="${v.price}">+ Add to Cart</button>
+                <div style="font-size:14px; font-weight:800; color:#10b981; font-family:'JetBrains Mono'; margin-top:8px;">${priceStr} <span style="font-size:10px; color:var(--text-sub);">/ ${Security.escapeHtml(unitLabel)}</span></div>
+                <button class="btn-add" data-pid="${Security.escapeHtml(p.id)}">${btnText}</button>
             </div>
         </div>`;
     }).join('');
 
     grid.querySelectorAll('.btn-add').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const b = e.currentTarget;
-            const key = `${b.dataset.pid}_${b.dataset.vid}`;
-            if(cart[key]) {
-                cart[key].qty += 1;
+            const pid = e.currentTarget.getAttribute('data-pid');
+            const prod = currentShopProducts.find(p => p.id === pid);
+            if(!prod) return;
+
+            if (prod.variants.length > 1 || (prod.variants[0].brands && prod.variants[0].brands.length > 0)) {
+                openWizard(prod);
             } else {
-                cart[key] = { prodId: b.dataset.pid, variantId: b.dataset.vid, name: b.dataset.name, price: parseFloat(b.dataset.price), qty: 1 };
+                addToCart(prod, prod.variants[0], null, 1);
             }
-            if (navigator.vibrate) navigator.vibrate(50);
-            updateCartUI();
         });
     });
+}
+
+// --- WIZARD LOGIC ---
+function bindWizardEvents() {
+    document.getElementById('wizQtyMinus').addEventListener('click', () => { if(wizState.qty > 1) { wizState.qty--; document.getElementById('wizQtyDisplay').innerText = wizState.qty; } });
+    document.getElementById('wizQtyPlus').addEventListener('click', () => { wizState.qty++; document.getElementById('wizQtyDisplay').innerText = wizState.qty; });
+    
+    document.getElementById('wizAddToCart').addEventListener('click', () => {
+        if(!wizState.variant) return alert("Select a variant");
+        addToCart(wizState.prod, wizState.variant, wizState.brand, wizState.qty);
+        document.getElementById('storeWizardModal').style.display = 'none';
+    });
+
+    document.getElementById('wizardVariantGrid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-wizard-opt');
+        if(btn) {
+            document.querySelectorAll('#wizardVariantGrid .btn-wizard-opt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            wizState.variant = wizState.prod.variants.find(v => v.id === btn.getAttribute('data-id'));
+            checkWizardBrand();
+        }
+    });
+
+    document.getElementById('wizardBrandGrid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-wizard-opt');
+        if(btn) {
+            document.querySelectorAll('#wizardBrandGrid .btn-wizard-opt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            wizState.brand = btn.getAttribute('data-name');
+        }
+    });
+}
+
+function openWizard(prod) {
+    wizState = { prod, variant: prod.variants[0], brand: null, qty: 1 };
+    document.getElementById('wizardProdName').innerText = prod.name;
+    document.getElementById('wizQtyDisplay').innerText = '1';
+
+    const vGrid = document.getElementById('wizardVariantGrid');
+    vGrid.innerHTML = prod.variants.map((v, i) => `
+        <div class="btn-wizard-opt ${i===0?'active':''}" data-id="${Security.escapeHtml(v.id)}">
+            <span>${Security.escapeHtml(v.quantity)}</span>
+            <span style="color:var(--success); font-family:'JetBrains Mono';">₹${v.price}</span>
+        </div>
+    `).join('');
+    
+    document.getElementById('wizardStepType').style.display = prod.variants.length > 1 ? 'block' : 'none';
+    
+    checkWizardBrand();
+    document.getElementById('storeWizardModal').style.display = 'flex';
+}
+
+function checkWizardBrand() {
+    const bGrid = document.getElementById('wizardBrandGrid');
+    const v = wizState.variant;
+    
+    if (v && v.brands && v.brands.length > 0) {
+        wizState.brand = v.brands[0].name;
+        bGrid.innerHTML = v.brands.map((b, i) => `
+            <div class="btn-wizard-opt ${i===0?'active':''}" data-name="${Security.escapeHtml(b.name)}">
+                <span>${Security.escapeHtml(b.name)}</span>
+            </div>
+        `).join('');
+        document.getElementById('wizardStepBrand').style.display = 'block';
+    } else {
+        wizState.brand = null;
+        document.getElementById('wizardStepBrand').style.display = 'none';
+    }
+    
+    document.getElementById('wizardStepQty').style.display = 'block';
+}
+
+function addToCart(prod, variant, brandName, qty) {
+    const key = `${prod.id}_${variant.id}_${brandName||'none'}`;
+    
+    let price = variant.price;
+    // Handle loose weight pricing
+    if(prod.isLoose) {
+        const bq = Number(variant.baseQty) || 1;
+        price = variant.price / bq; // price per unit
+    }
+
+    if(cart[key]) {
+        cart[key].qty += qty;
+    } else {
+        cart[key] = { 
+            prodId: prod.id, variantId: variant.id, 
+            name: prod.name, variantName: variant.quantity, brand: brandName,
+            price: price, qty: qty 
+        };
+    }
+    if (navigator.vibrate) navigator.vibrate(50);
+    updateCartUI();
 }
 
 function updateCartUI() {
@@ -219,6 +322,7 @@ async function placeOrder(shopId, shopName) {
         await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
         alert("Order sent to shop successfully! They will contact you shortly.");
         cart = {}; updateCartUI();
+        document.getElementById('storeWizardModal').style.display = 'none';
     } catch(e) {
         alert("Failed to send order. Check your internet connection.");
     } finally {

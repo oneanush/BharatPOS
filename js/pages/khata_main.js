@@ -6,10 +6,9 @@ import { Security } from '../utils/security.js';
 
 let currentUserPhone = null;
 
-// Global Memory Cache
 window.KhataData = {
     sales: [],
-    shopsMap: {}, // { shopId: { name } }
+    shopsMap: {}, 
     activeShopId: null
 };
 
@@ -29,7 +28,6 @@ function checkAuthState() {
     }
 }
 
-// Auth Bypass
 document.getElementById('btnLoginBypass').addEventListener('click', () => {
     const phone = document.getElementById('loginPhone').value.trim();
     if (phone.length !== 10 || isNaN(phone)) return alert("Please enter a valid 10-digit mobile number.");
@@ -48,7 +46,6 @@ async function loginUser(phone) {
     if(globalLoader) globalLoader.style.display = 'flex';
 
     try {
-        // Fetch ALL Sales for this user ONCE.
         const salesQuery = query(collectionGroup(db, 'sales'), where('customerPhone', '==', phone));
         const snapshot = await getDocs(salesQuery);
         
@@ -57,9 +54,8 @@ async function loginUser(phone) {
 
         snapshot.forEach(doc => {
             const s = doc.data();
-            // Bulletproof shopId extraction
             const shopId = s._branchId || s.merchantId || doc.ref.parent.parent.id;
-            const shopName = s._branchName || 'Local Shop';
+            const shopName = s._branchName || s.shopName || 'Local Store'; // Explicit name extraction
             
             s._resolvedShopId = shopId; 
             s._resolvedShopName = shopName;
@@ -68,17 +64,14 @@ async function loginUser(phone) {
             if (!shopsMap[shopId]) shopsMap[shopId] = { id: shopId, name: shopName };
         });
 
-        // Store globally
         window.KhataData.sales = sales;
         window.KhataData.shopsMap = shopsMap;
 
-        // Populate Top Selector
         populateTopSelector(shopsMap);
 
         document.getElementById('bottomNav').style.display = 'flex';
         document.getElementById('btnProfile').style.display = 'flex';
         
-        // Load initial tab
         loadTabModule('bills');
 
     } catch (err) {
@@ -111,7 +104,6 @@ function populateTopSelector(shopsMap) {
 
     select.addEventListener('change', (e) => {
         window.KhataData.activeShopId = e.target.value;
-        // Explicitly trigger independent module refreshes
         if (window.refreshKhataBills) window.refreshKhataBills();
         if (window.refreshKhataStore) window.refreshKhataStore();
     });
@@ -137,7 +129,6 @@ function bindNavEvents() {
             document.querySelectorAll('.tab-view').forEach(tab => tab.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
 
-            // Manage Top Selector Visibility
             const wrapper = document.getElementById('globalShopWrapper');
             if(moduleName === 'khoj') wrapper.style.display = 'none';
             else if(Object.keys(window.KhataData.shopsMap).length > 0) wrapper.style.display = 'block';
@@ -149,22 +140,14 @@ function bindNavEvents() {
 
 function loadTabModule(moduleName) {
     if (moduleName === 'bills') {
-        if(!loadedModules.bills) {
-            import('./khata_bills.js').then(module => { module.initBills(); loadedModules.bills = true; });
-        } else if (window.refreshKhataBills) {
-            window.refreshKhataBills(); // Trigger refresh on tab return
-        }
+        if(!loadedModules.bills) { import('./khata_bills.js').then(module => { module.initBills(); loadedModules.bills = true; }); } 
+        else if (window.refreshKhataBills) { window.refreshKhataBills(); }
     } 
     else if (moduleName === 'store') {
-        if(!loadedModules.store) {
-            import('./khata_store.js').then(module => { module.initStore(currentUserPhone); loadedModules.store = true; });
-        } else if (window.refreshKhataStore) {
-            window.refreshKhataStore(); // Trigger refresh on tab return
-        }
+        if(!loadedModules.store) { import('./khata_store.js').then(module => { module.initStore(currentUserPhone); loadedModules.store = true; }); } 
+        else if (window.refreshKhataStore) { window.refreshKhataStore(); }
     }
     else if (moduleName === 'khoj' && !loadedModules.khoj) {
-        setTimeout(() => {
-            import('./khata_khoj.js').then(module => { module.initKhoj(); loadedModules.khoj = true; });
-        }, 100);
+        setTimeout(() => { import('./khata_khoj.js').then(module => { module.initKhoj(); loadedModules.khoj = true; }); }, 100);
     }
 }

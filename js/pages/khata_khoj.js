@@ -7,7 +7,7 @@ let map = null;
 let allShopsCache = {};
 let markersLayer = null;
 let routingControl = null;
-let userLoc = [20.5937, 78.9629]; // Default India
+let userLoc = [20.5937, 78.9629]; 
 
 export async function initKhoj() {
     const loader = document.getElementById('khojLoader');
@@ -22,7 +22,7 @@ export async function initKhoj() {
             .custom-div-icon { background: white; border: 3px solid var(--brand-primary); border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
             .pin-icon { font-size: 38px; color: var(--brand-accent); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
             
-            /* Hide the text instructions from leaflet routing machine to save screen space on mobile */
+            /* Hide the textual directions from routing machine to save space */
             .leaflet-routing-container { display: none !important; }
         </style>
     `;
@@ -43,13 +43,11 @@ export async function initKhoj() {
 
     markersLayer = L.layerGroup().addTo(map);
 
-    // Get User Location & highlight nearest shop
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
             userLoc = [pos.coords.latitude, pos.coords.longitude];
             map.setView(userLoc, 13);
             
-            // User Dot
             L.circleMarker(userLoc, { radius: 8, fillColor: '#3b82f6', color: '#fff', weight: 3, opacity: 1, fillOpacity: 1 }).addTo(map).bindPopup("You are here");
             
             await cacheAllShops();
@@ -64,18 +62,24 @@ export async function initKhoj() {
         if(e.key === 'Enter') performKhoj();
     });
 
-    // Make global routing function available for the popup buttons
+    // Global scope so map popups can call it
     window.drawRouteToShop = function(lat, lng) {
         if(routingControl) map.removeControl(routingControl);
         
         routingControl = L.Routing.control({
             waypoints: [ L.latLng(userLoc[0], userLoc[1]), L.latLng(lat, lng) ],
-            routeWhileDragging: false,
-            addWaypoints: false,
-            fitSelectedRoutes: true,
-            show: false, // hide textual itinerary
+            routeWhileDragging: false, addWaypoints: false, fitSelectedRoutes: true, show: false,
             lineOptions: { styles: [{color: '#6366f1', opacity: 0.8, weight: 6}] }
         }).addTo(map);
+
+        // Listen for distance calculation
+        routingControl.on('routesfound', function(e) {
+            const distanceKM = (e.routes[0].summary.totalDistance / 1000).toFixed(2);
+            const box = document.getElementById('routeInfoBox');
+            document.getElementById('routeDistanceText').innerText = `Distance: ${distanceKM} km`;
+            box.style.display = 'flex';
+            map.closePopup();
+        });
     };
 }
 
@@ -94,7 +98,7 @@ async function cacheAllShops() {
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // km
+    const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
@@ -113,7 +117,6 @@ async function highlightNearestShop() {
 
     if(nearest) {
         try {
-            // Find most sold product locally by just picking one (simulated via pulling products)
             const prodSnap = await getDocs(collectionGroup(db, 'products'));
             let topProd = null;
             prodSnap.forEach(d => {
@@ -148,7 +151,8 @@ async function performKhoj() {
     const btn = document.getElementById('btnKhojSearch');
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`; btn.disabled = true;
 
-    if(routingControl) map.removeControl(routingControl); // clear previous route
+    if(routingControl) map.removeControl(routingControl); 
+    document.getElementById('routeInfoBox').style.display = 'none';
 
     try {
         markersLayer.clearLayers();
