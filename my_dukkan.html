@@ -3,1121 +3,207 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>My Dukkan • Finance HQ</title>
+  <title>Finance HQ - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-<script type="module" src="bharatpos.js"></script>
-<link rel="stylesheet" href="bharatpos.css">
-<style>
+  <style>
     /* ═══════════════════════════════════════════════════════════
-       SPECIFIC ANIMATIONS
+       FINANCE HQ SPECIFIC LAYOUT & RESPONSIVENESS
     ═══════════════════════════════════════════════════════════ */
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-    
-    /* ═══════════════════════════════════════════════════════════
-       HEADER (Specific to My Dukkan)
-    ═══════════════════════════════════════════════════════════ */
-    .header { 
-        background: var(--white); 
-        padding: 16px 20px; 
-        display: flex; justify-content: space-between; align-items: center; 
-        position: sticky; top: 0; z-index: 100; 
-        border-bottom: 2px solid var(--blue-200); 
-        box-shadow: 0 4px 20px rgba(25,118,210,0.05);
-    }
-    .brand { display: flex; flex-direction: column; } 
-    .brand h1 { margin: 0; font-size: 18px; font-weight: 800; color: var(--blue-600); display: flex; align-items: center; gap: 8px; font-family: var(--font-head); } 
-    .brand span { font-size: 11px; font-weight: 700; color: var(--slate-500); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px; font-family: var(--font-body); }
-    
-    .header-actions { display: flex; gap: 10px; align-items: center;}
-    
-    .shop-switcher { background: #f9f9f9; border: 1.5px solid var(--blue-200); color: var(--slate-900); padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; outline: none; cursor: pointer; max-width: 160px; transition: 0.2s; font-family: var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
-    .shop-switcher:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.1); }
+    .container { max-width: 1200px; margin: 30px auto; padding: 0 15px; font-family: var(--font-body); }
 
-    .btn-nav { 
-        background: var(--blue-50); color: var(--blue-600); border: 1.5px solid var(--blue-200); 
-        padding: 8px 14px; border-radius: var(--radius-input); font-size: 13px; font-weight: 700; 
-        cursor: pointer; transition: var(--trans); display: flex; align-items: center; gap: 6px; 
-        text-decoration: none; font-family: var(--font-body);
-    }
-    .btn-nav:hover { 
-        background: var(--white); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(25,118,210,0.1); 
-    }
+    /* KPI Top Bar */
+    .finance-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .fkpi-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-card); padding: 20px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+    .fkpi-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px; }
+    .fkpi-card.balance::before { background: var(--primary); }
+    .fkpi-card.in::before { background: var(--success); }
+    .fkpi-card.out::before { background: var(--danger); }
     
-    .btn-sync { 
-        background: var(--primary-gradient); color: white; border: none; 
-        box-shadow: 0 4px 15px rgba(25,118,210,0.25); 
-    }
-    .btn-sync:hover { 
-        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); color: white; 
-    }
-    
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; animation: fadeIn 0.6s ease-out; font-family: var(--font-body);}
-    
-    /* ═══════════════════════════════════════════════════════════
-       GREETING
-    ═══════════════════════════════════════════════════════════ */
-    .greeting-box { margin-bottom: 20px; } 
-    .greeting-time { font-size: 12px; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-body); } 
-    .greeting-text { font-size: 24px; font-weight: 800; color: var(--slate-900); letter-spacing: -0.5px; margin: 4px 0 0 0; font-family: var(--font-head); }
-    
-    /* ═══════════════════════════════════════════════════════════
-       METRICS GRID
-    ═══════════════════════════════════════════════════════════ */
-    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    .metric-card { 
-        background: var(--white); border-radius: var(--radius-card); padding: 20px; 
-        position: relative; overflow: hidden; box-shadow: var(--shadow-card); 
-        transition: transform var(--trans); border: 1.5px solid var(--blue-100); 
-    }
-    .metric-card:hover { transform: translateY(-3px); border-color: var(--blue-200); }
-    .metric-head { font-size: 11px; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; font-family: var(--font-body); }
-    .metric-val { font-size: 26px; font-weight: 800; margin: 10px 0 6px 0; color: var(--slate-900); font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
-    .metric-sub { font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px; font-family: var(--font-body); }
-    
-    .card-rev .metric-sub { color: var(--success); }
-    .card-exp .metric-sub { color: var(--danger); }
-    .card-prof .metric-sub { color: var(--blue-600); }
-    .card-udhaar { cursor: pointer; background: var(--warning-soft); border-color: #fde68a; } 
-    .card-udhaar .metric-head, .card-udhaar .metric-val, .card-udhaar .metric-sub { color: #d97706; }
-    
-    .skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; color: transparent !important; border-radius: 6px; }
-    
-    /* ═══════════════════════════════════════════════════════════
-       CHARTS & PANELS
-    ═══════════════════════════════════════════════════════════ */
-    .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; } 
-    .panel-box { 
-        background: var(--white); padding: 24px; border-radius: var(--radius-card); 
-        box-shadow: var(--shadow-card); border: 1.5px solid var(--blue-100); 
-        display: flex; flex-direction: column; height: 100%; 
-    }
-    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; } 
-    .panel-title { font-weight: 800; color: var(--slate-900); font-size: 16px; display: flex; align-items: center; gap: 8px; font-family: var(--font-head); }
-    .chart-wrapper { position: relative; height: 250px; width: 100%; }
-    
-    /* ═══════════════════════════════════════════════════════════
-       EXPENSE FORM & LISTS
-    ═══════════════════════════════════════════════════════════ */
-    .bottom-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 40px; } 
-    .input-group { margin-bottom: 12px; } 
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    
-    .inp { 
-        width: 100%; padding: 12px 14px; border: 1.5px solid var(--blue-200); border-radius: var(--radius-input); 
-        font-size: 14px; background: #f9f9f9; transition: border-color var(--trans), box-shadow var(--trans); 
-        font-family: var(--font-body); color: var(--slate-900); font-weight: 600; outline: none; box-sizing: border-box;
-    } 
-    .inp:focus { border-color: var(--blue-600); background: var(--white); box-shadow: 0 0 0 3px rgba(25,118,210,0.12); } 
-    
-    .btn-record { 
-        background: var(--slate-900); color: white; border: none; padding: 14px; border-radius: var(--radius-input); 
-        font-weight: 800; cursor: pointer; width: 100%; font-size: 14px; display: flex; justify-content: center; 
-        align-items: center; gap: 8px; transition: transform var(--trans), box-shadow var(--trans); margin-top: 5px; 
-        font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;
-    } 
-    .btn-record:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-    .btn-record:active { transform: scale(0.98); } 
-    
-    .btn-ghost { 
-        background: var(--white); border: 1.5px solid var(--blue-200); color: var(--blue-600); 
-        padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; 
-        transition: var(--trans); font-family: var(--font-body); text-transform: uppercase;
-    } 
-    .btn-ghost:hover { background: var(--blue-50); transform: translateY(-2px); } 
+    .fkpi-label { font-size: 12px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .fkpi-value { font-size: 28px; font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
+    .fkpi-sub { font-size: 11px; color: var(--text-light); font-weight: 600; margin-top: 4px; }
 
-    /* ═══════════════════════════════════════════════════════════
-       RECENT TRANSACTIONS & POs
-    ═══════════════════════════════════════════════════════════ */
-    .recent-list { margin-top: 15px; max-height: 200px; overflow-y: auto; padding-right: 5px; scrollbar-width: thin; }
-    .recent-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1.5px solid var(--blue-50); transition: var(--trans); border-radius: 8px; }
-    .recent-item:hover { background: var(--blue-50); }
-    .recent-info { display: flex; flex-direction: column; }
-    .recent-cat { font-weight: 800; font-size: 13px; color: var(--slate-900); font-family: var(--font-body); }
-    .recent-desc { font-size: 11px; color: var(--slate-500); margin-top: 4px; font-weight: 600;}
-    .recent-amt { font-weight: 800; color: var(--danger); font-family: 'JetBrains Mono', monospace; font-size: 14px; }
-    .recent-del { background: none; border: none; color: var(--slate-400); cursor: pointer; padding: 5px; margin-left: 10px; transition: color var(--trans); }
-    .recent-del:hover { color: var(--danger); }
-    
-    .po-status { font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;}
-    .po-pending { background: var(--warning-soft); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
-    .po-amt { font-weight: 800; color: var(--slate-900); font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+    /* Tab Navigation (Scrollable on mobile) */
+    .tab-container { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; padding-bottom: 5px; border-bottom: 1.5px solid var(--border); }
+    .tab-container::-webkit-scrollbar { display: none; }
+    .tab-btn { padding: 12px 24px; border: none; background: transparent; font-size: 14px; font-weight: 800; color: var(--text-muted); cursor: pointer; transition: var(--trans); border-bottom: 3px solid transparent; white-space: nowrap; font-family: var(--font-head); }
+    .tab-btn:hover { color: var(--primary); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-    /* ═══════════════════════════════════════════════════════════
-       MODALS
-    ═══════════════════════════════════════════════════════════ */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s ease;}
-    .modal-overlay.show { opacity: 1; }
-    .modal-box { background: var(--white); width: 100%; max-width: 500px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1.5px solid var(--blue-100); }
-    .modal-overlay.show .modal-box { transform: scale(1); }
-    .modal-head { padding: 20px 24px; background: #f9f9f9; border-bottom: 1.5px solid var(--blue-100); display: flex; justify-content: space-between; align-items: center; font-family: var(--font-head); color: var(--slate-900); } 
-    .modal-body { padding: 20px 24px; overflow-y: auto; background: var(--white); max-height: 70vh;} 
+    /* Panels */
+    .tab-content { display: none; animation: fadeIn 0.3s ease; }
+    .tab-content.active { display: block; }
     
-    .udhaar-row { padding: 16px 0; border-bottom: 1.5px solid var(--blue-100); display: flex; justify-content: space-between; align-items: center; transition: var(--trans); } 
-    .udhaar-row:hover { background: var(--blue-50); }
+    .panel { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-card); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1.5px dashed var(--border); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    .panel-title { font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0; font-family: var(--font-head); display: flex; align-items: center; gap: 8px; }
     
-    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--slate-900); color: white; padding: 14px 28px; border-radius: 100px; font-weight: 700; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 12000; white-space: nowrap; font-family: var(--font-body);}
-    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    /* Layouts */
+    .expense-layout { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+    @media(min-width: 900px) { .expense-layout { grid-template-columns: 350px 1fr; } }
+    
+    .charts-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media(min-width: 900px) { .charts-layout { grid-template-columns: 2fr 1fr; } }
 
-    /* ═══════════════════════════════════════════════════════════
-       MOBILE OPTIMIZATION
-    ═══════════════════════════════════════════════════════════ */
-    @media(max-width: 768px) { 
-        .metrics-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-        .charts-row, .bottom-grid { grid-template-columns: 1fr; gap: 12px; }
-        .container { padding: 16px; }
-        .metric-val { font-size: 20px; }
-        .panel-box { padding: 16px; }
-        .header { padding: 12px 16px; }
+    /* Chart Wrappers (Crucial for mobile Canvas scaling) */
+    .chart-wrapper { position: relative; height: 320px; width: 100%; }
+    .chart-wrapper.pie-wrapper { height: 280px; }
+
+    /* Expense List Items (Grid prevents overlap) */
+    .expense-list { display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto; padding-right: 5px; }
+    .expense-item { 
+        background: #f9f9f9; border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; 
+        display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; transition: var(--trans);
     }
-</style>
+    .expense-item:hover { background: var(--white); border-color: var(--primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+    
+    .exp-info { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+    .exp-title { font-size: 14px; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .exp-meta { font-size: 11px; color: var(--text-muted); font-weight: 600; display: flex; gap: 8px; flex-wrap: wrap;}
+    
+    .exp-amount { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: var(--danger); text-align: right; }
+    
+    .btn-delete-exp { background: transparent; border: 1px solid rgba(220,38,38,0.2); color: var(--danger); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--trans); }
+    .btn-delete-exp:hover { background: var(--danger); color: white; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state i { font-size: 40px; color: var(--border-hover); margin-bottom: 16px; }
+    .empty-state p { font-size: 13px; font-weight: 600; }
+  </style>
 </head>
-<body>
-
-<div id="toast">✅ Action Successful</div>
-
-<div class="header">
-    <div class="brand">
-        <h1>My Dukkan</h1>
-        <span>Finance HQ</span>
-    </div>
-    <div class="header-actions">
-        <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
-        
-        <button class="btn-nav btn-sync" onclick="window.syncAllData()" id="syncBtn">
-            <i class="fa-solid fa-rotate"></i> <span class="desktop-only">Sync</span>
-        </button>
-        <a href="dashboard.html" class="btn-nav"><i class="fa-solid fa-house"></i></a>
-    </div>
-</div>
+<body class="lang-en">
 
 <div class="container">
-
-    <div class="greeting-box">
-        <div class="greeting-time" id="greetTime">Welcome Back</div>
-        <h2 class="greeting-text">Financial Overview</h2>
-    </div>
-
-    <div class="metrics-grid">
-        <div class="metric-card card-rev">
-            <div class="metric-head">Revenue <i class="fa-solid fa-arrow-trend-up"></i></div>
-            <div class="metric-val skeleton-load" id="valRev">₹0</div>
-            <div class="metric-sub">Sales & Income</div>
-        </div>
-        <div class="metric-card card-exp">
-            <div class="metric-head">Expenses <i class="fa-solid fa-arrow-trend-down"></i></div>
-            <div class="metric-val skeleton-load" id="valExp">₹0</div>
-            <div class="metric-sub">Purchases & Bills</div>
-        </div>
-        <div class="metric-card card-prof">
-            <div class="metric-head">Net Profit <i class="fa-solid fa-star"></i></div>
-            <div class="metric-val skeleton-load" id="valProf">₹0</div>
-            <div class="metric-sub" id="profStat">Calculating...</div>
-        </div>
-        <div class="metric-card card-udhaar" onclick="window.openUdhaarModal()">
-            <div class="metric-head">Udhaar <i class="fa-solid fa-triangle-exclamation"></i></div>
-            <div class="metric-val skeleton-load" id="valUdhaar">₹0</div>
-            <div class="metric-sub">Tap to view list</div>
-        </div>
-    </div>
-
-    <div class="charts-row">
-        <div class="panel-box">
-            <div class="panel-header">
-                <span class="panel-title"><i class="fa-solid fa-chart-line" style="color:var(--primary);"></i> Cash Flow</span>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="mainChart"></canvas>
-            </div>
-        </div>
-
-        <div class="panel-box">
-            <div class="panel-header">
-                <span class="panel-title"><i class="fa-solid fa-chart-pie" style="color:var(--danger);"></i> Expenses</span>
-            </div>
-            <div class="chart-wrapper" style="height:200px;">
-                 <canvas id="pieChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="bottom-grid">
-        <div class="panel-box" style="border: 1.5px solid var(--blue-200);">
-            <div class="panel-header">
-                <span class="panel-title"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--success);"></i> Fast Expense Entry</span>
-                <button class="btn-ghost" onclick="window.downloadCSV()">📥 CSV</button>
-            </div>
-            
-            <div class="form-row">
-                <div class="input-group">
-                    <select id="exCat" class="inp">
-                        <option value="" disabled selected>Category</option>
-                        <option>Stock / Inventory</option>
-                        <option>Rent / Electricity</option>
-                        <option>Salary</option>
-                        <option>Marketing</option>
-                        <option>Personal / Other</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <input id="exAmt" type="number" class="inp" placeholder="Amount (₹)">
-                </div>
-            </div>
-            <div class="input-group">
-                <input id="exDesc" class="inp" placeholder="Short Note (e.g. Bought Maggi cartons)">
-            </div>
-            
-            <button class="btn-record" onclick="window.addExpense()" id="saveExpBtn">
-                <i class="fa-solid fa-plus"></i> Record Expense
-            </button>
-
-            <div style="margin-top: 24px; border-top: 1.5px dashed var(--blue-100); padding-top: 16px;">
-                <div style="font-size: 11px; font-weight: 800; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Recent Expenses</div>
-                <div class="recent-list" id="recentExpensesList">
-                    </div>
-            </div>
-        </div>
-
-        <div class="panel-box" style="border: 1.5px solid var(--purple-soft);">
-            <div class="panel-header">
-                <span class="panel-title"><i class="fa-solid fa-truck-ramp-box" style="color:var(--purple);"></i> Purchase Orders</span>
-                <button class="btn-ghost" onclick="window.openCreatePOModal()" style="color:var(--purple); border-color:var(--purple-soft); background:var(--white);">+ New PO</button>
-            </div>
-            <div style="font-size: 11px; font-weight: 800; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Pending Orders</div>
-            <div class="recent-list" id="pendingPOList">
-                </div>
-        </div>
-    </div>
-
-</div>
-
-<div id="udhaarModal" class="modal-overlay" onclick="window.closeModal(event)">
-    <div class="modal-box">
-        <div class="modal-head">
-            <h3 style="margin:0; font-size:18px; font-weight:800;"><i class="fa-solid fa-book-open" style="color:var(--danger);"></i> Pending Udhaar</h3>
-            <button onclick="window.closeModal()" style="border:none; background:none; font-size:24px; cursor:pointer; color:var(--slate-400);"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="modal-body" id="udhaarListBody" style="padding: 0 24px;"></div>
-    </div>
-</div>
-
-<div id="createPOModal" class="modal-overlay" onclick="window.closeModal(event)">
-    <div class="modal-box" style="max-width:600px;">
-        <div class="modal-head">
-            <h3 style="margin:0; font-size:18px; font-weight:800;"><i class="fa-solid fa-truck-ramp-box" style="color:var(--purple);"></i> Create Purchase Order</h3>
-            <button onclick="window.closeModal()" style="border:none; background:none; font-size:24px; cursor:pointer; color:var(--slate-400);"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="modal-body">
-            <button class="btn-record" onclick="window.autoGeneratePO()" style="margin-bottom:20px; background:var(--blue-50); color:var(--blue-600); border:1.5px solid var(--blue-200); box-shadow:none;">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Generate from Low Stock
-            </button>
-            
-            <div style="font-size: 11px; font-weight: 800; color: var(--slate-500); text-transform: uppercase; margin-bottom:8px;">Draft Items</div>
-            <div id="poDraftList" style="margin-bottom:20px; background:#f9f9f9; border:1.5px solid var(--blue-100); border-radius:12px; padding:10px; min-height:80px; max-height:200px; overflow-y:auto;">
-                <div style="text-align:center; color:var(--slate-400); font-size:12px; padding:20px; font-weight:600;">No items added yet.</div>
-            </div>
-            
-            <div style="font-size: 11px; font-weight: 800; color: var(--slate-500); text-transform: uppercase; margin-bottom:8px;">Add Item Manually</div>
-            <select id="poProductSelect" class="inp" style="margin-bottom:12px;" onchange="window.updatePOHint()"></select>
-            <div style="display:flex; gap:10px; margin-bottom:8px;">
-                <input type="number" id="poQty" class="inp" placeholder="Stock Qty" style="flex:1;" oninput="window.updatePOHint()">
-                <input type="number" id="poCost" class="inp" placeholder="Total Cost (₹)" style="flex:1;">
-                <button class="btn-record" onclick="window.addDraftPOItem()" style="background:var(--primary-gradient); width:auto; padding:0 20px; margin:0;"><i class="fa-solid fa-plus"></i></button>
-            </div>
-            <div id="poQtyHint" style="font-size: 11px; margin-bottom: 24px; line-height: 1.4; color: var(--slate-500);">Select a product to see stock unit details.</div>
-            
-            <button class="btn-record" onclick="window.submitPO()" style="background: linear-gradient(135deg, var(--purple), #6D28D9);">Save Purchase Order</button>
-        </div>
-    </div>
-</div>
-
-<div id="receivePOModal" class="modal-overlay" onclick="window.closeModal(event)">
-    <div class="modal-box" style="max-width:400px;">
-         <div class="modal-head">
-             <h3 style="margin:0; font-size:18px; font-weight:800;" id="receivePOTitle">Receive PO</h3>
-             <button onclick="window.closeModal()" style="border:none; background:none; font-size:24px; cursor:pointer; color:var(--slate-400);"><i class="fa-solid fa-xmark"></i></button>
-         </div>
-         <div class="modal-body">
-             <div style="font-size:12px; font-weight:700; color:var(--slate-500); text-align:center; text-transform:uppercase;">Total Expected Cost</div>
-             <div style="font-size:32px; font-weight:800; color:var(--danger); text-align:center; margin:10px 0 24px; font-family:'JetBrains Mono';" id="receivePOCost">₹0.00</div>
-             
-             <div style="font-size: 11px; font-weight: 800; color: var(--slate-500); text-transform: uppercase; margin-bottom:8px;">Payment Method</div>
-             <select id="receivePOMode" class="inp" style="margin-bottom:24px;">
-                 <option value="Cash">Cash</option>
-                 <option value="Online">Online / UPI</option>
-                 <option value="Partial">Partial Mix</option>
-                 <option value="Udhaar Payable">Udhaar (To Pay Later)</option>
-             </select>
-             
-             <button class="btn-record" onclick="window.confirmReceivePO()" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="fa-solid fa-check-circle"></i> Confirm Receipt & Restock</button>
-         </div>
-    </div>
-</div>
-
-<script type="module">
-    import { db } from "./bharatpos.js";
-    import { collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // --- UX UTILS ---
-    window.formatMoney = (n) => '₹' + Number(n).toLocaleString('en-IN');
     
-    window.showModal = function(id) {
-        const m = document.getElementById(id);
-        if(m) {
-            m.style.display = 'flex';
-            setTimeout(() => m.classList.add('show'), 10);
-        }
-    }
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 24px;">
+        <div>
+            <h1 style="margin:0; font-size:24px; font-weight:800; font-family:var(--font-head); color:var(--text-main);">Finance HQ</h1>
+            <div style="font-size:13px; color:var(--text-muted); font-weight:600; margin-top:4px;">Manage expenses and view real-time profit & loss.</div>
+        </div>
+        <select id="filterBranch" class="form-select" style="width:auto; font-weight:800; color:var(--primary); border-color:var(--primary); display:none;">
+            <option value="all">🌍 All Branches</option>
+        </select>
+    </div>
 
-    window.hideModal = function(id) {
-        const m = document.getElementById(id);
-        if(m) {
-            m.classList.remove('show');
-            setTimeout(() => m.style.display = 'none', 300);
-        }
-    }
+    <div class="finance-kpi-grid">
+        <div class="fkpi-card balance">
+            <div class="fkpi-label">Current Balance <i class="fa-solid fa-wallet" style="color:var(--primary);"></i></div>
+            <div class="fkpi-value" id="kpiBalance" style="color:var(--primary);">₹0</div>
+            <div class="fkpi-sub">Net available cash/bank</div>
+        </div>
+        <div class="fkpi-card in">
+            <div class="fkpi-label">Money In (Revenue) <i class="fa-solid fa-arrow-trend-up" style="color:var(--success);"></i></div>
+            <div class="fkpi-value" id="kpiMoneyIn">₹0</div>
+            <div class="fkpi-sub">Total sales collected</div>
+        </div>
+        <div class="fkpi-card out">
+            <div class="fkpi-label">Money Out (Expense) <i class="fa-solid fa-arrow-trend-down" style="color:var(--danger);"></i></div>
+            <div class="fkpi-value" id="kpiMoneyOut">₹0</div>
+            <div class="fkpi-sub">Total business expenses</div>
+        </div>
+    </div>
 
-    window.showToast = function(msg, type='info') {
-        const t = document.getElementById('toast');
-        if(!t) return;
-        t.innerText = msg; 
-        t.style.background = type === 'success' ? 'var(--success)' : (type === 'error' ? 'var(--danger)' : 'var(--slate-900)');
-        t.classList.add('show'); 
-        setTimeout(() => t.classList.remove('show'), 3000);
-    }
+    <div class="tab-container" id="financeTabs">
+        <button class="tab-btn active" data-target="tab-expenses">Expense Book</button>
+        <button class="tab-btn" data-target="tab-analytics">P&L Analytics</button>
+    </div>
 
-    function setGreeting() {
-        const hour = new Date().getHours();
-        const el = document.getElementById('greetTime');
-        if(!el) return;
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const name = user.name ? user.name.split(' ')[0] : 'Owner';
-        
-        if(hour < 12) el.innerText = `Good Morning, ${name}`;
-        else if(hour < 18) el.innerText = `Good Afternoon, ${name}`;
-        else el.innerText = `Good Evening, ${name}`;
-    }
-
-    // --- STATE (Enterprise & Local) ---
-    window.enterpriseExpenses = [];
-    window.enterpriseSales = [];
-    window.enterprisePOs = [];
-    window.allProducts = [];
-    
-    window.currentBranch = 'all';
-    window.poDraftItems = [];
-    window.currentReceivePOId = null;
-    let lineChart = null;
-    let pieChart = null;
-
-    document.addEventListener("DOMContentLoaded", async () => {
-        setGreeting();
-        
-        // 1. Initial Load via Async Bridge
-        window.allProducts = await window.dbGet('bharatpos_products', '[]');
-        
-        let eExp = await window.dbGet('bharatpos_enterprise_expenses', 'null');
-        if (eExp === null) eExp = await window.dbGet('bharatpos_expenses', '[]');
-        window.enterpriseExpenses = eExp;
-
-        let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
-        if (eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
-        window.enterpriseSales = eSales;
-
-        let ePO = await window.dbGet('bharatpos_enterprise_pos', 'null');
-        if (ePO === null) ePO = await window.dbGet('bharatpos_pos', '[]');
-        window.enterprisePOs = ePO;
-        
-        // Multi-Branch Setup
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
-
-        if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
-            const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
-            if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
-        }
-
-        const switcher = document.getElementById('shopSwitcher');
-        if (shops.length > 1 && switcher) {
-            switcher.style.display = 'inline-block';
-            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
-                shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
+    <div id="tab-expenses" class="tab-content active">
+        <div class="expense-layout">
             
-            window.currentBranch = user.merchantId;
-            switcher.value = user.merchantId;
-
-            switcher.addEventListener('change', (e) => {
-                const val = e.target.value;
-                if(val === 'all' || val === user.merchantId) {
-                    window.currentBranch = val;
-                    refreshDashboard();
-                } else if(window.switchActiveShop) {
-                    window.switchActiveShop(val);
-                }
-            });
-        } else if (switcher) {
-            window.currentBranch = user.merchantId;
-            switcher.value = user.merchantId;
-        }
-
-        refreshDashboard();
-        
-        setTimeout(() => {
-            document.querySelectorAll('.skeleton-load').forEach(el => el.classList.remove('skeleton-load'));
-            // Silently pull fresh cloud data from all branches
-            if (user.merchantId && db && navigator.onLine) {
-                window.syncAllData(true, shops);
-            }
-        }, 500); 
-
-        // Populate Product Select for POs
-        const poSelect = document.getElementById('poProductSelect');
-        if(poSelect && window.allProducts.length > 0) {
-            poSelect.innerHTML = '<option value="" disabled selected>Select Product to Order</option>' + 
-                window.allProducts.map(p => `<option value="${p.id}">${window.escapeHtml(p.name)}</option>`).join('');
-        }
-    });
-
-    window.escapeHtml = function(str) { 
-        return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
-    }
-
-    // --- 🟢 FIREBASE: SYNC LOGIC (Multi-Branch) ---
-    window.syncAllData = async function(isSilent = false, shopsArray = null) {
-        const btn = document.getElementById('syncBtn');
-        if(btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span class="desktop-only">Syncing</span>`;
-        
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        if(!user.merchantId || !db || !navigator.onLine) {
-            if(!isSilent) window.showToast("Offline mode. Showing local data.", "info");
-            refreshDashboard();
-            if(btn) btn.innerHTML = `<i class="fa-solid fa-rotate"></i> <span class="desktop-only">Sync</span>`;
-            return;
-        }
-
-        try {
-            let shops = shopsArray;
-            if(!shops) {
-                shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
-                if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
-                    const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
-                    if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
-                }
-            }
-
-            let allExp = [];
-            let allSales = [];
-            let allPOs = [];
-
-            const fetchPromises = shops.map(async (shop) => {
-                if(!shop.merchantId) return;
-                try {
-                    const expSnap = await getDocs(collection(db, "shops", shop.merchantId, "expenses"));
-                    expSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allExp.push(data); });
-
-                    const salesSnap = await getDocs(collection(db, "shops", shop.merchantId, "sales"));
-                    salesSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allSales.push(data); });
-
-                    const poSnap = await getDocs(collection(db, "shops", shop.merchantId, "purchase_orders"));
-                    poSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allPOs.push(data); });
-                } catch(e) { console.warn(`Failed fetching data for branch: ${shop.shopName}`); }
-            });
-            
-            await Promise.all(fetchPromises);
-
-            allExp.sort((a,b) => new Date(b.date) - new Date(a.date));
-            allSales.sort((a,b) => new Date(b.date) - new Date(a.date));
-            allPOs.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-            window.enterpriseExpenses = allExp;
-            window.enterpriseSales = allSales;
-            window.enterprisePOs = allPOs;
-
-            await window.dbSave('bharatpos_enterprise_expenses', window.enterpriseExpenses);
-            await window.dbSave('bharatpos_enterprise_sales', window.enterpriseSales);
-            await window.dbSave('bharatpos_enterprise_pos', window.enterprisePOs);
-
-            refreshDashboard();
-            if(!isSilent) {
-                window.showToast("Cloud Sync Complete!", "success");
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            }
-        } catch(e) {
-            console.error("Sync Error", e);
-            if(!isSilent) window.showToast("Sync failed. Using offline data.", "info");
-        } finally {
-            if(btn) btn.innerHTML = `<i class="fa-solid fa-rotate"></i> <span class="desktop-only">Sync</span>`;
-        }
-    }
-
-    // --- 🟢 FIREBASE: ADD EXPENSE ---
-    window.addExpense = async function(customAmt = null, customDesc = null, customCat = null, customMode = 'Cash', targetBranchId = null) {
-        const amtInp = document.getElementById('exAmt');
-        const descInp = document.getElementById('exDesc');
-        const catInp = document.getElementById('exCat');
-        const btn = document.getElementById('saveExpBtn');
-
-        const amt = customAmt !== null ? customAmt : parseFloat(amtInp ? amtInp.value : 0);
-        const desc = customDesc !== null ? customDesc : (descInp ? descInp.value : "Expense");
-        const cat = customCat !== null ? customCat : (catInp ? catInp.value : 'Personal / Other');
-
-        if(!amt || amt<=0) { window.showToast("Please enter a valid amount.", "error"); return; }
-        if(!cat) { window.showToast("Please select a category.", "error"); return; }
-
-        if(btn && customAmt === null) {
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
-            btn.disabled = true;
-        }
-
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const branchToSave = targetBranchId || user.merchantId;
-
-        const expenseObj = {
-            id: "EXP-" + Date.now(), 
-            date: new Date().toISOString(),
-            amount: amt, 
-            type: 'expense', 
-            cat: cat, 
-            desc: desc,
-            paymentMode: customMode,
-            _branchId: branchToSave
-        };
-
-        // 1. Save Locally
-        window.enterpriseExpenses.unshift(expenseObj); 
-        await window.dbSave('bharatpos_enterprise_expenses', window.enterpriseExpenses);
-        
-        // Push to local shop array as well just for redundancy if offline
-        const localOnly = await window.dbGet('bharatpos_expenses', '[]');
-        localOnly.unshift(expenseObj);
-        await window.dbSave('bharatpos_expenses', localOnly);
-
-        // 2. Save to Cloud
-        if(branchToSave && db && navigator.onLine) {
-            try {
-                const expRef = doc(db, "shops", branchToSave, "expenses", expenseObj.id);
-                await setDoc(expRef, expenseObj);
-            } catch(e) { console.error("Failed to save expense to cloud", e); }
-        }
-
-        if(amtInp) amtInp.value = ''; 
-        if(descInp) descInp.value = ''; 
-        if(catInp) catInp.value = '';
-        
-        refreshDashboard();
-        window.showToast("Expense recorded.", "success");
-        
-        if(btn && customAmt === null) {
-            btn.innerHTML = `<i class="fa-solid fa-plus"></i> Record Expense`;
-            btn.disabled = false;
-        }
-    }
-
-    window.deleteExpense = async function(id) {
-        if(!confirm("Delete this expense record?")) return;
-
-        const targetExp = window.enterpriseExpenses.find(e => e.id === id);
-        const branchId = targetExp ? targetExp._branchId : null;
-
-        // Remove locally
-        window.enterpriseExpenses = window.enterpriseExpenses.filter(e => e.id !== id);
-        await window.dbSave('bharatpos_enterprise_expenses', window.enterpriseExpenses);
-        
-        const localOnly = await window.dbGet('bharatpos_expenses', '[]');
-        const newLocal = localOnly.filter(e => e.id !== id);
-        await window.dbSave('bharatpos_expenses', newLocal);
-        
-        refreshDashboard();
-
-        // Remove from Cloud
-        if(branchId && db && navigator.onLine) {
-            try {
-                const expRef = doc(db, "shops", branchId, "expenses", id);
-                await deleteDoc(expRef);
-            } catch(e) { console.error("Failed to delete from cloud", e); }
-        }
-        window.showToast("Record deleted.", "success");
-    }
-
-    // --- PURCHASE ORDERS ENGINE ---
-    window.openCreatePOModal = function() {
-        window.poDraftItems = [];
-        window.renderPODraftList();
-        const pQty = document.getElementById('poQty'); if(pQty) pQty.value = '';
-        const pCost = document.getElementById('poCost'); if(pCost) pCost.value = '';
-        const hint = document.getElementById('poQtyHint'); if(hint) hint.innerHTML = 'Select a product to see stock unit details.';
-        window.showModal('createPOModal');
-    }
-
-    window.updatePOHint = function() {
-        const prodId = document.getElementById('poProductSelect').value;
-        const qty = parseFloat(document.getElementById('poQty').value) || 0;
-        const hintEl = document.getElementById('poQtyHint');
-        
-        if(!prodId) { hintEl.innerHTML = 'Select a product to see stock unit details.'; return; }
-        
-        const p = window.allProducts.find(x => x.id === prodId);
-        if(!p) return;
-        const v = p.variants[0]; 
-        
-        let label = `1 Stock Unit = ${v.quantity}`;
-        let total = qty;
-        let unitStr = v.quantity;
-
-        if(p.isLoose) {
-            const bq = Number(v.baseQty) || 1;
-            const bu = v.baseUnit || 'units';
-            label = `1 Stock Unit = ${bq} ${bu} (Loose Base Qty)`;
-            total = qty * bq;
-            unitStr = bu;
-        }
-        
-        if(qty > 0) {
-            hintEl.innerHTML = `<span style="color:var(--blue-600); font-weight:800;">${label}</span><br>You are ordering: <strong style="color:var(--success); font-family:'JetBrains Mono';">${total} ${unitStr}</strong> to be added to inventory.`;
-        } else {
-            hintEl.innerHTML = `<span style="color:var(--slate-500); font-weight:700;">${label}. Enter quantity to see total.</span>`;
-        }
-    }
-
-    window.autoGeneratePO = function() {
-        let addedCount = 0;
-        window.allProducts.forEach(p => {
-            const threshold = (p.reorderPoint !== undefined && p.reorderPoint !== '') ? Number(p.reorderPoint) : 5;
-            let totalStock = 0;
-            p.variants.forEach(v => totalStock += Number(v.stock||0));
-            
-            if(totalStock <= threshold) {
-                // Auto calculate order qty (enough to double the threshold)
-                const orderQty = Math.max(10, Math.round(threshold * 2));
-                const estCost = orderQty * (Number(p.variants[0].costPrice) || (Number(p.variants[0].price) * 0.7)); // Guess cost if not set
-                
-                const existingIdx = window.poDraftItems.findIndex(i => i.prodId === p.id);
-                if(existingIdx === -1) {
-                    window.poDraftItems.push({
-                        prodId: p.id,
-                        name: p.name,
-                        qty: orderQty,
-                        cost: Number(estCost.toFixed(2))
-                    });
-                    addedCount++;
-                }
-            }
-        });
-        
-        if(addedCount > 0) {
-            window.renderPODraftList();
-            window.showToast(`Auto-added ${addedCount} low stock items.`);
-        } else {
-            window.showToast("Inventory is healthy. Nothing to auto-add.");
-        }
-    }
-
-    window.addDraftPOItem = function() {
-        const prodSel = document.getElementById('poProductSelect');
-        const qtyInp = document.getElementById('poQty');
-        const costInp = document.getElementById('poCost');
-        if(!prodSel || !qtyInp || !costInp) return;
-
-        const prodId = prodSel.value;
-        const qty = parseFloat(qtyInp.value);
-        const cost = parseFloat(costInp.value);
-
-        if(!prodId) return window.showToast("Select a product", "error");
-        if(isNaN(qty) || qty <= 0) return window.showToast("Enter valid quantity", "error");
-        if(isNaN(cost) || cost <= 0) return window.showToast("Enter valid cost", "error");
-
-        const prod = window.allProducts.find(p => p.id === prodId);
-        if(!prod) return;
-
-        const existingIdx = window.poDraftItems.findIndex(i => i.prodId === prodId);
-        if(existingIdx >= 0) {
-            window.poDraftItems[existingIdx].qty += qty;
-            window.poDraftItems[existingIdx].cost += cost;
-        } else {
-            window.poDraftItems.push({
-                prodId: prodId,
-                name: prod.name,
-                qty: qty,
-                cost: cost
-            });
-        }
-
-        qtyInp.value = ''; costInp.value = '';
-        const hint = document.getElementById('poQtyHint'); if(hint) hint.innerHTML = 'Select a product to see stock unit details.';
-        window.renderPODraftList();
-    }
-
-    window.removeDraftPOItem = function(idx) {
-        window.poDraftItems.splice(idx, 1);
-        window.renderPODraftList();
-    }
-
-    window.renderPODraftList = function() {
-        const list = document.getElementById('poDraftList');
-        if(!list) return;
-
-        if(window.poDraftItems.length === 0) {
-            list.innerHTML = '<div style="text-align:center; color:var(--slate-400); font-size:12px; padding:20px; font-weight:600;">No items added yet.</div>';
-            return;
-        }
-
-        let totalExpected = 0;
-        list.innerHTML = window.poDraftItems.map((item, i) => {
-            totalExpected += item.cost;
-            return `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid var(--blue-100); background:var(--white);">
-                <div>
-                    <div style="font-weight:800; font-size:13px; color:var(--slate-900); font-family:var(--font-head);">${window.escapeHtml(item.name)}</div>
-                    <div style="font-size:11px; color:var(--slate-500); font-weight:700; margin-top:2px;">Stock Units: ${item.qty}</div>
+            <div class="panel">
+                <div class="panel-header" style="margin-bottom:15px; padding-bottom:10px;">
+                    <h3 class="panel-title"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--warning);"></i> Record Expense</h3>
                 </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="font-weight:800; color:var(--danger); font-family:'JetBrains Mono';">₹${item.cost.toFixed(2)}</div>
-                    <button onclick="window.removeDraftPOItem(${i})" style="background:none; border:none; color:var(--slate-400); cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </div>`;
-        }).join('');
-        
-        list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 10px; background:var(--blue-50); border-top:2px dashed var(--blue-200); border-radius:0 0 10px 10px;">
-                <div style="font-weight:800; font-size:12px; color:var(--blue-600); text-transform:uppercase;">Expected Total</div>
-                <div style="font-weight:800; font-size:16px; color:var(--blue-600); font-family:'JetBrains Mono';">₹${totalExpected.toFixed(2)}</div>
-            </div>
-        `;
-    }
-
-    window.submitPO = async function() {
-        if(window.poDraftItems.length === 0) return window.showToast("Add items to PO first", "error");
-
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const totalExpected = window.poDraftItems.reduce((sum, item) => sum + item.cost, 0);
-        
-        const poObj = {
-            id: "PO-" + Date.now(),
-            date: new Date().toISOString(),
-            status: "Pending",
-            items: [...window.poDraftItems],
-            totalExpected: totalExpected,
-            _branchId: user.merchantId
-        };
-
-        window.enterprisePOs.unshift(poObj);
-        await window.dbSave('bharatpos_enterprise_pos', window.enterprisePOs);
-        
-        const localOnly = await window.dbGet('bharatpos_pos', '[]');
-        localOnly.unshift(poObj);
-        await window.dbSave('bharatpos_pos', localOnly);
-
-        if(user.merchantId && db && navigator.onLine) {
-            try {
-                await setDoc(doc(db, "shops", user.merchantId, "purchase_orders", poObj.id), poObj);
-            } catch(e) { console.error("Cloud PO Save Error", e); }
-        }
-
-        window.hideModal('createPOModal');
-        refreshDashboard();
-        window.showToast("Purchase Order Drafted!", "success");
-    }
-
-    window.openReceivePOModal = function(poId) {
-        const po = window.enterprisePOs.find(p => p.id === poId);
-        if(!po) return;
-
-        window.currentReceivePOId = poId;
-        const t = document.getElementById('receivePOTitle'); if(t) t.innerText = `Receive ${po.id.slice(-8)}`;
-        const c = document.getElementById('receivePOCost'); if(c) c.innerText = `₹${po.totalExpected.toFixed(2)}`;
-        const m = document.getElementById('receivePOMode'); if(m) m.value = "Cash";
-
-        window.showModal('receivePOModal');
-    }
-
-    window.confirmReceivePO = async function() {
-        const po = window.enterprisePOs.find(p => p.id === window.currentReceivePOId);
-        if(!po) return;
-
-        const mEl = document.getElementById('receivePOMode');
-        const payMode = mEl ? mEl.value : 'Cash';
-
-        // 1. Update PO Status
-        po.status = 'Received';
-        po.receivedDate = new Date().toISOString();
-
-        // 2. Record Expense (Pass the branch ID of the PO)
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const branchToSaveTo = po._branchId || user.merchantId;
-        await window.addExpense(po.totalExpected, `Received PO ${po.id.slice(-8)}`, 'Stock / Inventory', payMode, branchToSaveTo);
-
-        // 3. Increment Stock in Inventory
-        let stockUpdated = false;
-        po.items.forEach(poItem => {
-            const prod = window.allProducts.find(p => p.id === poItem.prodId);
-            if(prod && prod.variants && prod.variants.length > 0) {
-                // Determine deduction based on whether it is loose or not
-                let addition = poItem.qty;
-                if(prod.isLoose) {
-                    const bq = Number(prod.variants[0].baseQty) || 1;
-                    addition = poItem.qty / bq; // convert PO units back to logical stock
-                }
-                
-                prod.variants[0].stock = (Number(prod.variants[0].stock) || 0) + addition;
-                
-                // Update primary brand if exists
-                if(prod.variants[0].brands && prod.variants[0].brands.length > 0) {
-                    prod.variants[0].brands[0].stock = (Number(prod.variants[0].brands[0].stock) || 0) + addition;
-                }
-                stockUpdated = true;
-            }
-        });
-
-        // 4. Save all states
-        await window.dbSave('bharatpos_enterprise_pos', window.enterprisePOs);
-        
-        // Update local-only arrays as well
-        const localPOs = await window.dbGet('bharatpos_pos', '[]');
-        const idx = localPOs.findIndex(p => p.id === po.id);
-        if(idx > -1) {
-            localPOs[idx].status = 'Received';
-            localPOs[idx].receivedDate = po.receivedDate;
-            await window.dbSave('bharatpos_pos', localPOs);
-        }
-
-        if(stockUpdated) {
-            await window.dbSave('bharatpos_products', window.allProducts);
-        }
-
-        // 5. Cloud Sync
-        if(branchToSaveTo && db && navigator.onLine) {
-            try {
-                const batch = writeBatch(db);
-                batch.set(doc(db, "shops", branchToSaveTo, "purchase_orders", po.id), po);
-                
-                if(stockUpdated) {
-                    po.items.forEach(poItem => {
-                        const prod = window.allProducts.find(p => p.id === poItem.prodId);
-                        if(prod) batch.set(doc(db, "shops", branchToSaveTo, "products", prod.id), prod);
-                    });
-                }
-                await batch.commit();
-            } catch(e) { console.error("Cloud Receive PO Error", e); }
-        }
-
-        window.hideModal('receivePOModal');
-        refreshDashboard();
-        window.showToast("Stock received & inventory updated!", "success");
-    }
-
-    // --- DASHBOARD ENGINE ---
-    function refreshDashboard() {
-        let rev = 0, exp = 0, catMap = {};
-        
-        const fSales = window.currentBranch === 'all' ? window.enterpriseSales : window.enterpriseSales.filter(s => s._branchId === window.currentBranch || s.merchantId === window.currentBranch);
-        const fExp = window.currentBranch === 'all' ? window.enterpriseExpenses : window.enterpriseExpenses.filter(e => e._branchId === window.currentBranch || e.merchantId === window.currentBranch);
-        const fUdhaar = fSales.filter(s => (s.paymentMode === 'Udhaar' && s.isPaid !== true) || (s.paymentMethod === 'Udhaar' && s.isPaid !== true));
-
-        fSales.forEach(s => {
-            rev += Number(s.amount || s.total || 0);
-        });
-
-        fExp.forEach(t => {
-            exp += Number(t.amount || 0);
-            catMap[t.cat] = (catMap[t.cat] || 0) + Number(t.amount);
-        });
-
-        const profit = rev - exp;
-        const udhaarTotal = fUdhaar.reduce((s, i) => s + Number(i.amount || i.total || 0), 0);
-
-        updateVal('valRev', rev);
-        updateVal('valExp', exp);
-        updateVal('valProf', profit);
-        updateVal('valUdhaar', udhaarTotal);
-
-        const vP = document.getElementById('valProf'); if(vP) vP.style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
-        const pS = document.getElementById('profStat'); if(pS) pS.innerText = profit >= 0 ? "Healthy Margins" : "Loss / Overspending";
-
-        renderRecentExpenses(fExp);
-        renderPendingPOs();
-        renderCharts(fSales, fExp, catMap, exp);
-    }
-
-    function updateVal(id, target) {
-        const el = document.getElementById(id);
-        if(!el) return;
-        el.innerText = window.formatMoney(target);
-        el.classList.remove('skeleton-load', 'skeleton');
-    }
-
-    function renderRecentExpenses(expensesList) {
-        const container = document.getElementById('recentExpensesList');
-        if(!container) return;
-
-        if(expensesList.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:15px; font-size:12px; color:var(--slate-400); font-weight:600;">No recent expenses</div>';
-            return;
-        }
-
-        const recent = expensesList.slice(0, 5);
-        container.innerHTML = recent.map(e => {
-            let modeBadge = '';
-            if(e.paymentMode) {
-                let badgeClass = 'var(--blue-100)'; let textCol = 'var(--blue-600)';
-                if(e.paymentMode === 'Udhaar Payable') { badgeClass = 'var(--danger-soft)'; textCol = 'var(--danger)'; }
-                modeBadge = `<span style="font-size:9px; background:${badgeClass}; color:${textCol}; padding:2px 6px; border-radius:6px; margin-left:6px; font-weight:800; text-transform:uppercase;">${e.paymentMode}</span>`;
-            }
-            
-            const branchTag = window.currentBranch === 'all' && e._branchId ? `<div style="font-size:9px; color:var(--blue-600); background:var(--blue-50); padding:2px 6px; border-radius:4px; margin-top:2px; display:inline-block;">${e._branchId.slice(-4)}</div>` : '';
-
-            return `
-            <div class="recent-item">
-                <div class="recent-info">
-                    <div style="display:flex; align-items:center;">
-                        <span class="recent-cat">${window.escapeHtml(e.cat)}</span>
-                        ${modeBadge}
+                <form id="formAddExpense">
+                    <div class="form-group">
+                        <label class="floating-label" style="position:static; margin-bottom:6px;">Amount (₹)</label>
+                        <input type="number" id="expAmount" class="form-input" placeholder="0.00" required style="font-size:18px; font-weight:800; color:var(--danger);">
                     </div>
-                    <span class="recent-desc">${new Date(e.date).toLocaleDateString('en-IN')} • ${window.escapeHtml(e.desc)}</span>
-                    ${branchTag}
-                </div>
-                <div style="display:flex; align-items:center;">
-                    <span class="recent-amt">-₹${e.amount}</span>
-                    <button class="recent-del" onclick="window.deleteExpense('${e.id}')"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </div>
-            `;
-        }).join('');
-    }
-
-    function renderPendingPOs() {
-        const container = document.getElementById('pendingPOList');
-        if(!container) return;
-
-        const fPOs = window.currentBranch === 'all' ? window.enterprisePOs : window.enterprisePOs.filter(p => p._branchId === window.currentBranch || p.merchantId === window.currentBranch);
-        const pending = fPOs.filter(p => p.status === 'Pending');
-        
-        if(pending.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:25px; color:var(--slate-400); font-weight:600; font-size:12px;"><i class="fa-solid fa-check-circle" style="font-size:24px; color:var(--success); margin-bottom:10px;"></i><br>No pending purchase orders.</div>';
-            return;
-        }
-
-        container.innerHTML = pending.map(po => {
-            const branchTag = window.currentBranch === 'all' && po._branchId ? `<div style="font-size:9px; color:var(--purple); background:var(--purple-soft); padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block;">${po._branchId.slice(-4)}</div>` : '';
-            
-            return `
-            <div class="recent-item" style="border: 1.5px solid var(--purple-soft); background:#f9f9f9; margin-bottom:8px;">
-                <div class="recent-info">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span class="recent-cat">${po.id.slice(-8)}</span>
-                        <span class="po-status po-pending">Pending</span>
+                    <div class="form-group">
+                        <label class="floating-label" style="position:static; margin-bottom:6px;">Category</label>
+                        <select id="expCategory" class="form-select" required>
+                            <option value="Stock/Inventory">Stock / Inventory Purchase</option>
+                            <option value="Rent">Shop Rent</option>
+                            <option value="Electricity/Utility">Electricity / Utilities</option>
+                            <option value="Staff Salary">Staff Salary</option>
+                            <option value="Marketing">Marketing / Ads</option>
+                            <option value="Maintenance">Repair & Maintenance</option>
+                            <option value="Other">Other Expenses</option>
+                        </select>
                     </div>
-                    <span class="recent-desc">${new Date(po.date).toLocaleDateString('en-IN')} • ${po.items.length} items</span>
-                    ${branchTag}
+                    <div class="form-group">
+                        <label class="floating-label" style="position:static; margin-bottom:6px;">Payment Mode</label>
+                        <select id="expMode" class="form-select">
+                            <option value="Cash">Cash</option>
+                            <option value="Bank/UPI">Bank / UPI</option>
+                            <option value="Credit">Credit (To pay later)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="floating-label" style="position:static; margin-bottom:6px;">Description / Notes</label>
+                        <input type="text" id="expDesc" class="form-input" placeholder="e.g. Paid to supplier ABC">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px; background:linear-gradient(135deg, var(--danger), #b91c1c); box-shadow:0 4px 15px rgba(220,38,38,0.3);">
+                        <i class="fa-solid fa-minus"></i> Deduct from Balance
+                    </button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa-solid fa-list" style="color:var(--text-main);"></i> Recent Expenses</h3>
+                    <button id="btnDownloadCSV" class="btn btn-outline" style="width:auto; padding:6px 12px; font-size:12px;">
+                        <i class="fa-solid fa-download"></i> CSV
+                    </button>
                 </div>
-                <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                    <span class="po-amt">₹${po.totalExpected.toFixed(2)}</span>
-                    <button class="btn-ghost" onclick="window.openReceivePOModal('${po.id}')" style="margin-top:6px; background:var(--white); border-color:var(--success); color:var(--success); padding:4px 10px; font-size:10px;">Receive</button>
+                <div class="expense-list" id="expenseListBody">
+                    </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="tab-analytics" class="tab-content">
+        <div class="charts-layout">
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa-solid fa-chart-area" style="color:var(--primary);"></i> 30-Day Income vs Expense Trend</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="trendChart"></canvas>
                 </div>
             </div>
-            `;
-        }).join('');
-    }
 
-    // --- CHARTS ---
-    function renderCharts(sales, expenses, catMap, totalExp) {
-        Chart.defaults.font.family = "'Inter', sans-serif";
-        Chart.defaults.color = '#94a3b8';
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa-solid fa-chart-pie" style="color:var(--purple);"></i> Expense Breakdown</h3>
+                </div>
+                <div class="chart-wrapper pie-wrapper">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
 
-        const cLine = document.getElementById('mainChart');
-        if(cLine) {
-            const ctxLine = cLine.getContext('2d');
-            const buckets = {};
-            const labels = [];
-            
-            for(let i=6; i>=0; i--) {
-                const d = new Date(); d.setDate(d.getDate()-i);
-                const k = d.toDateString();
-                labels.push(d.toLocaleDateString('en-IN',{weekday:'short'}));
-                buckets[k] = {in:0, out:0};
-            }
-            
-            sales.forEach(s => {
-                const k = new Date(s.date).toDateString();
-                if(buckets[k]) buckets[k].in += Number(s.amount || s.total || 0);
-            });
-            expenses.forEach(e => {
-                const k = new Date(e.date).toDateString();
-                if(buckets[k]) buckets[k].out += Number(e.amount || 0);
-            });
+        </div>
+    </div>
 
-            if(lineChart) lineChart.destroy();
-            const gradInc = ctxLine.createLinearGradient(0,0,0,250);
-            gradInc.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
-            gradInc.addColorStop(1, 'rgba(37, 99, 235, 0)');
+</div>
 
-            lineChart = new Chart(ctxLine, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label:'Revenue', data:Object.values(buckets).map(b=>b.in), borderColor:'#2563eb', borderWidth:3, tension:0.4, fill:true, backgroundColor:gradInc, pointRadius:0, pointHoverRadius:6 },
-                        { label:'Expense', data:Object.values(buckets).map(b=>b.out), borderColor:'#ef4444', borderWidth:2, borderDash:[5,5], tension:0.4, fill:false, pointRadius:0 }
-                    ]
-                },
-                options: { 
-                    responsive:true, maintainAspectRatio:false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins:{ legend:{ display:false }, tooltip: { backgroundColor:'#0f172a', padding:10, cornerRadius:8 } },
-                    scales: { x: { grid: {display:false} }, y: { border:{display:false}, grid:{color:'rgba(0,0,0,0.05)'} } }
-                }
-            });
-        }
+<script type="module" src="./js/pages/my_dukkan.js"></script>
 
-        const cPie = document.getElementById('pieChart');
-        if(cPie) {
-            const ctxPie = cPie.getContext('2d');
-            const pieLabels = Object.keys(catMap);
-            const pieData = Object.values(catMap);
-            const colors = ['#2563eb', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#64748b'];
-
-            if(pieChart) pieChart.destroy();
-            pieChart = new Chart(ctxPie, {
-                type: 'doughnut',
-                data: {
-                    labels: pieLabels.length ? pieLabels : ['No Expenses'],
-                    datasets: [{ data: pieData.length ? pieData : [1], backgroundColor: pieData.length ? colors : ['#e2e8f0'], borderWidth: 2, borderColor:'#ffffff' }]
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { backgroundColor:'#0f172a' } },
-                    cutout: '70%'
-                }
-            });
-        }
-    }
-
-    // --- DOWNLOAD ---
-    window.downloadCSV = function() {
-        const fExp = window.currentBranch === 'all' ? window.enterpriseExpenses : window.enterpriseExpenses.filter(e => e._branchId === window.currentBranch || e.merchantId === window.currentBranch);
-        
-        if(fExp.length === 0) { window.showToast("No expenses to download.", "error"); return; }
-        
-        let csv = "Date,Category,Amount,Description,PaymentMode,BranchId\n";
-        fExp.forEach(row => { 
-            const desc = row.desc ? row.desc.replace(/,/g, ' ') : '';
-            csv += `${new Date(row.date).toLocaleDateString()},${row.cat},${row.amount},${desc},${row.paymentMode||'Cash'},${row._branchId||'Main'}\n`; 
-        });
-        
-        const link = document.createElement('a');
-        link.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
-        link.download = `MyDukkan_Expenses_${Date.now()}.csv`;
-        link.click();
-        window.showToast("Report downloaded!", "success");
-    }
-</script>
 </body>
 </html>
