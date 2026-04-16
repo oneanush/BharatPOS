@@ -149,7 +149,7 @@ function renderProducts() {
     grid.innerHTML = filteredProducts.map(p => {
         const v = p.variants[0] || {};
         
-        // Price per unit logic
+        // Exact Unit Price Math
         let priceStr = `₹${v.price}`;
         let unitLabel = v.quantity || 'pc';
         if (p.isLoose) {
@@ -170,7 +170,7 @@ function renderProducts() {
                 <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:4px;">${Security.escapeHtml(v.quantity)}</div>
             </div>
             <div>
-                <div style="font-size:14px; font-weight:800; color:#10b981; font-family:'JetBrains Mono'; margin-top:8px;">${priceStr} <span style="font-size:10px; color:var(--text-sub);">/ ${Security.escapeHtml(unitLabel)}</span></div>
+                <div style="font-size:15px; font-weight:800; color:#10b981; font-family:'JetBrains Mono'; margin-top:8px;">${priceStr} <span style="font-size:10px; color:var(--text-sub);">/ ${Security.escapeHtml(unitLabel)}</span></div>
                 <button class="btn-add" data-pid="${Security.escapeHtml(p.id)}">${btnText}</button>
             </div>
         </div>`;
@@ -228,12 +228,25 @@ function openWizard(prod) {
     document.getElementById('wizQtyDisplay').innerText = '1';
 
     const vGrid = document.getElementById('wizardVariantGrid');
-    vGrid.innerHTML = prod.variants.map((v, i) => `
+    
+    // Explicit per-unit math for the wizard options
+    vGrid.innerHTML = prod.variants.map((v, i) => {
+        let priceStr = `₹${v.price}`;
+        let unitLabel = v.quantity || 'pc';
+        if (prod.isLoose) {
+            const bq = Number(v.baseQty) || 1;
+            const bu = v.baseUnit || 'kg';
+            priceStr = `₹${(v.price / bq).toFixed(2)}`;
+            unitLabel = bu;
+        }
+
+        return `
         <div class="btn-wizard-opt ${i===0?'active':''}" data-id="${Security.escapeHtml(v.id)}">
             <span>${Security.escapeHtml(v.quantity)}</span>
-            <span style="color:var(--success); font-family:'JetBrains Mono';">₹${v.price}</span>
+            <span style="color:var(--success); font-family:'JetBrains Mono';">${priceStr} / ${Security.escapeHtml(unitLabel)}</span>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     document.getElementById('wizardStepType').style.display = prod.variants.length > 1 ? 'block' : 'none';
     
@@ -265,10 +278,9 @@ function addToCart(prod, variant, brandName, qty) {
     const key = `${prod.id}_${variant.id}_${brandName||'none'}`;
     
     let price = variant.price;
-    // Handle loose weight pricing
     if(prod.isLoose) {
         const bq = Number(variant.baseQty) || 1;
-        price = variant.price / bq; // price per unit
+        price = variant.price / bq; 
     }
 
     if(cart[key]) {

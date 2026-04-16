@@ -1,11 +1,12 @@
 // File: /js/pages/khata_main.js
 
 import { db } from '../core/firebase.js';
-import { collectionGroup, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collectionGroup, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { Security } from '../utils/security.js';
 
 let currentUserPhone = null;
 
+// Global Memory Cache
 window.KhataData = {
     sales: [],
     shopsMap: {}, 
@@ -49,22 +50,40 @@ async function loginUser(phone) {
         const salesQuery = query(collectionGroup(db, 'sales'), where('customerPhone', '==', phone));
         const snapshot = await getDocs(salesQuery);
         
-        const sales = [];
-        const shopsMap = {};
+        const rawSales = [];
+        const uniqueShopIds = new Set();
 
-        snapshot.forEach(doc => {
-            const s = doc.data();
-            const shopId = s._branchId || s.merchantId || doc.ref.parent.parent.id;
-            const shopName = s._branchName || s.shopName || 'Local Store'; // Explicit name extraction
-            
+        // 1. Gather all sales and find unique Shop IDs
+        snapshot.forEach(docSnap => {
+            const s = docSnap.data();
+            const shopId = s._branchId || s.merchantId || docSnap.ref.parent.parent.id;
             s._resolvedShopId = shopId; 
-            s._resolvedShopName = shopName;
-            
-            sales.push(s);
-            if (!shopsMap[shopId]) shopsMap[shopId] = { id: shopId, name: shopName };
+            uniqueShopIds.add(shopId);
+            rawSales.push(s);
         });
 
-        window.KhataData.sales = sales;
+        // 2. Look up the ACTUAL shop names from the database
+        const shopsMap = {};
+        for(const shopId of uniqueShopIds) {
+            try {
+                const shopDoc = await getDoc(doc(db, "shops", shopId));
+                if(shopDoc.exists()) {
+                    const profile = shopDoc.data().profile || shopDoc.data();
+                    shopsMap[shopId] = { id: shopId, name: profile.shopName || 'Retail Store' };
+                } else {
+                    shopsMap[shopId] = { id: shopId, name: 'Retail Store' };
+                }
+            } catch(e) {
+                shopsMap[shopId] = { id: shopId, name: 'Local Shop' };
+            }
+        }
+
+        // 3. Attach the exact names to the sales
+        rawSales.forEach(s => {
+            s._resolvedShopName = shopsMap[s._resolvedShopId]?.name || 'Local Shop';
+        });
+
+        window.KhataData.sales = rawSales;
         window.KhataData.shopsMap = shopsMap;
 
         populateTopSelector(shopsMap);
