@@ -7,13 +7,14 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/base.css">
 
     <style>
-        /* Customer App Specific Theme (GenZ + GenY Appeal) */
         :root {
             --app-bg: #f4f7f6;
             --card-bg: #ffffff;
@@ -27,25 +28,30 @@
         body { background: var(--app-bg); font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; overflow-x: hidden; color: var(--text-main); }
         
         /* Top App Bar */
-        .app-header { background: var(--card-bg); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border-bottom: 1px solid #e2e8f0; }
+        .app-header { background: var(--card-bg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border-bottom: 1px solid #e2e8f0; gap: 10px; flex-wrap: wrap;}
         .app-brand { font-size: 20px; font-weight: 800; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .user-chip { background: #e0e7ff; color: var(--brand-primary); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;}
+        
+        /* Global Shop Selector */
+        .shop-selector-wrapper { flex: 1; min-width: 150px; display: none; position: relative; }
+        .shop-selector-wrapper i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--brand-primary); pointer-events: none; z-index: 10;}
+        .shop-selector { width: 100%; appearance: none; background: #e0e7ff; color: var(--brand-primary); border: 1.5px solid #c7d2fe; padding: 8px 30px 8px 32px; border-radius: 20px; font-size: 13px; font-weight: 800; outline: none; cursor: pointer; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;}
+        .shop-selector-wrapper::after { content: '▼'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--brand-primary); font-size: 10px; pointer-events: none; }
+
+        .user-chip { background: #f1f5f9; color: var(--text-sub); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
+        .user-chip:hover { background: #e2e8f0; color: var(--danger); }
         
         /* Main Containers */
-        .tab-view { display: none; padding: 16px 16px 90px 16px; animation: fadeIn 0.3s ease; min-height: calc(100vh - 160px); }
+        .tab-view { display: none; padding: 16px 16px 90px 16px; animation: fadeIn 0.3s ease; min-height: calc(100vh - 140px); }
         .tab-view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Bottom Navigation (Glassmorphism) */
+        /* Bottom Navigation */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.3); display: flex; justify-content: space-around; padding: 12px 10px 24px 10px; z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); text-decoration: none; font-size: 11px; font-weight: 700; width: 33%; transition: 0.2s; cursor: pointer;}
         .nav-item i { font-size: 20px; padding: 8px 16px; border-radius: 16px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .nav-item.active { color: var(--brand-primary); }
         .nav-item.active i { background: #e0e7ff; transform: translateY(-4px); }
 
-        /* Shared Card Styles */
-        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; margin-bottom: 16px; }
-        
         /* Auth Modal */
         .auth-overlay { position: fixed; inset: 0; background: var(--app-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 24px; }
         .auth-box { background: white; border-radius: 24px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; }
@@ -54,32 +60,34 @@
         .btn-main { background: var(--brand-gradient); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; width: 100%; cursor: pointer; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); transition: 0.2s;}
         .btn-main:active { transform: scale(0.97); }
         
-        /* Loader */
         .loader-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; color: var(--brand-primary); }
     </style>
 </head>
 <body>
 
     <header class="app-header">
-        <div class="app-brand">BharatPOS</div>
+        <div class="app-brand">Khata</div>
+        
+        <div class="shop-selector-wrapper" id="globalShopWrapper">
+            <i class="fa-solid fa-store"></i>
+            <select id="globalShopSelect" class="shop-selector"></select>
+        </div>
+
         <div class="user-chip" id="btnProfile" style="display:none;" title="Logout">
-            <i class="fa-solid fa-user"></i> <span id="userNameDisplay">Guest</span>
+            <i class="fa-solid fa-right-from-bracket"></i>
         </div>
     </header>
 
+    <div id="globalLoader" class="loader-screen" style="display:none; height: 100vh; position:fixed; inset:0; background:var(--app-bg); z-index:1500;">
+        <i class="fa-solid fa-circle-notch fa-spin fa-3x"></i>
+        <p style="margin-top:16px; font-weight:800; font-size:16px;">Syncing Your Khata...</p>
+    </div>
+
     <main id="tab-bills" class="tab-view active">
-        <div class="loader-screen" id="billsLoader">
-            <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
-            <p style="margin-top:12px; font-weight:700;">Fetching your Udhaar records...</p>
-        </div>
         <div id="billsContent"></div>
     </main>
 
     <main id="tab-store" class="tab-view">
-        <div class="loader-screen" id="storeLoader">
-            <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
-            <p style="margin-top:12px; font-weight:700;">Loading nearby stores...</p>
-        </div>
         <div id="storeContent"></div>
     </main>
 
@@ -93,12 +101,12 @@
 
     <nav class="bottom-nav" id="bottomNav" style="display:none;">
         <div class="nav-item active" data-target="tab-bills">
-            <i class="fa-solid fa-book-open"></i>
-            <span>Khata</span>
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+            <span>Bills</span>
         </div>
         <div class="nav-item" data-target="tab-store">
-            <i class="fa-solid fa-store"></i>
-            <span>Dukaan</span>
+            <i class="fa-solid fa-basket-shopping"></i>
+            <span>Order</span>
         </div>
         <div class="nav-item" data-target="tab-khoj">
             <i class="fa-solid fa-radar"></i>
@@ -110,17 +118,16 @@
         <div class="auth-box">
             <div style="font-size:40px; margin-bottom:16px;">👋</div>
             <h2 style="margin:0 0 8px 0; font-family:var(--font-head);">Welcome to Khata</h2>
-            <p style="color:var(--text-sub); font-size:14px; margin-bottom:24px;">Enter your phone number to view your bills and udhaar.</p>
-            
+            <p style="color:var(--text-sub); font-size:14px; margin-bottom:24px;">Enter your phone number to access your digital bills & local stores.</p>
             <div id="phoneStep">
                 <input type="tel" id="loginPhone" class="auth-input" placeholder="10-digit Mobile No." maxlength="10">
-                <button id="btnLoginBypass" class="btn-main">Enter Mera Khata <i class="fa-solid fa-arrow-right"></i></button>
+                <button id="btnLoginBypass" class="btn-main">Enter Securely <i class="fa-solid fa-arrow-right"></i></button>
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     <script type="module" src="./js/pages/khata_main.js"></script>
 </body>
 </html>

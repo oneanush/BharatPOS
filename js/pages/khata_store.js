@@ -12,81 +12,34 @@ let userMobile = '';
 
 export async function initStore(phone) {
     userMobile = phone;
-    const loader = document.getElementById('storeLoader');
-    const content = document.getElementById('storeContent');
     
-    try {
-        const shopsSnap = await getDocs(collection(db, "shops"));
-        let shops = [];
-        shopsSnap.forEach(d => {
-            const data = d.data();
-            if(data.profile) shops.push({ id: d.id, ...data.profile });
-        });
-
-        renderShopSelector(content, shops);
-    } catch(e) {
-        content.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444; font-weight:700;">Failed to load nearby stores.</div>`;
-    } finally {
-        loader.style.display = 'none';
-    }
+    window.onShopChanged = (shopId) => {
+        if(document.getElementById('tab-store').classList.contains('active')) {
+            loadShopCatalog(shopId);
+        }
+    };
+    
+    // Load initially based on Top Selector
+    loadShopCatalog(window.KhataData.activeShopId);
 }
 
-function renderShopSelector(container, shops) {
-    let html = `
-        <h2 style="font-family:var(--font-head); margin-top:0;">Order Online</h2>
-        <p style="color:var(--text-sub); font-size:13px; margin-bottom:16px;">Select a nearby store to browse their catalog.</p>
-        
-        <div style="position:relative; margin-bottom:20px;">
-            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-sub);"></i>
-            <input type="text" id="storeShopSearch" placeholder="Search for a store..." style="width:100%; padding:12px 14px 12px 40px; border-radius:12px; border:1px solid #e2e8f0; font-size:14px; font-weight:600; font-family:inherit; outline:none; box-sizing:border-box;">
-        </div>
-
-        <div id="storeShopsContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
-    `;
-
-    container.innerHTML = html;
-
-    const listContainer = document.getElementById('storeShopsContainer');
-    const searchInput = document.getElementById('storeShopSearch');
-
-    const renderList = (filtered) => {
-        if(filtered.length === 0) {
-            listContainer.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub); font-weight:600;">No stores found matching your search.</div>`;
+async function loadShopCatalog(shopId) {
+    const container = document.getElementById('storeContent');
+    
+    if(!shopId || shopId === 'ALL') {
+        const firstShop = Object.keys(window.KhataData.shopsMap)[0];
+        if(firstShop) {
+            document.getElementById('globalShopSelect').value = firstShop;
+            window.KhataData.activeShopId = firstShop;
+            shopId = firstShop;
+        } else {
+            container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub); font-weight:700;">You don't have any associated shops to order from yet.</div>`;
             return;
         }
-        listContainer.innerHTML = filtered.map(s => `
-            <div class="card shop-select-btn" data-id="${Security.escapeHtml(s.id)}" style="cursor:pointer; transition:0.2s; margin-bottom:0;">
-                <div style="display:flex; align-items:center; gap:16px;">
-                    <div style="width:48px; height:48px; background:#e0e7ff; color:var(--brand-primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px;"><i class="fa-solid fa-store"></i></div>
-                    <div>
-                        <div style="font-weight:800; font-size:16px; color:var(--text-main);">${Security.escapeHtml(s.shopName)}</div>
-                        <div style="font-size:12px; color:var(--text-sub); margin-top:4px; font-weight:600;">${Security.escapeHtml(s.category || 'Retail Store')}</div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        // Attach Selection Event
-        listContainer.querySelectorAll('.shop-select-btn').forEach(btn => {
-            btn.addEventListener('click', () => loadShopCatalog(container, btn.getAttribute('data-id'), btn.querySelector('div[style*="font-weight:800"]')?.innerText || 'Store'));
-        });
-    };
-
-    // Initial Render
-    renderList(shops);
-
-    // Fuzzy Search Event
-    if(searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase().replace(/\s+/g, '.*');
-            const regex = new RegExp(q, 'i');
-            const filtered = shops.filter(s => regex.test((s.shopName || '').toLowerCase()));
-            renderList(filtered);
-        });
     }
-}
 
-async function loadShopCatalog(container, shopId, shopName) {
+    const shopName = window.KhataData.shopsMap[shopId]?.name || 'Local Store';
+
     container.innerHTML = `<div class="loader-screen"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:12px; font-weight:700;">Loading Catalog...</p></div>`;
     
     try {
@@ -127,10 +80,8 @@ function renderCatalogUI(container, shopId, shopName, categories) {
     `;
 
     let html = style + `
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-            <button id="btnBackToShops" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px; color:var(--text-main); cursor:pointer; transition:0.2s;"><i class="fa-solid fa-arrow-left"></i></button>
-            <h3 style="margin:0; font-family:var(--font-head); font-size:18px;">${Security.escapeHtml(shopName)}</h3>
-        </div>
+        <div style="font-size:12px; font-weight:800; color:var(--brand-accent); text-transform:uppercase; margin-bottom:4px;">Currently Shopping At</div>
+        <h3 style="margin:0 0 16px 0; font-family:var(--font-head); font-size:20px; color:var(--text-main);">${Security.escapeHtml(shopName)}</h3>
 
         <div style="position:relative;">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -155,10 +106,6 @@ function renderCatalogUI(container, shopId, shopName, categories) {
 
     container.innerHTML = html;
 
-    // Events
-    document.getElementById('btnBackToShops').addEventListener('click', () => initStore(userMobile));
-    
-    // Fuzzy Search (Simple regex implementation)
     document.getElementById('fuzzySearch').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().replace(/\s+/g, '.*');
         const regex = new RegExp(query, 'i');
@@ -189,7 +136,6 @@ function renderCatalogUI(container, shopId, shopName, categories) {
     });
 
     document.getElementById('btnPlaceOrder').addEventListener('click', () => placeOrder(shopId, shopName));
-
     renderProducts();
 }
 
@@ -218,7 +164,6 @@ function renderProducts() {
         </div>`;
     }).join('');
 
-    // Bind Add to Cart
     grid.querySelectorAll('.btn-add').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const b = e.currentTarget;
@@ -226,15 +171,8 @@ function renderProducts() {
             if(cart[key]) {
                 cart[key].qty += 1;
             } else {
-                cart[key] = {
-                    prodId: b.dataset.pid,
-                    variantId: b.dataset.vid,
-                    name: b.dataset.name,
-                    price: parseFloat(b.dataset.price),
-                    qty: 1
-                };
+                cart[key] = { prodId: b.dataset.pid, variantId: b.dataset.vid, name: b.dataset.name, price: parseFloat(b.dataset.price), qty: 1 };
             }
-            // Haptic feedback simulation
             if (navigator.vibrate) navigator.vibrate(50);
             updateCartUI();
         });
@@ -246,12 +184,8 @@ function updateCartUI() {
     const txt = document.getElementById('cartTotalText');
     if(!fab || !txt) return;
 
-    let total = 0;
-    let items = 0;
-    Object.values(cart).forEach(item => {
-        total += item.price * item.qty;
-        items += item.qty;
-    });
+    let total = 0, items = 0;
+    Object.values(cart).forEach(item => { total += item.price * item.qty; items += item.qty; });
 
     if(items > 0) {
         txt.innerText = `${items} Items | ₹${total.toFixed(2)}`;
@@ -265,15 +199,11 @@ async function placeOrder(shopId, shopName) {
     if(Object.keys(cart).length === 0) return;
 
     const btn = document.getElementById('btnPlaceOrder');
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
-    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`; btn.disabled = true;
 
     try {
         let total = 0;
-        const itemsArr = Object.values(cart).map(i => {
-            total += i.price * i.qty;
-            return i;
-        });
+        const itemsArr = Object.values(cart).map(i => { total += i.price * i.qty; return i; });
 
         const order = {
             date: new Date().toISOString(),
@@ -284,17 +214,12 @@ async function placeOrder(shopId, shopName) {
             items: itemsArr
         };
 
-        // Push to merchant's onlineOrders collection
         await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
-        
         alert("Order sent to shop successfully! They will contact you shortly.");
-        cart = {};
-        updateCartUI();
+        cart = {}; updateCartUI();
     } catch(e) {
-        console.error(e);
         alert("Failed to send order. Check your internet connection.");
     } finally {
-        btn.innerHTML = `Place Order <i class="fa-solid fa-arrow-right"></i>`;
-        btn.disabled = false;
+        btn.innerHTML = `Place Order <i class="fa-solid fa-arrow-right"></i>`; btn.disabled = false;
     }
 }
