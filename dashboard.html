@@ -21,7 +21,7 @@
     /* --- DASHBOARD SPECIFIC OVERRIDES --- */
     
     /* Contrast & UI Blending Fixes */
-    body { background-color: #f4f7fb; } /* Slightly cooler background to make white cards pop */
+    body { background-color: #f4f7fb; }
     
     .widget, .kpi-card, .group-card, .list-item, .inv-item, .total-dues-card {
         background-color: #ffffff !important;
@@ -57,6 +57,24 @@
     .w-content::-webkit-scrollbar { width: 5px; }
     .w-content::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     .w-content::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+
+    /* Modern Quick Action Buttons */
+    .btn-action-dash {
+        width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; color: var(--text-main);
+        padding: 12px 16px; border-radius: 12px; font-weight: 700; font-size: 13px;
+        text-align: left; display: flex; align-items: center; gap: 12px;
+        transition: var(--trans); box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-bottom: 8px;
+        font-family: var(--font-body); cursor: pointer; outline: none;
+    }
+    .btn-action-dash i {
+        color: var(--btn-color); font-size: 16px; width: 24px; text-align: center;
+        background: rgba(0,0,0,0.04); padding: 8px; border-radius: 8px; transition: var(--trans);
+    }
+    .btn-action-dash:hover {
+        background: #ffffff; border-color: var(--btn-color); transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.06); color: var(--btn-color);
+    }
+    .btn-action-dash:hover i { background: var(--btn-color); color: #fff; }
 
     /* Chart Specifics */
     .bar-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 160px; padding-top: 10px; border-bottom: 1.5px solid var(--border); }
@@ -176,6 +194,27 @@
 
     <div class="widget-grid" id="widgetContainer">
         
+        <div class="widget glass-panel" draggable="true" id="w-links">
+            <div class="w-header">
+                <h3 class="w-title"><i class="fa-solid fa-bolt" style="color:var(--warning);"></i> Quick Actions</h3>
+                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
+            </div>
+            <div class="w-content" style="padding-top: 5px;">
+                <button id="btnQuickBranch" class="btn-action-dash" style="--btn-color: var(--primary);">
+                    <i class="fa-solid fa-store"></i> Create New Branch
+                </button>
+                <button id="btnViewMapAction" class="btn-action-dash" style="--btn-color: var(--danger); display:none;">
+                    <i class="fa-solid fa-map-location-dot"></i> View Branch Map
+                </button>
+                <button onclick="window.location.href='products.html'" class="btn-action-dash" style="--btn-color: var(--success);">
+                    <i class="fa-solid fa-box-open"></i> Manage Inventory
+                </button>
+                <button onclick="window.location.href='customers.html'" class="btn-action-dash" style="--btn-color: var(--purple);">
+                    <i class="fa-solid fa-users"></i> CRM & Khata
+                </button>
+            </div>
+        </div>
+
         <div class="widget glass-panel" draggable="true" id="w-sales">
             <div class="w-header">
                 <h3 class="w-title"><i class="fa-solid fa-chart-line" style="color:var(--primary);"></i> 7-Day Sales Trend</h3>
@@ -220,18 +259,6 @@
             </div>
             <div class="w-content">
                 <div class="audit-log" id="auditListBox"></div>
-            </div>
-        </div>
-
-        <div class="widget glass-panel" draggable="true" id="w-links">
-            <div class="w-header">
-                <h3 class="w-title"><i class="fa-solid fa-bolt" style="color:var(--warning);"></i> Quick Actions</h3>
-                <i class="fa-solid fa-ellipsis-vertical w-drag-handle"></i>
-            </div>
-            <div class="w-content" style="gap:10px; justify-content:center;">
-                <button id="btnQuickBranch" class="btn btn-outline" style="width:100%; border-color:var(--primary); color:var(--primary);"><i class="fa-solid fa-code-branch"></i> Create New Branch</button>
-                <button onclick="window.location.href='products.html'" class="btn btn-outline" style="width:100%; border-color:var(--success); color:var(--success);"><i class="fa-solid fa-box-open"></i> Manage Inventory</button>
-                <button onclick="window.location.href='customers.html'" class="btn btn-outline" style="width:100%; border-color:var(--purple); color:var(--purple);"><i class="fa-solid fa-users"></i> CRM & Khata</button>
             </div>
         </div>
 

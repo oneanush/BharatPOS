@@ -19,15 +19,12 @@ let mapMarker = null;
 async function initDashboard() {
     Navigation.inject('dashboard');
 
-    const navActions = document.getElementById('mainNavActions');
-    if(navActions) {
-        const defaultPos = navActions.querySelector('.btn-primary');
-        if(defaultPos) defaultPos.remove(); 
-
-        navActions.insertAdjacentHTML('beforeend', `
-            <button id="btnAddBranchNav" class="btn-nav" style="background:var(--primary-gradient); color:white; border:none;" title="Add New Branch"><i class="fa-solid fa-plus"></i></button>
-            <button id="btnViewMap" class="btn-nav" title="View Map" style="display:none;"><i class="fa-solid fa-map-location-dot"></i></button>
-        `);
+    // Logo Replacement
+    const logoWrap = document.querySelector('.brand-logo-wrap');
+    if (logoWrap) {
+        logoWrap.innerHTML = '<img src="assets/images/logo.png" alt="Logo" style="width:100%; height:100%; object-fit:contain; border-radius:8px;">';
+        logoWrap.style.background = 'transparent';
+        logoWrap.style.boxShadow = 'none';
     }
 
     setGreeting();
@@ -45,20 +42,25 @@ function bindAllEvents() {
     });
 
     document.body.addEventListener('click', (e) => {
-        if(e.target.closest('#btnViewMap')) openMap();
-        if(e.target.closest('#btnAddBranchNav') || e.target.closest('#btnQuickBranch')) UI.showModal('addBranchModal');
+        // Quick Action Buttons
+        if(e.target.closest('#btnViewMapAction')) openMap();
+        if(e.target.closest('#btnQuickBranch')) UI.showModal('addBranchModal');
         
+        // Modals Close
         if(e.target.closest('#btnCloseBranchModal')) UI.hideModal('addBranchModal');
         if(e.target.closest('#btnCloseMapModal')) closeMap();
         if(e.target.closest('#btnCloseCustomerModal')) UI.hideModal('customerModal');
         if(e.target.closest('#btnCloseReceipt')) UI.hideModal('receiptModal');
         if(e.target.classList.contains('modal-overlay')) UI.hideModal(e.target.id);
 
+        // Udhaar View
         if(e.target.closest('#btnOpenUdhaar')) openUdhaarSection();
         if(e.target.closest('#btnCloseUdhaar')) closeUdhaarSection();
 
+        // Branch Creation
         if(e.target.closest('#btnSubmitBranch')) submitNewBranch();
 
+        // Dynamic Actions via Delegation
         const restockBtn = e.target.closest('[data-action="restock"]');
         if(restockBtn) {
             localStorage.setItem("temp_add_stock", restockBtn.getAttribute('data-qty'));
@@ -73,6 +75,7 @@ function bindAllEvents() {
     });
 }
 
+// --- UTILS ---
 function setGreeting() {
     const d = new Date();
     const el = document.getElementById('dateDisplay');
@@ -87,6 +90,7 @@ function logAudit(action, details) {
     if(document.getElementById('auditListBox')) renderAuditTrail();
 }
 
+// --- DATA LOADING ---
 async function loadEnterpriseData() {
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const mobile = user.mobile || user.phone;
@@ -110,14 +114,21 @@ async function loadEnterpriseData() {
 
                     switcher.addEventListener('change', (e) => {
                         const val = e.target.value;
-                        currentBranch = val;
-                        renderAllWidgets();
+                        if (val === 'all') {
+                            currentBranch = 'all';
+                            UI.showToast("Showing All Branches");
+                            renderAllWidgets();
+                        } else {
+                            currentBranch = val;
+                            renderAllWidgets();
+                        }
                     });
                 }
             }
         } catch(e) {}
     }
 
+    // Safely pull from local memory cache First
     let localSales = await dbGet('bharatpos_sales', '[]');
     let eSales = await dbGet('bharatpos_enterprise_sales', '[]');
     
@@ -140,6 +151,7 @@ async function loadEnterpriseData() {
     
     if(enterpriseSales.length > 0 || enterpriseProducts.length > 0) renderAllWidgets();
 
+    // Pull from Cloud Safely
     if (db && navigator.onLine) {
         try {
             let tempSalesMap = {};
@@ -169,6 +181,7 @@ async function loadEnterpriseData() {
             
             await Promise.all(fetchPromises);
             
+            // Merge Cloud map with Local map safely so offline sales aren't lost
             localSales.forEach(s => { if(!tempSalesMap[s.id]) tempSalesMap[s.id] = s; });
             enterpriseSales = Object.values(tempSalesMap).sort((a, b) => new Date(b.date) - new Date(a.date));
             
@@ -192,11 +205,13 @@ async function loadEnterpriseData() {
     }
 }
 
+// --- RENDERERS ---
 function renderAllWidgets() {
     const fSales = currentBranch === 'all' ? enterpriseSales : enterpriseSales.filter(s => s._branchId === currentBranch || s.merchantId === currentBranch);
     const fProds = currentBranch === 'all' ? enterpriseProducts : enterpriseProducts.filter(p => p._branchId === currentBranch || p.merchantId === currentBranch);
 
-    const mapBtn = document.getElementById('btnViewMap');
+    // Update Map Quick Action Visibility
+    const mapBtn = document.getElementById('btnViewMapAction');
     if(mapBtn) {
         if(currentBranch === 'all') mapBtn.style.display = 'none';
         else mapBtn.style.display = 'flex';
@@ -486,6 +501,7 @@ async function submitNewBranch() {
         setTimeout(()=> window.location.reload(), 1000);
     } catch(e) { 
         UI.showToast("Firebase Error: Could not create branch.", true);
+        console.error(e);
     } finally {
         const btn = document.getElementById('btnSubmitBranch');
         btn.innerText = "Create Branch Shop"; 
@@ -493,6 +509,7 @@ async function submitNewBranch() {
     }
 }
 
+// --- MAP & GPS LOGIC ---
 function openMap() {
     if(currentBranch === 'all') return;
     
@@ -711,7 +728,7 @@ function openReceipt(dataStr) {
     UI.showModal('receiptModal');
 }
 
-// THE BUG FIX: Bulletproof Partial Settlement Math & Firebase Sync
+// BUG FIX: Proper Partial Payment Resolution & Sync
 async function settleDebt(id, saleBranchId) {
     if(!confirm("Mark this pending amount as PAID (Cash Received)?")) return;
 
@@ -729,7 +746,7 @@ async function settleDebt(id, saleBranchId) {
         
         if((s.paymentMethod === 'Partial' || s.paymentMethod === 'Partial (Settled)') && s.split) {
             s.split.cash = Number(s.split.cash || 0) + pendingAmt;
-            s.split.udhaar = 0; // Explicitly clear the debt
+            s.split.udhaar = 0; // Explicit zero out
             s.paymentMethod = "Partial (Settled)";
             s.paymentMode = "Partial (Settled)";
         } else {
@@ -747,7 +764,7 @@ async function settleDebt(id, saleBranchId) {
                 localSales[lIndex].settledDate = s.settledDate;
                 if((localSales[lIndex].paymentMethod === 'Partial' || localSales[lIndex].paymentMethod === 'Partial (Settled)') && localSales[lIndex].split) {
                     localSales[lIndex].split.cash = Number(localSales[lIndex].split.cash || 0) + pendingAmt;
-                    localSales[lIndex].split.udhaar = 0; 
+                    localSales[lIndex].split.udhaar = 0; // Explicit zero out
                     localSales[lIndex].paymentMethod = "Partial (Settled)";
                     localSales[lIndex].paymentMode = "Partial (Settled)";
                 } else {
@@ -776,16 +793,12 @@ async function settleDebt(id, saleBranchId) {
                         settledDate: s.settledDate,
                         paymentMethod: s.paymentMethod
                     };
-                    
                     if (s.paymentMode !== undefined) updatePayload.paymentMode = s.paymentMode;
                     if (s.split !== undefined) updatePayload.split = s.split;
 
                     transaction.update(saleRef, updatePayload);
                 });
-            } catch(e) { 
-                console.error("Firebase Udhaar Update Failed:", e); 
-                UI.showToast("Cloud Sync failed, but saved locally.", true);
-            }
+            } catch(e) { console.error("Firebase Udhaar Update Failed:", e); }
         }
     } else {
         alert("Error: Invoice not found.");
