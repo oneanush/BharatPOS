@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mera Khata - Customer Portal</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+
+    <style>
+        /* Customer App Specific Theme (GenZ + GenY Appeal) */
+        :root {
+            --app-bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --brand-primary: #6366f1; /* Vibrant Indigo */
+            --brand-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --brand-accent: #f59e0b; /* Festive Gold */
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+        }
+
+        body { background: var(--app-bg); font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; overflow-x: hidden; color: var(--text-main); }
+        
+        /* Top App Bar */
+        .app-header { background: var(--card-bg); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border-bottom: 1px solid #e2e8f0; }
+        .app-brand { font-size: 20px; font-weight: 800; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .user-chip { background: #e0e7ff; color: var(--brand-primary); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;}
+        
+        /* Main Containers */
+        .tab-view { display: none; padding: 16px 16px 90px 16px; animation: fadeIn 0.3s ease; min-height: calc(100vh - 160px); }
+        .tab-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Bottom Navigation (Glassmorphism) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.3); display: flex; justify-content: space-around; padding: 12px 10px 24px 10px; z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); text-decoration: none; font-size: 11px; font-weight: 700; width: 33%; transition: 0.2s; cursor: pointer;}
+        .nav-item i { font-size: 20px; padding: 8px 16px; border-radius: 16px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .nav-item.active { color: var(--brand-primary); }
+        .nav-item.active i { background: #e0e7ff; transform: translateY(-4px); }
+
+        /* Shared Card Styles */
+        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; margin-bottom: 16px; }
+        
+        /* Auth Modal */
+        .auth-overlay { position: fixed; inset: 0; background: var(--app-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 24px; }
+        .auth-box { background: white; border-radius: 24px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; }
+        .auth-input { width: 100%; padding: 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; font-weight: 700; margin-bottom: 16px; text-align: center; letter-spacing: 2px; outline: none; box-sizing: border-box;}
+        .auth-input:focus { border-color: var(--brand-primary); }
+        .btn-main { background: var(--brand-gradient); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; width: 100%; cursor: pointer; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); }
+        
+        /* Loader */
+        .loader-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; color: var(--brand-primary); }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="app-brand">BharatPOS</div>
+        <div class="user-chip" id="btnProfile" style="display:none;">
+            <i class="fa-solid fa-user"></i> <span id="userNameDisplay">Guest</span>
+        </div>
+    </header>
+
+    <main id="tab-bills" class="tab-view active">
+        <div class="loader-screen" id="billsLoader">
+            <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+            <p style="margin-top:12px; font-weight:700;">Fetching your Udhaar records...</p>
+        </div>
+        <div id="billsContent"></div>
+    </main>
+
+    <main id="tab-store" class="tab-view">
+        <div class="loader-screen" id="storeLoader">
+            <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+            <p style="margin-top:12px; font-weight:700;">Loading nearby stores...</p>
+        </div>
+        <div id="storeContent"></div>
+    </main>
+
+    <main id="tab-khoj" class="tab-view" style="padding:0;">
+        <div class="loader-screen" id="khojLoader">
+            <i class="fa-solid fa-map-location-dot fa-bounce fa-2x"></i>
+            <p style="margin-top:12px; font-weight:700;">Initializing Radar...</p>
+        </div>
+        <div id="khojContent" style="height: calc(100vh - 140px); width: 100%; position:relative;"></div>
+    </main>
+
+    <nav class="bottom-nav" id="bottomNav" style="display:none;">
+        <div class="nav-item active" data-target="tab-bills">
+            <i class="fa-solid fa-book-open"></i>
+            <span>Khata</span>
+        </div>
+        <div class="nav-item" data-target="tab-store">
+            <i class="fa-solid fa-store"></i>
+            <span>Dukaan</span>
+        </div>
+        <div class="nav-item" data-target="tab-khoj">
+            <i class="fa-solid fa-radar"></i>
+            <span>Khoj</span>
+        </div>
+    </nav>
+
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-box">
+            <div style="font-size:40px; margin-bottom:16px;">👋</div>
+            <h2 style="margin:0 0 8px 0; font-family:var(--font-head);">Welcome to Khata</h2>
+            <p style="color:var(--text-sub); font-size:14px; margin-bottom:24px;">Enter your phone number to view your bills and udhaar.</p>
+            
+            <div id="phoneStep">
+                <input type="tel" id="loginPhone" class="auth-input" placeholder="10-digit Mobile No." maxlength="10">
+                <button id="btnSendOtp" class="btn-main">Send OTP</button>
+            </div>
+            
+            <div id="otpStep" style="display:none;">
+                <input type="number" id="loginOtp" class="auth-input" placeholder="Enter 6-digit OTP" maxlength="6">
+                <button id="btnVerifyOtp" class="btn-main">Verify & Proceed</button>
+                <button id="btnCancelOtp" style="background:none; border:none; color:var(--text-sub); margin-top:16px; font-weight:700; cursor:pointer;">Cancel</button>
+            </div>
+            <div id="recaptcha-container"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="./js/pages/khata_main.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+// File: /js/pages/khata_store.js
+
+import { db } from '../core/firebase.js';
+import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+let currentShopProducts = [];
+let filteredProducts = [];
+let activeCategory = 'ALL';
+let cart = {}; // { 'prodId_varId': { product, variant, qty } }
+let userMobile = '';
+
+export async function initStore(phone) {
+    userMobile = phone;
+    const loader = document.getElementById('storeLoader');
+    const content = document.getElementById('storeContent');
+    
+    try {
+        // Step 1: Fetch available shops
+        const shopsSnap = await getDocs(collection(db, "shops"));
+        let shops = [];
+        shopsSnap.forEach(d => {
+            const data = d.data();
+            if(data.profile) shops.push({ id: d.id, ...data.profile });
+        });
+
+        // Step 2: Render Shop Selector
+        renderShopSelector(content, shops);
+    } catch(e) {
+        content.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444;">Failed to load stores.</div>`;
+    } finally {
+        loader.style.display = 'none';
+    }
+}
+
+function renderShopSelector(container, shops) {
+    let html = `
+        <h2 style="font-family:var(--font-head); margin-top:0;">Order Online</h2>
+        <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;">Select a nearby store to browse their catalog.</p>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+    `;
+
+    shops.forEach(s => {
+        html += `
+        <div class="card shop-select-btn" data-id="${s.id}" style="cursor:pointer; transition:0.2s;">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div style="width:48px; height:48px; background:#e0e7ff; color:var(--brand-primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px;"><i class="fa-solid fa-store"></i></div>
+                <div>
+                    <div style="font-weight:800; font-size:16px; color:var(--text-main);">${s.shopName}</div>
+                    <div style="font-size:12px; color:var(--text-sub); margin-top:4px;">${s.category || 'Retail Store'}</div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += `</div>`;
+    
+    container.innerHTML = html;
+
+    // Attach Selection Event
+    container.querySelectorAll('.shop-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => loadShopCatalog(container, btn.getAttribute('data-id'), btn.querySelector('.font-weight:800')?.innerText || 'Store'));
+    });
+}
+
+async function loadShopCatalog(container, shopId, shopName) {
+    container.innerHTML = `<div class="loader-screen"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p>Loading Catalog...</p></div>`;
+    
+    try {
+        const prodSnap = await getDocs(collection(db, "shops", shopId, "products"));
+        currentShopProducts = [];
+        const categories = new Set();
+
+        prodSnap.forEach(d => {
+            const p = d.data();
+            currentShopProducts.push(p);
+            if(p.category) categories.add(p.category);
+        });
+
+        filteredProducts = currentShopProducts;
+        renderCatalogUI(container, shopId, shopName, Array.from(categories));
+    } catch(e) {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444;">Failed to load products.</div>`;
+    }
+}
+
+function renderCatalogUI(container, shopId, shopName, categories) {
+    // Add specific CSS for the store locally
+    const style = `
+        <style>
+            .search-bar { width: 100%; padding: 14px 16px 14px 44px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+            .search-icon { position: absolute; left: 16px; top: 15px; color: var(--text-sub); }
+            .cat-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin: 16px 0; scrollbar-width: none; }
+            .cat-scroll::-webkit-scrollbar { display: none; }
+            .cat-chip { padding: 8px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s;}
+            .cat-chip.active { background: var(--brand-primary); color: white; border-color: var(--brand-primary); }
+            
+            .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px;}
+            .prod-item { background: white; padding: 12px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between;}
+            .btn-add { background: #e0e7ff; color: var(--brand-primary); border: none; padding: 8px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px;}
+            
+            .floating-cart { position: fixed; bottom: 80px; left: 16px; right: 16px; background: var(--text-main); color: white; padding: 16px; border-radius: 16px; display: none; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.2);}
+        </style>
+    `;
+
+    let html = style + `
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <button id="btnBackToShops" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px; color:var(--text-main); cursor:pointer;"><i class="fa-solid fa-arrow-left"></i></button>
+            <h3 style="margin:0; font-family:var(--font-head); font-size:18px;">${shopName}</h3>
+        </div>
+
+        <div style="position:relative;">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="fuzzySearch" class="search-bar" placeholder="Search for items...">
+        </div>
+
+        <div class="cat-scroll" id="storeCats">
+            <div class="cat-chip active" data-cat="ALL">All</div>
+            ${categories.map(c => `<div class="cat-chip" data-cat="${Security.escapeHtml(c)}">${Security.escapeHtml(c)}</div>`).join('')}
+        </div>
+
+        <div class="prod-grid" id="storeProdGrid"></div>
+
+        <div class="floating-cart" id="floatingCart">
+            <div>
+                <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Your Cart</div>
+                <div style="font-size:16px; font-weight:800; font-family:'JetBrains Mono'; margin-top:2px;" id="cartTotalText">₹0</div>
+            </div>
+            <button id="btnPlaceOrder" style="background:var(--brand-accent); color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:800; font-size:14px; cursor:pointer;">Place Order <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Events
+    document.getElementById('btnBackToShops').addEventListener('click', () => initStore(userMobile));
+    
+    // Fuzzy Search (Simple regex implementation)
+    document.getElementById('fuzzySearch').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().replace(/\s+/g, '.*');
+        const regex = new RegExp(query, 'i');
+        filteredProducts = currentShopProducts.filter(p => {
+            const matchName = regex.test(p.name);
+            const matchCat = activeCategory === 'ALL' || p.category === activeCategory;
+            return matchName && matchCat;
+        });
+        renderProducts();
+    });
+
+    document.getElementById('storeCats').addEventListener('click', (e) => {
+        if(e.target.classList.contains('cat-chip')) {
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            activeCategory = e.target.getAttribute('data-cat');
+            
+            const q = document.getElementById('fuzzySearch').value.toLowerCase();
+            filteredProducts = currentShopProducts.filter(p => {
+                const matchCat = activeCategory === 'ALL' || p.category === activeCategory;
+                const matchName = p.name.toLowerCase().includes(q);
+                return matchCat && matchName;
+            });
+            renderProducts();
+        }
+    });
+
+    document.getElementById('btnPlaceOrder').addEventListener('click', () => placeOrder(shopId, shopName));
+
+    renderProducts();
+}
+
+function renderProducts() {
+    const grid = document.getElementById('storeProdGrid');
+    if(!grid) return;
+
+    if(filteredProducts.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px; color:#94a3b8;">No items found.</div>`;
+        return;
+    }
+
+    grid.innerHTML = filteredProducts.map(p => {
+        const v = p.variants[0] || {};
+        return `
+        <div class="prod-item">
+            <div>
+                <div style="font-size:10px; color:var(--brand-primary); font-weight:800; text-transform:uppercase; margin-bottom:4px;">${Security.escapeHtml(p.category || 'Item')}</div>
+                <div style="font-size:13px; font-weight:800; color:var(--text-main); line-height:1.3;">${Security.escapeHtml(p.name)}</div>
+                <div style="font-size:11px; color:var(--text-sub); margin-top:4px;">${Security.escapeHtml(v.quantity)}</div>
+            </div>
+            <div>
+                <div style="font-size:15px; font-weight:800; color:#10b981; font-family:'JetBrains Mono'; margin-top:8px;">₹${v.price}</div>
+                <button class="btn-add" data-pid="${p.id}" data-vid="${v.id}" data-name="${Security.escapeHtml(p.name)}" data-price="${v.price}">Add to Cart</button>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Bind Add to Cart
+    grid.querySelectorAll('.btn-add').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const b = e.currentTarget;
+            const key = `${b.dataset.pid}_${b.dataset.vid}`;
+            if(cart[key]) {
+                cart[key].qty += 1;
+            } else {
+                cart[key] = {
+                    prodId: b.dataset.pid,
+                    variantId: b.dataset.vid,
+                    name: b.dataset.name,
+                    price: parseFloat(b.dataset.price),
+                    qty: 1
+                };
+            }
+            updateCartUI();
+        });
+    });
+}
+
+function updateCartUI() {
+    const fab = document.getElementById('floatingCart');
+    const txt = document.getElementById('cartTotalText');
+    if(!fab || !txt) return;
+
+    let total = 0;
+    let items = 0;
+    Object.values(cart).forEach(item => {
+        total += item.price * item.qty;
+        items += item.qty;
+    });
+
+    if(items > 0) {
+        txt.innerText = `${items} Items | ₹${total.toFixed(2)}`;
+        fab.style.display = 'flex';
+    } else {
+        fab.style.display = 'none';
+    }
+}
+
+async function placeOrder(shopId, shopName) {
+    if(Object.keys(cart).length === 0) return;
+
+    const btn = document.getElementById('btnPlaceOrder');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+    btn.disabled = true;
+
+    try {
+        let total = 0;
+        const itemsArr = Object.values(cart).map(i => {
+            total += i.price * i.qty;
+            return i;
+        });
+
+        const order = {
+            date: new Date().toISOString(),
+            customerMobile: userMobile,
+            customerName: "Khata App User",
+            status: "PENDING",
+            totalAmount: total,
+            items: itemsArr
+        };
+
+        // Push to merchant's onlineOrders collection
+        await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
+        
+        alert("Order sent to shop successfully!");
+        cart = {};
+        updateCartUI();
+    } catch(e) {
+        console.error(e);
+        alert("Failed to send order. Try again.");
+    } finally {
+        btn.innerHTML = `Place Order <i class="fa-solid fa-arrow-right"></i>`;
+        btn.disabled = false;
+    }
+}
