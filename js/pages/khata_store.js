@@ -15,9 +15,15 @@ let wizState = { prod: null, variant: null, brand: null, qty: 1 };
 
 export async function initStore(phone) {
     userMobile = phone;
+    
+    // Independent listener specifically for the Store tab
     window.refreshKhataStore = () => {
-        if(document.getElementById('tab-store').classList.contains('active')) loadShopCatalog(window.KhataData.activeShopId);
+        if(document.getElementById('tab-store').classList.contains('active')) {
+            loadShopCatalog(window.KhataData.activeShopId);
+        }
     };
+    
+    // Initial load based on Global Top Menu
     loadShopCatalog(window.KhataData.activeShopId);
     bindWizardEvents();
 }
@@ -38,6 +44,7 @@ async function loadShopCatalog(shopId) {
     }
 
     const shopName = window.KhataData.shopsMap[shopId]?.name || 'Local Store';
+
     container.innerHTML = `<div class="loader-screen"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:12px; font-weight:700;">Loading Catalog...</p></div>`;
     
     try {
@@ -68,7 +75,7 @@ function renderCatalogUI(container, shopId, shopName, categories) {
             .cat-chip { padding: 8px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s;}
             .cat-chip.active { background: var(--brand-primary); color: white; border-color: var(--brand-primary); box-shadow: 0 4px 10px rgba(99,102,241,0.2);}
             
-            .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding-bottom: 80px;}
+            .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px;}
             .prod-item { background: white; padding: 12px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
             .btn-add { background: #e0e7ff; color: var(--brand-primary); border: none; padding: 8px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s;}
             .btn-add:active { transform: scale(0.95); }
@@ -104,6 +111,7 @@ function renderCatalogUI(container, shopId, shopName, categories) {
 
     container.innerHTML = html;
 
+    // Fuzzy Search Event
     document.getElementById('fuzzySearch').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().replace(/\s+/g, '.*');
         const regex = new RegExp(query, 'i');
@@ -115,6 +123,7 @@ function renderCatalogUI(container, shopId, shopName, categories) {
         renderProducts();
     });
 
+    // Category Chip Event
     document.getElementById('storeCats').addEventListener('click', (e) => {
         if(e.target.classList.contains('cat-chip')) {
             document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
@@ -149,7 +158,7 @@ function renderProducts() {
     grid.innerHTML = filteredProducts.map(p => {
         const v = p.variants[0] || {};
         
-        // Exact Unit Price Math
+        // Exact Unit Price Math for Grid Display
         let priceStr = `₹${v.price}`;
         let unitLabel = v.quantity || 'pc';
         if (p.isLoose) {
@@ -176,12 +185,14 @@ function renderProducts() {
         </div>`;
     }).join('');
 
+    // Bind Add to Cart / Open Wizard
     grid.querySelectorAll('.btn-add').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const pid = e.currentTarget.getAttribute('data-pid');
             const prod = currentShopProducts.find(p => p.id === pid);
             if(!prod) return;
 
+            // If the product has options, open wizard. Otherwise, 1-click add to cart.
             if (prod.variants.length > 1 || (prod.variants[0].brands && prod.variants[0].brands.length > 0)) {
                 openWizard(prod);
             } else {
@@ -191,10 +202,21 @@ function renderProducts() {
     });
 }
 
-// --- WIZARD LOGIC ---
+// --- WIZARD LOGIC & DYNAMIC PRICING ---
 function bindWizardEvents() {
-    document.getElementById('wizQtyMinus').addEventListener('click', () => { if(wizState.qty > 1) { wizState.qty--; document.getElementById('wizQtyDisplay').innerText = wizState.qty; } });
-    document.getElementById('wizQtyPlus').addEventListener('click', () => { wizState.qty++; document.getElementById('wizQtyDisplay').innerText = wizState.qty; });
+    document.getElementById('wizQtyMinus').addEventListener('click', () => { 
+        if(wizState.qty > 1) { 
+            wizState.qty--; 
+            document.getElementById('wizQtyDisplay').innerText = wizState.qty; 
+            updateWizardTotal(); // Dynamically update button price
+        } 
+    });
+    
+    document.getElementById('wizQtyPlus').addEventListener('click', () => { 
+        wizState.qty++; 
+        document.getElementById('wizQtyDisplay').innerText = wizState.qty; 
+        updateWizardTotal(); // Dynamically update button price
+    });
     
     document.getElementById('wizAddToCart').addEventListener('click', () => {
         if(!wizState.variant) return alert("Select a variant");
@@ -209,6 +231,7 @@ function bindWizardEvents() {
             btn.classList.add('active');
             wizState.variant = wizState.prod.variants.find(v => v.id === btn.getAttribute('data-id'));
             checkWizardBrand();
+            updateWizardTotal(); // Dynamically update button price when variant changes
         }
     });
 
@@ -229,7 +252,7 @@ function openWizard(prod) {
 
     const vGrid = document.getElementById('wizardVariantGrid');
     
-    // Explicit per-unit math for the wizard options
+    // Explicit per-unit math for the wizard variant options
     vGrid.innerHTML = prod.variants.map((v, i) => {
         let priceStr = `₹${v.price}`;
         let unitLabel = v.quantity || 'pc';
@@ -251,6 +274,8 @@ function openWizard(prod) {
     document.getElementById('wizardStepType').style.display = prod.variants.length > 1 ? 'block' : 'none';
     
     checkWizardBrand();
+    updateWizardTotal(); // Set initial Add to Cart button price
+    
     document.getElementById('storeWizardModal').style.display = 'flex';
 }
 
@@ -274,9 +299,25 @@ function checkWizardBrand() {
     document.getElementById('wizardStepQty').style.display = 'block';
 }
 
+function updateWizardTotal() {
+    const btn = document.getElementById('wizAddToCart');
+    if (!wizState.variant) return;
+
+    let price = wizState.variant.price;
+    if (wizState.prod.isLoose) {
+        const bq = Number(wizState.variant.baseQty) || 1;
+        price = price / bq;
+    }
+
+    const total = price * wizState.qty;
+    btn.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart • ₹${total.toFixed(2)}`;
+}
+
+// --- CART LOGIC ---
 function addToCart(prod, variant, brandName, qty) {
     const key = `${prod.id}_${variant.id}_${brandName||'none'}`;
     
+    // Ensure accurate unit price is used in cart
     let price = variant.price;
     if(prod.isLoose) {
         const bq = Number(variant.baseQty) || 1;
@@ -292,6 +333,7 @@ function addToCart(prod, variant, brandName, qty) {
             price: price, qty: qty 
         };
     }
+    
     if (navigator.vibrate) navigator.vibrate(50);
     updateCartUI();
 }
@@ -302,7 +344,10 @@ function updateCartUI() {
     if(!fab || !txt) return;
 
     let total = 0, items = 0;
-    Object.values(cart).forEach(item => { total += item.price * item.qty; items += item.qty; });
+    Object.values(cart).forEach(item => { 
+        total += item.price * item.qty; 
+        items += item.qty; 
+    });
 
     if(items > 0) {
         txt.innerText = `${items} Items | ₹${total.toFixed(2)}`;
