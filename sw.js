@@ -7,6 +7,7 @@ const CACHE_NAME = 'bharatpos-v1.0';
 // Do NOT cache Firebase data here; Firebase handles its own offline data.
 const ASSETS_TO_CACHE = [
   '/',
+  '/index.html',
   '/login.html',
   '/dashboard.html',
   '/products.html',
