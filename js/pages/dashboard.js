@@ -1,13 +1,12 @@
 // File: /js/pages/dashboard.js
 
 import { db } from '../core/firebase.js';
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { dbGet, dbSave } from '../core/storage.js';
 import { Navigation } from '../components/navigation.js';
 import { UI } from '../utils/ui.js';
 import { Security } from '../utils/security.js';
 import { Formatters } from '../utils/formatters.js';
-import { Modals } from '../components/modals.js'; // Ensure receipt modal is injected
 
 // --- ENCAPSULATED STATE ---
 let enterpriseSales = [];
@@ -19,9 +18,8 @@ let mapMarker = null;
 // --- INITIALIZATION ---
 async function initDashboard() {
     Navigation.inject('dashboard');
-    Modals.injectReceiptModal();
 
-    // 2. RESTORE CUSTOM DASHBOARD NAVBAR BUTTONS
+    // RESTORE CUSTOM DASHBOARD NAVBAR BUTTONS
     const navActions = document.getElementById('mainNavActions');
     if(navActions) {
         const defaultPos = navActions.querySelector('.btn-primary');
@@ -30,7 +28,6 @@ async function initDashboard() {
         navActions.insertAdjacentHTML('beforeend', `
             <button id="btnAddBranchNav" class="btn-nav" style="background:var(--primary-gradient); color:white; border:none;" title="Add New Branch"><i class="fa-solid fa-plus"></i></button>
             <button id="btnViewMap" class="btn-nav" title="View Map" style="display:none;"><i class="fa-solid fa-map-location-dot"></i></button>
-            <button onclick="window.location.href='billing.html'" class="btn btn-primary" style="padding:8px 14px; font-size:13px; width:auto; border-radius:10px;"><i class="fa-solid fa-file-invoice"></i> <span data-i18n="nav_billing">Bill</span></button>
         `);
     }
 
@@ -119,7 +116,6 @@ async function loadEnterpriseData() {
                     switcher.value = user.merchantId;
                     currentBranch = user.merchantId; 
 
-                    // Attach switcher event manually since it was injected dynamically
                     switcher.addEventListener('change', (e) => {
                         const val = e.target.value;
                         if (val === 'all') {
@@ -136,6 +132,7 @@ async function loadEnterpriseData() {
         } catch(e) {}
     }
 
+    // Safely pull from local memory cache First
     let localSales = await dbGet('bharatpos_sales', '[]');
     let eSales = await dbGet('bharatpos_enterprise_sales', '[]');
     
@@ -158,19 +155,9 @@ async function loadEnterpriseData() {
     
     if(enterpriseSales.length > 0 || enterpriseProducts.length > 0) renderAllWidgets();
 
+    // Pull from Cloud Safely
     if (db && navigator.onLine) {
         try {
-            if (user.merchantId && localSales.length > 0) {
-                const batch = writeBatch(db);
-                let ops = 0;
-                localSales.forEach(sale => {
-                    const ref = doc(db, "shops", user.merchantId, "sales", sale.id);
-                    batch.set(ref, sale, { merge: true });
-                    ops++;
-                });
-                if (ops > 0) await batch.commit();
-            }
-
             let tempSalesMap = {};
             let tempProds = [];
 
@@ -198,6 +185,7 @@ async function loadEnterpriseData() {
             
             await Promise.all(fetchPromises);
             
+            // Merge Cloud map with Local map safely so offline sales aren't lost
             localSales.forEach(s => { if(!tempSalesMap[s.id]) tempSalesMap[s.id] = s; });
             enterpriseSales = Object.values(tempSalesMap).sort((a, b) => new Date(b.date) - new Date(a.date));
             
@@ -498,7 +486,6 @@ async function submitNewBranch() {
             profile: { mobile: mobileNum, shopName, category, isBranch: true, parentId: user.merchantId }
         });
         
-        // FIX: Update local cache so switcher sees it immediately
         const cacheKey = `bharatpos_shops_${mobileNum}`;
         let cachedShops = JSON.parse(localStorage.getItem(cacheKey) || '[]');
         cachedShops.push({
@@ -732,7 +719,7 @@ function openReceipt(dataStr) {
     document.getElementById('rec-full-total').innerText = `₹${Number(inv.total || inv.amount || 0).toFixed(2)}`;
     
     if(inv.split) {
-        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>Cash: ₹${inv.split.cash} | Online: ₹${inv.split.online}</span>`;
+        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>Cash: ₹${inv.split.cash || 0} | Online: ₹${inv.split.online || 0}</span>`;
     } else {
         document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>₹0.00</span>`;
     }
@@ -740,7 +727,6 @@ function openReceipt(dataStr) {
     document.getElementById('rec-due').innerText = `₹${Formatters.currency(pendingAmt)}`;
 
     const payBtn = document.getElementById('btnSettle');
-    // Using delegation or direct bind since this is a dynamic modal context. We'll attach a one-time listener:
     payBtn.onclick = () => settleDebt(invId, inv._branchId || inv.merchantId);
 
     UI.showModal('receiptModal');
@@ -797,9 +783,8 @@ async function settleDebt(id, saleBranchId) {
         renderAllWidgets();
         if(document.getElementById('udhaarView').style.display === 'block') renderUdhaarGroups();
         
-        if(targetBranch && db) {
+        if(targetBranch && db && navigator.onLine) {
             try {
-                // Using imported runTransaction
                 await runTransaction(db, async (transaction) => {
                     const saleRef = doc(db, "shops", targetBranch, "sales", id);
                     transaction.update(saleRef, {
