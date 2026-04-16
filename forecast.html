@@ -2,601 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <title>DemandMitra AI • BharatPOS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-  <script type="module" src="bharatpos.js"></script>
-  <link rel="stylesheet" href="bharatpos.css">
-<style>
-    /* --- HEADER --- */
-    .header {
-        background: var(--primary-gradient); 
-        color: white;
-        padding: 20px; 
-        border-radius: 0 0 24px 24px; 
-        margin-bottom: 20px;
-        box-shadow: 0 10px 25px rgba(25, 118, 210, 0.2);
-        font-family: var(--font-head);
-    }
 
-    .container { max-width: 800px; margin: 0 auto; padding: 0 15px; }
-
-    /* --- CONTROLS (Horizontal Scroll) --- */
-    .controls { 
-        display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; 
-        padding-bottom: 10px; scrollbar-width: none; 
-    }
-    .controls::-webkit-scrollbar { display: none; }
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       FORECAST SPECIFIC LAYOUT & RESPONSIVENESS
+    ═══════════════════════════════════════════════════════════ */
+    .container { max-width: 1000px; margin: 30px auto; padding: 0 15px; font-family: var(--font-body); }
     
-    .chip {
-        background: white; border: 1.5px solid var(--border); padding: 10px 20px;
-        border-radius: 30px; font-size: 13px; font-weight: 600; cursor: pointer; 
-        white-space: nowrap; transition: var(--trans); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        color: var(--slate-700); font-family: var(--font-body);
-    }
-    .chip:hover { 
-        border-color: var(--primary); 
-        color: var(--primary); 
-        background: var(--blue-50); 
-    }
-    .chip.active { 
-        background: var(--primary); 
-        color: white; 
-        border-color: var(--primary); 
-        box-shadow: 0 4px 10px rgba(25, 118, 210, 0.3); 
-    }
-
-    /* --- CARDS --- */
-    .card { 
-        background: white; padding: 24px; border-radius: var(--radius-card); 
-        box-shadow: var(--shadow-card); margin-bottom: 20px; border: 1.5px solid var(--border); 
+    .forecast-panel {
+        background: var(--white); border: 1.5px solid var(--border);
+        border-radius: var(--radius-card); padding: 24px;
+        box-shadow: var(--shadow-card);
     }
     
-    /* --- LOADING OVERLAY --- */
-    #loadingOverlay {
-        display: none; position: absolute; inset: 0;
-        background: rgba(255,255,255,0.9); align-items: center; justify-content: center;
-        border-radius: var(--radius-card); font-weight: 700; color: var(--primary); z-index: 10;
-        flex-direction: column; gap: 10px; font-family: var(--font-body);
-    }
+    .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 15px; border-bottom: 1.5px dashed var(--border); }
+    .panel-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--blue-50); color: var(--primary); }
+    .panel-title h2 { margin: 0 0 4px 0; font-size: 18px; font-weight: 800; font-family: var(--font-head); color: var(--text-main); }
+    .panel-title p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; }
 
-    /* --- INSIGHT BOXES --- */
-    .insight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-    .stat-box { 
-        background: var(--blue-50); padding: 15px; border-radius: var(--radius-input); 
-        border-left: 4px solid var(--blue-400); color: var(--slate-900); font-family: var(--font-body);
-    }
+    .control-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: flex-end; }
+    .selector-wrapper { flex: 1; min-width: 250px; }
     
-    /* --- RESTOCK BUTTON --- */
-    .btn-restock {
-        width: 100%; padding: 16px; background: linear-gradient(135deg, #059669, #047857); color: white;
-        border: none; border-radius: var(--radius-input); font-weight: 800; font-size: 14px; margin-top: 15px; cursor: pointer;
-        box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3); transition: transform var(--trans), box-shadow var(--trans);
-        display: flex; justify-content: center; align-items: center; gap: 8px; font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    .btn-restock:hover { 
-        transform: translateY(-2px); 
-        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4); 
-        background: #047857; 
-    }
-    .btn-restock:active { transform: scale(0.98); }
+    /* Responsive Chart Wrapper to prevent overlap/overflow on mobile */
+    .chart-wrapper { position: relative; height: 350px; width: 100%; margin-bottom: 24px; background: #f9f9f9; border-radius: 12px; border: 1.5px solid var(--border); padding: 10px; box-sizing: border-box;}
+    @media(max-width: 600px) { .chart-wrapper { height: 280px; padding: 5px; } }
 
-    /* --- TIME STAMP BADGE --- */
-    .time-badge { font-size: 11px; opacity: 0.8; margin-top: 5px; display: block; font-family: var(--font-body); }
-
-    /* --- HEADER SWITCHER --- */
-    .header-switcher {
-        background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
-        color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px;
-        font-weight: 600; outline: none; cursor: pointer; margin-bottom: 8px;
-        font-family: var(--font-body); backdrop-filter: blur(4px);
+    /* AI Message Box */
+    .ai-msg-box {
+        background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px;
+        padding: 24px; position: relative; overflow: hidden; display: none;
+        animation: slideUp 0.4s ease-out;
     }
-    .header-switcher option { color: var(--slate-900); background: white; }
-</style>
+    .ai-msg-box.alert { background: #FEF2F2; border-color: #FECACA; }
+    
+    .ai-msg-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    
+    .ai-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; padding: 6px 12px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .badge-normal { background: var(--success-soft); color: var(--success); }
+    .badge-warning { background: #FEF3C7; color: #D97706; }
+    .badge-danger { background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(220,38,38,0.2); }
+    
+    .ai-reason { font-size: 14px; color: var(--text-main); line-height: 1.6; font-weight: 600; margin-bottom: 20px; }
+    
+    .stock-info { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stock-stat { background: var(--white); border: 1.5px solid var(--border); padding: 12px 16px; border-radius: 10px; flex: 1; min-width: 120px; text-align: center; }
+    .stock-stat-label { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+    .stock-stat-val { font-size: 20px; font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; }
+    
+    .btn-restock { background: linear-gradient(135deg, var(--danger), #b91c1c); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: var(--trans); display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(220,38,38,0.3); width: 100%; font-family: var(--font-body); text-transform: uppercase;}
+    .btn-restock:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(220,38,38,0.4); }
+    
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state i { font-size: 40px; color: var(--border-hover); margin-bottom: 16px; }
+    .empty-state h3 { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+  </style>
 </head>
-<body>
+<body class="lang-en">
 
-  <div class="header">
-    <div style="display:flex; justify-content:space-between; align-items:start;">
-        <div>
-            <h1 style="margin:0; font-size:22px; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-brain" style="color: #a5b4fc;"></i> DemandMitra AI
-            </h1>
-            <p style="margin:5px 0 0; opacity:0.8; font-size:13px; font-family:var(--font-body);">Real-Time Inventory Forecasting</p>
-        </div>
-        <div style="text-align:right;">
-            <select id="shopSwitcher" class="header-switcher" style="display:none;"></select><br>
-            <span id="lastUpdated" class="time-badge">No data yet</span>
-            <span onclick="window.clearAICache()" style="font-size:10px; text-decoration:underline; cursor:pointer; color:#a5b4fc; font-family:var(--font-body);"><i class="fa-solid fa-rotate-right"></i> Reset AI</span>
-        </div>
-    </div>
-  </div>
-
-  <div class="container">
-
-    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items:center;">
-      <a href="dashboard.html" style="color:var(--slate-500); text-decoration:none; font-size:20px;"><i class="fa-solid fa-arrow-left"></i></a>
-      <button onclick="window.generateBulkForecasts()" style="
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: white; border: none; padding: 12px 24px;
-        border-radius: 30px; font-weight: 700; cursor: pointer;
-        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-        display: flex; align-items: center; gap: 8px; transition: 0.2s; font-family:var(--font-body);">
-        <i class="fa-solid fa-bolt"></i> Analyze All Products
-      </button>
-    </div>
-
-    <div class="controls" id="productChips">
-      <div style="padding:10px; color:#64748b; font-size: 13px; font-family:var(--font-body);"><i class="fa-solid fa-spinner fa-spin"></i> Loading local database...</div>
-    </div>
-
-    <div class="card" style="position:relative; min-height: 350px;">
-      <div id="loadingOverlay">
-          <i class="fa-solid fa-microchip fa-2x fa-beat-fade" style="color: var(--primary);"></i>
-          <div style="margin-top: 10px;" id="loadingText">✨ AI is Analyzing Sales Patterns...</div>
-          <div style="font-size:12px; color:#64748b;">Cross-referencing global data...</div>
-      </div>
-      
-      <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
-        <b id="chartTitle" style="font-size:18px; color: #1e293b; font-family:var(--font-head);">Select a Product</b>
-        <span id="trendBadge" style="font-size:11px; padding:6px 12px; border-radius:20px; background:#f1f5f9; color: #475569; font-weight:800; font-family:var(--font-body);">--</span>
-      </div>
-      
-      <div style="position: relative; height: 250px; width: 100%;">
-          <canvas id="demandChart"></canvas>
-      </div>
-
-      <div class="insight-row">
-        <div class="stat-box" id="boxStock" style="border-left-color: #3b82f6;">
-          <div style="font-size:11px; color:#64748b; font-weight: 800;">CURRENT STOCK</div>
-          <div style="font-size:24px; font-weight:800; color: #1e293b; font-family:'JetBrains Mono';" id="valStock">--</div>
-        </div>
-        <div class="stat-box" id="boxPred" style="border-left-color: #10b981;">
-          <div style="font-size:11px; color:#64748b; font-weight: 800;">PREDICTED (7 DAYS)</div>
-          <div style="font-size:24px; font-weight:800; color: #1e293b; font-family:'JetBrains Mono';" id="valPred">--</div>
-        </div>
-      </div>
-
-      <div style="margin-top:20px; padding:15px; background:#fffbeb; border-radius:12px; border:1px solid #fcd34d; display:none;" id="aiMsgBox">
-        <div style="display: flex; gap: 10px;">
-            <i class="fa-solid fa-lightbulb" style="color: #d97706; font-size: 18px; margin-top: 2px;"></i>
-            <div style="flex: 1;">
-                <b style="color: #b45309; font-family:var(--font-head);">AI Recommendation:</b> 
-                <span id="aiReason" style="color: #78350f; font-size: 14px; line-height: 1.5; display: block; margin-top: 4px; font-family:var(--font-body);">--</span>
-                <div id="aiQuantityBadge" style="margin-top: 10px; display: inline-block; background: #fee2e2; color: #b91c1c; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 13px; border: 1px solid #f87171; font-family:var(--font-body);">
-                    Target Restock: -- Units
-                </div>
+<div class="container">
+    <div class="forecast-panel">
+        
+        <div class="panel-header">
+            <div class="panel-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="panel-title">
+                <h2>Product Demand Forecaster</h2>
+                <p>Select a product to analyze its 30-day historical data and predict the next 7 days of demand.</p>
             </div>
         </div>
-      </div>
 
-      <button id="restockBtn" class="btn-restock" style="display:none;">
-        <i class="fa-solid fa-box-open"></i> RESTOCK NOW
-      </button>
+        <div class="control-row">
+            <div class="selector-wrapper">
+                <label class="floating-label" style="position:static; display:block; margin-bottom:8px; font-size:12px;">Select Product to Analyze</label>
+                <select id="productSelect" class="form-select" style="font-weight:700;">
+                    <option value="">Loading products...</option>
+                </select>
+            </div>
+            <button id="btnPredict" class="btn btn-primary" style="padding: 11px 24px; min-width: 140px;">
+                <i class="fa-solid fa-brain"></i> Run AI Forecast
+            </button>
+        </div>
+
+        <div class="chart-wrapper">
+            <canvas id="forecastChart"></canvas>
+        </div>
+
+        <div id="aiMsgBox" class="ai-msg-box">
+            <div class="ai-msg-header">
+                <div class="ai-badge" id="aiStatusBadge">Status</div>
+                <div class="ai-badge badge-warning" id="aiQuantityBadge" style="display:none;"></div>
+            </div>
+            
+            <div class="ai-reason" id="aiReason">AI Analysis will appear here.</div>
+            
+            <div class="stock-info">
+                <div class="stock-stat">
+                    <div class="stock-stat-label">Current Stock</div>
+                    <div class="stock-stat-val" id="statCurrentStock">0</div>
+                </div>
+                <div class="stock-stat">
+                    <div class="stock-stat-label">Predicted 7-Day Demand</div>
+                    <div class="stock-stat-val" style="color:var(--primary);" id="statPredictedDemand">0</div>
+                </div>
+            </div>
+
+            <button id="btnRestock" class="btn-restock" style="display:none;">
+                <i class="fa-solid fa-cart-plus"></i> Auto-Fill Inventory
+            </button>
+        </div>
 
     </div>
+</div>
 
-  </div>
+<script type="module" src="./js/pages/forecast.js"></script>
 
-<script type="module">
-  import { db } from "./bharatpos.js";
-  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-  let myChart = null;
-  let currentProduct = null;
-  
-  // Enterprise State
-  window.enterpriseProducts = [];
-  window.enterpriseSales = [];
-  window.currentBranch = 'all';
-
-  // Async Bridge Cache
-  window.forecastCache = {};
-
-  window.escapeHtml = function(str) { 
-      return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
-  }
-
-  document.addEventListener("DOMContentLoaded", async () => {
-      // 1. Load Permanent Cache
-      window.forecastCache = await window.dbGet('bharatpos_ai_cache', '{}');
-      window.updateLastTime();
-
-      // 2. Load Enterprise Data via Async Bridge
-      let eProds = await window.dbGet('bharatpos_enterprise_products', 'null');
-      if(eProds === null) eProds = await window.dbGet('bharatpos_products', '[]');
-      window.enterpriseProducts = eProds;
-
-      let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
-      if(eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
-      window.enterpriseSales = eSales;
-
-      // 3. Multi-Branch UI
-      const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-      if(typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
-          const shops = await window.loadOwnedShops(user.mobile || user.phone);
-          if(shops && shops.length > 1) {
-              const switcher = document.getElementById('shopSwitcher');
-              if(switcher) {
-                  switcher.style.display = 'inline-block';
-                  switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
-                      shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)}</option>`).join('');
-                  
-                  window.currentBranch = user.merchantId;
-                  switcher.value = user.merchantId;
-                  
-                  switcher.addEventListener('change', (e) => {
-                      window.currentBranch = e.target.value;
-                      window.renderProductChips();
-                  });
-              }
-          } else {
-              window.currentBranch = user.merchantId || 'all';
-          }
-      } else {
-          window.currentBranch = user.merchantId || 'all';
-      }
-
-      window.renderProductChips();
-
-      // Background Cloud Sync (Silent)
-      if (user.merchantId && db && navigator.onLine) {
-          try {
-              let shopsToFetch = [{ merchantId: user.merchantId }];
-              if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
-                  const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
-                  if (fetchedShops && fetchedShops.length > 0) shopsToFetch = fetchedShops;
-              }
-
-              let allProds = [];
-              let allSales = [];
-
-              const fetchPromises = shopsToFetch.map(async (shop) => {
-                  if(!shop.merchantId) return;
-                  try {
-                      const pSnap = await getDocs(collection(db, "shops", shop.merchantId, "products"));
-                      pSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allProds.push(data); });
-
-                      const sSnap = await getDocs(collection(db, "shops", shop.merchantId, "sales"));
-                      sSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allSales.push(data); });
-                  } catch(e){}
-              });
-              
-              await Promise.all(fetchPromises);
-              
-              if(allProds.length > 0) {
-                  window.enterpriseProducts = allProds;
-                  await window.dbSave('bharatpos_enterprise_products', allProds);
-              }
-              if(allSales.length > 0) {
-                  window.enterpriseSales = allSales;
-                  await window.dbSave('bharatpos_enterprise_sales', allSales);
-              }
-              
-              window.renderProductChips(false); // Silent re-render
-          } catch(e) {}
-      }
-  });
-
-  window.getFilteredProducts = function() {
-      if(window.currentBranch === 'all') return window.enterpriseProducts;
-      return window.enterpriseProducts.filter(p => p._branchId === window.currentBranch || p.merchantId === window.currentBranch);
-  }
-
-  window.getFilteredSales = function() {
-      if(window.currentBranch === 'all') return window.enterpriseSales;
-      return window.enterpriseSales.filter(s => s._branchId === window.currentBranch || s.merchantId === window.currentBranch);
-  }
-
-  window.renderProductChips = function(autoSelect = true) {
-    const fProds = window.getFilteredProducts();
-    const container = document.getElementById('productChips');
-    
-    if(fProds.length === 0) {
-      container.innerHTML = `<div style="padding:10px; color: #64748b; font-family:var(--font-body);">No products found in this branch. Add items in Inventory first.</div>`;
-      return;
-    }
-
-    const uniqueNames = [...new Set(fProds.map(p => p.name))];
-    
-    container.innerHTML = uniqueNames.map(name => {
-        const pObj = fProds.find(p => p.name === name);
-        let totalStock = 0;
-        if (pObj && pObj.variants) {
-            pObj.variants.forEach(v => {
-                const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
-                totalStock += (Number(v.stock)||0) * bq;
-            });
-        }
-        return `<div class="chip" onclick="window.analyzeProduct('${window.escapeHtml(name).replace(/'/g, "\\'")}', ${totalStock})">${window.escapeHtml(name)}</div>`;
-    }).join('');
-
-    if(autoSelect) {
-        if(Object.keys(window.forecastCache).length === 0) {
-            document.getElementById('chartTitle').innerText = "Select a Product or Click 'Analyze All'";
-        } else {
-            const cachedKeys = Object.keys(window.forecastCache);
-            const availableCached = cachedKeys.find(k => uniqueNames.includes(k));
-            if(availableCached) {
-                const pObj = fProds.find(p => p.name === availableCached);
-                let totalStock = 0;
-                if (pObj && pObj.variants) {
-                    pObj.variants.forEach(v => {
-                        const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
-                        totalStock += (Number(v.stock)||0) * bq;
-                    });
-                }
-                window.analyzeProduct(availableCached, totalStock);
-            }
-        }
-    }
-  }
-
-  window.saveToMemory = async function() {
-      await window.dbSave('bharatpos_ai_cache', window.forecastCache);
-      const now = new Date().toLocaleString('en-IN');
-      localStorage.setItem('bharatpos_ai_time', now);
-      document.getElementById('lastUpdated').innerText = "Updated: " + now;
-  }
-
-  window.updateLastTime = function() {
-      const time = localStorage.getItem('bharatpos_ai_time');
-      if(time) document.getElementById('lastUpdated').innerText = "Updated: " + time;
-  }
-
-  window.clearAICache = async function() {
-      if(!confirm("Clear all AI predictions?")) return;
-      window.forecastCache = {};
-      await window.dbSave('bharatpos_ai_cache', window.forecastCache);
-      localStorage.removeItem('bharatpos_ai_time');
-      location.reload();
-  }
-
-  // --- BULK ACTION ---
-  window.generateBulkForecasts = async function() {
-    const fProds = window.getFilteredProducts();
-    const uniqueNames = [...new Set(fProds.map(p => p.name))];
-    if(uniqueNames.length === 0) return alert("No products to analyze!");
-
-    document.getElementById('loadingOverlay').style.display = 'flex';
-    document.getElementById('loadingText').innerText = `⚡ AI is processing ${uniqueNames.length} products...`;
-
-    const bulkPayload = uniqueNames.map(name => {
-      const pObj = fProds.find(p => p.name === name);
-      let totalStock = 0;
-      if (pObj && pObj.variants) {
-          pObj.variants.forEach(v => {
-              const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
-              totalStock += (Number(v.stock)||0) * bq;
-          });
-      }
-      return {
-        productName: name,
-        currentStock: totalStock,
-        history: window.calculateSalesHistory(name)
-      };
-    });
-
-    try {
-      const url = window.buildUrl ? window.buildUrl('/api/predict-demand-bulk') : 'https://server-xy7s.onrender.com/api/predict-demand-bulk';
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ products: bulkPayload })
-      });
-
-      const data = await res.json();
-
-      if(data.success && data.predictions) {
-        data.predictions.forEach(prediction => {
-            window.forecastCache[prediction.productName] = prediction;
-        });
-        
-        await window.saveToMemory();
-        alert("✅ Analysis Complete & Saved!");
-        
-        if(currentProduct && uniqueNames.includes(currentProduct)) {
-             const pObj = fProds.find(p => p.name === currentProduct);
-             let totalStock = 0;
-             if (pObj && pObj.variants) {
-                 pObj.variants.forEach(v => {
-                     const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
-                     totalStock += (Number(v.stock)||0) * bq;
-                 });
-             }
-             window.analyzeProduct(currentProduct, totalStock);
-        } else if(uniqueNames.length > 0) {
-             const pObj = fProds.find(p => p.name === uniqueNames[0]);
-             let totalStock = 0;
-             if (pObj && pObj.variants) {
-                 pObj.variants.forEach(v => {
-                     const bq = pObj.isLoose ? (Number(v.baseQty)||1) : 1;
-                     totalStock += (Number(v.stock)||0) * bq;
-                 });
-             }
-             window.analyzeProduct(uniqueNames[0], totalStock);
-        }
-
-      } else {
-        alert("AI Server Error: " + (data.message || "Unknown error"));
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Error connecting to AI Microservice.");
-    } finally {
-      document.getElementById('loadingOverlay').style.display = 'none';
-    }
-  }
-
-  // --- INDIVIDUAL VIEW ---
-  window.analyzeProduct = async function(name, currentStock) {
-    currentProduct = name;
-    
-    document.querySelectorAll('.chip').forEach(c => {
-      c.classList.toggle('active', c.innerText === name);
-    });
-    document.getElementById('chartTitle').innerText = name;
-    document.getElementById('valStock').innerText = currentStock;
-    document.getElementById('aiMsgBox').style.display = 'none';
-    document.getElementById('restockBtn').style.display = 'none';
-
-    const history = window.calculateSalesHistory(name);
-
-    if (window.forecastCache[name]) {
-        const cachedPred = window.forecastCache[name];
-        window.renderChart(history, cachedPred.predicted_sales);
-        window.updateInsights(cachedPred, currentStock);
-        return; 
-    }
-
-    document.getElementById('loadingText').innerText = `✨ Analyzing ${name}...`;
-    document.getElementById('loadingOverlay').style.display = 'flex';
-    
-    try {
-      const url = window.buildUrl ? window.buildUrl('/api/predict-demand-bulk') : 'https://server-xy7s.onrender.com/api/predict-demand-bulk';
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ products: [{ productName: name, history: history, currentStock: currentStock }] })
-      });
-
-      const data = await res.json();
-      
-      if(data.success && data.predictions && data.predictions.length > 0) {
-        const pred = data.predictions[0];
-        window.forecastCache[name] = pred;
-        await window.saveToMemory(); 
-        
-        window.renderChart(history, pred.predicted_sales);
-        window.updateInsights(pred, currentStock);
-      }
-
-    } catch (e) {
-      console.error(e);
-    } finally {
-      document.getElementById('loadingOverlay').style.display = 'none';
-    }
-  }
-
-  window.calculateSalesHistory = function(productName) {
-    const dailyCounts = Array(14).fill(0); 
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const fSales = window.getFilteredSales();
-
-    fSales.forEach(bill => {
-      if(!bill.items) return;
-      const billDate = new Date(bill.date);
-      billDate.setHours(0,0,0,0);
-      const diffTime = Math.abs(today - billDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-
-      if(diffDays < 14) {
-        const items = bill.items.filter(i => i.name === productName || (i.name && i.name.includes(productName)));
-        items.forEach(item => {
-            const index = 13 - diffDays; 
-            if(index >= 0 && index < 14) {
-                dailyCounts[index] += (Number(item.qty) || 1);
-            }
-        });
-      }
-    });
-    return dailyCounts;
-  }
-
-  // --- RENDER FUNCTIONS ---
-  window.renderChart = function(pastData, futureData) {
-    const ctx = document.getElementById('demandChart').getContext('2d');
-    if(myChart) myChart.destroy();
-
-    Chart.defaults.font.family = "'Inter', sans-serif";
-
-    const labels = [];
-    for(let i=13; i>=0; i--) labels.push(`-${i}d`); 
-    for(let i=1; i<=7; i++) labels.push(`+${i}d`);
-
-    const pastDataset = [...pastData, ...Array(7).fill(null)];
-    const futureDataset = [...Array(14).fill(null), ...futureData];
-    futureDataset[13] = pastData[13]; 
-
-    myChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Actual Sales',
-            data: pastDataset,
-            borderColor: '#4f46e5',
-            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            fill: true, tension: 0.4, pointRadius: 3, borderWidth: 3
-          },
-          {
-            label: 'AI Forecast',
-            data: futureDataset,
-            borderColor: '#10b981',
-            borderDash: [5, 5],
-            pointBackgroundColor: '#10b981',
-            backgroundColor: 'transparent',
-            tension: 0.4, pointRadius: 4, borderWidth: 3
-          }
-        ]
-      },
-      options: { 
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { 
-              legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
-              tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8 }
-          },
-          scales: { 
-              y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
-              x: { grid: { display: false }, border: { display: false } }
-          }
-      }
-    });
-  }
-
-  window.updateInsights = function(pred, stock) {
-    const totalPredicted = pred.predicted_sales.reduce((a,b)=>a+b, 0);
-    document.getElementById('valPred').innerText = Math.round(totalPredicted);
-    
-    const badge = document.getElementById('trendBadge');
-    badge.innerText = pred.trend_analysis;
-    if(pred.trend_analysis.toLowerCase().includes('up')) { badge.style.color = '#10b981'; badge.style.background = '#dcfce7'; }
-    else if(pred.trend_analysis.toLowerCase().includes('down')) { badge.style.color = '#ef4444'; badge.style.background = '#fee2e2'; }
-    else { badge.style.color = '#f59e0b'; badge.style.background = '#fef3c7'; }
-
-    document.getElementById('aiReason').innerText = pred.reason;
-    document.getElementById('aiMsgBox').style.display = 'block';
-
-    const btn = document.getElementById('restockBtn');
-    
-    if(pred.restock_recommendation === "Yes" || (totalPredicted > stock)) {
-      btn.style.display = 'flex';
-      const needed = Math.max(1, Math.round(totalPredicted - stock));
-      
-      document.getElementById('aiQuantityBadge').innerText = `Target Restock: ${needed} Units Minimum`;
-      document.getElementById('aiQuantityBadge').style.display = 'inline-block';
-      
-      btn.innerHTML = `<i class="fa-solid fa-box-open"></i> AUTO-FILL INVENTORY (+${needed})`;
-      btn.onclick = () => {
-          localStorage.setItem("temp_add_stock", needed);
-          window.location.href = `products.html?restock=${encodeURIComponent(currentProduct)}`;
-      };
-      
-      document.getElementById('aiMsgBox').style.backgroundColor = "#fef2f2";
-      document.getElementById('aiMsgBox').style.borderColor = "#fca5a5";
-    } else {
-      btn.style.display = 'none';
-      document.getElementById('aiQuantityBadge').style.display = 'none';
-      document.getElementById('aiMsgBox').style.backgroundColor = "#f0fdf4";
-      document.getElementById('aiMsgBox').style.borderColor = "#86efac";
-    }
-  }
-</script>
 </body>
 </html>
