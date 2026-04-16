@@ -3,544 +3,226 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <title>Bharat CRM — Customer Loyalty</title>
+  <title>Bharat CRM - Customer Loyalty</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
- <link rel="stylesheet" href="bharatpos.css">
-<style>
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       CRM SPECIFIC LAYOUT & CARDS
+    ═══════════════════════════════════════════════════════════ */
     :root {
-        --gold: #fbbf24; 
-        --silver: #94a3b8; 
-        --bronze: #b45309;
+        --vip-gold: #f59e0b; 
+        --risk-red: #ef4444; 
+        --reg-blue: #3b82f6;
     }
     
-    /* --- HEADER --- */
-    .header { background: var(--primary-gradient); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 24px 24px; box-shadow: 0 10px 25px rgba(25, 118, 210, 0.2); position: sticky; top: 0; z-index: 100; }
-    .header h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-family: var(--font-head); }
-    .header-actions { display: flex; gap: 10px; align-items: center; }
-    
-    .shop-switcher { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; outline: none; cursor: pointer; max-width: 160px; transition: 0.2s; font-family: var(--font-body); text-overflow: ellipsis; white-space: nowrap; backdrop-filter: blur(4px);}
-    .shop-switcher option { color: var(--slate-900); background: white; }
-    
-    .nav-btn { background: rgba(255,255,255,0.15); color: white; text-decoration: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 6px; cursor: pointer; font-family: var(--font-body); }
-    .nav-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
-    
-    .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; font-family: var(--font-body); }
-    
-    /* --- PODIUM --- */
-    .podium-box { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin-bottom: 40px; margin-top: 10px; min-height: 200px;}
-    .podium-card { background: white; border-radius: 16px 16px 8px 8px; padding: 15px 10px; text-align: center; box-shadow: var(--shadow-card); width: 130px; position: relative; border-top: 4px solid transparent; transition: transform 0.3s; border: 1.5px solid var(--border); border-top-width: 4px; }
-    .podium-card:hover { transform: translateY(-5px); }
-    .rank-1 { height: 180px; border-top-color: var(--gold); z-index: 10; order: 2; box-shadow: 0 15px 35px rgba(251, 191, 36, 0.2); }
-    .rank-2 { height: 150px; border-top-color: var(--silver); order: 1; }
-    .rank-3 { height: 130px; border-top-color: var(--bronze); order: 3; }
-    .crown { font-size: 32px; position: absolute; top: -24px; left: 50%; transform: translateX(-50%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
-    .p-name { font-weight: 700; margin-top: 15px; display: block; color: var(--text-main); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body); }
-    .p-amt { font-size: 18px; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace; margin-top: 4px; display: block;}
-
-    /* --- SETTINGS & CONTROLS --- */
-    .settings-box { background: white; padding: 20px; border-radius: var(--radius-card); box-shadow: var(--shadow-card); margin-bottom: 24px; border: 1.5px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
-    .settings-box h3 { margin: 0; color: var(--text-main); font-size: 15px; display: flex; align-items: center; gap: 8px; font-family: var(--font-head); }
-    .input-wrapper { display: flex; gap: 10px; width: 100%; }
-    .imp-inp { flex: 1; padding: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-input); font-size: 14px; transition: 0.2s; background: #f9f9f9; color: var(--text-main); font-family: var(--font-body); outline: none;}
-    .imp-inp:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-glow); }
-    .save-btn { background: var(--success); color: white; border: none; padding: 14px 24px; border-radius: var(--radius-input); font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;}
-    .save-btn:hover { background: #059669; transform: translateY(-2px); }
-
-    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 15px; flex-wrap: wrap; }
-    .search-wrapper { position: relative; flex: 1; min-width: 250px; }
-    .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-    .search-inp { padding: 14px 14px 14px 42px; border: 1.5px solid var(--border); border-radius: 30px; width: 100%; box-shadow: var(--shadow-card); outline: none; transition: 0.2s; font-size: 14px; font-family: var(--font-body); background: #f9f9f9; color: var(--text-main); box-sizing: border-box;}
-    .search-inp:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-glow); }
-    .magic-btn { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; border: none; padding: 14px 24px; border-radius: 30px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); transition: 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;}
-    .magic-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); }
-
-    /* --- GRID --- */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-    .cust-card { background: white; border-radius: var(--radius-card); padding: 20px; box-shadow: var(--shadow-card); border: 1.5px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-    .cust-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(25, 118, 210, 0.15); }
-    .c-info h3 { margin: 0 0 6px 0; font-size: 16px; color: var(--text-main); font-weight: 700; font-family: var(--font-head); }
-    .c-info .phone { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px;}
-    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-    .tag { font-size: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-    .c-total { font-size: 20px; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace; text-align: right; }
-    .c-visits { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px; display: block; }
-
-    /* --- MODAL (360 PROFILE) --- */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13, 58, 120, 0.5); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.3s; }
-    .modal-active { display: flex; opacity: 1; }
-    .modal-box { background: white; width: 90%; max-width: 480px; border-radius: var(--radius-card); overflow: hidden; box-shadow: 0 28px 70px rgba(25,118,210,0.18); transform: scale(0.95); transition: transform 0.3s; display: flex; flex-direction: column; max-height: 85vh; border: 2px solid var(--blue-200); }
-    .modal-active .modal-box { transform: scale(1); }
-    
-    .m-header { background: var(--primary-gradient); padding: 30px 20px 20px; color: white; text-align: center; position: relative; }
-    .m-close-top { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-    .m-close-top:hover { background: rgba(255,255,255,0.4); }
-    .m-avatar { width: 70px; height: 70px; background: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--primary); font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-    .m-body { padding: 24px; overflow-y: auto; background: var(--bg-body); flex: 1; }
-    
-    .progress-box { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--shadow-card); border: 1.5px solid var(--border); margin-bottom: 20px; }
-    .progress-bar { height: 8px; background: var(--blue-100); border-radius: 4px; overflow: hidden; margin-top: 8px; margin-bottom: 8px; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), #f59e0b); width: 0%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 4px; }
-    
-    .section-title { font-size: 13px; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; font-family: var(--font-head);}
-    
-    .fav-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-    .fav-item { background: white; border: 1.5px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-    .fav-badge { background: var(--success-soft); color: var(--success); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
-    
-    .timeline { background: white; border-radius: 16px; padding: 5px 20px; box-shadow: var(--shadow-card); border: 1.5px solid var(--border); }
-    .t-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px dashed var(--border); }
-    .t-item:last-child { border-bottom: none; }
-    
-    .toast-container { position: fixed; top: 90px; right: 20px; z-index: 12000; display: flex; flex-direction: column; gap: 10px; }
-    .toast { background: var(--slate-900); border-left: 4px solid var(--primary); padding: 12px 24px; border-radius: 100px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); min-width: 300px; animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 13px; color: white; border: 2px solid rgba(255,255,255,0.1); font-family: var(--font-body);}
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-    /* MOBILE RESPONSIVE */
-    @media(max-width: 600px) {
-        .header { padding: 16px 20px; flex-wrap: wrap; gap: 10px;}
-        .input-wrapper { flex-direction: column; }
-        .action-bar { flex-direction: column; align-items: stretch; }
-        .magic-btn { justify-content: center; }
-        .podium-box { align-items: center; gap: 8px; min-height: 160px; margin-bottom: 20px; }
-        .podium-card { width: 30%; padding: 10px 5px; }
-        .crown { font-size: 24px; top: -16px; }
-        .p-name { font-size: 12px; margin-top: 10px; }
-        .p-amt { font-size: 14px; }
-        .rank-1 { height: 140px; } .rank-2 { height: 110px; } .rank-3 { height: 90px; }
+    .crm-header-card {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-radius: var(--radius-card); padding: 24px; color: white;
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 20px; box-shadow: 0 10px 30px rgba(15,23,42,0.15);
+        margin-bottom: 24px; position: relative; overflow: hidden;
     }
-</style>
+    .crm-header-card::after {
+        content: '\f0c0'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+        position: absolute; right: -20px; bottom: -40px; font-size: 140px;
+        color: rgba(255,255,255,0.03); pointer-events: none; transform: rotate(-15deg);
+    }
+
+    /* AI Button */
+    .btn-ai-magic {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white;
+        border: none; padding: 12px 20px; border-radius: 12px; font-weight: 800;
+        font-size: 13px; cursor: pointer; transition: var(--trans);
+        display: inline-flex; align-items: center; gap: 8px;
+        box-shadow: 0 6px 20px rgba(139,92,246,0.3); white-space: nowrap; font-family: var(--font-body);
+    }
+    .btn-ai-magic:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(139,92,246,0.4); }
+
+    /* Filters - Responsive Wrap & Scroll */
+    .crm-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; }
+    .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; flex: 1; min-width: 280px;}
+    .filter-chips::-webkit-scrollbar { display: none; }
+    
+    .chip {
+        padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+        background: var(--white); border: 1.5px solid var(--border);
+        color: var(--text-muted); cursor: pointer; transition: var(--trans);
+        white-space: nowrap; display: flex; align-items: center; gap: 6px; font-family: var(--font-body);
+    }
+    .chip:hover { border-color: var(--primary); color: var(--primary); }
+    .chip.active { background: var(--primary); border-color: var(--primary); color: white; box-shadow: 0 4px 12px var(--primary-glow); }
+    
+    .search-box-crm { position: relative; flex: 1; min-width: 250px; }
+    .search-box-crm i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light); }
+    .search-box-crm input { width: 100%; padding: 10px 14px 10px 40px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; outline: none; transition: var(--trans); color: var(--text-main); font-family: var(--font-body); box-sizing: border-box;}
+    .search-box-crm input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+
+    /* Customer Grid - Prevents overlap */
+    .customer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+    
+    .cust-card {
+        background: var(--white); border: 1.5px solid var(--border);
+        border-radius: var(--radius-card); padding: 16px; transition: var(--trans);
+        box-shadow: var(--shadow-sm); cursor: pointer; position: relative; overflow: hidden;
+    }
+    .cust-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .cust-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+    .cust-card.status-vip::before { background: var(--vip-gold); }
+    .cust-card.status-risk::before { background: var(--risk-red); }
+    .cust-card.status-regular::before { background: var(--reg-blue); }
+
+    .cust-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .cust-avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--bg-input); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--primary); font-weight: 800; flex-shrink: 0;}
+    
+    .cust-name { font-size: 15px; font-weight: 800; color: var(--text-main); font-family: var(--font-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;}
+    .cust-phone { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+    
+    .cust-badge { font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-vip { background: #FEF3C7; color: #D97706; }
+    .badge-risk { background: var(--danger-soft); color: var(--danger); }
+    .badge-regular { background: var(--blue-50); color: var(--primary); }
+
+    .cust-stats { display: flex; justify-content: space-between; background: var(--bg-input); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .stat-box { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .stat-val { font-size: 14px; font-weight: 800; color: var(--text-main); font-family: 'JetBrains Mono', monospace; }
+    
+    .cust-udhaar { margin-top: 10px; padding-top: 10px; border-top: 1.5px dashed var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: var(--danger); }
+
+    /* Profile Modal specific */
+    .profile-header { text-align: center; padding-bottom: 20px; border-bottom: 1.5px dashed var(--border); margin-bottom: 20px; }
+    .profile-avatar { width: 64px; height: 64px; border-radius: 20px; background: var(--primary-soft); color: var(--primary); font-size: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-weight: 800; }
+    .profile-name { font-size: 20px; font-weight: 800; color: var(--text-main); font-family: var(--font-head); margin-bottom: 4px; }
+    .profile-phone { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+
+    .history-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; padding-right: 5px; }
+    .history-item { background: var(--white); border: 1.5px solid var(--border); padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .history-date { font-size: 12px; font-weight: 800; color: var(--text-main); }
+    .history-meta { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+    .history-amt { font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+  </style>
 </head>
-<body>
-
-<div class="toast-container" id="toastArea"></div>
-
-<div class="header">
-    <h1><i class="fa-solid fa-gem"></i> Bharat CRM</h1>
-    <div class="header-actions">
-        <select id="shopSwitcher" class="shop-switcher" style="display:none;"></select>
-        
-        <button class="nav-btn" onclick="window.syncCloudData()" id="syncBtn">
-            <i class="fa-solid fa-rotate"></i> Sync
-        </button>
-        <a href="dashboard.html" class="nav-btn"><i class="fa-solid fa-house"></i> Home</a>
-    </div>
-</div>
+<body class="lang-en">
 
 <div class="container">
-    <div id="podiumArea" class="podium-box"></div>
-
-    <div class="settings-box">
-        <h3><i class="fa-solid fa-bullhorn" style="color:var(--warning)"></i> Manage Customer Offer Text</h3>
-        <div class="input-wrapper">
-            <input type="text" id="offerInput" class="imp-inp" placeholder="E.g. Top 3 Champions get a Special Gift!">
-            <button class="save-btn" onclick="window.saveOffer()">Save Offer</button>
+    
+    <div class="crm-header-card" style="margin-top: 20px;">
+        <div style="z-index: 1;">
+            <h1 style="margin:0 0 6px 0; font-size:22px; font-weight:800; font-family:var(--font-head);"><i class="fa-solid fa-users" style="color:var(--border-hover);"></i> Bharat CRM & Khata</h1>
+            <div style="font-size:13px; color:var(--text-light); font-weight:600;">Manage customer loyalty, identify churn risks, and track Udhaar.</div>
+        </div>
+        <div style="display:flex; gap:10px; z-index: 1; flex-wrap: wrap;">
+            <button id="btnExportCustomers" class="btn btn-outline" style="border-color:rgba(255,255,255,0.3); color:white; background:transparent;"><i class="fa-solid fa-download"></i> Export List</button>
+            <button id="btnAiMarketing" class="btn-ai-magic">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Re-Targeting
+            </button>
         </div>
     </div>
 
-    <div class="action-bar">
-        <div class="search-wrapper">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input type="text" class="search-inp" placeholder="Search by name or phone..." oninput="window.renderCustomers(this.value)">
+    <div class="kpi-grid" style="margin-bottom: 20px;">
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon" style="background:var(--blue-50); color:var(--primary);"><i class="fa-solid fa-users"></i></div>
+            <div class="kpi-details">
+                <h4>Total Customers</h4>
+                <div class="value" id="kpiTotalCust">0</div>
+            </div>
         </div>
-        <button class="magic-btn" onclick="window.runAiMarketing()" id="aiBtn">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Magic Marketing
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon" style="background:#FEF3C7; color:#D97706;"><i class="fa-solid fa-crown"></i></div>
+            <div class="kpi-details">
+                <h4>VIP Customers</h4>
+                <div class="value" id="kpiVipCust">0</div>
+            </div>
+        </div>
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon" style="background:var(--danger-soft); color:var(--danger);"><i class="fa-solid fa-user-clock"></i></div>
+            <div class="kpi-details">
+                <h4>At-Risk (Churn)</h4>
+                <div class="value" id="kpiRiskCust">0</div>
+            </div>
+        </div>
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon" style="background:var(--success-soft); color:var(--success);"><i class="fa-solid fa-wallet"></i></div>
+            <div class="kpi-details">
+                <h4>Total Lifetime Value</h4>
+                <div class="value" id="kpiTotalLtv">₹0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="crm-filters">
+        <div class="filter-chips" id="loyaltyFilters">
+            <button class="chip active" data-filter="ALL">All Customers</button>
+            <button class="chip" data-filter="VIP"><i class="fa-solid fa-crown" style="color:var(--vip-gold);"></i> VIP Loyalty</button>
+            <button class="chip" data-filter="REGULAR"><i class="fa-solid fa-star" style="color:var(--reg-blue);"></i> Regulars</button>
+            <button class="chip" data-filter="RISK"><i class="fa-solid fa-triangle-exclamation" style="color:var(--risk-red);"></i> At-Risk</button>
+            <button class="chip" data-filter="UDHAAR"><i class="fa-solid fa-book-open" style="color:var(--primary);"></i> Has Udhaar</button>
+        </div>
+        
+        <div class="search-box-crm">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search customer name or phone..." autocomplete="off">
+        </div>
+    </div>
+
+    <div class="customer-grid" id="customerGrid">
+        </div>
+</div>
+
+<div id="profileModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:450px;">
+        <div class="modal-header" style="margin-bottom:0;">
+            <button id="btnCloseProfile" class="btn-close" style="margin-left:auto;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <div class="profile-header">
+            <div class="profile-avatar" id="profAvatar">C</div>
+            <div class="profile-name" id="profName">Customer Name</div>
+            <div class="profile-phone" id="profPhone">+91 0000000000</div>
+            <div style="margin-top:10px;" id="profBadge"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+            <div style="background:var(--bg-input); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);">
+                <div style="font-size:10px; color:var(--text-muted); font-weight:800; text-transform:uppercase; margin-bottom:4px;">Total Spent</div>
+                <div style="font-size:18px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';" id="profLtv">₹0</div>
+            </div>
+            <div style="background:var(--bg-input); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);">
+                <div style="font-size:10px; color:var(--text-muted); font-weight:800; text-transform:uppercase; margin-bottom:4px;">Store Visits</div>
+                <div style="font-size:18px; font-weight:800; color:var(--text-main); font-family:'JetBrains Mono';" id="profVisits">0</div>
+            </div>
+        </div>
+
+        <div style="background:var(--danger-soft); border:1.5px solid rgba(220,38,38,0.2); padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;" id="profUdhaarBox">
+            <div>
+                <div style="font-size:11px; font-weight:800; color:var(--danger); text-transform:uppercase;">Pending Udhaar</div>
+                <div style="font-size:10px; color:var(--text-main); opacity:0.8; font-weight:600; margin-top:2px;">Clear this in Billing/Sales</div>
+            </div>
+            <div style="font-size:22px; font-weight:800; color:var(--danger); font-family:'JetBrains Mono';" id="profUdhaarVal">₹0</div>
+        </div>
+
+        <h4 style="font-size:13px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px; font-family:var(--font-body);">Purchase History</h4>
+        <div class="history-list" id="profHistory">
+            </div>
+        
+        <button id="btnWhatsappCust" class="btn btn-outline" style="width:100%; margin-top:20px; border-color:#22c55e; color:#22c55e;">
+            <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Message
         </button>
     </div>
-
-    <div id="customerGrid" class="grid">
-        <div style="text-align:center; width:100%; padding:40px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Loading Intelligence...</div>
-    </div>
 </div>
 
-<div id="profileModal" class="modal-overlay" onclick="window.closeModal(event)">
-    <div class="modal-box">
-        <div class="m-header">
-            <button class="m-close-top" onclick="window.closeModal(true)"><i class="fa-solid fa-xmark"></i></button>
-            <div class="m-avatar" id="mAvatar">A</div>
-            <h2 style="margin:0; font-weight:800; font-size:24px;" id="mName">Name</h2>
-            <div style="font-size:13px; font-weight:600; background:rgba(255,255,255,0.2); display:inline-block; padding:4px 12px; border-radius:20px; margin-top:8px;" id="mTier">Tier</div>
-        </div>
-        <div class="m-body">
-            
-            <div class="progress-box">
-                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); font-weight:600;">
-                    <span>Total Spent: <b id="mSpend" style="color:var(--text-main); font-family:'JetBrains Mono'; font-size:14px;">₹0</b></span>
-                    <span id="mNextGoal" style="color:var(--primary);">Goal: ₹2000</span>
-                </div>
-                <div class="progress-bar"><div class="progress-fill" id="mProgress"></div></div>
-                <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:500;" id="mMsg">Unlock Gold Status at ₹2000</div>
-            </div>
+<script type="module" src="./js/pages/customers.js"></script>
 
-            <div class="section-title"><i class="fa-solid fa-cart-shopping"></i> Top Frequent Buys</div>
-            <div class="fav-grid" id="mFavorites"></div>
-
-            <div class="section-title" style="margin-top: 10px;"><i class="fa-solid fa-clock-rotate-left"></i> Purchase History</div>
-            <div class="timeline" id="mHistory"></div>
-            
-        </div>
-    </div>
-</div>
-
-<script type="module">
-    // 🟢 1. IMPORT FIREBASE SDK
-    import { db } from "./bharatpos.js";
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // --- UX UTILS ---
-    window.formatMoney = (n) => '₹' + Number(n).toLocaleString('en-IN');
-    
-    window.showToast = function(msg, type='info') {
-        const container = document.getElementById('toastArea');
-        if(!container) return;
-        const el = document.createElement('div');
-        el.className = 'toast';
-        const icon = type === 'success' ? '<i class="fa-solid fa-check-circle" style="color:var(--success)"></i>' : '<i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary)"></i>';
-        el.innerHTML = `${icon} <span>${msg}</span>`;
-        container.appendChild(el);
-        setTimeout(() => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateX(100%)';
-            setTimeout(() => el.remove(), 300);
-        }, 4000);
-    }
-    
-    window.escapeHtml = function(str) { 
-        return str ? String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;') : ''; 
-    }
-
-    // --- STATE ---
-    window.customersList = [];
-    window.enterpriseSales = [];
-    window.currentBranch = 'all';
-
-    document.addEventListener("DOMContentLoaded", async () => {
-        window.loadOfferSetting();
-        
-        // Multi-Branch Setup
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        let shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
-
-        if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
-            const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
-            if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
-        }
-
-        const switcher = document.getElementById('shopSwitcher');
-        if (shops.length > 1 && switcher) {
-            switcher.style.display = 'inline-block';
-            switcher.innerHTML = '<option value="all">🌍 All Branches</option>' + 
-                shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${window.escapeHtml(s.shopName)}</option>`).join('');
-            
-            window.currentBranch = user.merchantId;
-            switcher.value = user.merchantId;
-            
-            switcher.addEventListener('change', (e) => {
-                window.currentBranch = e.target.value;
-                window.analyzeData();
-            });
-        } else if (switcher) {
-            window.currentBranch = user.merchantId || 'all';
-        }
-
-        // Instantly load local cache via Async Bridge
-        let eSales = await window.dbGet('bharatpos_enterprise_sales', 'null');
-        if(eSales === null) eSales = await window.dbGet('bharatpos_sales', '[]');
-        window.enterpriseSales = eSales;
-        
-        window.analyzeData();
-        
-        // Silently sync cloud data
-        if (user.merchantId && db && navigator.onLine) {
-            setTimeout(() => { window.syncCloudData(true, shops); }, 500);
-        }
-    });
-
-    window.loadOfferSetting = function() {
-        const inp = document.getElementById('offerInput');
-        if(inp) inp.value = localStorage.getItem('bharatpos_offer_text') || "📢 Top 3 Champions get a Special Gift!";
-    }
-    
-    window.saveOffer = function() {
-        const text = document.getElementById('offerInput').value.trim();
-        if(!text) { alert("Enter text"); return; }
-        localStorage.setItem('bharatpos_offer_text', text);
-        window.showToast("Offer text updated successfully!", "success");
-    }
-
-    // 🟢 FIREBASE SYNC LOGIC (Multi-Branch)
-    window.syncCloudData = async function(isSilent = false, shopsArray = null) {
-        const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        const btn = document.getElementById('syncBtn');
-        
-        if(!user.merchantId) {
-            if(!isSilent) window.showToast("Merchant ID missing. Showing offline data.", "info");
-            return;
-        }
-
-        if(btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing`;
-
-        try {
-            let shops = shopsArray;
-            if(!shops) {
-                shops = [{ merchantId: user.merchantId, shopName: user.shopName || 'Main Shop' }];
-                if (typeof window.loadOwnedShops === 'function' && (user.mobile || user.phone)) {
-                    const fetchedShops = await window.loadOwnedShops(user.mobile || user.phone);
-                    if (fetchedShops && fetchedShops.length > 0) shops = fetchedShops;
-                }
-            }
-
-            let allSales = [];
-            const fetchPromises = shops.map(async (shop) => {
-                if(!shop.merchantId) return;
-                try {
-                    const salesSnap = await getDocs(collection(db, "shops", shop.merchantId, "sales"));
-                    salesSnap.forEach(d => { let data = d.data(); data._branchId = shop.merchantId; allSales.push(data); });
-                } catch(e) {}
-            });
-            
-            await Promise.all(fetchPromises);
-            
-            allSales.sort((a,b) => new Date(b.date) - new Date(a.date));
-            window.enterpriseSales = allSales;
-            await window.dbSave('bharatpos_enterprise_sales', window.enterpriseSales);
-            
-            window.analyzeData();
-            if(!isSilent) window.showToast("CRM Cloud Sync Complete!", "success");
-            
-        } catch(e) {
-            console.error("Firebase sync failed", e);
-            if(!isSilent) window.showToast("Cloud sync failed. Using local data.", "info");
-        } finally {
-            if(btn) btn.innerHTML = `<i class="fa-solid fa-rotate"></i> Sync`;
-        }
-    }
-
-    // --- CRM INTELLIGENCE ENGINE ---
-    window.analyzeData = function() {
-        const custMap = {};
-        
-        const fSales = window.currentBranch === 'all' ? window.enterpriseSales : window.enterpriseSales.filter(s => s._branchId === window.currentBranch || s.merchantId === window.currentBranch);
-
-        fSales.forEach(s => {
-            let name = (s.customerName || s.customer || "Walk-in").trim();
-            let phone = (s.phone || "").trim();
-            
-            if(name.toLowerCase() === 'walk-in' && !phone) return; // Skip pure anonymous walk-ins
-
-            // 🟢 INTELLIGENCE: Group by Phone if available, else Name
-            let key = phone ? phone : name.toLowerCase(); 
-
-            if(!custMap[key]) custMap[key] = { 
-                name: name, 
-                phone: phone, 
-                totalSpent: 0, 
-                visits: 0, 
-                lastVisit: s.date, 
-                history: [] 
-            };
-            
-            // If we grouped by phone but original name was missing, update it
-            if(name !== "Walk-in" && custMap[key].name === "Walk-in") {
-                custMap[key].name = name;
-            }
-
-            custMap[key].totalSpent += Number(s.amount || s.total || 0);
-            custMap[key].visits += 1;
-            custMap[key].history.push(s);
-            
-            if(new Date(s.date) > new Date(custMap[key].lastVisit)) {
-                custMap[key].lastVisit = s.date;
-            }
-        });
-
-        window.customersList = Object.values(custMap).map(c => {
-            const days = Math.floor((new Date() - new Date(c.lastVisit)) / 86400000);
-            let tier = 'Bronze', status = 'Active';
-            let tierColor = '#94a3b8'; 
-            
-            if(c.totalSpent >= 5000) { tier = 'Platinum 💎'; tierColor = '#0ea5e9'; }
-            else if(c.totalSpent >= 2000) { tier = 'Gold 🏆'; tierColor = '#f59e0b'; }
-            else if(c.totalSpent >= 500) { tier = 'Silver 🥈'; tierColor = '#64748b'; }
-            
-            if(days > 60) status = 'Lost ⚠️'; 
-            else if(days > 30) status = 'At Risk 🟠'; 
-            else if(c.visits === 1) status = 'New 🌱';
-            else status = 'Active 🟢';
-
-            return { ...c, tier, tierColor, status, days };
-        });
-
-        window.customersList.sort((a,b) => b.totalSpent - a.totalSpent);
-        
-        window.renderPodium();
-        window.renderCustomers();
-    }
-
-    window.renderCustomers = function(query = '') {
-        const grid = document.getElementById('customerGrid');
-        if(!grid) return;
-        
-        const displayList = window.customersList.map((c, index) => ({...c, originalIndex: index}))
-            .filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query));
-
-        if(displayList.length === 0) { 
-            grid.innerHTML = '<div style="text-align:center;width:100%;color:var(--text-muted);padding:40px;">No customers found matching search.</div>'; 
-            return; 
-        }
-
-        grid.innerHTML = displayList.map(c => {
-            let statusColor = c.status.includes('Lost') ? '#fef2f2' : (c.status.includes('Risk') ? '#fffbeb' : '#f0fdf4');
-            let statusTextColor = c.status.includes('Lost') ? '#ef4444' : (c.status.includes('Risk') ? '#d97706' : '#166534');
-
-            return `
-            <div class="cust-card" onclick="window.openProfile(${c.originalIndex})"> 
-                <div class="c-info">
-                    <h3>${window.escapeHtml(c.name)}</h3>
-                    ${c.phone ? `<div class="phone"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${window.escapeHtml(c.phone)}</div>` : ''}
-                    <div class="tags">
-                        <span class="tag" style="background:rgba(0,0,0,0.05); color:${c.tierColor}">${c.tier}</span>
-                        <span class="tag" style="background:${statusColor}; color:${statusTextColor}">${c.status}</span>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div class="c-total">${window.formatMoney(c.totalSpent)}</div>
-                    <div class="c-visits">${c.visits} Visit${c.visits>1?'s':''}</div>
-                </div>
-            </div>
-        `}).join('');
-    }
-
-    window.renderPodium = function() {
-        const podium = document.getElementById('podiumArea');
-        if(!podium) return;
-        
-        if(window.customersList.length === 0) { podium.style.display = 'none'; return; }
-        
-        podium.style.display = 'flex';
-
-        // Safe array extraction to prevent crashes if < 3 customers exist
-        let top = [];
-        if(window.customersList.length >= 3) { top = [window.customersList[1], window.customersList[0], window.customersList[2]]; }
-        else if (window.customersList.length === 2) { top = [window.customersList[1], window.customersList[0]]; }
-        else { top = [window.customersList[0]]; }
-
-        const styles = window.customersList.length >= 3 ? ['rank-2', 'rank-1', 'rank-3'] : (window.customersList.length === 2 ? ['rank-2', 'rank-1'] : ['rank-1']);
-        const emojis = window.customersList.length >= 3 ? ['🥈', '👑', '🥉'] : (window.customersList.length === 2 ? ['🥈', '👑'] : ['👑']);
-
-        podium.innerHTML = top.map((c,i) => `
-            <div class="podium-card ${styles[i]}" onclick="window.openProfile(${c.name === window.customersList[0].name ? 0 : (c.name === window.customersList[1]?.name ? 1 : 2)})" style="cursor:pointer;">
-                <div class="crown">${emojis[i]}</div>
-                <span class="p-name">${window.escapeHtml(c.name)}</span>
-                <span class="p-amt">${window.formatMoney(c.totalSpent)}</span>
-            </div>
-        `).join('');
-    }
-
-    // --- 360 PROFILE LOGIC ---
-    window.openProfile = function(index) {
-        const c = window.customersList[index];
-        if(!c) return;
-
-        document.getElementById('mName').innerText = c.name;
-        document.getElementById('mAvatar').innerText = c.name.charAt(0).toUpperCase();
-        document.getElementById('mTier').innerText = c.tier;
-        document.getElementById('mSpend').innerText = window.formatMoney(c.totalSpent);
-
-        // Progress Calculation
-        let nextGoal = 500;
-        if(c.totalSpent >= 500) nextGoal = 2000;
-        if(c.totalSpent >= 2000) nextGoal = 5000;
-        if(c.totalSpent >= 5000) nextGoal = c.totalSpent + 5000; // Keep pushing
-
-        const pct = Math.min((c.totalSpent / nextGoal)*100, 100);
-        document.getElementById('mProgress').style.width = pct + "%";
-        document.getElementById('mNextGoal').innerText = "Goal: " + window.formatMoney(nextGoal);
-        
-        let msg = "Unlock Silver Status at ₹500";
-        if(c.totalSpent >= 500) msg = "Unlock Gold Status at ₹2000";
-        if(c.totalSpent >= 2000) msg = "Unlock Platinum Status at ₹5000";
-        if(c.totalSpent >= 5000) msg = "Ultimate VIP Member 💎";
-        document.getElementById('mMsg').innerText = msg;
-
-        // Frequent Items Calculation
-        const productCounts = {};
-        c.history.forEach(sale => {
-            (sale.items || []).forEach(item => {
-                const pName = item.printName || item.name;
-                if(pName) productCounts[pName] = (productCounts[pName] || 0) + (Number(item.qty)||1);
-            });
-        });
-        
-        const sortedProds = Object.entries(productCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-        const favDiv = document.getElementById('mFavorites');
-        
-        if(sortedProds.length > 0) {
-            favDiv.innerHTML = sortedProds.map(([n, q]) => `
-                <div class="fav-item">
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">${window.escapeHtml(n)}</span> 
-                    <div class="fav-badge">${q}</div>
-                </div>
-            `).join('');
-        } else {
-            favDiv.innerHTML = '<span style="color:var(--text-muted);font-size:12px">No specific item data found.</span>';
-        }
-
-        // Purchase History Rendering
-        const histEl = document.getElementById('mHistory');
-        
-        // Clone and sort history newest first
-        const sortedHistory = [...c.history].sort((a,b) => new Date(b.date) - new Date(a.date));
-        
-        histEl.innerHTML = sortedHistory.map(h => {
-            const isUdhaar = h.paymentMode === 'Udhaar' && !h.isPaid;
-            const branchTag = window.currentBranch === 'all' && h._branchId ? `<div style="font-size:9px; color:var(--blue-600); background:var(--blue-50); padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block;">${h._branchId.slice(-4)}</div>` : '';
-
-            return `
-            <div class="t-item">
-                <div>
-                    <div style="font-weight:700; color:var(--text-main); font-size:14px;">Bill #${h.id || h.invoiceNo}</div>
-                    <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">${new Date(h.date).toLocaleString('en-IN', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
-                    ${branchTag}
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-weight:800; font-family:'JetBrains Mono'; color: ${isUdhaar ? 'var(--danger)' : 'var(--text-main)'};">${window.formatMoney(h.amount || h.total)}</div>
-                    ${isUdhaar ? '<div style="font-size:10px; color:var(--danger); font-weight:700; margin-top:2px;">UNPAID</div>' : ''}
-                </div>
-            </div>`
-        }).join('');
-
-        const modal = document.getElementById('profileModal');
-        if(modal) modal.classList.add('modal-active');
-    }
-
-    window.closeModal = function(forceClose = false, e = null) { 
-        if(forceClose || !e || e.target.id === 'profileModal' || !e.target) {
-            const m = document.getElementById('profileModal');
-            if(m) m.classList.remove('modal-active');
-        }
-    }
-
-    // --- AI MARKETING SIMULATION ---
-    window.runAiMarketing = function() { 
-        const btn = document.getElementById('aiBtn');
-        const origText = btn.innerHTML;
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Audience...`;
-        btn.style.opacity = '0.8';
-        btn.disabled = true;
-
-        setTimeout(() => {
-            const riskCount = window.customersList.filter(c => c.status.includes('Risk')).length;
-            window.showToast(`AI deployed successfully! Sent "We Miss You" SMS to ${riskCount} At-Risk customers.`, "success");
-            
-            btn.innerHTML = origText;
-            btn.style.opacity = '1';
-            btn.disabled = false;
-        }, 1500);
-    }
-</script>
 </body>
 </html>
