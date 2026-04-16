@@ -74,16 +74,53 @@ export class Navigation {
         });
     }
 } // <--- THE CLASS CLOSES HERE
-
-// <--- SERVICE WORKER REGISTRATION MUST BE OUTSIDE THE CLASS
+// --- ADVANCED PWA UPDATE MANAGER ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-                console.log('ServiceWorker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-                console.log('ServiceWorker registration failed:', error);
+        navigator.serviceWorker.register('./sw.js').then(registration => {
+            
+            // Function to show the "Update App" button
+            const showUpdatePrompt = (worker) => {
+                // Don't show multiple prompts
+                if(document.getElementById('pwa-update-toast')) return; 
+
+                const toastHTML = `
+                    <div id="pwa-update-toast" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1e293b; color:white; padding:12px 20px; border-radius:30px; display:flex; align-items:center; gap:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:2147483647; font-family:'Plus Jakarta Sans', sans-serif; font-size:13px; font-weight:700;">
+                        <span><i class="fa-solid fa-cloud-arrow-down" style="color:#10b981;"></i> App Update Available!</span>
+                        <button id="pwa-refresh-btn" style="background:#10b981; color:white; border:none; padding:8px 16px; border-radius:20px; font-weight:800; cursor:pointer;">Refresh Now</button>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', toastHTML);
+
+                // When user clicks Refresh, tell the Service Worker to take over
+                document.getElementById('pwa-refresh-btn').addEventListener('click', () => {
+                    document.getElementById('pwa-refresh-btn').innerText = "Updating...";
+                    worker.postMessage('SKIP_WAITING');
+                });
+            };
+
+            // 1. Check if there's an update already waiting
+            if (registration.waiting) showUpdatePrompt(registration.waiting);
+
+            // 2. Listen for a new update installing in the background
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    // If it finished installing and we already have a previous SW controlling the page
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdatePrompt(newWorker);
+                    }
+                });
             });
+        });
+
+        // 3. The moment the new Service Worker takes over, reload the page to apply the new code
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                window.location.reload();
+                refreshing = true;
+            }
+        });
     });
 }

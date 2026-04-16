@@ -1,22 +1,21 @@
 // File: /sw.js
 
-// IMPORTANT: Bumped version to 1.1 to force the phone to download the new fix
-const CACHE_NAME = 'bharatpos-v2';
+// Bump to v1.3 to trigger the update on your devices
+const CACHE_NAME = 'bharatpos-v1.3';
 
-// Removed the leading slashes to make paths perfectly relative
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
   './login.html',
   './dashboard.html',
+  './index.html',
+  './reports.html',
   './products.html',
   './sales.html',
   './my_dukkan.html',
   './customers.html',
   './settings.html',
   './forecast.html',
-    './reports.html',
-    
+  './my_khata.html',
   './manifest.json',
   './css/variables.css',
   './css/base.css',
@@ -30,10 +29,9 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
+    // We intentionally removed self.skipWaiting() here so it doesn't break the app mid-session
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[Service Worker] Caching App Shell');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -46,7 +44,6 @@ self.addEventListener('activate', (event) => {
             return Promise.all(
                 cacheNames.map((cache) => {
                     if (cache !== CACHE_NAME) {
-                        console.log('[Service Worker] Deleting old cache:', cache);
                         return caches.delete(cache);
                     }
                 })
@@ -56,29 +53,46 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Ignore Firebase API calls & external dynamic requests
     if (event.request.url.includes('firestore.googleapis.com') || 
         event.request.url.includes('identitytoolkit') ||
         event.request.url.includes('server-xy7s.onrender.com')) {
         return;
     }
 
-    event.respondWith(
-        // THE FIX: ignoreSearch: true prevents mobile OS URL parameters from breaking the cache
-        caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-            const fetchPromise = fetch(event.request).then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-                    const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
-                }
-                return networkResponse;
+    // Network-First for HTML
+    if (event.request.mode === 'navigate' || event.request.headers.get('accept').includes('text/html')) {
+        event.respondWith(
+            fetch(event.request).then((networkResponse) => {
+                return caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, networkResponse.clone());
+                    return networkResponse;
+                });
             }).catch(() => {
-                // Offline fallback - do nothing, let cachedResponse handle it
-            });
+                return caches.match(event.request, { ignoreSearch: true });
+            })
+        );
+        return;
+    }
 
-            return cachedResponse || fetchPromise;
+    // Cache-First for Assets
+    event.respondWith(
+        caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+            if (cachedResponse) {
+                fetch(event.request).then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
+                    }
+                }).catch(() => {});
+                return cachedResponse;
+            }
+            return fetch(event.request);
         })
     );
+});
+
+// THIS IS NEW: Listen for the user clicking the "Update" button in the UI
+self.addEventListener('message', (event) => {
+    if (event.data === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
