@@ -1,6 +1,8 @@
 // File: /js/pages/customers.js
 
-import { dbGet } from '../core/storage.js';
+import { db } from '../core/firebase.js';
+import { runTransaction, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { dbGet, dbSave } from '../core/storage.js';
 import { Navigation } from '../components/navigation.js';
 import { UI } from '../utils/ui.js';
 import { Security } from '../utils/security.js';
@@ -11,6 +13,9 @@ let aggregatedCustomers = [];
 let filteredCustomers = [];
 let activeFilter = 'ALL';
 let searchQuery = '';
+
+// Shared sales reference for settlement
+let enterpriseSalesRef = [];
 
 // --- INITIALIZATION ---
 async function initCustomers() {
@@ -41,49 +46,40 @@ function bindEvents() {
         if (card) openCustomerProfile(card.getAttribute('data-id'));
     });
 
-    document.getElementById('btnCloseProfile')?.addEventListener('click', () => UI.hideModal('profileModal'));
-    
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) UI.hideModal(e.target.id);
-        });
-    });
+    // Event Delegation for Receipt & WhatsApp
+    document.body.addEventListener('click', (e) => {
+        const receiptBtn = e.target.closest('[data-action="open-receipt"]');
+        if(receiptBtn) openReceipt(receiptBtn.getAttribute('data-json'));
 
-    document.getElementById('btnAiMarketing')?.addEventListener('click', runAiMarketingSimulation);
-    document.getElementById('btnExportCustomers')?.addEventListener('click', exportToCSV);
+        if(e.target.closest('#btnCloseProfile')) UI.hideModal('profileModal');
+        if(e.target.closest('#btnCloseReceipt')) UI.hideModal('receiptModal');
+        if(e.target.classList.contains('modal-overlay')) UI.hideModal(e.target.id);
+        if(e.target.closest('#btnExportCustomers')) exportToCSV();
+        if(e.target.closest('#btnAiMarketing')) runAiMarketingSimulation();
+    });
 }
 
 // --- DATA AGGREGATION ENGINE (RFM Analysis) ---
 async function loadAndAggregateData() {
-    // 1. Fetch raw data
     const rawCustomers = await dbGet('bharatpos_customers', '[]');
     const localSales = await dbGet('bharatpos_sales', '[]');
     const eSales = await dbGet('bharatpos_enterprise_sales', '[]');
     
-    // Merge Sales
     let mergedSalesMap = {};
     [...eSales, ...localSales].forEach(s => mergedSalesMap[s.id] = s);
     const allSales = Object.values(mergedSalesMap);
+    enterpriseSalesRef = allSales;
 
-    // 2. Build Aggregation Map
     const custMap = {};
 
-    // Seed map with known customers
     rawCustomers.forEach(c => {
         const id = c.phone || c.id || c.name.toLowerCase().replace(/\s/g, '_');
         custMap[id] = {
-            id: id,
-            name: c.name || 'Unknown',
-            phone: c.phone || c.mobile || '',
-            totalSpent: 0,
-            visitCount: 0,
-            lastVisit: new Date(0),
-            pendingUdhaar: 0,
-            history: []
+            id: id, name: c.name || 'Unknown', phone: c.phone || c.mobile || '',
+            totalSpent: 0, visitCount: 0, lastVisit: new Date(0), pendingUdhaar: 0, history: []
         };
     });
 
-    // Aggregate Sales Data
     allSales.forEach(sale => {
         const identifier = sale.customerPhone || sale.phone || (sale.customer || sale.customerName || 'walkin').toLowerCase().replace(/\s/g, '_');
         const name = sale.customer || sale.customerName || 'Walk-in';
@@ -103,7 +99,6 @@ async function loadAndAggregateData() {
         const c = custMap[identifier];
         const total = Number(sale.total || sale.amount || 0);
         
-        // Calculate Udhaar vs Spent
         const pMode = sale.paymentMethod || sale.paymentMode || 'Cash';
         let spentThisTx = 0;
         let udhaarThisTx = 0;
@@ -126,17 +121,12 @@ async function loadAndAggregateData() {
         if (saleDate > c.lastVisit) c.lastVisit = saleDate;
 
         c.history.push({
-            id: sale.id,
-            date: sale.date,
-            total: total,
-            spent: spentThisTx,
-            udhaar: udhaarThisTx,
-            items: (sale.items || []).length,
-            isPaid: sale.isPaid || false
+            id: sale.id, date: sale.date, total: total, spent: spentThisTx,
+            udhaar: udhaarThisTx, items: (sale.items || []).length, isPaid: sale.isPaid || false,
+            _fullSale: sale
         });
     });
 
-    // 3. Assign Loyalty Status (RFM Logic)
     const today = new Date();
     const thirtyDaysAgo = new Date(today); thirtyDaysAgo.setDate(today.getDate() - 30);
     const sixtyDaysAgo = new Date(today); sixtyDaysAgo.setDate(today.getDate() - 60);
@@ -144,46 +134,33 @@ async function loadAndAggregateData() {
     aggregatedCustomers = Object.values(custMap).filter(c => c.visitCount > 0 || c.pendingUdhaar > 0);
 
     aggregatedCustomers.forEach(c => {
-        c.status = 'REGULAR';
-        c.badgeClass = 'badge-regular';
-        c.cardClass = 'status-regular';
+        c.status = 'REGULAR'; c.badgeClass = 'badge-regular'; c.cardClass = 'status-regular';
 
         if (c.visitCount >= 5 && c.totalSpent >= 2000 && c.lastVisit >= thirtyDaysAgo) {
-            c.status = 'VIP';
-            c.badgeClass = 'badge-vip';
-            c.cardClass = 'status-vip';
+            c.status = 'VIP'; c.badgeClass = 'badge-vip'; c.cardClass = 'status-vip';
         } else if (c.visitCount > 1 && c.lastVisit < sixtyDaysAgo) {
-            c.status = 'RISK';
-            c.badgeClass = 'badge-risk';
-            c.cardClass = 'status-risk';
+            c.status = 'RISK'; c.badgeClass = 'badge-risk'; c.cardClass = 'status-risk';
         }
         
-        // Sort history newest first
         c.history.sort((a,b) => new Date(b.date) - new Date(a.date));
     });
 
-    // Sort by most recently active
     aggregatedCustomers.sort((a,b) => b.lastVisit - a.lastVisit);
-    
     applyFilters();
 }
 
-// --- FILTERING & RENDERING ---
 function applyFilters() {
     filteredCustomers = aggregatedCustomers.filter(c => {
-        // Loyalty Filter
         if (activeFilter === 'VIP' && c.status !== 'VIP') return false;
         if (activeFilter === 'REGULAR' && c.status !== 'REGULAR') return false;
         if (activeFilter === 'RISK' && c.status !== 'RISK') return false;
         if (activeFilter === 'UDHAAR' && c.pendingUdhaar <= 0) return false;
 
-        // Search Filter
         if (searchQuery) {
             const matchName = c.name.toLowerCase().includes(searchQuery);
             const matchPhone = c.phone.includes(searchQuery);
             if (!matchName && !matchPhone) return false;
         }
-
         return true;
     });
 
@@ -282,6 +259,7 @@ function openCustomerProfile(id) {
         historyBox.innerHTML = c.history.map(h => {
             const d = new Date(h.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
             const isUdhaar = h.udhaar > 0 && !h.isPaid;
+            const dataStr = encodeURIComponent(JSON.stringify(h._fullSale));
             
             return `
             <div class="history-item">
@@ -289,9 +267,12 @@ function openCustomerProfile(id) {
                     <div class="history-date">${d}</div>
                     <div class="history-meta">${h.items} Items • Inv #${Security.escapeHtml(h.id.slice(-6))}</div>
                 </div>
-                <div style="text-align:right;">
-                    <div class="history-amt" style="color:${isUdhaar ? 'var(--danger)' : 'var(--text-main)'};">₹${Formatters.currency(h.total)}</div>
-                    ${isUdhaar ? '<div style="font-size:10px; color:var(--danger); font-weight:700; margin-top:2px;">UNPAID</div>' : ''}
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="text-align:right;">
+                        <div class="history-amt" style="color:${isUdhaar ? 'var(--danger)' : 'var(--text-main)'};">₹${Formatters.currency(h.total)}</div>
+                        ${isUdhaar ? '<div style="font-size:10px; color:var(--danger); font-weight:700; margin-top:2px;">UNPAID</div>' : ''}
+                    </div>
+                    ${isUdhaar ? `<button class="btn-outline" style="padding:4px 8px; font-size:10px; border-radius:6px; color:var(--primary); border-color:var(--primary);" data-action="open-receipt" data-json="${dataStr}">Settle</button>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -312,6 +293,174 @@ function openCustomerProfile(id) {
     }
 
     UI.showModal('profileModal');
+}
+
+// Ensure the UI Modal exists in Customers page dynamically if missing
+function injectReceiptModalIfMissing() {
+    if(!document.getElementById('receiptModal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+        <div id="receiptModal" class="modal-overlay" style="z-index: 10500 !important;">
+            <div class="modal-box" style="max-width: 380px; padding: 20px; border-radius: 12px; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <button class="btn-close" id="btnCloseReceipt"><i class="fa-solid fa-xmark"></i></button>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #000;">
+                    <div style="text-align:center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+                        <h2 id="rec-shop" style="margin:0; font-size:18px;">Shop Name</h2>
+                        <div id="rec-id">INV: 000000</div>
+                        <div id="rec-date">Date</div>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <div>Cust: <span id="rec-name"></span></div>
+                        <div>Ph: <span id="rec-phone"></span></div>
+                    </div>
+                    <table style="width:100%; text-align:left; border-collapse:collapse;">
+                        <thead>
+                            <tr style="border-bottom:1px dashed #000;">
+                                <th style="padding:4px 0;">Item</th>
+                                <th style="padding:4px 0; text-align:center;">Qty</th>
+                                <th style="padding:4px 0; text-align:right;">Amt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rec-items"></tbody>
+                    </table>
+                    <div style="border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span>Total Bill Value:</span> <span id="rec-full-total" style="font-weight:800;">₹0</span>
+                        </div>
+                        <div id="rec-split-info" style="display:flex; justify-content:space-between; margin-bottom:4px;"></div>
+                        <div style="display:flex; justify-content:space-between; font-weight:800; font-size:14px; margin-top:8px; border-top:1px solid #000; padding-top:8px;">
+                            <span style="color:var(--danger);">PENDING UDHAAR:</span>
+                            <span id="rec-due" style="color:var(--danger);">₹0</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="btnSettle" class="btn btn-primary" style="width:100%; margin-top:20px; background:var(--success); border-color:var(--success); font-size:15px; box-shadow:0 4px 15px rgba(16,185,129,0.3);"><i class="fa-solid fa-check-circle"></i> Receive Cash & Settle</button>
+            </div>
+        </div>`);
+    }
+}
+
+function getPendingUdhaarAmount(sale) {
+    if(sale.isPaid) return 0;
+    const pMode = sale.paymentMethod || sale.paymentMode;
+    if(pMode === 'Udhaar') return Number(sale.total || sale.amount || 0);
+    if(pMode === 'Partial' && sale.split) return Number(sale.split.udhaar || 0);
+    return 0;
+}
+
+function openReceipt(dataStr) {
+    injectReceiptModalIfMissing();
+    
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const inv = JSON.parse(decodeURIComponent(dataStr));
+    const pendingAmt = getPendingUdhaarAmount(inv);
+    const invId = inv.id || inv.invoiceNo;
+
+    document.getElementById('rec-shop').innerText = Security.escapeHtml(inv._branchName || user.shopName || "BHARAT POS");
+    document.getElementById('rec-id').innerText = "INV: " + Security.escapeHtml(invId.slice(-8));
+    document.getElementById('rec-date').innerText = new Date(inv.date).toLocaleString();
+    document.getElementById('rec-name').innerText = Security.escapeHtml(inv.customerName || inv.customer || 'Walk-in');
+    document.getElementById('rec-phone').innerText = Security.escapeHtml(inv.customerPhone || inv.phone || '');
+    
+    const tbody = document.getElementById('rec-items');
+    tbody.innerHTML = (inv.items || []).map(i => {
+        const qtyPrint = i.isLoose ? `${parseFloat(i.qty).toFixed(3)} ${Security.escapeHtml(i.unitLabel||'kg')}` : `${i.qty}`;
+        const amt = i.total || (i.price * i.qty);
+        return `<tr><td>${Security.escapeHtml(i.name)} <div style="font-size:9px; color:#555;">${Security.escapeHtml(i.variant||'')}</div></td><td style="text-align:center">${qtyPrint}</td><td style="text-align:right">${amt.toFixed(2)}</td></tr>`;
+    }).join('');
+
+    document.getElementById('rec-full-total').innerText = `₹${Number(inv.total || inv.amount || 0).toFixed(2)}`;
+    
+    if(inv.split) {
+        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>Cash: ₹${inv.split.cash} | Online: ₹${inv.split.online}</span>`;
+    } else {
+        document.getElementById('rec-split-info').innerHTML = `<span>Paid:</span> <span>₹0.00</span>`;
+    }
+
+    document.getElementById('rec-due').innerText = `₹${Formatters.currency(pendingAmt)}`;
+
+    const payBtn = document.getElementById('btnSettle');
+    payBtn.onclick = () => settleDebt(invId, inv._branchId || inv.merchantId);
+
+    UI.showModal('receiptModal');
+}
+
+// THE BUG FIX: Bulletproof Partial Settlement Math & Firebase Sync
+async function settleDebt(id, saleBranchId) {
+    if(!confirm("Mark this pending amount as PAID (Cash Received)?")) return;
+
+    const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+    const targetBranch = saleBranchId || user.merchantId;
+    
+    const index = enterpriseSalesRef.findIndex(s => (s.id === id || s.invoiceNo === id));
+
+    if(index > -1) {
+        const s = enterpriseSalesRef[index];
+        const pendingAmt = getPendingUdhaarAmount(s);
+        
+        s.isPaid = true;
+        s.settledDate = new Date().toISOString();
+        
+        if((s.paymentMethod === 'Partial' || s.paymentMethod === 'Partial (Settled)') && s.split) {
+            s.split.cash = Number(s.split.cash || 0) + pendingAmt;
+            s.split.udhaar = 0; // Explicitly clear
+            s.paymentMethod = "Partial (Settled)";
+            s.paymentMode = "Partial (Settled)";
+        } else {
+            s.paymentMode = "Cash (Settled)"; 
+            s.paymentMethod = "Cash (Settled)";
+        }
+        
+        await dbSave('bharatpos_enterprise_sales', enterpriseSalesRef);
+
+        if (targetBranch === user.merchantId) {
+            const localSales = await dbGet('bharatpos_sales', '[]');
+            const lIndex = localSales.findIndex(ls => (ls.id === id || ls.invoiceNo === id));
+            if (lIndex > -1) {
+                localSales[lIndex].isPaid = true;
+                localSales[lIndex].settledDate = s.settledDate;
+                if((localSales[lIndex].paymentMethod === 'Partial' || localSales[lIndex].paymentMethod === 'Partial (Settled)') && localSales[lIndex].split) {
+                    localSales[lIndex].split.cash = Number(localSales[lIndex].split.cash || 0) + pendingAmt;
+                    localSales[lIndex].split.udhaar = 0; 
+                    localSales[lIndex].paymentMethod = "Partial (Settled)";
+                    localSales[lIndex].paymentMode = "Partial (Settled)";
+                } else {
+                    localSales[lIndex].paymentMode = "Cash (Settled)";
+                    localSales[lIndex].paymentMethod = "Cash (Settled)";
+                }
+                await dbSave('bharatpos_sales', localSales);
+            }
+        }
+
+        UI.showToast("✅ Payment Recorded Successfully!");
+        UI.hideModal('receiptModal');
+        UI.hideModal('customerModal');
+        
+        // Re-aggregate data so UI updates instantly
+        await loadAndAggregateData();
+        
+        if(targetBranch && db && navigator.onLine) {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const saleRef = doc(db, "shops", targetBranch, "sales", id);
+                    const updatePayload = {
+                        isPaid: true,
+                        settledDate: s.settledDate,
+                        paymentMethod: s.paymentMethod
+                    };
+                    
+                    if (s.paymentMode !== undefined) updatePayload.paymentMode = s.paymentMode;
+                    if (s.split !== undefined) updatePayload.split = s.split;
+
+                    transaction.update(saleRef, updatePayload);
+                });
+            } catch(e) { 
+                console.error("Firebase Udhaar Update Failed:", e); 
+                UI.showToast("Cloud Sync failed, but saved locally.", true);
+            }
+        }
+    } else {
+        alert("Error: Invoice not found.");
+    }
 }
 
 // --- ACTIONS ---
