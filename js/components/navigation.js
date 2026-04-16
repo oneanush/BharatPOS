@@ -56,7 +56,7 @@ export class Navigation {
 
         this.bindEvents();
         I18n.apply(); // Translate immediately
-    }
+    } // <--- THIS BRACKET WAS MISSING
 
     static bindEvents() {
         const toggleMenu = () => {
@@ -73,4 +73,17 @@ export class Navigation {
             I18n.toggleLanguage();
         });
     }
+} // <--- THE CLASS CLOSES HERE
+
+// <--- SERVICE WORKER REGISTRATION MUST BE OUTSIDE THE CLASS
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.log('ServiceWorker registration failed:', error);
+            });
+    });
 }
