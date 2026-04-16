@@ -2,11 +2,12 @@
 
 import { db } from '../core/firebase.js';
 import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { Security } from '../utils/security.js';
 
 let currentShopProducts = [];
 let filteredProducts = [];
 let activeCategory = 'ALL';
-let cart = {}; // { 'prodId_varId': { product, variant, qty } }
+let cart = {}; 
 let userMobile = '';
 
 export async function initStore(phone) {
@@ -15,7 +16,6 @@ export async function initStore(phone) {
     const content = document.getElementById('storeContent');
     
     try {
-        // Step 1: Fetch available shops
         const shopsSnap = await getDocs(collection(db, "shops"));
         let shops = [];
         shopsSnap.forEach(d => {
@@ -23,10 +23,9 @@ export async function initStore(phone) {
             if(data.profile) shops.push({ id: d.id, ...data.profile });
         });
 
-        // Step 2: Render Shop Selector
         renderShopSelector(content, shops);
     } catch(e) {
-        content.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444;">Failed to load stores.</div>`;
+        content.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444; font-weight:700;">Failed to load nearby stores.</div>`;
     } finally {
         loader.style.display = 'none';
     }
@@ -35,34 +34,60 @@ export async function initStore(phone) {
 function renderShopSelector(container, shops) {
     let html = `
         <h2 style="font-family:var(--font-head); margin-top:0;">Order Online</h2>
-        <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;">Select a nearby store to browse their catalog.</p>
-        <div style="display:flex; flex-direction:column; gap:12px;">
+        <p style="color:var(--text-sub); font-size:13px; margin-bottom:16px;">Select a nearby store to browse their catalog.</p>
+        
+        <div style="position:relative; margin-bottom:20px;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-sub);"></i>
+            <input type="text" id="storeShopSearch" placeholder="Search for a store..." style="width:100%; padding:12px 14px 12px 40px; border-radius:12px; border:1px solid #e2e8f0; font-size:14px; font-weight:600; font-family:inherit; outline:none; box-sizing:border-box;">
+        </div>
+
+        <div id="storeShopsContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
     `;
 
-    shops.forEach(s => {
-        html += `
-        <div class="card shop-select-btn" data-id="${s.id}" style="cursor:pointer; transition:0.2s;">
-            <div style="display:flex; align-items:center; gap:16px;">
-                <div style="width:48px; height:48px; background:#e0e7ff; color:var(--brand-primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px;"><i class="fa-solid fa-store"></i></div>
-                <div>
-                    <div style="font-weight:800; font-size:16px; color:var(--text-main);">${s.shopName}</div>
-                    <div style="font-size:12px; color:var(--text-sub); margin-top:4px;">${s.category || 'Retail Store'}</div>
-                </div>
-            </div>
-        </div>`;
-    });
-    html += `</div>`;
-    
     container.innerHTML = html;
 
-    // Attach Selection Event
-    container.querySelectorAll('.shop-select-btn').forEach(btn => {
-        btn.addEventListener('click', () => loadShopCatalog(container, btn.getAttribute('data-id'), btn.querySelector('.font-weight:800')?.innerText || 'Store'));
-    });
+    const listContainer = document.getElementById('storeShopsContainer');
+    const searchInput = document.getElementById('storeShopSearch');
+
+    const renderList = (filtered) => {
+        if(filtered.length === 0) {
+            listContainer.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub); font-weight:600;">No stores found matching your search.</div>`;
+            return;
+        }
+        listContainer.innerHTML = filtered.map(s => `
+            <div class="card shop-select-btn" data-id="${Security.escapeHtml(s.id)}" style="cursor:pointer; transition:0.2s; margin-bottom:0;">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <div style="width:48px; height:48px; background:#e0e7ff; color:var(--brand-primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px;"><i class="fa-solid fa-store"></i></div>
+                    <div>
+                        <div style="font-weight:800; font-size:16px; color:var(--text-main);">${Security.escapeHtml(s.shopName)}</div>
+                        <div style="font-size:12px; color:var(--text-sub); margin-top:4px; font-weight:600;">${Security.escapeHtml(s.category || 'Retail Store')}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Attach Selection Event
+        listContainer.querySelectorAll('.shop-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => loadShopCatalog(container, btn.getAttribute('data-id'), btn.querySelector('div[style*="font-weight:800"]')?.innerText || 'Store'));
+        });
+    };
+
+    // Initial Render
+    renderList(shops);
+
+    // Fuzzy Search Event
+    if(searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().replace(/\s+/g, '.*');
+            const regex = new RegExp(q, 'i');
+            const filtered = shops.filter(s => regex.test((s.shopName || '').toLowerCase()));
+            renderList(filtered);
+        });
+    }
 }
 
 async function loadShopCatalog(container, shopId, shopName) {
-    container.innerHTML = `<div class="loader-screen"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p>Loading Catalog...</p></div>`;
+    container.innerHTML = `<div class="loader-screen"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:12px; font-weight:700;">Loading Catalog...</p></div>`;
     
     try {
         const prodSnap = await getDocs(collection(db, "shops", shopId, "products"));
@@ -78,24 +103,24 @@ async function loadShopCatalog(container, shopId, shopName) {
         filteredProducts = currentShopProducts;
         renderCatalogUI(container, shopId, shopName, Array.from(categories));
     } catch(e) {
-        container.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444;">Failed to load products.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444; font-weight:700;">Failed to load products.</div>`;
     }
 }
 
 function renderCatalogUI(container, shopId, shopName, categories) {
-    // Add specific CSS for the store locally
     const style = `
         <style>
-            .search-bar { width: 100%; padding: 14px 16px 14px 44px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+            .search-bar { width: 100%; padding: 14px 16px 14px 44px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-family: inherit; font-size: 14px; font-weight:600; outline: none; box-sizing: border-box; }
             .search-icon { position: absolute; left: 16px; top: 15px; color: var(--text-sub); }
             .cat-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin: 16px 0; scrollbar-width: none; }
             .cat-scroll::-webkit-scrollbar { display: none; }
             .cat-chip { padding: 8px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s;}
-            .cat-chip.active { background: var(--brand-primary); color: white; border-color: var(--brand-primary); }
+            .cat-chip.active { background: var(--brand-primary); color: white; border-color: var(--brand-primary); box-shadow: 0 4px 10px rgba(99,102,241,0.2);}
             
             .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px;}
-            .prod-item { background: white; padding: 12px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between;}
-            .btn-add { background: #e0e7ff; color: var(--brand-primary); border: none; padding: 8px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px;}
+            .prod-item { background: white; padding: 12px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
+            .btn-add { background: #e0e7ff; color: var(--brand-primary); border: none; padding: 8px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s;}
+            .btn-add:active { transform: scale(0.95); }
             
             .floating-cart { position: fixed; bottom: 80px; left: 16px; right: 16px; background: var(--text-main); color: white; padding: 16px; border-radius: 16px; display: none; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.2);}
         </style>
@@ -103,8 +128,8 @@ function renderCatalogUI(container, shopId, shopName, categories) {
 
     let html = style + `
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-            <button id="btnBackToShops" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px; color:var(--text-main); cursor:pointer;"><i class="fa-solid fa-arrow-left"></i></button>
-            <h3 style="margin:0; font-family:var(--font-head); font-size:18px;">${shopName}</h3>
+            <button id="btnBackToShops" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px; color:var(--text-main); cursor:pointer; transition:0.2s;"><i class="fa-solid fa-arrow-left"></i></button>
+            <h3 style="margin:0; font-family:var(--font-head); font-size:18px;">${Security.escapeHtml(shopName)}</h3>
         </div>
 
         <div style="position:relative;">
@@ -113,7 +138,7 @@ function renderCatalogUI(container, shopId, shopName, categories) {
         </div>
 
         <div class="cat-scroll" id="storeCats">
-            <div class="cat-chip active" data-cat="ALL">All</div>
+            <div class="cat-chip active" data-cat="ALL">All Items</div>
             ${categories.map(c => `<div class="cat-chip" data-cat="${Security.escapeHtml(c)}">${Security.escapeHtml(c)}</div>`).join('')}
         </div>
 
@@ -124,7 +149,7 @@ function renderCatalogUI(container, shopId, shopName, categories) {
                 <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Your Cart</div>
                 <div style="font-size:16px; font-weight:800; font-family:'JetBrains Mono'; margin-top:2px;" id="cartTotalText">₹0</div>
             </div>
-            <button id="btnPlaceOrder" style="background:var(--brand-accent); color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:800; font-size:14px; cursor:pointer;">Place Order <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="btnPlaceOrder" style="background:var(--brand-accent); color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 4px 10px rgba(245, 158, 11, 0.3);">Place Order <i class="fa-solid fa-arrow-right"></i></button>
         </div>
     `;
 
@@ -138,7 +163,7 @@ function renderCatalogUI(container, shopId, shopName, categories) {
         const query = e.target.value.toLowerCase().replace(/\s+/g, '.*');
         const regex = new RegExp(query, 'i');
         filteredProducts = currentShopProducts.filter(p => {
-            const matchName = regex.test(p.name);
+            const matchName = regex.test((p.name || '').toLowerCase());
             const matchCat = activeCategory === 'ALL' || p.category === activeCategory;
             return matchName && matchCat;
         });
@@ -151,10 +176,12 @@ function renderCatalogUI(container, shopId, shopName, categories) {
             e.target.classList.add('active');
             activeCategory = e.target.getAttribute('data-cat');
             
-            const q = document.getElementById('fuzzySearch').value.toLowerCase();
+            const q = document.getElementById('fuzzySearch').value.toLowerCase().replace(/\s+/g, '.*');
+            const regex = new RegExp(q, 'i');
+            
             filteredProducts = currentShopProducts.filter(p => {
                 const matchCat = activeCategory === 'ALL' || p.category === activeCategory;
-                const matchName = p.name.toLowerCase().includes(q);
+                const matchName = regex.test((p.name || '').toLowerCase());
                 return matchCat && matchName;
             });
             renderProducts();
@@ -171,7 +198,7 @@ function renderProducts() {
     if(!grid) return;
 
     if(filteredProducts.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px; color:#94a3b8;">No items found.</div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8; font-weight:600;">No items found.</div>`;
         return;
     }
 
@@ -180,13 +207,13 @@ function renderProducts() {
         return `
         <div class="prod-item">
             <div>
-                <div style="font-size:10px; color:var(--brand-primary); font-weight:800; text-transform:uppercase; margin-bottom:4px;">${Security.escapeHtml(p.category || 'Item')}</div>
+                <div style="font-size:10px; color:var(--brand-primary); font-weight:800; text-transform:uppercase; margin-bottom:4px;">${Security.escapeHtml(p.category || 'General')}</div>
                 <div style="font-size:13px; font-weight:800; color:var(--text-main); line-height:1.3;">${Security.escapeHtml(p.name)}</div>
-                <div style="font-size:11px; color:var(--text-sub); margin-top:4px;">${Security.escapeHtml(v.quantity)}</div>
+                <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:4px;">${Security.escapeHtml(v.quantity)}</div>
             </div>
             <div>
                 <div style="font-size:15px; font-weight:800; color:#10b981; font-family:'JetBrains Mono'; margin-top:8px;">₹${v.price}</div>
-                <button class="btn-add" data-pid="${p.id}" data-vid="${v.id}" data-name="${Security.escapeHtml(p.name)}" data-price="${v.price}">Add to Cart</button>
+                <button class="btn-add" data-pid="${Security.escapeHtml(p.id)}" data-vid="${Security.escapeHtml(v.id)}" data-name="${Security.escapeHtml(p.name)}" data-price="${v.price}">+ Add to Cart</button>
             </div>
         </div>`;
     }).join('');
@@ -207,6 +234,8 @@ function renderProducts() {
                     qty: 1
                 };
             }
+            // Haptic feedback simulation
+            if (navigator.vibrate) navigator.vibrate(50);
             updateCartUI();
         });
     });
@@ -258,12 +287,12 @@ async function placeOrder(shopId, shopName) {
         // Push to merchant's onlineOrders collection
         await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
         
-        alert("Order sent to shop successfully!");
+        alert("Order sent to shop successfully! They will contact you shortly.");
         cart = {};
         updateCartUI();
     } catch(e) {
         console.error(e);
-        alert("Failed to send order. Try again.");
+        alert("Failed to send order. Check your internet connection.");
     } finally {
         btn.innerHTML = `Place Order <i class="fa-solid fa-arrow-right"></i>`;
         btn.disabled = false;
