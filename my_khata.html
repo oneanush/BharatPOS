@@ -17,9 +17,9 @@
         :root {
             --app-bg: #f4f7f6;
             --card-bg: #ffffff;
-            --brand-primary: #6366f1; /* Vibrant Indigo */
+            --brand-primary: #6366f1; 
             --brand-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
-            --brand-accent: #f59e0b; /* Festive Gold */
+            --brand-accent: #f59e0b; 
             --text-main: #1e293b;
             --text-sub: #64748b;
         }
@@ -51,7 +51,8 @@
         .auth-box { background: white; border-radius: 24px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; }
         .auth-input { width: 100%; padding: 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; font-weight: 700; margin-bottom: 16px; text-align: center; letter-spacing: 2px; outline: none; box-sizing: border-box;}
         .auth-input:focus { border-color: var(--brand-primary); }
-        .btn-main { background: var(--brand-gradient); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; width: 100%; cursor: pointer; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); }
+        .btn-main { background: var(--brand-gradient); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; width: 100%; cursor: pointer; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); transition: 0.2s;}
+        .btn-main:active { transform: scale(0.97); }
         
         /* Loader */
         .loader-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; color: var(--brand-primary); }
@@ -61,7 +62,7 @@
 
     <header class="app-header">
         <div class="app-brand">BharatPOS</div>
-        <div class="user-chip" id="btnProfile" style="display:none;">
+        <div class="user-chip" id="btnProfile" style="display:none;" title="Logout">
             <i class="fa-solid fa-user"></i> <span id="userNameDisplay">Guest</span>
         </div>
     </header>
@@ -113,19 +114,13 @@
             
             <div id="phoneStep">
                 <input type="tel" id="loginPhone" class="auth-input" placeholder="10-digit Mobile No." maxlength="10">
-                <button id="btnSendOtp" class="btn-main">Send OTP</button>
+                <button id="btnLoginBypass" class="btn-main">Enter Mera Khata <i class="fa-solid fa-arrow-right"></i></button>
             </div>
-            
-            <div id="otpStep" style="display:none;">
-                <input type="number" id="loginOtp" class="auth-input" placeholder="Enter 6-digit OTP" maxlength="6">
-                <button id="btnVerifyOtp" class="btn-main">Verify & Proceed</button>
-                <button id="btnCancelOtp" style="background:none; border:none; color:var(--text-sub); margin-top:16px; font-weight:700; cursor:pointer;">Cancel</button>
-            </div>
-            <div id="recaptcha-container"></div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script type="module" src="./js/pages/khata_main.js"></script>
 </body>
 </html>

@@ -1,10 +1,6 @@
 // File: /js/pages/khata_main.js
 
-import { auth } from '../core/firebase.js';
-import { RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
 let currentUserPhone = null;
-let confirmationResultObj = null;
 
 // Track loaded modules to prevent duplicate fetching
 const loadedModules = {
@@ -19,74 +15,48 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function checkAuthState() {
-    onAuthStateChanged(auth, (user) => {
-        if (user && user.phoneNumber) {
-            currentUserPhone = user.phoneNumber.replace('+91', '');
-            document.getElementById('authOverlay').style.display = 'none';
-            document.getElementById('bottomNav').style.display = 'flex';
-            document.getElementById('btnProfile').style.display = 'flex';
-            document.getElementById('userNameDisplay').innerText = currentUserPhone;
-            
-            // Load default tab (Bills)
-            loadTabModule('bills');
-        } else {
-            document.getElementById('authOverlay').style.display = 'flex';
-            initRecaptcha();
-        }
-    });
-}
-
-function initRecaptcha() {
-    if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'btnSendOtp', { 'size': 'invisible' });
+    const storedPhone = localStorage.getItem('khata_user_phone');
+    if (storedPhone && storedPhone.length === 10) {
+        loginUser(storedPhone);
+    } else {
+        document.getElementById('authOverlay').style.display = 'flex';
     }
 }
 
-// Authentication Flow
-document.getElementById('btnSendOtp').addEventListener('click', async () => {
+// Login Bypass Flow
+document.getElementById('btnLoginBypass').addEventListener('click', () => {
     const phone = document.getElementById('loginPhone').value.trim();
-    if (phone.length !== 10) return alert("Enter valid 10 digit number");
-    
-    const btn = document.getElementById('btnSendOtp');
-    btn.innerText = "Sending..."; btn.disabled = true;
-
-    try {
-        const appVerifier = window.recaptchaVerifier;
-        confirmationResultObj = await signInWithPhoneNumber(auth, `+91${phone}`, appVerifier);
-        document.getElementById('phoneStep').style.display = 'none';
-        document.getElementById('otpStep').style.display = 'block';
-    } catch (e) {
-        console.error(e);
-        alert("Failed to send OTP. Try again.");
-    } finally {
-        btn.innerText = "Send OTP"; btn.disabled = false;
+    if (phone.length !== 10 || isNaN(phone)) {
+        return alert("Please enter a valid 10-digit mobile number.");
     }
-});
-
-document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
-    const otp = document.getElementById('loginOtp').value.trim();
-    if (otp.length !== 6) return alert("Enter 6 digit OTP");
     
-    const btn = document.getElementById('btnVerifyOtp');
-    btn.innerText = "Verifying..."; btn.disabled = true;
-
-    try {
-        await confirmationResultObj.confirm(otp);
-        // onAuthStateChanged will handle the rest
-    } catch (e) {
-        alert("Invalid OTP");
-        btn.innerText = "Verify & Proceed"; btn.disabled = false;
-    }
+    // Simulate slight loading state for UX
+    const btn = document.getElementById('btnLoginBypass');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Securing...`;
+    
+    setTimeout(() => {
+        loginUser(phone);
+    }, 500);
 });
 
-document.getElementById('btnCancelOtp').addEventListener('click', () => {
-    document.getElementById('otpStep').style.display = 'none';
-    document.getElementById('phoneStep').style.display = 'block';
-});
+function loginUser(phone) {
+    currentUserPhone = phone;
+    localStorage.setItem('khata_user_phone', phone);
+    
+    // Update UI
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('bottomNav').style.display = 'flex';
+    document.getElementById('btnProfile').style.display = 'flex';
+    document.getElementById('userNameDisplay').innerText = phone;
+    
+    // Load default tab (Bills)
+    loadTabModule('bills');
+}
 
+// Logout Flow
 document.getElementById('btnProfile').addEventListener('click', () => {
     if(confirm("Log out of Mera Khata?")) {
-        auth.signOut();
+        localStorage.removeItem('khata_user_phone');
         location.reload();
     }
 });
@@ -97,7 +67,7 @@ function bindNavEvents() {
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const targetId = e.currentTarget.getAttribute('data-target');
-            const moduleName = targetId.split('-')[1]; // bills, store, khoj
+            const moduleName = targetId.split('-')[1]; // extracts 'bills', 'store', or 'khoj'
             
             // UI Switch
             navItems.forEach(nav => nav.classList.remove('active'));
@@ -128,7 +98,7 @@ function loadTabModule(moduleName) {
         });
     }
     else if (moduleName === 'khoj' && !loadedModules.khoj) {
-        // We delay Leaflet map initialization slightly to ensure the tab is visible
+        // We delay Leaflet map initialization slightly to ensure the tab's DOM is visible
         setTimeout(() => {
             import('./khata_khoj.js').then(module => {
                 module.initKhoj();
