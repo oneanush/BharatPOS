@@ -1,7 +1,7 @@
 // File: /sw.js
 
 // IMPORTANT: Bumped version to 1.1 to force the phone to download the new fix
-const CACHE_NAME = 'bharatpos-v1.1';
+const CACHE_NAME = 'bharatpos-v2';
 
 // Removed the leading slashes to make paths perfectly relative
 const ASSETS_TO_CACHE = [
