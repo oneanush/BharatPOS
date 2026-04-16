@@ -5,9 +5,8 @@ import { Security } from '../utils/security.js';
 let currentFilter = 'PENDING'; // PENDING or PAID
 
 export function initBills() {
-    // Expose listener to global scope for top-menu changes
-    window.onShopChanged = (shopId) => {
-        // Ensure we are on the bills tab before rendering
+    // Independent listener specifically for the Bills tab
+    window.refreshKhataBills = () => {
         if(document.getElementById('tab-bills').classList.contains('active')) {
             renderBillsData();
         }
@@ -18,13 +17,11 @@ export function initBills() {
 
 function renderBillsData() {
     const container = document.getElementById('billsContent');
-    const allSales = window.KhataData.sales;
+    const allSales = window.KhataData.sales || [];
     const activeShop = window.KhataData.activeShopId;
 
-    const filteredSales = activeShop === 'ALL' ? allSales : allSales.filter(s => {
-        const sid = s._branchId || s.merchantId;
-        return sid === activeShop;
-    });
+    // Use the bulletproof ID we set in the router
+    const filteredSales = activeShop === 'ALL' ? allSales : allSales.filter(s => s._resolvedShopId === activeShop);
 
     let totalSpent = 0;
     let totalPending = 0;
@@ -59,7 +56,6 @@ function renderBillsData() {
         });
     });
 
-    // Find favorite category
     let favCat = "N/A";
     let maxQty = 0;
     Object.entries(categories).forEach(([cat, qty]) => {
@@ -76,13 +72,12 @@ function renderBillsData() {
             .kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
             .kpi-card { background:white; padding:16px; border-radius:16px; border:1px solid #e2e8f0; box-shadow:0 4px 10px rgba(0,0,0,0.02);}
             .tab-switch { display:flex; background:#e2e8f0; border-radius:12px; padding:4px; margin-bottom:16px;}
-            .tab-btn { flex:1; padding:10px; border:none; background:transparent; border-radius:8px; font-weight:800; font-size:13px; color:var(--text-sub); transition:0.2s;}
+            .tab-btn { flex:1; padding:10px; border:none; background:transparent; border-radius:8px; font-weight:800; font-size:13px; color:var(--text-sub); transition:0.2s; cursor:pointer;}
             .tab-btn.active { background:white; color:var(--brand-primary); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
             
             .bill-card { background:white; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 4px 10px rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:12px;}
             .bill-header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px dashed #e2e8f0; padding-bottom:12px;}
             .bill-items { font-size:12px; color:var(--text-sub); font-weight:600; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
-            .bill-footer { display:flex; justify-content:space-between; align-items:center; padding-top:4px;}
             .badge-red { background:#fee2e2; color:#ef4444; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase;}
             .badge-green { background:#d1fae5; color:#10b981; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase;}
         </style>
@@ -101,7 +96,7 @@ function renderBillsData() {
         </div>
 
         <div class="tab-switch" id="billTabs">
-            <button class="tab-btn ${currentFilter==='PENDING'?'active':''}" data-f="PENDING">Pending (₹${totalPending})</button>
+            <button class="tab-btn ${currentFilter==='PENDING'?'active':''}" data-f="PENDING">Pending (₹${totalPending.toFixed(2)})</button>
             <button class="tab-btn ${currentFilter==='PAID'?'active':''}" data-f="PAID">Paid Bills</button>
         </div>
 
@@ -109,20 +104,20 @@ function renderBillsData() {
     `;
 
     if(listToRender.length === 0) {
-        html += `<div style="text-align:center; padding:40px; color:var(--text-sub); font-weight:600;">No ${currentFilter.toLowerCase()} bills found.</div>`;
+        html += `<div style="text-align:center; padding:40px; color:var(--text-sub); font-weight:600;">No ${currentFilter.toLowerCase()} bills found here.</div>`;
     } else {
         listToRender.forEach(b => {
             const dateStr = new Date(b.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
             const itemsStr = (b.items||[]).map(i => `${i.qty}x ${Security.escapeHtml(i.name)}`).join(', ');
             const isPen = currentFilter === 'PENDING';
-            const amtDisplay = isPen ? b._pendingAmt : b.total;
+            const amtDisplay = isPen ? b._pendingAmt : (b.total || b.amount || 0);
             
             html += `
             <div class="bill-card">
                 <div class="bill-header">
                     <div>
-                        <div style="font-weight:800; font-size:14px; color:var(--text-main);">${Security.escapeHtml(b._branchName || 'Local Shop')}</div>
-                        <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:2px;">${dateStr} • #${Security.escapeHtml(b.id.slice(-6))}</div>
+                        <div style="font-weight:800; font-size:14px; color:var(--text-main);">${Security.escapeHtml(b._resolvedShopName || 'Local Shop')}</div>
+                        <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:2px;">${dateStr} • #${Security.escapeHtml((b.id || 'INV').slice(-6))}</div>
                     </div>
                     <div style="text-align:right;">
                         <div style="font-family:'JetBrains Mono'; font-weight:800; font-size:16px; color:${isPen?'#ef4444':'#10b981'};">₹${Number(amtDisplay).toFixed(2)}</div>
@@ -137,7 +132,6 @@ function renderBillsData() {
     html += `</div>`;
     container.innerHTML = html;
 
-    // Tab Listeners
     const tbs = document.getElementById('billTabs');
     if(tbs) {
         tbs.addEventListener('click', (e) => {

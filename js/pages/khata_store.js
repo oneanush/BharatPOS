@@ -13,19 +13,21 @@ let userMobile = '';
 export async function initStore(phone) {
     userMobile = phone;
     
-    window.onShopChanged = (shopId) => {
+    // Independent listener specifically for the Store tab
+    window.refreshKhataStore = () => {
         if(document.getElementById('tab-store').classList.contains('active')) {
-            loadShopCatalog(shopId);
+            loadShopCatalog(window.KhataData.activeShopId);
         }
     };
     
-    // Load initially based on Top Selector
+    // Initial load
     loadShopCatalog(window.KhataData.activeShopId);
 }
 
 async function loadShopCatalog(shopId) {
     const container = document.getElementById('storeContent');
     
+    // Store does not support "ALL" logic. Force to first available shop.
     if(!shopId || shopId === 'ALL') {
         const firstShop = Object.keys(window.KhataData.shopsMap)[0];
         if(firstShop) {

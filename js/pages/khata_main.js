@@ -9,7 +9,7 @@ let currentUserPhone = null;
 // Global Memory Cache
 window.KhataData = {
     sales: [],
-    shopsMap: {}, // { shopId: { shopName, lat, lng } }
+    shopsMap: {}, // { shopId: { name } }
     activeShopId: null
 };
 
@@ -45,7 +45,7 @@ async function loginUser(phone) {
     
     document.getElementById('authOverlay').style.display = 'none';
     const globalLoader = document.getElementById('globalLoader');
-    globalLoader.style.display = 'flex';
+    if(globalLoader) globalLoader.style.display = 'flex';
 
     try {
         // Fetch ALL Sales for this user ONCE.
@@ -57,8 +57,12 @@ async function loginUser(phone) {
 
         snapshot.forEach(doc => {
             const s = doc.data();
+            // Bulletproof shopId extraction
             const shopId = s._branchId || s.merchantId || doc.ref.parent.parent.id;
             const shopName = s._branchName || 'Local Shop';
+            
+            s._resolvedShopId = shopId; 
+            s._resolvedShopName = shopName;
             
             sales.push(s);
             if (!shopsMap[shopId]) shopsMap[shopId] = { id: shopId, name: shopName };
@@ -81,7 +85,7 @@ async function loginUser(phone) {
         console.error(err);
         alert("Failed to sync data. Please check your internet connection.");
     } finally {
-        globalLoader.style.display = 'none';
+        if(globalLoader) globalLoader.style.display = 'none';
     }
 }
 
@@ -96,7 +100,6 @@ function populateTopSelector(shopsMap) {
         return;
     }
 
-    // Default to 'ALL' for bills, but the module handles behavior
     let html = `<option value="ALL">All My Shops</option>`;
     shopIds.forEach(id => {
         html += `<option value="${Security.escapeHtml(id)}">${Security.escapeHtml(shopsMap[id].name)}</option>`;
@@ -108,8 +111,9 @@ function populateTopSelector(shopsMap) {
 
     select.addEventListener('change', (e) => {
         window.KhataData.activeShopId = e.target.value;
-        // Broadcast change
-        if (window.onShopChanged) window.onShopChanged(e.target.value);
+        // Explicitly trigger independent module refreshes
+        if (window.refreshKhataBills) window.refreshKhataBills();
+        if (window.refreshKhataStore) window.refreshKhataStore();
     });
 }
 
@@ -144,20 +148,23 @@ function bindNavEvents() {
 }
 
 function loadTabModule(moduleName) {
-    if (moduleName === 'bills' && !loadedModules.bills) {
-        import('./khata_bills.js').then(module => { module.initBills(); loadedModules.bills = true; });
+    if (moduleName === 'bills') {
+        if(!loadedModules.bills) {
+            import('./khata_bills.js').then(module => { module.initBills(); loadedModules.bills = true; });
+        } else if (window.refreshKhataBills) {
+            window.refreshKhataBills(); // Trigger refresh on tab return
+        }
     } 
-    else if (moduleName === 'store' && !loadedModules.store) {
-        import('./khata_store.js').then(module => { module.initStore(currentUserPhone); loadedModules.store = true; });
+    else if (moduleName === 'store') {
+        if(!loadedModules.store) {
+            import('./khata_store.js').then(module => { module.initStore(currentUserPhone); loadedModules.store = true; });
+        } else if (window.refreshKhataStore) {
+            window.refreshKhataStore(); // Trigger refresh on tab return
+        }
     }
     else if (moduleName === 'khoj' && !loadedModules.khoj) {
         setTimeout(() => {
             import('./khata_khoj.js').then(module => { module.initKhoj(); loadedModules.khoj = true; });
         }, 100);
-    }
-    
-    // If module already loaded, force a refresh based on active shop
-    if (loadedModules[moduleName] && window.onShopChanged) {
-        window.onShopChanged(window.KhataData.activeShopId);
     }
 }
