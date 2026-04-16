@@ -2,6 +2,7 @@
 
 import { db } from '../core/firebase.js';
 import { collectionGroup, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { Security } from '../utils/security.js'; // <-- Added missing import
 
 let currentShopsList = [];
 
