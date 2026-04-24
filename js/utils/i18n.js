@@ -6,6 +6,7 @@ export class I18n {
         "nav_sales":        { "en": "Sales Ledger",       "hinglish": "Sales Record",      "hi": "सेल्स रिकॉर्ड" },
         "nav_finance":      { "en": "Finance HQ",         "hinglish": "Hisab Kitab",       "hi": "हिसाब किताब" },
         "nav_crm":          { "en": "Bharat CRM",         "hinglish": "Grahak (Customers)","hi": "ग्राहक" },
+        "nav_online_orders": { "en": "Online Orders",      "hinglish": "Online Orders",     "hi": "ऑनलाइन ऑर्डर्स" },
         "nav_reports":      { "en": "Reports",            "hinglish": "Reports",           "hi": "रिपोर्ट" },
         "nav_ai":           { "en": "AI-Assistant",     "hinglish": "AI-Madad",       "hi": "AI-सहायक" },
         "nav_settings":     { "en": "Settings",           "hinglish": "Settings",          "hi": "सेटिंग्स" },
