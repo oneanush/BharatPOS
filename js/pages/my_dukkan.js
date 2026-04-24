@@ -120,8 +120,10 @@ async function loadData() {
     [...eExp, ...localExp].forEach(e => mergedExp[e.id] = e);
     enterpriseExpenses = Object.values(mergedExp).sort((a,b) => new Date(b.date) - new Date(a.date));
 
-    // NEW: Load Drawer Data
-    drawerShifts = await dbGet('bharatpos_drawer_shifts', '[]');
+   // NEW: Load Drawer Data Safely
+    let rawShifts = await dbGet('bharatpos_drawer_shifts');
+    // Force it to be a real array even if storage returns a string or null
+    drawerShifts = typeof rawShifts === 'string' ? JSON.parse(rawShifts) : (rawShifts || []);
 
     refreshUI();
 
@@ -292,9 +294,13 @@ function renderDrawerUI() {
     }
 }
 
+
 async function openDrawer() {
     const input = document.getElementById('inputOpeningCash');
-    if(!input.value || input.value < 0) return UI.showToast("Enter a valid opening amount", true);
+    // Safe check for empty values
+    if(!input || input.value === '' || Number(input.value) < 0) {
+        return UI.showToast("Enter a valid opening amount", true);
+    }
     
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const targetBranch = (currentBranch !== 'all') ? currentBranch : user.merchantId;
@@ -320,6 +326,7 @@ async function openDrawer() {
     refreshUI();
     UI.showToast("Register Opened successfully!");
 }
+
 
 async function handlePayInOut(type) {
     const shift = getActiveShift();
