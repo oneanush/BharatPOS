@@ -4,323 +4,415 @@ import { db } from '../core/firebase.js';
 import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { Security } from '../utils/security.js';
 
-// --- ENCAPSULATED STATE ---
 let currentShopProducts = [];
 let filteredProducts = [];
 let activeCategory = 'ALL';
 let cart = {}; 
 let userMobile = '';
+
+// Wizard State
 let wizState = { prod: null, variant: null, brand: null, qty: 1 };
 
-// --- INITIALIZATION ---
 export async function initStore(phone) {
     userMobile = phone;
     
-    // Allow the main tab switcher to trigger a refresh
+    // Independent listener specifically for the Store tab
     window.refreshKhataStore = () => {
         if(document.getElementById('tab-store').classList.contains('active')) {
-            loadShopCatalog(window.KhataData?.activeShopId);
+            loadShopCatalog(window.KhataData.activeShopId);
         }
     };
     
-    // Bind all static modal and button events once
+    // Initial load based on Global Top Menu
+    loadShopCatalog(window.KhataData.activeShopId);
     bindWizardEvents();
-
-    // Initial load
-    loadShopCatalog(window.KhataData?.activeShopId);
 }
 
-// --- DATA ENGINE ---
 async function loadShopCatalog(shopId) {
     const container = document.getElementById('storeContent');
-    if(!container) return;
     
-    // Auto-select the first available shop if 'ALL' or null is passed
     if(!shopId || shopId === 'ALL') {
-        const firstShop = Object.keys(window.KhataData?.shopsMap || {})[0];
+        const firstShop = Object.keys(window.KhataData.shopsMap)[0];
         if(firstShop) {
-            const globalSelect = document.getElementById('globalShopSelect');
-            if(globalSelect) globalSelect.value = firstShop;
+            document.getElementById('globalShopSelect').value = firstShop;
             window.KhataData.activeShopId = firstShop;
             shopId = firstShop;
         } else {
-            container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted); font-weight:700;"><i class="fa-solid fa-store-slash fa-2x"></i><br><br>No shop is linked to your Khata yet.</div>`;
+            container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub); font-weight:700;">You don't have any associated shops to order from yet.</div>`;
             return;
         }
     }
 
-    container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--primary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Loading catalog...</div>`;
+    const shopName = window.KhataData.shopsMap[shopId]?.name || 'Local Store';
 
+    container.innerHTML = `<div class="loader-screen"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:12px; font-weight:700;">Loading Catalog...</p></div>`;
+    
     try {
-        const snap = await getDocs(collection(db, "shops", shopId, "products"));
-        currentShopProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        filteredProducts = [...currentShopProducts];
-        
-        renderCategories();
-        renderProducts();
+        const prodSnap = await getDocs(collection(db, "shops", shopId, "products"));
+        currentShopProducts = [];
+        const categories = new Set();
+
+        prodSnap.forEach(d => {
+            const p = d.data();
+            p.id = d.id; // ensure ID is attached
+            currentShopProducts.push(p);
+            if(p.category) categories.add(p.category);
+        });
+
+        filteredProducts = currentShopProducts;
+        renderCatalogUI(container, shopId, shopName, Array.from(categories));
     } catch(e) {
-        console.error("Store Load Error:", e);
-        container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--danger); font-weight:700;"><i class="fa-solid fa-triangle-exclamation fa-2x"></i><br><br>Failed to load catalog. Check connection.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#ef4444; font-weight:700;">Failed to load products.</div>`;
     }
 }
 
-// --- UI RENDERERS ---
-function renderCategories() {
-    const catContainer = document.getElementById('storeCategories');
-    if(!catContainer) return;
+function renderCatalogUI(container, shopId, shopName, categories) {
+    const style = `
+        <style>
+            .search-bar { width: 100%; padding: 14px 16px 14px 44px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-family: inherit; font-size: 14px; font-weight:600; outline: none; box-sizing: border-box; }
+            .search-icon { position: absolute; left: 16px; top: 15px; color: var(--text-sub); }
+            .cat-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin: 16px 0; scrollbar-width: none; }
+            .cat-scroll::-webkit-scrollbar { display: none; }
+            .cat-chip { padding: 8px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s;}
+            .cat-chip.active { background: var(--brand-primary); color: white; border-color: var(--brand-primary); box-shadow: 0 4px 10px rgba(99,102,241,0.2);}
+            
+            .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px;}
+            .prod-item { background: white; padding: 12px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
+            .btn-add { background: #e0e7ff; color: var(--brand-primary); border: none; padding: 8px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s;}
+            .btn-add:active { transform: scale(0.95); }
+            
+            .floating-cart { position: fixed; bottom: 80px; left: 16px; right: 16px; background: var(--text-main); color: white; padding: 16px; border-radius: 16px; display: none; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.2);}
+        </style>
+    `;
 
-    const categories = new Set(currentShopProducts.map(p => p.category || 'Uncategorized'));
-    
-    let html = `<button class="chip ${activeCategory === 'ALL' ? 'active' : ''}" data-cat="ALL">All Items</button>`;
-    categories.forEach(c => {
-        html += `<button class="chip ${activeCategory === c ? 'active' : ''}" data-cat="${Security.escapeHtml(c)}">${Security.escapeHtml(c)}</button>`;
+    let html = style + `
+        <div style="font-size:12px; font-weight:800; color:var(--brand-accent); text-transform:uppercase; margin-bottom:4px;">Currently Shopping At</div>
+        <h3 style="margin:0 0 16px 0; font-family:var(--font-head); font-size:20px; color:var(--text-main);">${Security.escapeHtml(shopName)}</h3>
+
+        <div style="position:relative;">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="fuzzySearch" class="search-bar" placeholder="Search for items...">
+        </div>
+
+        <div class="cat-scroll" id="storeCats">
+            <div class="cat-chip active" data-cat="ALL">All Items</div>
+            ${categories.map(c => `<div class="cat-chip" data-cat="${Security.escapeHtml(c)}">${Security.escapeHtml(c)}</div>`).join('')}
+        </div>
+
+        <div class="prod-grid" id="storeProdGrid"></div>
+
+        <div class="floating-cart" id="floatingCart">
+            <div>
+                <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Your Cart</div>
+                <div style="font-size:16px; font-weight:800; font-family:'JetBrains Mono'; margin-top:2px;" id="cartTotalText">₹0</div>
+            </div>
+            <button id="btnPlaceOrder" style="background:var(--brand-accent); color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 4px 10px rgba(245, 158, 11, 0.3);">Place Order <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Fuzzy Search Event
+    document.getElementById('fuzzySearch').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().replace(/\s+/g, '.*');
+        const regex = new RegExp(query, 'i');
+        filteredProducts = currentShopProducts.filter(p => {
+            const matchName = regex.test((p.name || '').toLowerCase());
+            const matchCat = activeCategory === 'ALL' || p.category === activeCategory;
+            return matchName && matchCat;
+        });
+        renderProducts();
     });
 
-    catContainer.innerHTML = html;
-
-    catContainer.querySelectorAll('.chip').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            catContainer.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+    // Category Chip Event
+    document.getElementById('storeCats').addEventListener('click', (e) => {
+        if(e.target.classList.contains('cat-chip')) {
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
             activeCategory = e.target.getAttribute('data-cat');
             
-            if(activeCategory === 'ALL') filteredProducts = currentShopProducts;
-            else filteredProducts = currentShopProducts.filter(p => p.category === activeCategory);
+            const q = document.getElementById('fuzzySearch').value.toLowerCase().replace(/\s+/g, '.*');
+            const regex = new RegExp(q, 'i');
             
+            filteredProducts = currentShopProducts.filter(p => {
+                const matchCat = activeCategory === 'ALL' || p.category === activeCategory;
+                const matchName = regex.test((p.name || '').toLowerCase());
+                return matchCat && matchName;
+            });
             renderProducts();
-        });
+        }
     });
+
+    document.getElementById('btnPlaceOrder').addEventListener('click', () => placeOrder(shopId, shopName));
+    renderProducts();
 }
 
-function renderProducts() {
-    const grid = document.getElementById('storeContent');
-    if(!grid) return;
-    grid.innerHTML = '';
-
-    // 1. INJECT THE PREMIUM SERVICE REQUEST CARD FIRST
-    const serviceCard = document.createElement('div');
-    serviceCard.innerHTML = `
-        <div class="product-card" style="display:flex; flex-direction:column; overflow:hidden; border:2px dashed var(--primary); border-radius:16px; background:#eff6ff; cursor:pointer; transition:0.2s; height:100%; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);" onclick="addCustomService()">
-            <div style="height:140px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:48px;">
-                <i class="fa-solid fa-screwdriver-wrench"></i>
-            </div>
-            <div style="padding:16px; display:flex; flex-direction:column; flex:1; text-align:center;">
-                <div style="font-size:16px; font-weight:800; color:var(--primary); margin-bottom:4px;">Request a Service</div>
-                <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:12px;">Fan Repair, Plumbing, Custom List...</div>
-                <button class="btn-main" style="margin-top:auto; padding:8px 16px; border-radius:100px; font-size:13px; background:var(--primary); color:white; border:none;">Request Now <i class="fa-solid fa-arrow-right"></i></button>
-            </div>
-        </div>
-    `;
-    grid.appendChild(serviceCard.firstElementChild);
-
-    // 2. RENDER PHYSICAL PRODUCTS
-    if(filteredProducts.length === 0 && currentShopProducts.length > 0) {
-        grid.innerHTML += `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted); font-weight:700;">No items found in this category.</div>`;
-        return;
-    }
-
-    filteredProducts.forEach(p => {
-        let minPrice = Infinity;
-        (p.variants || []).forEach(v => { if(Number(v.price) < minPrice) minPrice = Number(v.price); });
-        if(minPrice === Infinity) minPrice = 0;
-
-        const el = document.createElement('div');
-        el.innerHTML = `
-            <div class="product-card" style="display:flex; flex-direction:column; overflow:hidden; border:1.5px solid var(--border); border-radius:16px; background:white; box-shadow:0 4px 10px rgba(0,0,0,0.03); height:100%;">
-                <div style="height:140px; background:linear-gradient(135deg, #f8fafc, #f1f5f9); display:flex; align-items:center; justify-content:center; color:#cbd5e1; font-size:48px;">
-                    <i class="fa-solid fa-box-open"></i>
-                </div>
-                <div style="padding:16px; display:flex; flex-direction:column; flex:1;">
-                    <div style="font-size:10px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${Security.escapeHtml(p.category || 'Item')}</div>
-                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${Security.escapeHtml(p.name)}</div>
-                    
-                    <div style="margin-top:auto; display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px dashed var(--border);">
-                        <div style="font-size:16px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';">₹${minPrice.toFixed(2)}</div>
-                        <button class="btn-main" style="padding:6px 14px; border-radius:100px; font-size:12px; border:none; background:var(--primary); color:white; cursor:pointer;" onclick="openStoreWizard('${p.id}')">Add <i class="fa-solid fa-plus"></i></button>
-                    </div>
-                </div>
-            </div>
-        `;
-        grid.appendChild(el.firstElementChild);
-    });
-}
-
-// --- WIZARD & CART LOGIC ---
-window.openStoreWizard = (prodId) => {
-    const prod = currentShopProducts.find(p => p.id === prodId);
-    if(!prod) return;
-
-    wizState = { prod: prod, variant: null, brand: null, qty: 1 };
-    
-    document.getElementById('wizardStepVariant').style.display = 'block';
-    document.getElementById('wizardStepBrand').style.display = 'none';
-    document.getElementById('wizardStepQty').style.display = 'none';
-
-    const vGrid = document.getElementById('wizardVariantGrid');
-    vGrid.innerHTML = prod.variants.map((v, idx) => `
-        <div class="wizard-option" onclick="selectWizVariant(${idx})" style="padding:15px; border:1.5px solid var(--border); border-radius:12px; text-align:center; cursor:pointer; background:white;">
-            <div style="font-weight:800; color:var(--text-main);">${Security.escapeHtml(String(v.quantity))}</div>
-            <div style="font-size:14px; color:var(--primary); font-weight:800; margin-top:6px; font-family:'JetBrains Mono';">₹${v.price}</div>
-        </div>
-    `).join('');
-
-    document.getElementById('storeWizardModal').style.display = 'flex';
-};
-
-window.selectWizVariant = (idx) => {
-    const variant = wizState.prod.variants[idx];
-    wizState.variant = variant;
-
-    if(variant.brands && variant.brands.length > 0) {
-        document.getElementById('wizardStepVariant').style.display = 'none';
-        document.getElementById('wizardStepBrand').style.display = 'block';
-        
-        const bGrid = document.getElementById('wizardBrandGrid');
-        bGrid.innerHTML = variant.brands.map((b, bIdx) => `
-            <div class="wizard-option" onclick="selectWizBrand(${bIdx})" style="padding:15px; border:1.5px solid var(--border); border-radius:12px; text-align:center; cursor:pointer; background:white;">
-                <div style="font-weight:800; color:var(--text-main);">${Security.escapeHtml(b.name)}</div>
-            </div>
-        `).join('');
-    } else {
-        window.goToWizQty();
-    }
-};
-
-window.selectWizBrand = (idx) => {
-    wizState.brand = wizState.variant.brands[idx].name;
-    window.goToWizQty();
-};
-
-window.goToWizQty = () => {
-    document.getElementById('wizardStepVariant').style.display = 'none';
-    document.getElementById('wizardStepBrand').style.display = 'none';
-    document.getElementById('wizardStepQty').style.display = 'block';
-    
-    wizState.qty = 1;
-    document.getElementById('wizQtyDisplay').innerText = wizState.qty;
-};
-
-// --- CUSTOM SERVICE HANDLER ---
+// --- NEW: CUSTOM SERVICE HANDLER ---
 window.addCustomService = () => {
     const serviceName = prompt("Enter the service you need (e.g., Fan Repair, Plumbing, Custom Grocery List):");
     if(!serviceName || serviceName.trim() === '') return;
     
     const serviceId = 'srv_' + Date.now();
     cart[serviceId] = {
-        id: serviceId,
-        name: "Service Request: " + serviceName,
+        prodId: serviceId,
+        variantId: 'custom',
+        name: "Service: " + serviceName,
+        variantName: '',
         price: 0, 
         qty: 1,
         isService: true
     };
     
-    window.updateCartUI();
-    alert(serviceName + " added to your request list!");
+    if (navigator.vibrate) navigator.vibrate(50);
+    updateCartUI();
+    alert(serviceName + " added to your cart!");
 };
 
-// --- EVENTS AND UI UPDATES ---
-function bindWizardEvents() {
-    document.getElementById('wizClose')?.addEventListener('click', () => {
-        document.getElementById('storeWizardModal').style.display = 'none';
-    });
+function renderProducts() {
+    const grid = document.getElementById('storeProdGrid');
+    if(!grid) return;
 
-    document.getElementById('wizQtyMinus')?.addEventListener('click', () => {
-        if(wizState.qty > 1) { wizState.qty--; document.getElementById('wizQtyDisplay').innerText = wizState.qty; }
-    });
+    // 1. INJECT THE SERVICE CARD EXACTLY LIKE A NORMAL PRODUCT
+    let serviceCardHtml = `
+    <div class="prod-item" style="border: 2px dashed var(--brand-primary); cursor: pointer; background: #eff6ff;" onclick="addCustomService()">
+        <div>
+            <div style="font-size:10px; color:var(--brand-primary); font-weight:800; text-transform:uppercase; margin-bottom:4px;">Custom Request</div>
+            <div style="font-size:13px; font-weight:800; color:var(--text-main); line-height:1.3;">Request a Service</div>
+            <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:4px;">Fan Repair, Plumbing, etc.</div>
+        </div>
+        <div>
+            <div style="font-size:15px; font-weight:800; color:var(--brand-primary); font-family:'JetBrains Mono'; margin-top:8px; text-align:center;"><i class="fa-solid fa-screwdriver-wrench fa-lg"></i></div>
+            <button class="btn-add" style="background:var(--brand-primary); color:white;">Add Request</button>
+        </div>
+    </div>`;
 
-    document.getElementById('wizQtyPlus')?.addEventListener('click', () => {
-        wizState.qty++; document.getElementById('wizQtyDisplay').innerText = wizState.qty;
-    });
+    if(filteredProducts.length === 0) {
+        grid.innerHTML = serviceCardHtml + `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8; font-weight:600;">No items found.</div>`;
+        return;
+    }
 
-    document.getElementById('wizAddToCart')?.addEventListener('click', () => {
-        const p = wizState.prod;
-        const v = wizState.variant;
-        const b = wizState.brand;
-        const q = wizState.qty;
-
-        const cartId = `${p.id}_${v.id}_${b || 'none'}`;
-        const displayName = b ? `${p.name} (${v.quantity}) - ${b}` : `${p.name} (${v.quantity})`;
-
-        if(cart[cartId]) cart[cartId].qty += q;
-        else cart[cartId] = { id: cartId, prodId: p.id, name: displayName, price: Number(v.price), qty: q };
-
-        window.updateCartUI();
-        document.getElementById('storeWizardModal').style.display = 'none';
-    });
-
-    document.getElementById('fabCart')?.addEventListener('click', () => {
-        const modal = document.getElementById('cartWizModal');
-        const list = document.getElementById('cartWizItems');
-        if(!modal || !list) return;
+    // 2. RENDER NORMAL PRODUCTS
+    let productsHtml = filteredProducts.map(p => {
+        const v = p.variants[0] || {};
         
-        list.innerHTML = Object.values(cart).map(item => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#f8fafc; border:1px solid var(--border); border-radius:12px; margin-bottom:10px;">
-                <div>
-                    <div style="font-weight:800; font-size:14px; color:var(--text-main);">${Security.escapeHtml(item.name)}</div>
-                    <div style="font-size:13px; color:var(--primary); font-weight:800; margin-top:4px; font-family:'JetBrains Mono';">
-                        ${item.isService ? '<span style="color:var(--text-muted);">Price set by merchant</span>' : `₹${item.price.toFixed(2)} x ${item.qty}`}
-                    </div>
-                </div>
-                <button onclick="removeFromCart('${item.id}')" style="background:#fee2e2; border:none; color:var(--danger); width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+        // Exact Unit Price Math for Grid Display
+        let priceStr = `₹${v.price}`;
+        let unitLabel = v.quantity || 'pc';
+        if (p.isLoose) {
+            const bq = Number(v.baseQty) || 1;
+            const bu = v.baseUnit || 'kg';
+            priceStr = `₹${(v.price / bq).toFixed(2)}`;
+            unitLabel = bu;
+        }
+
+        const hasChoices = (p.variants.length > 1) || (v.brands && v.brands.length > 0);
+        const btnText = hasChoices ? 'Select Options' : '+ Add to Cart';
+
+        return `
+        <div class="prod-item">
+            <div>
+                <div style="font-size:10px; color:var(--brand-primary); font-weight:800; text-transform:uppercase; margin-bottom:4px;">${Security.escapeHtml(p.category || 'General')}</div>
+                <div style="font-size:13px; font-weight:800; color:var(--text-main); line-height:1.3;">${Security.escapeHtml(p.name)}</div>
+                <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:4px;">${Security.escapeHtml(v.quantity)}</div>
             </div>
-        `).join('');
+            <div>
+                <div style="font-size:15px; font-weight:800; color:#10b981; font-family:'JetBrains Mono'; margin-top:8px;">${priceStr} <span style="font-size:10px; color:var(--text-sub);">/ ${Security.escapeHtml(unitLabel)}</span></div>
+                <button class="btn-add" data-pid="${Security.escapeHtml(p.id)}">${btnText}</button>
+            </div>
+        </div>`;
+    }).join('');
 
-        modal.style.display = 'flex';
+    grid.innerHTML = serviceCardHtml + productsHtml;
+
+    // Bind Add to Cart / Open Wizard
+    grid.querySelectorAll('.btn-add').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const pid = e.currentTarget.getAttribute('data-pid');
+            if(!pid) return; // Prevent clicking the service card's visual button from triggering this logic
+            
+            const prod = currentShopProducts.find(p => p.id === pid);
+            if(!prod) return;
+
+            // If the product has options, open wizard. Otherwise, 1-click add to cart.
+            if (prod.variants.length > 1 || (prod.variants[0].brands && prod.variants[0].brands.length > 0)) {
+                openWizard(prod);
+            } else {
+                addToCart(prod, prod.variants[0], null, 1);
+            }
+        });
     });
-
-    document.getElementById('btnCartClose')?.addEventListener('click', () => {
-        document.getElementById('cartWizModal').style.display = 'none';
-    });
-
-    document.getElementById('btnPlaceOrder')?.addEventListener('click', placeOrder);
 }
 
-window.removeFromCart = (cartId) => {
-    delete cart[cartId];
-    window.updateCartUI();
-    const fab = document.getElementById('fabCart');
-    if(fab && fab.style.display !== 'none') fab.click(); // Refresh modal view
-};
+// --- WIZARD LOGIC & DYNAMIC PRICING ---
+function bindWizardEvents() {
+    document.getElementById('wizQtyMinus').addEventListener('click', () => { 
+        if(wizState.qty > 1) { 
+            wizState.qty--; 
+            document.getElementById('wizQtyDisplay').innerText = wizState.qty; 
+            updateWizardTotal(); // Dynamically update button price
+        } 
+    });
+    
+    document.getElementById('wizQtyPlus').addEventListener('click', () => { 
+        wizState.qty++; 
+        document.getElementById('wizQtyDisplay').innerText = wizState.qty; 
+        updateWizardTotal(); // Dynamically update button price
+    });
+    
+    document.getElementById('wizAddToCart').addEventListener('click', () => {
+        if(!wizState.variant) return alert("Select a variant");
+        addToCart(wizState.prod, wizState.variant, wizState.brand, wizState.qty);
+        document.getElementById('storeWizardModal').style.display = 'none';
+    });
 
-window.updateCartUI = () => {
-    const fab = document.getElementById('fabCart');
-    const txt = document.getElementById('fabCartText');
+    document.getElementById('wizardVariantGrid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-wizard-opt');
+        if(btn) {
+            document.querySelectorAll('#wizardVariantGrid .btn-wizard-opt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            wizState.variant = wizState.prod.variants.find(v => v.id === btn.getAttribute('data-id'));
+            checkWizardBrand();
+            updateWizardTotal(); // Dynamically update button price when variant changes
+        }
+    });
+
+    document.getElementById('wizardBrandGrid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-wizard-opt');
+        if(btn) {
+            document.querySelectorAll('#wizardBrandGrid .btn-wizard-opt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            wizState.brand = btn.getAttribute('data-name');
+        }
+    });
+}
+
+function openWizard(prod) {
+    wizState = { prod, variant: prod.variants[0], brand: null, qty: 1 };
+    document.getElementById('wizardProdName').innerText = prod.name;
+    document.getElementById('wizQtyDisplay').innerText = '1';
+
+    const vGrid = document.getElementById('wizardVariantGrid');
+    
+    // Explicit per-unit math for the wizard variant options
+    vGrid.innerHTML = prod.variants.map((v, i) => {
+        let priceStr = `₹${v.price}`;
+        let unitLabel = v.quantity || 'pc';
+        if (prod.isLoose) {
+            const bq = Number(v.baseQty) || 1;
+            const bu = v.baseUnit || 'kg';
+            priceStr = `₹${(v.price / bq).toFixed(2)}`;
+            unitLabel = bu;
+        }
+
+        return `
+        <div class="btn-wizard-opt ${i===0?'active':''}" data-id="${Security.escapeHtml(v.id)}">
+            <span>${Security.escapeHtml(v.quantity)}</span>
+            <span style="color:var(--success); font-family:'JetBrains Mono';">${priceStr} / ${Security.escapeHtml(unitLabel)}</span>
+        </div>
+        `;
+    }).join('');
+    
+    document.getElementById('wizardStepType').style.display = prod.variants.length > 1 ? 'block' : 'none';
+    
+    checkWizardBrand();
+    updateWizardTotal(); // Set initial Add to Cart button price
+    
+    document.getElementById('storeWizardModal').style.display = 'flex';
+}
+
+function checkWizardBrand() {
+    const bGrid = document.getElementById('wizardBrandGrid');
+    const v = wizState.variant;
+    
+    if (v && v.brands && v.brands.length > 0) {
+        wizState.brand = v.brands[0].name;
+        bGrid.innerHTML = v.brands.map((b, i) => `
+            <div class="btn-wizard-opt ${i===0?'active':''}" data-name="${Security.escapeHtml(b.name)}">
+                <span>${Security.escapeHtml(b.name)}</span>
+            </div>
+        `).join('');
+        document.getElementById('wizardStepBrand').style.display = 'block';
+    } else {
+        wizState.brand = null;
+        document.getElementById('wizardStepBrand').style.display = 'none';
+    }
+    
+    document.getElementById('wizardStepQty').style.display = 'block';
+}
+
+function updateWizardTotal() {
+    const btn = document.getElementById('wizAddToCart');
+    if (!wizState.variant) return;
+
+    let price = wizState.variant.price;
+    if (wizState.prod.isLoose) {
+        const bq = Number(wizState.variant.baseQty) || 1;
+        price = price / bq;
+    }
+
+    const total = price * wizState.qty;
+    btn.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart • ₹${total.toFixed(2)}`;
+}
+
+// --- CART LOGIC ---
+function addToCart(prod, variant, brandName, qty) {
+    const key = `${prod.id}_${variant.id}_${brandName||'none'}`;
+    
+    // Ensure accurate unit price is used in cart
+    let price = variant.price;
+    if(prod.isLoose) {
+        const bq = Number(variant.baseQty) || 1;
+        price = variant.price / bq; 
+    }
+
+    if(cart[key]) {
+        cart[key].qty += qty;
+    } else {
+        cart[key] = { 
+            prodId: prod.id, variantId: variant.id, 
+            name: prod.name, variantName: variant.quantity, brand: brandName,
+            price: price, qty: qty 
+        };
+    }
+    
+    if (navigator.vibrate) navigator.vibrate(50);
+    updateCartUI();
+}
+
+function updateCartUI() {
+    const fab = document.getElementById('floatingCart');
+    const txt = document.getElementById('cartTotalText');
     if(!fab || !txt) return;
 
     let total = 0, items = 0;
+    let hasService = false;
+    
     Object.values(cart).forEach(item => { 
-        total += (item.price * item.qty); 
+        total += item.price * item.qty; 
         items += item.qty; 
+        if(item.isService) hasService = true;
     });
 
     if(items > 0) {
-        const hasService = Object.values(cart).some(i => i.isService);
-        txt.innerText = hasService ? `${items} Items/Services added` : `${items} Items | ₹${total.toFixed(2)}`;
+        txt.innerText = hasService ? `${items} Items/Services` : `${items} Items | ₹${total.toFixed(2)}`;
         fab.style.display = 'flex';
     } else {
         fab.style.display = 'none';
-        const modal = document.getElementById('cartWizModal');
-        if(modal) modal.style.display = 'none';
     }
-};
+}
 
-// --- FIREBASE ORDER SUBMISSION ---
-async function placeOrder() {
-    // 1. Secure Shop ID Validation
-    const shopId = window.KhataData?.activeShopId;
-    if (!shopId || shopId === 'ALL') {
-        return alert("Please select a specific shop from the top dropdown before placing your order.");
-    }
-
+// --- UPGRADED PLACE ORDER FUNCTION ---
+async function placeOrder(shopId, shopName) {
     if(Object.keys(cart).length === 0) return;
 
     const btn = document.getElementById('btnPlaceOrder');
-    if(btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sending...`; btn.disabled = true; }
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`; btn.disabled = true;
 
+    // Detect if this order contains a custom service request
     const hasService = Object.values(cart).some(i => i.isService);
     const orderType = hasService ? "Service Request" : "Home Delivery";
 
-    // 2. Fetch Live Location (Silently fails if blocked)
+    // Grab Live GPS Location
     let location = null;
     try {
         const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:5000}));
@@ -329,37 +421,43 @@ async function placeOrder() {
         console.warn("Location permission denied or timeout");
     }
 
-    // 3. Build & Send Payload
     try {
         let total = 0;
-        const itemsArr = Object.values(cart).map(i => { total += (i.price * i.qty); return i; });
+        
+        // Format items precisely so the merchant's dashboard reads them correctly
+        const itemsArr = Object.values(cart).map(i => { 
+            total += i.price * i.qty; 
+            return {
+                id: i.prodId || i.id,
+                name: i.name + (i.variantName ? ` (${i.variantName})` : ''),
+                price: i.price,
+                qty: i.qty
+            };
+        });
 
         const order = {
             date: new Date().toISOString(),
             customerMobile: userMobile,
             customerName: "Khata App User",
             status: "PENDING",
-            orderType: orderType,
-            location: location,
+            orderType: orderType, // Added!
+            location: location,   // Added!
             totalAmount: total,
-            items: itemsArr
+            items: itemsArr       // Formatted!
         };
 
-        // Sends to Firebase exactly where the Merchant's online_orders.js is listening!
         await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
         
-        alert("Request sent successfully! The merchant will process your request shortly.");
-        
-        // Clear cart and close modals
+        alert("Request sent successfully! The merchant has received your order and location.");
         cart = {}; 
-        window.updateCartUI();
+        updateCartUI();
         const modal = document.getElementById('cartWizModal');
         if(modal) modal.style.display = 'none';
         
     } catch (error) {
         console.error("Order Error:", error);
-        alert("Failed to send request. Please check your internet connection and try again.");
+        alert("Failed to send request. Check your internet connection.");
     } finally {
-        if(btn) { btn.innerHTML = `Place Order`; btn.disabled = false; }
+        btn.innerHTML = `Place Order <i class="fa-solid fa-arrow-right"></i>`; btn.disabled = false;
     }
 }

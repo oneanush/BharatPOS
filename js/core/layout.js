@@ -41,6 +41,7 @@ export const injectLayout = (activePageCode) => {
               <a href="my_dukkan.html" class="${getActive('finance')}"><i class="fa-solid fa-wallet"></i> <span data-i18n="nav_finance">Finance HQ</span></a>
               <a href="reports.html" class="${getActive('reports')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_reports">Reports</span></a>
               <a href="customers.html" class="${getActive('crm')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_crm">Bharat CRM</span></a>
+              <a href="online_orders.html" class="${getActive('online_orders')}"><i class="fa-solid fa-shopping-cart"></i> <span data-i18n="nav_online_orders">Online Orders</span></a>
               <a href="ai.html" class="${getActive('ai')}"><i class="fa-solid fa-brain"></i> <span data-i18n="nav_ai"> AI-Madad</span></a>
               <a href="settings.html" class="${getActive('settings')}"><i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span></a>
         </div>
