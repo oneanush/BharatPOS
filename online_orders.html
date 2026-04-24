@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>Online Orders & Services - BharatPOS</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+  <style>
+    .orders-container { display: flex; height: calc(100vh - 80px); max-width: 1400px; margin: 0 auto; gap: 20px; padding: 20px; }
+    .orders-list-pane { flex: 1; max-width: 400px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-card); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-sm); }
+    .orders-detail-pane { flex: 2; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-card); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-sm); }
+    
+    .pane-header { padding: 15px 20px; border-bottom: 1.5px solid var(--border); background: #f8fafc; font-weight: 800; font-family: var(--font-head); font-size: 16px; color: var(--text-main); display: flex; justify-content: space-between; align-items: center;}
+    
+    .order-card { padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+    .order-card:hover { background: var(--bg-input); }
+    .order-card.active { background: var(--blue-50); border-left-color: var(--primary); }
+    
+    .oc-type { font-size: 10px; font-weight: 800; text-transform: uppercase; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 5px; }
+    .oc-phone { font-size: 14px; font-weight: 700; color: var(--text-main); }
+    .oc-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .detail-body { padding: 20px; overflow-y: auto; flex: 1; }
+    #customerMap { width: 100%; height: 250px; background: #e2e8f0; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border); }
+    
+    .billing-section { background: var(--bg-input); padding: 20px; border-top: 1.5px solid var(--border); }
+    .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; font-weight: 600; }
+    
+    @media(max-width: 900px) {
+        .orders-container { flex-direction: column; height: auto; }
+        .orders-list-pane { max-width: 100%; height: 40vh; }
+        .orders-detail-pane { height: auto; }
+    }
+  </style>
+</head>
+<body class="lang-en">
+
+<div class="orders-container">
+    <div class="orders-list-pane">
+        <div class="pane-header">
+            <span><i class="fa-solid fa-bell" style="color:var(--primary);"></i> Incoming Requests</span>
+            <span id="orderCount" style="background:var(--danger); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">0</span>
+        </div>
+        <div id="ordersList" style="overflow-y: auto; flex: 1;">
+            <div style="padding: 30px; text-align: center; color: var(--text-muted); font-weight: 600;">Loading orders...</div>
+        </div>
+    </div>
+
+    <div class="orders-detail-pane">
+        <div class="pane-header" id="detailHeader">Select an order to view details</div>
+        
+        <div class="detail-body" id="detailBody" style="display:none;">
+            <div id="customerMap"></div>
+            
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <div>
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Customer Mobile</div>
+                    <div style="font-size:18px; font-weight:800; color:var(--text-main);" id="detPhone"></div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Request Type</div>
+                    <div style="font-size:16px; font-weight:800; color:var(--primary);" id="detType"></div>
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:10px;">Requested Items / Services</div>
+            <div id="detItems" style="background:white; border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:20px;"></div>
+        </div>
+
+        <div class="billing-section" id="billingSection" style="display:none;">
+            <h4 style="margin:0 0 15px 0; font-family:var(--font-head);">Generate Bill & Complete</h4>
+            
+            <div class="form-group">
+                <label class="floating-label" style="position:static; margin-bottom:5px;">Add Delivery / Service Charge (₹)</label>
+                <input type="number" id="extraCharge" class="form-input" placeholder="0" value="0" style="font-weight:800; font-size:16px;">
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin:15px 0; font-size:20px; font-weight:800;">
+                <span>Grand Total:</span>
+                <span style="color:var(--success); font-family:'JetBrains Mono';" id="grandTotalDisplay">₹0</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button id="btnReject" class="btn btn-outline" style="color:var(--danger); border-color:rgba(220,38,38,0.3);"><i class="fa-solid fa-xmark"></i> Reject Order</button>
+                <button id="btnGenerateBill" class="btn btn-primary" style="box-shadow: 0 5px 15px var(--primary-glow);"><i class="fa-solid fa-file-invoice"></i> Generate Bill</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="./js/pages/online_orders.js"></script>
+
+</body>
+</html>

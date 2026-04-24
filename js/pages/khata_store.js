@@ -356,33 +356,57 @@ function updateCartUI() {
         fab.style.display = 'none';
     }
 }
-
 async function placeOrder(shopId, shopName) {
     if(Object.keys(cart).length === 0) return;
 
+    // 1. Ask for Service/Order Type
+    const orderType = prompt("Enter Order Type (e.g., Home Delivery, AC Repair, Plumbing):", "Home Delivery");
+    if (!orderType) return; // User cancelled
+
     const btn = document.getElementById('btnPlaceOrder');
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`; btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`; 
+    btn.disabled = true;
+
+    // 2. Grab Live Location
+    let location = null;
+    try {
+        const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch(e) {
+        console.warn("Location permission denied or timed out.");
+    }
 
     try {
         let total = 0;
         const itemsArr = Object.values(cart).map(i => { total += i.price * i.qty; return i; });
 
+        // 3. Construct Enhanced Order Payload
         const order = {
             date: new Date().toISOString(),
             customerMobile: userMobile,
             customerName: "Khata App User",
             status: "PENDING",
+            orderType: orderType, // New!
+            location: location,   // New!
             totalAmount: total,
             items: itemsArr
         };
 
+        // 4. Send to Firebase
         await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
-        alert("Order sent to shop successfully! They will contact you shortly.");
-        cart = {}; updateCartUI();
-        document.getElementById('storeWizardModal').style.display = 'none';
-    } catch(e) {
-        alert("Failed to send order. Check your internet connection.");
+        
+        alert("Request sent successfully! The merchant will process your bill.");
+        cart = {}; 
+        updateCartUI();
+        document.getElementById('cartWizModal').style.display = 'none';
+        
+    } catch (error) {
+        console.error("Order Error:", error);
+        alert("Failed to send request. Check connection.");
     } finally {
-        btn.innerHTML = `Place Order <i class="fa-solid fa-arrow-right"></i>`; btn.disabled = false;
+        btn.innerHTML = `Place Order`; 
+        btn.disabled = false;
     }
 }
