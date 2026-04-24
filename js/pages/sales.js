@@ -107,7 +107,7 @@ async function loadSalesData() {
     
     let mergedSalesMap = {};
     [...eSales, ...localSales].forEach(s => mergedSalesMap[s.id] = s);
-    enterpriseSales = Object.values(mergedSalesMap).sort((a, b) => new Date(b.date) - new Date(a.date));
+    enterpriseSales = Object.values(mergedSalesMap).sort((a, b) => new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp));
 
     applyFilters();
 
@@ -131,7 +131,7 @@ async function loadSalesData() {
             
             await Promise.all(fetchPromises);
             
-            allEnterpriseSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+            allEnterpriseSales.sort((a, b) => new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp));
             enterpriseSales = allEnterpriseSales;
             
             await dbSave('bharatpos_enterprise_sales', enterpriseSales);
@@ -160,21 +160,23 @@ function applyFilters() {
     filteredSales = enterpriseSales.filter(s => {
         if(branchFilter !== 'all' && s._branchId !== branchFilter && s.merchantId !== branchFilter) return false;
 
-        const d = new Date(s.date);
+        const d = new Date(s.date || s.timestamp || Date.now());
         if(d < startD || d > endD) return false;
         
-        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
+        // Bulletproof Payment Mode Extraction
+        const pMode = String(s.paymentMethod || s.paymentMode || 'Cash');
+        
         if(mode === 'Settled') {
             if(!s.isPaid || !s.settledDate) return false;
         } else if(mode !== 'ALL') {
-            if(mode === 'Udhaar' && s.isPaid) return false; // Exclude settled from active udhaar
+            if(mode === 'Udhaar' && s.isPaid) return false;
             if(!pMode.includes(mode)) return false;
         }
 
         if(query) {
-            const cust = (s.customer || s.customerName || '').toLowerCase();
-            const phone = s.phone || s.customerPhone || '';
-            const id = s.id.toLowerCase();
+            const cust = String(s.customer || s.customerName || '').toLowerCase();
+            const phone = String(s.phone || s.customerPhone || '');
+            const id = String(s.id || '').toLowerCase();
             if(!cust.includes(query) && !phone.includes(query) && !id.includes(query)) return false;
         }
 
@@ -195,7 +197,7 @@ function renderKPIs() {
     let udhaarPending = 0;
     
     filteredSales.forEach(s => {
-        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
+        const pMode = String(s.paymentMethod || s.paymentMode || 'Cash');
         const total = Number(s.total || s.amount || 0);
 
         if (pMode === 'Partial' && s.split) {
@@ -207,9 +209,8 @@ function renderKPIs() {
             totalSales += total;
         }
 
-        // Add settled amounts if they were settled within this filtered view
         if(s.isPaid && s.settledDate) {
-            totalSales += (pMode === 'Partial (Settled)' && s.split) ? Number(s.split.udhaar || 0) : total;
+            totalSales += (pMode.includes('Partial') && s.split) ? Number(s.split.udhaar || 0) : total;
         }
     });
 
@@ -238,52 +239,65 @@ function renderChunk() {
 
     const fragment = document.createDocumentFragment();
 
+    // BULLETPROOF LOOP: Wrap in Try/Catch to prevent 1 bad record from breaking the whole grid
     chunk.forEach(sale => {
-        const id = sale.id;
-        const shortId = id.slice(-8);
-        const dateStr = new Date(sale.date).toLocaleString('en-IN', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
-        const total = Number(sale.total || sale.amount || 0).toFixed(2);
-        
-        const custName = sale.customer || sale.customerName || 'Walk-in Customer';
-        const custPhone = sale.phone || sale.customerPhone || '';
-        const custDisplay = custPhone ? `${Security.escapeHtml(custName)} (${Security.escapeHtml(custPhone)})` : Security.escapeHtml(custName);
-        
-        const itemsSummary = (sale.items || []).map(i => `${i.qty}x ${Security.escapeHtml(i.name)}`).join(', ');
-        
-        let pMode = sale.paymentMethod || sale.paymentMode || 'Cash';
-        let modeClass = 'mode-cash';
-        
-        if(pMode.includes('Online')) modeClass = 'mode-online';
-        if(pMode.includes('Udhaar') && !sale.isPaid) modeClass = 'mode-udhaar';
-        if(pMode.includes('Partial')) modeClass = 'mode-partial';
-        
-        // BUG FIX: Changed 's.settledDate' to 'sale.settledDate'
-        if(sale.isPaid && sale.settledDate) modeClass = 'mode-settled'; 
+        try {
+            const id = String(sale.id || 'UNKNOWN');
+            const shortId = id.length > 8 ? id.slice(-8) : id;
+            
+            const dateObj = new Date(sale.date || sale.timestamp || Date.now());
+            const dateStr = dateObj.toLocaleString('en-IN', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+            
+            const total = Number(sale.total || sale.amount || 0).toFixed(2);
+            
+            const custName = String(sale.customer || sale.customerName || 'Walk-in Customer');
+            const custPhone = String(sale.phone || sale.customerPhone || '');
+            const custDisplay = custPhone ? `${Security.escapeHtml(custName)} (${Security.escapeHtml(custPhone)})` : Security.escapeHtml(custName);
+            
+            // Extremely safe item parsing
+            const itemsSummary = Array.isArray(sale.items) 
+                ? sale.items.map(i => {
+                    if(!i) return '';
+                    return `${i.qty || 1}x ${Security.escapeHtml(String(i.name || 'Item'))}`;
+                  }).filter(Boolean).join(', ') 
+                : 'No items';
+            
+            let pMode = String(sale.paymentMethod || sale.paymentMode || 'Cash');
+            let modeClass = 'mode-cash';
+            
+            if(pMode.includes('Online')) modeClass = 'mode-online';
+            if(pMode.includes('Udhaar') && !sale.isPaid) modeClass = 'mode-udhaar';
+            if(pMode.includes('Partial')) modeClass = 'mode-partial';
+            
+            if(sale.isPaid && sale.settledDate) modeClass = 'mode-settled'; 
 
-        const card = document.createElement('div');
-        card.className = 'invoice-card';
-        card.innerHTML = `
-            <div class="inv-header">
-                <div>
-                    <div class="inv-id">#${Security.escapeHtml(shortId)}</div>
-                    <div class="inv-date">${dateStr}</div>
-                    ${sale._branchName ? `<div style="font-size:10px; color:var(--primary); font-weight:800; margin-top:4px;">📍 ${Security.escapeHtml(sale._branchName)}</div>` : ''}
+            const card = document.createElement('div');
+            card.className = 'invoice-card';
+            card.innerHTML = `
+                <div class="inv-header">
+                    <div>
+                        <div class="inv-id">#${Security.escapeHtml(shortId)}</div>
+                        <div class="inv-date">${dateStr}</div>
+                        ${sale._branchName ? `<div style="font-size:10px; color:var(--primary); font-weight:800; margin-top:4px;">📍 ${Security.escapeHtml(String(sale._branchName))}</div>` : ''}
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="inv-amount">₹${total}</div>
+                        <div class="inv-mode ${modeClass}">${Security.escapeHtml(pMode)}</div>
+                    </div>
                 </div>
-                <div style="text-align:right;">
-                    <div class="inv-amount">₹${total}</div>
-                    <div class="inv-mode ${modeClass}">${Security.escapeHtml(pMode)}</div>
+                <div class="inv-body">
+                    <div class="inv-customer"><i class="fa-solid fa-user"></i> ${custDisplay}</div>
+                    <div class="inv-items">${Security.escapeHtml(itemsSummary) || 'No items listed'}</div>
                 </div>
-            </div>
-            <div class="inv-body">
-                <div class="inv-customer"><i class="fa-solid fa-user"></i> ${custDisplay}</div>
-                <div class="inv-items">${Security.escapeHtml(itemsSummary) || 'No items listed'}</div>
-            </div>
-            <div class="inv-footer">
-                <button class="btn-action btn-view" data-id="${Security.escapeHtml(id)}"><i class="fa-solid fa-eye"></i> View</button>
-                <button class="btn-action btn-delete" data-id="${Security.escapeHtml(id)}"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        `;
-        fragment.appendChild(card);
+                <div class="inv-footer">
+                    <button class="btn-action btn-view" data-id="${Security.escapeHtml(id)}"><i class="fa-solid fa-eye"></i> View</button>
+                    <button class="btn-action btn-delete" data-id="${Security.escapeHtml(id)}"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            fragment.appendChild(card);
+        } catch (error) {
+            console.warn("Skipped rendering corrupted invoice:", error, sale);
+        }
     });
 
     grid.appendChild(fragment);
@@ -312,7 +326,7 @@ function setupIntersectionObserver() {
 
 // --- INVOICE VIEW & PRINT ---
 function viewInvoice(id) {
-    const sale = enterpriseSales.find(s => s.id === id);
+    const sale = enterpriseSales.find(s => String(s.id) === String(id));
     if(!sale) return;
 
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
@@ -330,12 +344,12 @@ function viewInvoice(id) {
 
     (sale.items || []).forEach(i => {
         let taxHtml = '';
-        const amt = i.total || (i.price * i.qty);
+        const amt = Number(i.total || (i.price * i.qty));
         if(hasGst) {
             let base = amt; let tax = 0;
             if(i.gstRate > 0) {
-                if(i.priceType === 'inclusive') { base = amt / (1 + (i.gstRate/100)); tax = amt - base; }
-                else { tax = amt * (i.gstRate/100); base = amt; }
+                if(i.priceType === 'inclusive') { base = amt / (1 + (Number(i.gstRate)/100)); tax = amt - base; }
+                else { tax = amt * (Number(i.gstRate)/100); base = amt; }
             }
             totalTax += tax; subtotal += base;
             taxHtml = `<td class="inv-center">${i.gstRate}%</td>`;
@@ -343,8 +357,8 @@ function viewInvoice(id) {
 
         rows += `
         <tr>
-            <td>${Security.escapeHtml(i.name)} <div style="font-size:10px; color:#555;">${Security.escapeHtml(i.variant)} ${i.brand?`(${Security.escapeHtml(i.brand)})`:''}</div></td>
-            <td class="inv-center">${i.qty}${i.unitLabel==='unit'?'':Security.escapeHtml(i.unitLabel)}</td>
+            <td>${Security.escapeHtml(String(i.name))} <div style="font-size:10px; color:#555;">${Security.escapeHtml(String(i.variant || ''))} ${i.brand?`(${Security.escapeHtml(String(i.brand))})`:''}</div></td>
+            <td class="inv-center">${i.qty}${i.unitLabel==='unit'?'':Security.escapeHtml(String(i.unitLabel || ''))}</td>
             <td class="inv-right">${Number(i.unitPrice || i.price).toFixed(2)}</td>
             ${taxHtml}
             <td class="inv-right">${amt.toFixed(2)}</td>
@@ -355,26 +369,26 @@ function viewInvoice(id) {
     let discountRow = sale.discount > 0 ? `<div class="inv-row" style="color:red;"><span>Discount:</span><span>-₹${Number(sale.discount).toFixed(2)}</span></div>` : '';
 
     let splitData = '';
-    const pMode = sale.paymentMethod || sale.paymentMode || 'Cash';
+    const pMode = String(sale.paymentMethod || sale.paymentMode || 'Cash');
     if(sale.split) {
         splitData = `<div style="font-size:10px; margin-top:10px; border-top:1px dotted #ccc; padding-top:5px;">
-            Split: Cash: ₹${sale.split.cash} | Online: ₹${sale.split.online} | Udhaar: ₹${sale.split.udhaar}
+            Split: Cash: ₹${Number(sale.split.cash||0)} | Online: ₹${Number(sale.split.online||0)} | Udhaar: ₹${Number(sale.split.udhaar||0)}
         </div>`;
     }
 
     const html = `
         <div class="inv-paper-header">
-            <h2 style="margin:0; font-size:18px;">${Security.escapeHtml(shopName)}</h2>
-            ${shopAddress ? `<div>${Security.escapeHtml(shopAddress)}</div>` : ''}
+            <h2 style="margin:0; font-size:18px;">${Security.escapeHtml(String(shopName))}</h2>
+            ${shopAddress ? `<div>${Security.escapeHtml(String(shopAddress))}</div>` : ''}
             <div style="margin-top:10px; font-weight:bold;">TAX INVOICE</div>
         </div>
         <div style="margin-bottom:10px;">
             <div class="inv-row">
-                <span>Inv No: ${Security.escapeHtml(sale.id.slice(-8))}</span>
-                <span>Date: ${new Date(sale.date).toLocaleDateString()}</span>
+                <span>Inv No: ${Security.escapeHtml(String(sale.id || '').slice(-8))}</span>
+                <span>Date: ${new Date(sale.date || sale.timestamp || Date.now()).toLocaleDateString()}</span>
             </div>
             <div class="inv-row">
-                <span>Cust: ${Security.escapeHtml(sale.customer || sale.customerName || 'Walk-in')} ${sale.customerPhone || sale.phone ? `(${Security.escapeHtml(sale.customerPhone || sale.phone)})` : ''}</span>
+                <span>Cust: ${Security.escapeHtml(String(sale.customer || sale.customerName || 'Walk-in'))} ${sale.customerPhone || sale.phone ? `(${Security.escapeHtml(String(sale.customerPhone || sale.phone))})` : ''}</span>
                 <span>Mode: ${Security.escapeHtml(pMode)}</span>
             </div>
         </div>
@@ -420,7 +434,6 @@ function printInvoice() {
     window.print();
     document.body.innerHTML = originalContent;
     
-    // Rebind necessary as DOM was overwritten
     window.location.reload(); 
 }
 
@@ -429,26 +442,23 @@ async function deleteInvoice(id) {
     if(!confirm("Are you sure you want to delete this invoice? The stock for these items will be added back to your inventory.")) return;
 
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-    const saleIndex = enterpriseSales.findIndex(s => s.id === id);
+    const saleIndex = enterpriseSales.findIndex(s => String(s.id) === String(id));
     if(saleIndex === -1) return;
 
     const sale = enterpriseSales[saleIndex];
     const targetBranch = sale._branchId || user.merchantId;
     const uniqueProdIds = [...new Set((sale.items || []).map(item => item.prodId))];
 
-    // Remove from UI array
     enterpriseSales.splice(saleIndex, 1);
     
-    // Fallback: Remove from Local memory if it originated here
     let localSales = await dbGet('bharatpos_sales', '[]');
-    localSales = localSales.filter(s => s.id !== id);
+    localSales = localSales.filter(s => String(s.id) !== String(id));
     await dbSave('bharatpos_sales', localSales);
     await dbSave('bharatpos_enterprise_sales', enterpriseSales);
     
     applyFilters();
     UI.showToast("Invoice deleted locally. Restoring stock...");
 
-    // Atomic Cloud Transaction to restore stock
     if (db && navigator.onLine && targetBranch) {
         try {
             await runTransaction(db, async (transaction) => {
@@ -464,36 +474,28 @@ async function deleteInvoice(id) {
                         let pData = snap.data();
                         
                         sale.items.filter(c => c.prodId === pid).forEach(cItem => {
-                            const vIdx = pData.variants.findIndex(v => v.id === cItem.id);
+                            const vIdx = pData.variants.findIndex(v => String(v.id) === String(cItem.id));
                             if(vIdx > -1) {
                                 let addition = Number(cItem.qty) || 0;
                                 if(pData.isLoose) {
                                     const bq = Number(pData.variants[vIdx].baseQty) || 1;
-                                    addition = (Number(cItem.qty) || 0) / bq; 
+                                    addition = addition / bq; 
                                 }
                                 
                                 pData.variants[vIdx].stock = (Number(pData.variants[vIdx].stock) || 0) + addition;
-                                
-                                if(cItem.brand && pData.variants[vIdx].brands) {
-                                    const bIdx = pData.variants[vIdx].brands.findIndex(b => b.name === cItem.brand);
-                                    if(bIdx > -1) {
-                                        pData.variants[vIdx].brands[bIdx].stock = (Number(pData.variants[vIdx].brands[bIdx].stock) || 0) + addition;
-                                    }
-                                }
                             }
                         });
                         transaction.update(snap.ref, { variants: pData.variants });
                     }
                 }
 
-                // Customer Udhaar Reversal
-                const pMode = sale.paymentMethod || sale.paymentMode || 'Cash';
+                const pMode = String(sale.paymentMethod || sale.paymentMode || 'Cash');
                 let udhaarAmt = 0;
-                if(!sale.isPaid && pMode === 'Udhaar') udhaarAmt = Number(sale.total || sale.amount || 0);
-                if(!sale.isPaid && pMode === 'Partial' && sale.split) udhaarAmt = Number(sale.split.udhaar || 0);
+                if(!sale.isPaid && pMode.includes('Udhaar')) udhaarAmt = Number(sale.total || sale.amount || 0);
+                if(!sale.isPaid && pMode.includes('Partial') && sale.split) udhaarAmt = Number(sale.split.udhaar || 0);
 
                 if(udhaarAmt > 0 && (sale.customerPhone || sale.phone || sale.customer || sale.customerName)) {
-                    const identifier = sale.customerPhone || sale.phone || (sale.customer || sale.customerName).toLowerCase().replace(/\s/g,'_');
+                    const identifier = sale.customerPhone || sale.phone || String(sale.customer || sale.customerName).toLowerCase().replace(/\s/g,'_');
                     const cRef = doc(db, "shops", targetBranch, "customers", identifier);
                     const cSnap = await transaction.get(cRef);
                     if(cSnap.exists()) {
@@ -503,13 +505,11 @@ async function deleteInvoice(id) {
                     }
                 }
 
-                // Delete the sale document
                 const saleRef = doc(db, "shops", targetBranch, "sales", id);
                 transaction.delete(saleRef);
             });
             UI.showToast("Cloud sync complete. Stock restored.");
         } catch(e) {
-            console.error("Failed to restore cloud stock", e);
             UI.showToast("Failed to sync stock restoration to cloud.", true);
         }
     }
@@ -521,18 +521,18 @@ function exportToExcel() {
     
     let rows = [];
     filteredSales.forEach(s => {
-        const dateStr = new Date(s.date).toLocaleString();
-        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
-        const custName = s.customer || s.customerName || 'Walk-in';
+        const dateStr = new Date(s.date || s.timestamp || Date.now()).toLocaleString();
+        const pMode = String(s.paymentMethod || s.paymentMode || 'Cash');
+        const custName = String(s.customer || s.customerName || 'Walk-in');
         
         let itemsStr = '';
         (s.items || []).forEach(i => { itemsStr += `${i.qty}x ${i.name}, `; });
         
         rows.push({
-            "Invoice ID": s.id,
+            "Invoice ID": String(s.id),
             "Date": dateStr,
             "Customer": custName,
-            "Phone": s.customerPhone || s.phone || '',
+            "Phone": String(s.customerPhone || s.phone || ''),
             "Payment Mode": pMode,
             "Total Amount": Number(s.total || s.amount).toFixed(2),
             "Items": itemsStr
@@ -556,10 +556,10 @@ function exportToPDF() {
     doc.setFontSize(10); doc.text(`Date Range: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}`, 14, 22);
 
     const tableData = filteredSales.map(s => {
-        const dateStr = new Date(s.date).toLocaleDateString();
-        const pMode = s.paymentMethod || s.paymentMode || 'Cash';
-        const custName = s.customer || s.customerName || 'Walk-in';
-        return [ s.id.slice(-8), dateStr, custName, pMode, s.items ? s.items.length.toString() : '0', Number(s.total || s.amount).toFixed(2) ];
+        const dateStr = new Date(s.date || s.timestamp || Date.now()).toLocaleDateString();
+        const pMode = String(s.paymentMethod || s.paymentMode || 'Cash');
+        const custName = String(s.customer || s.customerName || 'Walk-in');
+        return [ String(s.id).slice(-8), dateStr, custName, pMode, s.items ? s.items.length.toString() : '0', Number(s.total || s.amount).toFixed(2) ];
     });
 
     doc.autoTable({
