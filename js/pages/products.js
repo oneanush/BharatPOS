@@ -1327,7 +1327,6 @@ function stopAIScan() {
     const box = document.getElementById('scannerBox');
     if(box) box.style.display = 'none';
 }
-
 async function captureAndSendToAI() {
     if (!cameraStream) return;
     const video  = document.getElementById("cameraPreview");
@@ -1344,33 +1343,63 @@ async function captureAndSendToAI() {
     UI.showToast("✨ AI Lens analyzing...");
 
     try {
-        const url  = 'https://server-xy7s.onrender.com/ai-product-scan';
+        const url  = typeof window.buildUrl === 'function' ? window.buildUrl('/ai-product-scan') : 'https://server-xy7s.onrender.com/ai-product-scan';
         const res  = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: base64 }) });
         const data = await res.json();
 
         if (data && data.success && data.product) {
-            const pN = document.getElementById("pName"); if(pN && !pN.value) pN.value = data.product.name || "";
-            const pC = document.getElementById("pCategory"); if(pC && !pC.value) pC.value = data.product.category || "";
+            const p = data.product;
+            
+            // 1. Fill Base Info
+            const pN = document.getElementById("pName"); if(pN && !pN.value) pN.value = p.name || "";
+            const pC = document.getElementById("pCategory"); if(pC && !pC.value) pC.value = p.category || "";
+            
+            // 2. Fill GST/Accounting
+            const pHsn = document.getElementById("pHSN"); if(pHsn && !pHsn.value) pHsn.value = p.hsn_code || "";
+            const pGst = document.getElementById("pGSTRate"); if(pGst && !pGst.value && p.gst_rate !== null) pGst.value = p.gst_rate;
 
             const firstVariant = document.querySelector('.variant-box');
-            if (firstVariant && data.product.price) {
-                const vP = firstVariant.querySelector('.v-price');
-                if(vP && !vP.value) vP.value = data.product.price;
-            }
+            if (firstVariant) {
+                // 3. Fill Variant Basics
+                if (p.price !== null) { const vP = firstVariant.querySelector('.v-price'); if(vP && !vP.value) vP.value = p.price; }
+                if (p.quantity_unit) { const vU = firstVariant.querySelector('.v-unit'); if(vU && !vU.value) vU.value = p.quantity_unit; }
+                
+                // 4. Auto-Trigger Advanced Fields if AI found advanced data
+                if (p.barcode || p.expiry_date || p.hsn_code || p.gst_rate || p.brand) {
+                    const advEl = document.getElementById('cfgAdvFields');
+                    if (advEl && !advEl.checked) {
+                        advEl.checked = true;
+                        saveConfig(); // Automatically expands the UI to show these fields!
+                    }
+                }
 
-            const advEl = document.getElementById('cfgAdvFields');
-            if (advEl && advEl.checked && firstVariant) {
+                // 5. Fill Advanced Fields (now that they are guaranteed to be visible)
+                if (p.brand) { const bN = firstVariant.querySelector('.vb-name'); if(bN && !bN.value) bN.value = p.brand; }
                 const bCode = firstVariant.querySelector('.v-barcode');
                 const eDate = firstVariant.querySelector('.v-expiry');
-                if (data.product.expiry_date && eDate && !eDate.value) eDate.value = data.product.expiry_date;
-                if (data.product.barcode && bCode && !bCode.value) bCode.value = data.product.barcode;
+                if (p.expiry_date && eDate && !eDate.value) eDate.value = p.expiry_date;
+                if (p.barcode && bCode && !bCode.value) bCode.value = p.barcode;
             }
+            
+            // 6. Expand GST Menu if tax data was found
+            if (p.hsn_code || p.gst_rate !== null) {
+                const gstContent = document.getElementById('tierGst');
+                if (gstContent && !gstContent.classList.contains('active')) {
+                    const gstBtn = document.getElementById('btnToggleGst');
+                    if (gstBtn) gstBtn.click();
+                }
+            }
+
             UI.showToast("✨ AI Auto-fill complete");
+        } else {
+            throw new Error("Invalid AI response");
         }
     } catch (e) {
-        UI.showToast("AI Lens failed", true);
+        console.error(e);
+        UI.showToast("AI Lens failed to recognize product", true);
     }
 }
+
 
 function openTransferModal() {
     const base = allProducts.find(p => p.id === currentDetailId);
