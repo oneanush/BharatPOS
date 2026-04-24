@@ -252,10 +252,13 @@ function renderChunk() {
         
         let pMode = sale.paymentMethod || sale.paymentMode || 'Cash';
         let modeClass = 'mode-cash';
+        
         if(pMode.includes('Online')) modeClass = 'mode-online';
         if(pMode.includes('Udhaar') && !sale.isPaid) modeClass = 'mode-udhaar';
         if(pMode.includes('Partial')) modeClass = 'mode-partial';
-        if(sale.isPaid && s.settledDate) modeClass = 'mode-settled';
+        
+        // BUG FIX: Changed 's.settledDate' to 'sale.settledDate'
+        if(sale.isPaid && sale.settledDate) modeClass = 'mode-settled'; 
 
         const card = document.createElement('div');
         card.className = 'invoice-card';
