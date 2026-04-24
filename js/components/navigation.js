@@ -17,7 +17,7 @@ export class Navigation {
               <a href="products.html" class="${getActive('products')}"><i class="fa-solid fa-box-open"></i> <span data-i18n="nav_inventory">Inventory</span></a>
               <a href="sales.html" class="${getActive('sales')}"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_sales">Sales Ledger</span></a>
               <a href="my_dukkan.html" class="${getActive('finance')}"><i class="fa-solid fa-wallet"></i> <span data-i18n="nav_finance">Finance HQ</span></a>
-              <a href="reports.html" class="${getActive('reports')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_crm">Reports</span></a>
+              <a href="reports.html" class="${getActive('reports')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_reports">Reports</span></a>
               <a href="customers.html" class="${getActive('crm')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_crm">Bharat CRM</span></a>
               <a href="ai.html" class="${getActive('ai')}"><i class="fa-solid fa-brain"></i> <span data-i18n="nav_ai"> AI-Madad</span></a>
               <a href="settings.html" class="${getActive('settings')}"><i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span></a>

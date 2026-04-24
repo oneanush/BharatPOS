@@ -34,14 +34,15 @@ export const injectLayout = (activePageCode) => {
           <button id="btnCloseMenuMain" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
         </div>
         <div class="side-menu-links">
-          <a href="dashboard.html" class="${getActive('dashboard')}"><i class="fa-solid fa-house"></i> <span data-i18n="nav_dashboard">Dashboard</span></a>
-          <a href="billing.html" class="${getActive('billing')}"><i class="fa-solid fa-file-invoice"></i> <span data-i18n="nav_billing">Billing</span></a>
-          <a href="products.html" class="${getActive('products')}"><i class="fa-solid fa-box-open"></i> <span data-i18n="nav_inventory">Inventory</span></a>
-          <a href="sales.html" class="${getActive('sales')}"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_sales">Sales Ledger</span></a>
-          <a href="my_dukkan.html" class="${getActive('finance')}"><i class="fa-solid fa-wallet"></i> <span data-i18n="nav_finance">Finance HQ</span></a>
-          <a href="customers.html" class="${getActive('crm')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_crm">Bharat CRM</span></a>
-          <a href="forecast.html" class="${getActive('forecast')}"><i class="fa-solid fa-brain"></i> <span data-i18n="nav_ai">DemandMitra AI</span></a>
-          <a href="settings.html" class="${getActive('settings')}"><i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span></a>
+              <a href="dashboard.html" class="${getActive('dashboard')}"><i class="fa-solid fa-house"></i> <span data-i18n="nav_dashboard">Dashboard</span></a>
+              <a href="billing.html" class="${getActive('billing')}"><i class="fa-solid fa-file-invoice"></i> <span data-i18n="nav_billing">Billing</span></a>
+              <a href="products.html" class="${getActive('products')}"><i class="fa-solid fa-box-open"></i> <span data-i18n="nav_inventory">Inventory</span></a>
+              <a href="sales.html" class="${getActive('sales')}"><i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_sales">Sales Ledger</span></a>
+              <a href="my_dukkan.html" class="${getActive('finance')}"><i class="fa-solid fa-wallet"></i> <span data-i18n="nav_finance">Finance HQ</span></a>
+              <a href="reports.html" class="${getActive('reports')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_reports">Reports</span></a>
+              <a href="customers.html" class="${getActive('crm')}"><i class="fa-solid fa-users"></i> <span data-i18n="nav_crm">Bharat CRM</span></a>
+              <a href="ai.html" class="${getActive('ai')}"><i class="fa-solid fa-brain"></i> <span data-i18n="nav_ai"> AI-Madad</span></a>
+              <a href="settings.html" class="${getActive('settings')}"><i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">Settings</span></a>
         </div>
       </div>
     `;
