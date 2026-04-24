@@ -183,25 +183,38 @@ function getActiveShift() {
 
 function calculateExpectedCash(shift) {
     if (!shift) return 0;
+    
+    // 1. Start with Opening Cash
     let expected = Number(shift.openingCash || 0);
 
-    // Add Pay-Ins, subtract Pay-Outs
+    // 2. Add manual Pay-Ins, subtract manual Pay-Outs
     (shift.transactions || []).forEach(tx => {
         if (tx.type === 'IN') expected += Number(tx.amount);
         if (tx.type === 'OUT') expected -= Number(tx.amount);
     });
 
-    // Add Cash Sales during shift
+    // 3. AUTO-UPDATE: Scan all sales and extract ONLY the CASH component
     const shiftStart = new Date(shift.startTime);
+    
     enterpriseSales.forEach(s => {
+        // Ensure the timestamp exists before converting
+        if (!s.timestamp && !s.date) return; 
+        
         const sDate = new Date(s.timestamp || s.date);
-        if (sDate >= shiftStart && (s._branchId === shift._branchId || s.merchantId === shift.merchantId)) {
+        
+        // Only count sales that happened AFTER the drawer was opened
+        if (sDate >= shiftStart) {
             const pMode = s.paymentMethod || s.paymentMode || 'Cash';
-            if (pMode === 'Cash' && s.isPaid) {
+            
+            // Strictly extract only Cash
+            if (pMode === 'Cash') {
+                // Fully Cash Paid
                 expected += Number(s.total || s.amount || 0);
             } else if (pMode === 'Partial' && s.split) {
+                // Mix Payment: ONLY add the cash portion, ignore online/udhaar
                 expected += Number(s.split.cash || 0);
             }
+            // If pMode === 'Online' or 'Udhaar', they are completely ignored.
         }
     });
 
