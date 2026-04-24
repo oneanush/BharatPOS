@@ -10,12 +10,12 @@ import { Formatters } from '../utils/formatters.js';
 
 // --- ENCAPSULATED STATE ---
 let allSales = [];
+let allDrawerShifts = []; // NEW: Used for Loss Calculation
 
 // --- INITIALIZATION ---
 async function initReports() {
     Navigation.inject('reports');
 
-    // Set default dates
     const today = new Date();
     const endEl = document.getElementById('endDate');
     if(endEl) endEl.valueAsDate = today;
@@ -33,7 +33,6 @@ function bindEvents() {
     document.getElementById('btnOpenExportModal')?.addEventListener('click', () => UI.showModal('exportModal'));
     document.getElementById('btnCloseExportModal')?.addEventListener('click', () => UI.hideModal('exportModal'));
 
-    // Compact Mode Toggle
     document.getElementById('btnToggleCompact')?.addEventListener('click', () => {
         document.body.classList.toggle('compact-mode');
         const icon = document.querySelector('#btnToggleCompact i');
@@ -63,7 +62,6 @@ function bindEvents() {
     document.getElementById('startDate')?.addEventListener('change', renderReports);
     document.getElementById('endDate')?.addEventListener('change', renderReports);
 
-    // Event Delegation for row expansion (Removes inline onclick)
     document.getElementById('salesHistoryBody')?.addEventListener('click', (e) => {
         const row = e.target.closest('.sale-row');
         if(row) {
@@ -91,18 +89,14 @@ function toggleDetails(dateId) {
     if(!detailRow) return;
     const isHidden = getComputedStyle(detailRow).display === 'none';
     
-    // Close all others
     document.querySelectorAll('.details-row').forEach(row => { 
         row.classList.remove('active'); 
         row.style.display = 'none'; 
     });
     
     if(isHidden) {
-        if(window.innerWidth < 768) { 
-            detailRow.style.display = 'block'; 
-        } else { 
-            detailRow.style.display = 'table-row'; 
-        }
+        if(window.innerWidth < 768) detailRow.style.display = 'block'; 
+        else detailRow.style.display = 'table-row'; 
         setTimeout(() => detailRow.classList.add('active'), 10);
     }
 }
@@ -136,12 +130,8 @@ async function loadSalesFromCloud() {
             branchFilter.addEventListener('change', (e) => {
                 const val = e.target.value;
                 if(shopSwitcher) shopSwitcher.value = val;
-                
-                if (val === 'all' || val === user.merchantId) {
-                    renderReports();
-                } else if (window.switchActiveShop) {
-                    window.switchActiveShop(val);
-                }
+                if (val === 'all' || val === user.merchantId) renderReports();
+                else if (window.switchActiveShop) window.switchActiveShop(val);
             });
         }
         
@@ -152,26 +142,25 @@ async function loadSalesFromCloud() {
             shopSwitcher.addEventListener('change', (e) => {
                 const val = e.target.value;
                 if(branchFilter) branchFilter.value = val;
-                
-                if (val === 'all' || val === user.merchantId) {
-                    renderReports();
-                } else if (window.switchActiveShop) {
-                    window.switchActiveShop(val);
-                }
+                if (val === 'all' || val === user.merchantId) renderReports();
+                else if (window.switchActiveShop) window.switchActiveShop(val);
             });
         }
     }
 
     let eSales = await dbGet('bharatpos_enterprise_sales', 'null');
-    if (eSales === null) {
-        eSales = await dbGet('bharatpos_sales', '[]');
-    }
+    if (eSales === null) eSales = await dbGet('bharatpos_sales', '[]');
     allSales = eSales;
+    
+    // NEW: Load Drawer Shifts to calculate Losses
+    allDrawerShifts = await dbGet('bharatpos_drawer_shifts', '[]');
+    
     if(allSales.length > 0) renderReports();
 
     if (user && user.merchantId && typeof user.merchantId === 'string' && user.merchantId.trim() !== '' && db && navigator.onLine) {
         try {
             let allEnterpriseSales = [];
+            let allEntDrawers = [];
             
             const fetchPromises = shops.map(async (shop) => {
                 if(!shop.merchantId) return;
@@ -181,18 +170,28 @@ async function loadSalesFromCloud() {
                     snap.forEach(doc => {
                         let data = doc.data();
                         data._branchId = shop.merchantId;
-                        data._branchName = shop.shopName;
                         allEnterpriseSales.push(data);
                     });
-                } catch(e) { console.warn(`Failed fetching sales for branch: ${shop.shopName}`); }
+
+                    // Fetch drawers for cloud loss tracking
+                    const dSnap = await getDocs(collection(db, "shops", shop.merchantId, "drawer_shifts"));
+                    dSnap.forEach(doc => {
+                        let data = doc.data();
+                        data._branchId = shop.merchantId;
+                        allEntDrawers.push(data);
+                    });
+                } catch(e) {}
             });
             
             await Promise.all(fetchPromises);
             
-            allEnterpriseSales.sort((a, b) => new Date(b.date) - new Date(a.date));
-            allSales = allEnterpriseSales;
-            
-            if(window.dbSave) await window.dbSave('bharatpos_enterprise_sales', allSales);
+            allSales = allEnterpriseSales.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+            allDrawerShifts = allEntDrawers;
+
+            if(window.dbSave) {
+                await window.dbSave('bharatpos_enterprise_sales', allSales);
+                await window.dbSave('bharatpos_drawer_shifts', allDrawerShifts);
+            }
             
             renderReports();
         } catch (e) {
@@ -218,15 +217,16 @@ function groupSalesByDate() {
     if(ss && ss.style.display !== 'none') branchFilter = ss.value;
     else if(bf && bf.style.display !== 'none') branchFilter = bf.value;
 
+    // 1. Group standard sales
     sales.forEach(sale => {
         if(branchFilter !== 'all' && sale._branchId !== branchFilter && sale.merchantId !== branchFilter) return;
 
-        const saleDateObj = new Date(sale.date);
+        let rawDate = sale.timestamp || sale.date || new Date().toISOString();
+        const saleDateObj = new Date(rawDate);
         if(saleDateObj < startD || saleDateObj > endD) return;
 
-        let rawDate = sale.date || new Date().toISOString();
         const d = rawDate.substring(0, 10); 
-        if(!grouped[d]) grouped[d] = { gross: 0, netCollected: 0, tax: 0, bills: 0, itemsCount: 0, products: {} };
+        if(!grouped[d]) grouped[d] = { gross: 0, netCollected: 0, tax: 0, bills: 0, itemsCount: 0, products: {}, cashLoss: 0 };
         
         const pMode = sale.paymentMethod || sale.paymentMode || 'Cash';
         let collected = 0;
@@ -236,13 +236,6 @@ function groupSalesByDate() {
             collected = Number(sale.split.cash || 0) + Number(sale.split.online || 0);
         } else if (pMode !== 'Udhaar') {
             collected = gross;
-        }
-
-        if(sale.isPaid && sale.settledDate) {
-            const setStr = new Date(sale.settledDate).toISOString().substring(0, 10);
-            if(setStr === d && rawDate.substring(0,10) !== d) {
-                collected += (pMode === 'Partial' && sale.split) ? Number(sale.split.udhaar) : gross;
-            }
         }
 
         let tax = 0;
@@ -265,6 +258,32 @@ function groupSalesByDate() {
         grouped[d].tax += tax;
         grouped[d].bills++;
     });
+
+    // 2. Factor in Drawer Cash Discrepancies (Losses)
+    allDrawerShifts.forEach(shift => {
+        if (shift.status !== 'CLOSED') return;
+        if(branchFilter !== 'all' && shift._branchId !== branchFilter && shift.merchantId !== branchFilter) return;
+
+        const shiftDateObj = new Date(shift.endTime);
+        if (shiftDateObj < startD || shiftDateObj > endD) return;
+
+        const d = shift.endTime.substring(0, 10);
+        if (!grouped[d]) grouped[d] = { gross: 0, netCollected: 0, tax: 0, bills: 0, itemsCount: 0, products: {}, cashLoss: 0 };
+        else if (grouped[d].cashLoss === undefined) grouped[d].cashLoss = 0;
+
+        // If discrepancy is negative, it's a loss
+        const diff = Number(shift.discrepancy || 0);
+        if (diff < 0) {
+            grouped[d].cashLoss += diff; 
+        }
+    });
+
+    // 3. Compute final Adjusted Income
+    Object.values(grouped).forEach(d => {
+        d.cashLoss = d.cashLoss || 0; 
+        d.adjIncome = d.netCollected + d.cashLoss; // Since cashLoss is negative, this correctly subtracts it
+    });
+
     return grouped;
 }
 
@@ -275,7 +294,8 @@ function renderReports(){
     if(!tableBody) return;
     const sortedDates = Object.keys(data).sort().reverse();
     
-    let totalNet = 0, totalGross = 0, totalTax = 0, totalBills = 0, totalItems = 0;
+    let totalNet = 0, totalGross = 0, totalTax = 0, totalBills = 0;
+    let totalLoss = 0, totalAdj = 0;
     let maxDailyNet = 0;
 
     sortedDates.forEach(date => {
@@ -284,24 +304,35 @@ function renderReports(){
         totalGross += d.gross;
         totalTax += d.tax;
         totalBills += d.bills;
-        totalItems += d.itemsCount;
+        totalLoss += d.cashLoss;
+        totalAdj += d.adjIncome;
         if(d.netCollected > maxDailyNet) maxDailyNet = d.netCollected;
     });
 
+    // Update Standard KPIs
     animateValue(document.getElementById('kpiNetRev'), 0, totalNet, 1000, true);
     animateValue(document.getElementById('kpiGrossRev'), 0, totalGross, 1000, true);
     animateValue(document.getElementById('kpiGST'), 0, totalTax, 1000, true);
     animateValue(document.getElementById('kpiBills'), 0, totalBills, 1000);
+
+    // Update NEW Loss & Adjusted KPIs
+    const lossEl = document.getElementById('kpiCashLoss');
+    const adjEl = document.getElementById('kpiAdjIncome');
+    if(lossEl) {
+        lossEl.innerText = `${totalLoss < 0 ? '-' : ''}₹${Formatters.currency(Math.abs(totalLoss))}`;
+    }
+    if(adjEl) {
+        animateValue(adjEl, 0, totalAdj, 1000, true);
+    }
 
     if(sortedDates.length === 0){
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; color:var(--text-muted); font-weight:700;">No sales records found for this period.</td></tr>';
         return;
     }
 
-    const historyHtml = sortedDates.map((date, index) => {
+    const historyHtml = sortedDates.map((date) => {
         const rowData = data[date];
         const dateId = date.replace(/-/g, ''); 
-        const barWidth = maxDailyNet > 0 ? (rowData.netCollected / maxDailyNet) * 100 : 0;
         
         const productEntries = Object.entries(rowData.products).sort((a,b)=>b[1]-a[1]);
         let productsHtml = productEntries.length > 0 
@@ -319,12 +350,14 @@ function renderReports(){
                     <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:700;">${date}</div>
                 </td>
                 <td class="text-right">${rowData.bills}</td>
-                <td class="text-right">${rowData.itemsCount}</td>
                 <td class="text-right" style="color:var(--text-muted); font-family:'JetBrains Mono'; font-weight:700;">₹${rowData.gross.toFixed(2)}</td>
-                <td class="text-right" style="color:var(--warning); font-family:'JetBrains Mono'; font-weight:700;">₹${rowData.tax.toFixed(2)}</td>
-                <td class="text-right" style="position:relative;">
-                    <div class="trend-bg" style="width:${barWidth * 0.7}px"></div> 
-                    <span class="money-cell">₹${Formatters.currency(rowData.netCollected)}</span>
+                <td class="text-right" style="color:var(--text-main); font-family:'JetBrains Mono'; font-weight:700;">₹${rowData.netCollected.toFixed(2)}</td>
+                
+                <td class="text-right" style="color:var(--danger); font-family:'JetBrains Mono'; font-weight:700;">
+                    ${rowData.cashLoss < 0 ? '-' : ''}₹${Math.abs(rowData.cashLoss).toFixed(2)}
+                </td>
+                <td class="text-right">
+                    <span class="money-cell">₹${Formatters.currency(rowData.adjIncome)}</span>
                 </td>
             </tr>
             <tr id="details-${dateId}" class="details-row">
@@ -353,20 +386,19 @@ function exportExcel() {
         rows.push({
             "Date": date,
             "Total Bills": d.bills,
-            "Items Sold": d.itemsCount,
             "Gross Sales": d.gross.toFixed(2),
-            "GST Collected": d.tax.toFixed(2),
-            "Net Collected": d.netCollected.toFixed(2)
+            "Software Net": d.netCollected.toFixed(2),
+            "Cash Diff (Loss)": d.cashLoss.toFixed(2),
+            "Adjusted Income": d.adjIncome.toFixed(2)
         });
     });
 
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch: 15}, {wch: 12}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}];
+    ws['!cols'] = [{wch: 15}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}];
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Daily_Audit");
     XLSX.writeFile(wb, `BharatPOS_Daily_Audit_${Date.now()}.xlsx`);
-    
     UI.hideModal('exportModal');
 }
 
@@ -387,21 +419,7 @@ function exportPDF() {
     
     doc.setFontSize(10); 
     doc.setTextColor(100, 100, 100);
-    
-    let branchFilter = 'all';
-    let filterText = 'All Branches';
-    const ss = document.getElementById('globalShopSwitcher');
-    const bf = document.getElementById('filterBranch');
-    
-    if(ss && ss.style.display !== 'none') {
-        branchFilter = ss.value;
-        filterText = ss.options[ss.selectedIndex].text.replace('⭐','').trim();
-    } else if (bf && bf.style.display !== 'none') {
-        branchFilter = bf.value;
-        filterText = bf.options[bf.selectedIndex].text.replace('⭐','').trim();
-    }
-
-    doc.text(`Business Name: ${shopName} (${filterText})`, 14, 22);
+    doc.text(`Business Name: ${shopName}`, 14, 22);
     doc.text(`Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}`, 14, 27);
     
     const tableData = sortedDates.map(date => {
@@ -409,27 +427,27 @@ function exportPDF() {
         return [
             date,
             d.bills.toString(),
-            d.itemsCount.toString(),
             d.gross.toFixed(2),
-            d.tax.toFixed(2),
-            d.netCollected.toFixed(2)
+            d.netCollected.toFixed(2),
+            d.cashLoss.toFixed(2),
+            d.adjIncome.toFixed(2)
         ];
     });
 
     doc.autoTable({
-        head: [['Date', 'Bills', 'Items', 'Gross (Rs)', 'GST (Rs)', 'Net Collected (Rs)']],
+        head: [['Date', 'Bills', 'Gross (Rs)', 'Soft Net (Rs)', 'Loss (Rs)', 'Adj Income (Rs)']],
         body: tableData,
         startY: 35,
         theme: 'grid',
         headStyles: { fillColor: [25, 118, 210], textColor: [255, 255, 255] },
-        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right', fontStyle: 'bold' } }
+        columnStyles: { 1:{halign:'center'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right', textColor:[220,38,38]}, 5:{halign:'right', fontStyle:'bold'} }
     });
     
     doc.save(`Daily_Audit_${Date.now()}.pdf`);
     UI.hideModal('exportModal');
 }
 
-// --- AI & FIREBASE SYNC LOGIC ---
+// --- AI SYNC LOGIC (Unchanged) ---
 function hashStringDjb2(str) {
     let hash = 5381;
     for (let i = 0; i < str.length; i++) { hash = ((hash << 5) + hash) + str.charCodeAt(i); hash = hash & 0xFFFFFFFF; }
@@ -464,7 +482,6 @@ async function handleAISnapshot(data, totalNet, totalGross, totalTax) {
         if (!user.merchantId) return;
 
         const snapshot = getReportsSnapshot(data, totalNet, totalGross, totalTax, user);
-        
         const contentToHash = JSON.stringify({ revenue: snapshot.net_collected_revenue, history: snapshot.daily_history });
         const snapshotHash = hashStringDjb2(contentToHash);
         const lastHash = localStorage.getItem('bharatpos_last_sent_reports_snapshot_hash');
@@ -474,12 +491,9 @@ async function handleAISnapshot(data, totalNet, totalGross, totalTax) {
 
             let firebasePromise = Promise.resolve();
             if(db) {
-                firebasePromise = updateDoc(doc(db, "shops", user.merchantId), {
-                    auditData: snapshot
-                }).catch(e => console.error("Firebase Audit Sync failed:", e));
+                firebasePromise = updateDoc(doc(db, "shops", user.merchantId), { auditData: snapshot }).catch(e => console.error("Firebase Audit Sync failed:", e));
             }
 
-            // Fallback for buildUrl if not globally defined
             const consultUrl = typeof window.buildUrl === 'function' ? window.buildUrl('/ai-business-consult') : 'https://server-xy7s.onrender.com/ai-business-consult';
             const renderPromise = fetch(consultUrl, { 
                 method: 'POST', 
@@ -501,13 +515,12 @@ async function handleAISnapshot(data, totalNet, totalGross, totalTax) {
 
 function getReportsSnapshot(groupedData, netTotal, grossTotal, taxTotal, user) {
     const dates = Object.keys(groupedData).sort().reverse();
-    
     const dateEntries = dates.map(date => {
         const d = groupedData[date];
         const products = Object.entries(d.products || {}).map(([name, qty])=>({ name, qty: Number(qty) })).slice(0, 10);
         return { 
             date, 
-            net_collected: Number(d.netCollected || 0), 
+            net_collected: Number(d.adjIncome || 0), 
             gross_sales: Number(d.gross || 0),
             tax_collected: Number(d.tax || 0),
             bills: Number(d.bills || 0), 

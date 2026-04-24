@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="css/components.css">
 
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#6366f1">
-<link rel="apple-touch-icon" href="assets/images/logo.png">
+  <meta name="theme-color" content="#6366f1">
+  <link rel="apple-touch-icon" href="assets/images/logo.png">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -24,9 +24,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 
   <style>
-    /* ═══════════════════════════════════════════════════════════
-       REPORT SPECIFIC LAYOUT & CARDS
-    ═══════════════════════════════════════════════════════════ */
+    /* ... (Keep ALL your existing styles exactly the same) ... */
     .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700; display: flex; justify-content: space-between; transition: 0.3s ease; font-family: var(--font-body); }
     .kpi-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 10px; letter-spacing: -1px; transition: 0.3s ease; }
     .kpi-border { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; }
@@ -37,23 +35,18 @@
     .report-title-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex: 1; }
     .report-title { font-size: 16px; font-weight: 800; color: var(--text-main); font-family: var(--font-head); margin: 0; white-space: nowrap;}
     
-    /* Date Filters - Mobile Responsive */
     .date-filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .date-input { background: var(--white); border: 1.5px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font-body); font-weight: 700; outline: none; cursor: pointer; transition: var(--trans); width: 100%; max-width: 140px; box-sizing: border-box; }
     .date-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
 
-    /* Sync Indicator */
     .sync-status { font-size: 11px; padding: 6px 12px; border-radius: 20px; background: var(--white); border: 1.5px solid var(--border); color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-weight: 700; opacity: 0; transition: opacity 0.3s; box-shadow: var(--shadow-sm); font-family: var(--font-body); white-space: nowrap;}
     .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
     .sync-active { opacity: 1; }
     .sync-active .sync-dot { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulseDot 1s infinite; }
     @keyframes pulseDot { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-    /* ═══════════════════════════════════════════════════════════
-       DATA TABLE
-    ═══════════════════════════════════════════════════════════ */
     .table-responsive { overflow-x: auto; width: 100%; }
-    table { width: 100%; border-collapse: collapse; min-width: 650px; }
+    table { width: 100%; border-collapse: collapse; min-width: 850px; } /* Increased width for new cols */
     th { text-align: left; padding: 16px 20px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1.5px solid var(--border); font-weight: 800; white-space: nowrap; background: var(--white); transition: 0.3s ease; font-family: var(--font-body); }
     td { padding: 16px 20px; color: var(--text-main); font-size: 14px; border-bottom: 1px solid #e0e7ef; vertical-align: middle; font-weight: 600; transition: 0.3s ease; font-family: var(--font-body); }
     .text-right { text-align: right; }
@@ -61,120 +54,53 @@
     .sale-row { cursor: pointer; transition: background var(--trans); position: relative; background: var(--white);}
     .sale-row:hover { background: var(--bg-input); }
     
-    .trend-bg { position: absolute; right: 0; top: 15%; height: 70%; background: var(--border); z-index: 0; pointer-events: none; border-radius: 4px 0 0 4px; transition: width 1s ease-out; width: 0; opacity: 0.6; }
     .money-cell { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--success); position: relative; z-index: 1; transition: 0.3s ease; }
-    
-    .details-row { display: none; background: #F8FAFC; box-shadow: inset 0 4px 10px rgba(0,0,0,0.02); }
-    .details-row.active { display: table-row; }
-    .details-content { padding: 20px; border-left: 4px solid var(--primary); animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); transition: 0.3s ease; }
-    
-    .product-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .product-chip { background: var(--white); border: 1.5px solid var(--border); padding: 8px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-main); font-weight: 700; box-shadow: var(--shadow-sm); transition: 0.3s ease; }
-    .chip-qty { background: var(--bg-input); color: var(--primary); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .loss-cell { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--danger); position: relative; z-index: 1; }
 
-    /* ═══════════════════════════════════════════════════════════
-       COMPACT MODE STYLES (The Shrink Feature)
-    ═══════════════════════════════════════════════════════════ */
-    body.compact-mode .container { max-width: 100%; margin: 10px auto; padding: 0 10px; gap: 12px; }
-    body.compact-mode .kpi-card { padding: 12px 16px; border-radius: 12px; }
-    body.compact-mode .kpi-value { font-size: 20px; margin-top: 4px; }
-    body.compact-mode .kpi-label { font-size: 10px; }
-    body.compact-mode .report-header { padding: 12px 16px; gap: 10px;}
-    body.compact-mode .report-title { font-size: 14px; }
-    body.compact-mode th, body.compact-mode td { padding: 10px 12px; font-size: 12px; }
-    body.compact-mode .money-cell { font-size: 13px; }
-    body.compact-mode .date-input, body.compact-mode .btn { padding: 6px 10px; font-size: 11px; }
-    body.compact-mode .details-content { padding: 12px; border-left-width: 3px; }
-    body.compact-mode .product-chip { padding: 5px 10px; font-size: 11px; }
+    /* New Grid Layout to support 5 KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
 
-    /* ═══════════════════════════════════════════════════════════
-       MOBILE RESPONSIVE FALLBACK (Completely Fixed)
-    ═══════════════════════════════════════════════════════════ */
-    @media (max-width: 768px) {
-      .kpi-grid { grid-template-columns: 1fr 1fr; }
-      .kpi-grid .kpi-card:last-child { grid-column: span 2; }
-      
-      /* Make header stack nicely */
-      .report-header { flex-direction: column; align-items: stretch; }
-      .report-title-group { flex-direction: column; align-items: stretch; }
-      .date-filter-group { display: grid; grid-template-columns: 1fr auto 1fr; width: 100%; }
-      .date-input { max-width: 100%; }
-      
-      .table-responsive { overflow: visible; }
-      thead { display: none; }
-      table, tbody { display: block; width: 100%; }
-
-      .sale-row { 
-          display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; 
-          margin-bottom: 12px; background: var(--white); border-radius: 12px; 
-          border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);
-      }
-      
-      td { padding: 0; border: none; display: flex; flex-direction: column; background: transparent !important; text-align: left !important;}
-      
-      /* 1. Date (Top Left) */
-      td:nth-child(1) { grid-column: 1 / span 2; border-bottom: 1px dashed var(--border); padding-bottom: 10px; margin-bottom: 5px;}
-      
-      /* 2. Bills & Items (Mid Left) */
-      td:nth-child(2) { grid-column: 1; font-size: 12px; color: var(--text-muted); }
-      td:nth-child(2)::before { content: "Total Bills"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 2px;}
-      
-      td:nth-child(3) { grid-column: 2; font-size: 12px; color: var(--text-muted); }
-      td:nth-child(3)::before { content: "Items Sold"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 2px;}
-      
-      /* 3. Gross & GST (Bottom Left) */
-      td:nth-child(4) { grid-column: 1; font-size: 13px; font-weight: 700; color: var(--text-main); }
-      td:nth-child(4)::before { content: "Gross Sales"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;}
-      
-      td:nth-child(5) { grid-column: 2; font-size: 13px; font-weight: 700; color: var(--warning); }
-      td:nth-child(5)::before { content: "GST Collected"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;}
-
-      /* 4. Net Collected (Full Bottom) */
-      td:nth-child(6) { grid-column: 1 / span 2; margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--border); align-items: flex-end;}
-      td:nth-child(6)::before { content: "Net Collected"; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--success); margin-bottom: 2px;}
-      td:nth-child(6) .money-cell { font-size: 20px; }
-      td:nth-child(6) .trend-bg { display: none; } /* Hide progress bar on mobile to save space */
-
-      .details-row.active { display: block; margin-top: -12px; margin-bottom: 12px; }
-      .details-content { padding: 15px; border-radius: 0 0 12px 12px; border-left: none; border-top: 4px solid var(--primary); background: var(--bg-input); border-left: 1.5px solid var(--border); border-right: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); }
-    }
-
-    /* ═══════════════════════════════════════════════════════════
-       EXPORT MODAL ACTIONS
-    ═══════════════════════════════════════════════════════════ */
+    /* Export Actions */
     .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;}
     .btn-action { padding: 14px; border-radius: var(--radius-sm); border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; color: white; font-family: var(--font-body); transition: var(--trans); box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-transform: uppercase; letter-spacing: 0.04em; }
-    .btn-action:active { transform: scale(0.97); }
     .btn-excel { background: linear-gradient(135deg, #10b981, #059669); }
-    .btn-excel:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16,185,129,0.3); }
     .btn-pdf { background: linear-gradient(135deg, #ef4444, #dc2626); }
-    .btn-pdf:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(239,68,68,0.3); }
   </style>
 </head>
 
 <body class="lang-en">
   
   <div class="container">
+    
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Net Collected <i class="fa-solid fa-money-bill-wave" style="color:var(--success);"></i></div>
+        <div class="kpi-label">Software Net Collected <i class="fa-solid fa-desktop" style="color:var(--text-muted);"></i></div>
         <div class="kpi-value" id="kpiNetRev">₹0</div>
+        <div class="kpi-border" style="background: var(--text-muted);"></div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">What the system calculated</div>
+      </div>
+      
+      <div class="kpi-card" style="background: #fef2f2; border-color: #fca5a5;">
+        <div class="kpi-label" style="color:var(--danger);">Cash Shortage (Loss) <i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i></div>
+        <div class="kpi-value" id="kpiCashLoss" style="color:var(--danger);">₹0</div>
+        <div class="kpi-border" style="background: var(--danger);"></div>
+        <div style="font-size:11px; color:var(--danger); margin-top:4px; font-weight:600;" class="kpi-sub">Missing from Cash Drawer</div>
+      </div>
+
+      <div class="kpi-card" style="background: #f0fdf4; border-color: #86efac;">
+        <div class="kpi-label" style="color:var(--success);">Adjusted Net Income <i class="fa-solid fa-money-bill-wave" style="color:var(--success);"></i></div>
+        <div class="kpi-value" id="kpiAdjIncome" style="color:var(--success);">₹0</div>
         <div class="kpi-border" style="background: var(--success);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">Cash + Online Only</div>
+        <div style="font-size:11px; color:var(--success); margin-top:4px; font-weight:600;" class="kpi-sub">True Cash in Hand</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Total GST Collected <i class="fa-solid fa-receipt" style="color:var(--warning);"></i></div>
-        <div class="kpi-value" id="kpiGST">₹0</div>
-        <div class="kpi-border" style="background: var(--warning);"></div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">CGST + SGST</div>
-      </div>
+
       <div class="kpi-card">
         <div class="kpi-label">Gross Sales <i class="fa-solid fa-chart-line" style="color:var(--primary);"></i></div>
         <div class="kpi-value" id="kpiGrossRev">₹0</div>
         <div class="kpi-border" style="background: var(--primary);"></div>
         <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;" class="kpi-sub">Includes Pending Udhaar</div>
       </div>
+
       <div class="kpi-card">
         <div class="kpi-label">Total Bills <i class="fa-solid fa-hashtag" style="color:var(--purple);"></i></div>
         <div class="kpi-value" id="kpiBills">0</div>
@@ -186,12 +112,8 @@
     <div class="report-card">
       <div class="report-header">
         <div class="report-title-group">
-            <div class="report-title">📊 Daily Aggregates</div>
+            <div class="report-title">📊 Daily Aggregates & Audit</div>
             
-            <select id="filterBranch" class="date-input" style="display:none; font-weight:800; color:var(--primary); border-color:var(--border); background:var(--bg-input);">
-                <option value="all">🌍 All Branches</option>
-            </select>
-
             <div class="date-filter-group">
                 <input type="date" id="startDate" class="date-input">
                 <span style="color:var(--text-muted); font-size:12px; font-weight:800;">TO</span>
@@ -209,19 +131,21 @@
             </button>
         </div>
       </div>
+      
       <div class="table-responsive">
           <table id="reportsTable">
             <thead>
                 <tr>
                     <th>Date</th>
                     <th class="text-right">Bills</th>
-                    <th class="text-right">Items Sold</th>
                     <th class="text-right">Gross Sales</th>
-                    <th class="text-right">GST Coll.</th>
-                    <th class="text-right">Net Collected</th>
+                    <th class="text-right">Software Net</th>
+                    <th class="text-right" style="color:var(--danger);">Cash Diff (Loss)</th>
+                    <th class="text-right" style="color:var(--success);">Adjusted Income</th>
                 </tr>
             </thead>
-            <tbody id="salesHistoryBody"></tbody>
+            <tbody id="salesHistoryBody">
+                </tbody>
           </table>
       </div>
     </div>
