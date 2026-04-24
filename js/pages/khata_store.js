@@ -10,17 +10,20 @@ let activeCategory = 'ALL';
 let cart = {}; 
 let userMobile = '';
 
+// Wizard State
 let wizState = { prod: null, variant: null, brand: null, qty: 1 };
 
 export async function initStore(phone) {
     userMobile = phone;
     
+    // Independent listener specifically for the Store tab
     window.refreshKhataStore = () => {
         if(document.getElementById('tab-store').classList.contains('active')) {
             loadShopCatalog(window.KhataData.activeShopId);
         }
     };
     
+    // Initial load based on Global Top Menu
     loadShopCatalog(window.KhataData.activeShopId);
     bindWizardEvents();
 }
@@ -86,25 +89,21 @@ function renderProducts() {
     const grid = document.getElementById('storeContent');
     grid.innerHTML = '';
 
-    // --- NEW FEATURE: DEDICATED SERVICE REQUEST CARD ---
-    // This card always stays at the top of the store, allowing custom service requests.
-    const serviceCard = document.createElement('div');
-    serviceCard.className = 'product-card';
-    serviceCard.style.border = '2px dashed var(--brand-primary)';
-    serviceCard.innerHTML = `
-        <div style="background:#e0e7ff; color:var(--brand-primary); height:120px; display:flex; align-items:center; justify-content:center; font-size:40px;">
-            <i class="fa-solid fa-screwdriver-wrench"></i>
-        </div>
-        <div class="p-15">
-            <div style="font-weight:800; font-size:15px; color:var(--text-main);">Request a Service</div>
-            <div style="font-size:12px; color:var(--text-sub); margin-top:4px;">Fan Repair, Electrician, Plumber, etc.</div>
-            <button class="btn-main" style="width:100%; margin-top:10px; padding:8px;" onclick="addCustomService()">Add Service</button>
+    // --- INJECT THE SERVICE CARD FIRST ---
+    grid.innerHTML += `
+        <div class="product-card" style="border: 2px dashed var(--brand-primary); cursor: pointer;" onclick="addCustomService()">
+            <div style="background:#e0e7ff; color:var(--brand-primary); height:120px; display:flex; align-items:center; justify-content:center; font-size:40px;">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <div class="p-15" style="text-align: center;">
+                <div style="font-weight:800; font-size:15px; color:var(--text-main);">Request a Service</div>
+                <div style="font-size:12px; color:var(--text-sub); margin-top:4px;">Fan Repair, Plumber, etc.</div>
+            </div>
         </div>
     `;
-    grid.appendChild(serviceCard);
 
-    // Render standard physical products
-    if(filteredProducts.length === 0) {
+    // Render normal products
+    if(filteredProducts.length === 0 && currentShopProducts.length > 0) {
         grid.innerHTML += `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-sub);">No items found in this category.</div>`;
         return;
     }
@@ -131,7 +130,7 @@ function renderProducts() {
     });
 }
 
-// --- GLOBAL ATTACHMENTS FOR INLINE HTML CLICKS ---
+// --- GLOBAL ATTACHMENTS FOR HTML CLICKS ---
 window.openStoreWizard = (prodId) => {
     const prod = currentShopProducts.find(p => p.id === prodId);
     if(!prod) return;
@@ -145,7 +144,7 @@ window.openStoreWizard = (prodId) => {
     const vGrid = document.getElementById('wizardVariantGrid');
     vGrid.innerHTML = prod.variants.map((v, idx) => `
         <div class="wizard-option" onclick="selectWizVariant(${idx})">
-            <div style="font-weight:800; color:var(--text-main);">${Security.escapeHtml(v.quantity)}</div>
+            <div style="font-weight:800; color:var(--text-main);">${Security.escapeHtml(String(v.quantity))}</div>
             <div style="font-size:12px; color:var(--brand-primary); font-weight:800; margin-top:4px;">₹${v.price}</div>
         </div>
     `).join('');
@@ -177,14 +176,14 @@ window.selectWizBrand = (idx) => {
     goToWizQty();
 };
 
-function goToWizQty() {
+window.goToWizQty = () => {
     document.getElementById('wizardStepVariant').style.display = 'none';
     document.getElementById('wizardStepBrand').style.display = 'none';
     document.getElementById('wizardStepQty').style.display = 'block';
     
     wizState.qty = 1;
     document.getElementById('wizQtyDisplay').innerText = wizState.qty;
-}
+};
 
 // NEW: Handle Custom Service Addition
 window.addCustomService = () => {
@@ -195,7 +194,7 @@ window.addCustomService = () => {
     cart[serviceId] = {
         id: serviceId,
         name: "Service: " + serviceName,
-        price: 0, // Merchant decides price later
+        price: 0, 
         qty: 1,
         isService: true
     };
@@ -258,14 +257,8 @@ function bindWizardEvents() {
         document.getElementById('cartWizModal').style.display = 'none';
     });
 
-    // BUG FIX: Securely pass the activeShopId without passing the event object!
-    document.getElementById('btnPlaceOrder').addEventListener('click', async () => {
-        const shopId = window.KhataData.activeShopId;
-        if (!shopId || shopId === 'ALL') {
-            return alert("Please select a specific shop from the top dropdown before ordering.");
-        }
-        await placeOrder(shopId);
-    });
+    // Setup Place Order button
+    document.getElementById('btnPlaceOrder').addEventListener('click', placeOrder);
 }
 
 window.removeFromCart = (cartId) => {
@@ -296,16 +289,20 @@ function updateCartUI() {
     }
 }
 
-async function placeOrder(shopId) {
+async function placeOrder() {
+    // Securely grab the shop ID from memory
+    const shopId = window.KhataData.activeShopId;
+    if (!shopId || shopId === 'ALL') {
+        return alert("Please select a specific shop from the top dropdown before ordering.");
+    }
+
     if(Object.keys(cart).length === 0) return;
 
     const btn = document.getElementById('btnPlaceOrder');
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sending...`; 
-    btn.disabled = true;
+    if(btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sending...`; btn.disabled = true; }
 
-    // Determine type automatically based on cart contents
     const hasService = Object.values(cart).some(i => i.isService);
-    const orderType = hasService ? "Service & Items" : "Home Delivery";
+    const orderType = hasService ? "Service Request" : "Home Delivery";
 
     let location = null;
     try {
@@ -330,10 +327,9 @@ async function placeOrder(shopId) {
             items: itemsArr
         };
 
-        // This path exactly matches your merchant's listener in online_orders.js!
         await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
         
-        alert("Request sent successfully! The merchant has received your order on their dashboard.");
+        alert("Request sent successfully! The merchant has received your order.");
         cart = {}; 
         updateCartUI();
         document.getElementById('cartWizModal').style.display = 'none';
@@ -342,7 +338,6 @@ async function placeOrder(shopId) {
         console.error("Order Error:", error);
         alert("Failed to send request. Check your internet connection.");
     } finally {
-        btn.innerHTML = `Place Order`; 
-        btn.disabled = false;
+        if(btn) { btn.innerHTML = `Place Order`; btn.disabled = false; }
     }
 }
