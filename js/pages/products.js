@@ -39,7 +39,6 @@ async function initProducts() {
         bindEvents();
         loadSettings();
 
-        // Await IndexedDB Loading
         allProducts = await dbGet('bharatpos_products', '[]');
         salesHistory = await dbGet('bharatpos_sales', '[]');
 
@@ -53,7 +52,6 @@ async function initProducts() {
         }
 
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
-        // Handle Global Branch Switcher populating
         const storedShopsStr = localStorage.getItem(`bharatpos_shops_${user.mobile || user.phone}`);
         if (storedShopsStr) {
             try {
@@ -67,38 +65,29 @@ async function initProducts() {
                         switcher.style.display = 'inline-block';
                         switcher.innerHTML = shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${Security.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
                         switcher.addEventListener('change', (e) => {
-                            if(e.target.value !== user.merchantId) {
-                                // Simple reload redirect handling via storage would go here in full app
-                                window.location.reload(); 
-                            }
+                            if(e.target.value !== user.merchantId) window.location.reload(); 
                         });
                     }
                 }
             } catch(e) {}
         }
 
-        if(localStorage.getItem('tutorial_inventory') !== 'true') {
-            UI.showModal('welcomeTutorial');
-        }
+        if(localStorage.getItem('tutorial_inventory') !== 'true') UI.showModal('welcomeTutorial');
 
         updateDatalists();
         applyFilters(); 
         setupIntersectionObserver();
-        addVariantUI();
+        
+        // Render 1 Default Type Box
+        addTypeBoxUI();
 
         const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
         if (isGstGlobal) {
             const tierGst = document.getElementById('tierGst');
             if(tierGst) tierGst.classList.add('active');
             const gstBtn = document.getElementById('btnToggleGst');
-            if(gstBtn) {
-                gstBtn.style.background = 'var(--blue-50)';
-                gstBtn.style.borderColor = 'var(--primary)';
-                gstBtn.style.color = 'var(--primary)';
-            }
+            if(gstBtn) { gstBtn.style.background = 'var(--blue-50)'; gstBtn.style.borderColor = 'var(--primary)'; gstBtn.style.color = 'var(--primary)'; }
         }
-
-        checkDemandMitraRouting();
 
     } catch (err) {
         console.error("Init Error:", err);
@@ -156,42 +145,46 @@ function bindEvents() {
         }
     });
 
-    document.getElementById('btnAddVariant')?.addEventListener('click', () => addVariantUI());
+    document.getElementById('btnAddVariant')?.addEventListener('click', () => addTypeBoxUI());
     
+    // UI Interactions inside the new Engine
     document.getElementById('variantEngine')?.addEventListener('click', (e) => {
-        const removeBtn = e.target.closest('.btn-remove-var');
-        if (removeBtn) removeBtn.closest('.variant-box').remove();
-        
         const addBrandBtn = e.target.closest('.btn-add-brand');
         if (addBrandBtn) {
-            const container = e.target.closest('.variant-brands-container').querySelector('.brand-list');
-            if(container) container.insertAdjacentHTML('beforeend', getBrandRowHTML());
+            const typeBox = addBrandBtn.closest('.type-box');
+            const brandsContainer = typeBox.querySelector('.brands-container');
+            
+            // Show brand name inputs for all boxes inside this Type
+            brandsContainer.querySelectorAll('.brand-name-group').forEach(grp => grp.style.display = 'block');
+            
+            // Append new brand box
+            brandsContainer.insertAdjacentHTML('beforeend', getBrandBoxHTML(null, true));
+            const newBox = brandsContainer.lastElementChild;
+            updatePriceLabel(newBox);
+            
+            const isAdv = document.getElementById('cfgAdvFields')?.checked;
+            if(isAdv) newBox.classList.add('show-adv');
         }
         
         const removeBrandBtn = e.target.closest('.btn-remove-brand');
-        if (removeBrandBtn) {
-            const row = e.target.closest('.brand-row');
-            const variantBox = row.closest('.variant-box');
-            if(row) row.remove();
-            if(variantBox) syncVariantMath(variantBox, 'brand'); 
-        }
+        if(removeBrandBtn) removeBrandBtn.closest('.brand-box').remove();
+        
+        const removeTypeBtn = e.target.closest('.btn-remove-type');
+        if(removeTypeBtn) removeTypeBtn.closest('.type-box').remove();
 
         const scanBtn = e.target.closest('.btn-scan-barcode');
-        if (scanBtn) {
-            startBarcodeScan(scanBtn);
+        if (scanBtn) startBarcodeScan(scanBtn);
+    });
+
+    // Dynamic Price Label Update
+    document.getElementById('variantEngine')?.addEventListener('input', (e) => {
+        if (e.target.classList.contains('b-base-qty') || e.target.classList.contains('b-base-unit')) {
+            updatePriceLabel(e.target.closest('.brand-box'));
         }
     });
 
-    document.getElementById('variantEngine')?.addEventListener('input', (e) => {
-        if (e.target.classList.contains('vb-stock')) {
-            syncVariantMath(e.target.closest('.variant-box'), 'brand');
-        }
-        if (e.target.classList.contains('v-add-stock')) {
-            syncVariantMath(e.target.closest('.variant-box'), 'total');
-        }
-        if (e.target.classList.contains('v-add-stock') || e.target.classList.contains('v-base-qty') || e.target.classList.contains('v-base-unit') || e.target.classList.contains('v-unit')) {
-            updateLiveStockCalc(e.target.closest('.variant-box'));
-        }
+    document.getElementById('pIsLoose')?.addEventListener('change', () => {
+        document.querySelectorAll('.brand-box').forEach(box => updatePriceLabel(box));
     });
 
     document.getElementById('productForm')?.addEventListener('submit', handleSaveProduct);
@@ -200,17 +193,8 @@ function bindEvents() {
     
     document.getElementById('cfgAdvFields')?.addEventListener('change', saveConfig);
     document.getElementById('cfgBatch')?.addEventListener('change',     saveConfig);
-    document.getElementById('cfgLoose')?.addEventListener('change',     saveConfig);
     document.getElementById('cfgHints')?.addEventListener('change',     saveConfig);
     
-    document.getElementById('pIsLoose')?.addEventListener('change', (e) => {
-        const engine = document.getElementById('variantEngineWrapper');
-        if(engine) {
-            if(e.target.checked) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
-        }
-        document.querySelectorAll('.variant-box').forEach(box => updateLiveStockCalc(box));
-    });
-
     document.getElementById('btnAutoBatch')?.addEventListener('click', () => {
         const catInput = document.getElementById('pCategory');
         const prefix = (catInput ? catInput.value.substring(0,3).toUpperCase() : 'BAT');
@@ -259,14 +243,12 @@ function bindEvents() {
         chip.addEventListener('click', (e) => toggleChip(e.currentTarget));
     });
 
-    // EVENT DELEGATION FOR INVENTORY GRID
     document.getElementById('inventoryGrid')?.addEventListener('click', (e) => {
         if (e.target.classList.contains('bulk-cb')) {
             toggleBulkItem(e.target.dataset.id, e.target.checked);
             e.stopPropagation();
             return;
         }
-        
         const card = e.target.closest('.sku-card');
         if (card) openProductDetails(card.getAttribute('data-id'));
     });
@@ -313,6 +295,111 @@ function bindEvents() {
     });
 }
 
+// --- NEW ENGINE UI BUILDERS ---
+function updatePriceLabel(brandBox) {
+    const isLoose = document.getElementById('pIsLoose')?.checked;
+    const bq = brandBox.querySelector('.b-base-qty').value || 1;
+    const bu = brandBox.querySelector('.b-base-unit').value || 'pcs';
+    const lbl = brandBox.querySelector('.b-price-label');
+    
+    if(!lbl) return;
+    if (isLoose) lbl.innerText = `Amount per 1 ${bu}`;
+    else lbl.innerText = `Amount per ${bq} ${bu}`;
+}
+
+function getBrandBoxHTML(vData = null, showBrandName = false) {
+    const bq = vData?.baseQty || 1;
+    const bu = vData?.baseUnit || 'pcs';
+    const isLoose = document.getElementById('pIsLoose')?.checked;
+    
+    let formPrice = vData?.price !== undefined ? vData.price : '';
+    if (isLoose && formPrice !== '') formPrice = (formPrice / bq).toFixed(2);
+
+    return `
+    <div class="brand-box" style="margin-top:16px; padding-top:16px; border-top:1.5px dashed var(--border); position:relative;">
+        <div class="form-group brand-name-group" style="${showBrandName ? 'display:block;' : 'display:none;'}">
+            <input type="text" class="form-input b-name" placeholder=" " value="${Security.escapeHtml(vData?.brandName || '')}">
+            <label class="floating-label">Brand Name</label>
+        </div>
+        
+        <div class="variant-grid">
+            <div class="form-group" style="margin-bottom:0;">
+                <div style="display:flex; gap:8px;">
+                    <input type="number" step="0.001" class="form-input b-base-qty" placeholder="Qty" value="${bq}" style="flex:1;">
+                    <input type="text" class="form-input b-base-unit" list="unitOptions" placeholder="Unit" value="${Security.escapeHtml(bu)}" style="width: 80px;">
+                </div>
+                <label class="floating-label" style="top:-8px; background:#fff; font-size:11px; color:var(--primary);"><i class="fa-solid fa-box"></i> 1 Stock Contains</label>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:0;">
+                <input type="number" step="0.01" class="form-input b-price" placeholder=" " value="${formPrice}" required style="font-size:16px; font-weight:800; color:var(--success); font-family:'JetBrains Mono';">
+                <label class="floating-label b-price-label">Selling Price</label>
+            </div>
+        </div>
+        
+        <div class="form-group" style="margin-top:12px; margin-bottom:0;">
+            <input type="number" step="0.001" class="form-input b-stock" placeholder=" " value="${vData?.stock !== undefined ? vData.stock : ''}" required>
+            <label class="floating-label" style="color:var(--primary); font-weight:700;">Stock</label>
+        </div>
+        
+        <div class="adv-only-field">
+            <div class="variant-grid">
+                <div class="form-group" style="margin-bottom:0; position:relative;">
+                    <input type="text" class="form-input b-barcode" placeholder=" " value="${Security.escapeHtml(vData?.barcode || '')}">
+                    <button type="button" class="btn-scan-barcode" style="position:absolute; right:8px; top:11px; background:none; border:none; color:var(--primary); font-size:16px; cursor:pointer;"><i class="fa-solid fa-barcode"></i></button>
+                    <label class="floating-label"><i class="fa-solid fa-barcode"></i> Barcode</label>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <input type="number" step="0.01" class="form-input b-cost" placeholder=" " value="${vData?.costPrice || ''}">
+                    <label class="floating-label"><i class="fa-solid fa-tags"></i> Cost Price</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:12px; margin-bottom:0;">
+                <input type="date" class="form-input b-expiry" placeholder=" " value="${Security.escapeHtml(vData?.expiryDate || '')}">
+                <label class="floating-label"><i class="fa-regular fa-calendar-xmark"></i> Expiry Date</label>
+            </div>
+        </div>
+        
+        <input type="hidden" class="b-id" value="${Security.escapeHtml(vData?.id || '')}">
+        <input type="hidden" class="b-added" value="${Security.escapeHtml(vData?.dateAdded || '')}">
+        
+        <button type="button" class="btn-remove-brand" style="position:absolute; top:16px; right:0; background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; padding:5px;"><i class="fa-solid fa-trash"></i></button>
+    </div>`;
+}
+
+function addTypeBoxUI(typeString = '', variantsArray = []) {
+    const container = document.getElementById('variantEngine');
+    const div = document.createElement('div');
+    div.className = 'type-box';
+    
+    const showBrands = variantsArray.length > 1 || (variantsArray.length === 1 && variantsArray[0].brandName);
+    
+    let brandsHtml = '';
+    if (variantsArray.length > 0) {
+        variantsArray.forEach(v => brandsHtml += getBrandBoxHTML(v, showBrands));
+    } else {
+        brandsHtml = getBrandBoxHTML(null, false);
+    }
+
+    div.innerHTML = `
+        ${container.children.length > 0 ? `<button type="button" class="btn-remove-type"><i class="fa-solid fa-xmark"></i></button>` : ''}
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div class="form-group" style="flex:2; margin-bottom:0;">
+                <input type="text" class="form-input v-type-input" placeholder=" " value="${Security.escapeHtml(typeString)}" required>
+                <label class="floating-label">Type of Item (e.g. Biscuit)</label>
+            </div>
+            <button type="button" class="btn btn-dashed btn-add-brand" style="flex:1; margin-bottom:0; height:46px; font-size:13px; font-family:var(--font-body);">+ Add Brand</button>
+        </div>
+        <div class="brands-container">${brandsHtml}</div>
+    `;
+    
+    container.appendChild(div);
+    div.querySelectorAll('.brand-box').forEach(bBox => updatePriceLabel(bBox));
+    
+    const advEl = document.getElementById('cfgAdvFields');
+    if(advEl && advEl.checked) div.classList.add('show-adv');
+}
+
 // --- LOGIC METHODS ---
 function handleHintEvent(e) {
     const hintBar = document.getElementById('globalHintBar');
@@ -337,125 +424,45 @@ function handleHintEvent(e) {
     }
 }
 
-function updateLiveStockCalc(box) {
-    const stockInput = box.querySelector('.v-add-stock');
-    const calcDisplay = box.querySelector('.v-calc-stock');
-    if(!stockInput || !calcDisplay) return;
-
-    const stockVal = parseFloat(stockInput.value);
-    if (isNaN(stockVal)) {
-        calcDisplay.innerText = '';
-        return;
-    }
-
-    const isLooseToggle = document.getElementById('pIsLoose');
-    const isLoose = isLooseToggle ? isLooseToggle.checked : false;
-
-    if (isLoose) {
-        const baseQty = parseFloat(box.querySelector('.v-base-qty').value) || 1;
-        const baseUnit = box.querySelector('.v-base-unit').value || 'units';
-        const total = stockVal * baseQty;
-        calcDisplay.innerText = `≈ ${total.toFixed(3).replace(/\.?0+$/, '')} ${baseUnit}`;
-    } else {
-        const unitType = box.querySelector('.v-unit').value || 'units';
-        calcDisplay.innerText = `≈ ${stockVal} ${unitType}`;
-    }
-}
-
-function syncVariantMath(variantBox, source) {
-    const brandStocks = Array.from(variantBox.querySelectorAll('.vb-stock'));
-    const totalStockInput = variantBox.querySelector('.v-add-stock');
-    if(brandStocks.length === 0) return;
-
-    if (source === 'brand') {
-        let sum = 0;
-        brandStocks.forEach(input => sum += (parseFloat(input.value) || 0));
-        totalStockInput.value = sum;
-    } else if (source === 'total') {
-        const targetTotal = parseFloat(totalStockInput.value) || 0;
-        let filledSum = 0;
-        let emptyInputs = [];
-        brandStocks.forEach(input => {
-            if (input.value === '') emptyInputs.push(input);
-            else filledSum += parseFloat(input.value);
-        });
-        
-        if (emptyInputs.length === 1) {
-            emptyInputs[0].value = Math.max(0, targetTotal - filledSum);
-        } else if (brandStocks.length === 1) {
-            brandStocks[0].value = targetTotal;
-        }
-    }
-}
-
 function loadSettings() {
     const isAdv   = localStorage.getItem('cfg_adv_fields') === 'true';
     const isBatch = localStorage.getItem('cfg_batch') === 'true';
-    const isLoose = localStorage.getItem('cfg_loose') === 'true';
     const isHints = localStorage.getItem('cfg_hints') !== 'false';
 
     const elAdv = document.getElementById('cfgAdvFields'); if(elAdv) elAdv.checked = isAdv;
     const elBatch = document.getElementById('cfgBatch'); if(elBatch) elBatch.checked = isBatch;
-    const elLoose = document.getElementById('cfgLoose'); if(elLoose) elLoose.checked = isLoose;
     const elHints = document.getElementById('cfgHints'); if(elHints) elHints.checked = isHints;
 
-    applySettingsUI(isAdv, isBatch, isLoose);
+    applySettingsUI(isAdv, isBatch);
 }
 
 function saveConfig() {
-    const isAdv   = document.getElementById('cfgAdvFields').checked;
-    const isBatch = document.getElementById('cfgBatch').checked;
-    const isLoose = document.getElementById('cfgLoose').checked;
-    const hintsToggle = document.getElementById('cfgHints');
-    const isHints = hintsToggle ? hintsToggle.checked : true;
+    const advEl = document.getElementById('cfgAdvFields');
+    const batchEl = document.getElementById('cfgBatch');
+    const hintsEl = document.getElementById('cfgHints');
+
+    const isAdv   = advEl ? advEl.checked : false;
+    const isBatch = batchEl ? batchEl.checked : false;
+    const isHints = hintsEl ? hintsEl.checked : true;
 
     localStorage.setItem('cfg_adv_fields', isAdv);
     localStorage.setItem('cfg_batch',      isBatch);
-    localStorage.setItem('cfg_loose',      isLoose);
     localStorage.setItem('cfg_hints',      isHints);
 
-    applySettingsUI(isAdv, isBatch, isLoose);
+    applySettingsUI(isAdv, isBatch);
     UI.showToast(document.body.classList.contains('lang-hin') ? "Settings badal di gayi" : "Settings Updated");
 }
 
-function applySettingsUI(isAdv, isBatch, isLoose) {
+function applySettingsUI(isAdv, isBatch) {
     const advCon = document.getElementById('advancedFieldsContainer');
-    if(advCon) advCon.style.display = (isAdv || isBatch || isLoose) ? 'block' : 'none';
+    if(advCon) advCon.style.display = (isAdv || isBatch) ? 'block' : 'none';
     
     const batCon = document.getElementById('batchInputContainer');
     if(batCon) batCon.style.display = isBatch ? 'block' : 'none';
     
-    const looseCon = document.getElementById('looseInputContainer');
-    if(looseCon) looseCon.style.display = isLoose ? 'flex' : 'none';
-    
-    const engine = document.getElementById('variantEngineWrapper');
-    if(engine) {
-        if (isAdv) engine.classList.add('show-adv'); else engine.classList.remove('show-adv');
-        if (isLoose) engine.classList.add('show-loose'); else engine.classList.remove('show-loose');
-    }
-}
-
-function checkDemandMitraRouting() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const restockName = urlParams.get('restock');
-    if (restockName) {
-        const targetProd = allProducts.find(p => p.name === restockName);
-        if(targetProd) {
-            loadProductForEdit(targetProd.id);
-            const tempStock = localStorage.getItem("temp_add_stock");
-            if (tempStock) {
-                setTimeout(() => {
-                    const stockInputs = document.querySelectorAll('.v-add-stock');
-                    if (stockInputs.length > 0) {
-                        stockInputs[0].value = tempStock;
-                        updateLiveStockCalc(stockInputs[0].closest('.variant-box'));
-                    }
-                    localStorage.removeItem("temp_add_stock");
-                    UI.showToast(`DemandMitra suggests adding ${tempStock} units.`);
-                }, 500);
-            }
-        }
-    }
+    document.querySelectorAll('.type-box').forEach(box => {
+        if(isAdv) box.classList.add('show-adv'); else box.classList.remove('show-adv');
+    });
 }
 
 function handleExportCSV() {
@@ -464,14 +471,13 @@ function handleExportCSV() {
         const flattened = [];
         allProducts.forEach(p => {
             p.variants.forEach(v => {
-                let brandsStr = '';
-                if(v.brands && v.brands.length > 0) {
-                    brandsStr = v.brands.map(b => `${b.name}(${b.stock})`).join(', ');
-                }
                 flattened.push({
-                    Name: p.name, Category: p.category, Type: v.quantity, Price: v.price, Stock: v.stock,
-                    Brands: brandsStr, Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
-                    BaseQty: v.baseQty, BaseUnit: v.baseUnit, BatchID: p.batchId, HSN: p.hsn, GST: p.gstRate, DateAdded: p.dateAdded
+                    Name: p.name, Category: p.category, 
+                    Type: v.type, Brand: v.brandName, 
+                    Price: v.price, Stock: v.stock,
+                    BaseQty: v.baseQty, BaseUnit: v.baseUnit,
+                    Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
+                    BatchID: p.batchId, HSN: p.hsn, GST: p.gstRate, DateAdded: p.dateAdded
                 });
             });
         });
@@ -481,89 +487,6 @@ function handleExportCSV() {
         XLSX.writeFile(wb, `BharatPOS_Inventory_${new Date().toISOString().slice(0,10)}.xlsx`);
         UI.showToast("✅ Export Successful!");
     } catch(e) { UI.showToast("Export Failed", true); }
-}
-
-function getBrandRowHTML(name = '', stock = '') {
-    return `
-    <div class="brand-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
-        <div style="flex:2; position:relative;">
-            <input type="text" class="form-input vb-name" list="brandList" placeholder="Brand Name" style="padding:10px 12px; font-size:12px;" value="${Security.escapeHtml(name)}">
-        </div>
-        <div style="flex:1; position:relative;">
-            <input type="number" step="0.001" class="form-input vb-stock" placeholder="Stock" style="padding:10px 12px; font-size:12px;" value="${stock}">
-        </div>
-        <button type="button" class="btn-remove-brand" style="background:none; border:none; color:var(--danger); cursor:pointer; padding:5px;"><i class="fa-solid fa-xmark"></i></button>
-    </div>`;
-}
-
-function addVariantUI(data = null) {
-    const container = document.getElementById('variantEngine');
-    if(!container) return;
-    const div = document.createElement('div');
-    div.className = 'variant-box';
-    const uid = Math.floor(Math.random() * 10000);
-
-    let brandsHtml = '';
-    const brandsArray = data?.brands || (data?.brand ? [{name: data.brand, stock: data.stock || 0}] : []);
-    if (brandsArray.length > 0) {
-        brandsArray.forEach(b => { brandsHtml += getBrandRowHTML(b.name, b.stock); });
-    } else {
-        brandsHtml = getBrandRowHTML('', ''); 
-    }
-
-    div.innerHTML = `
-        ${container.children.length > 0 ? `<button type="button" class="btn-remove-var"><i class="fa-solid fa-xmark"></i></button>` : ''}
-        <div class="variant-grid">
-            <div class="form-group" style="margin-bottom:0;">
-                <input type="text" class="form-input v-unit" list="unitOptions" id="u_${uid}" placeholder=" " value="${Security.escapeHtml(data?.quantity || '')}" required>
-                <label for="u_${uid}" class="floating-label">Type (Color, Size, ₹, Wt)</label>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <input type="number" step="0.001" class="form-input v-add-stock" id="s_${uid}" placeholder=" " value="${data?.stock || ''}">
-                <label for="s_${uid}" class="floating-label" style="color:var(--success);">Total Stock</label>
-                <div class="v-calc-stock" style="font-size:11px; font-weight:800; color:var(--primary); margin-top:6px; text-align:right; min-height:14px;"></div>
-            </div>
-        </div>
-        <div class="form-group" style="margin-top:10px;margin-bottom:0;">
-            <input type="number" step="0.01" class="form-input v-price" id="p_${uid}" placeholder=" " value="${data?.price || ''}" required style="font-size:17px;font-weight:800;color:var(--success);font-family:'JetBrains Mono',monospace;">
-            <label for="p_${uid}" class="floating-label">Selling Price (₹)</label>
-        </div>
-        
-        <div class="variant-brands-container adv-only-field" style="margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;">
-           <label class="floating-label" style="position:static; display:block; margin-bottom:8px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-copyright"></i> Brands & Stock List</label>
-           <div class="brand-list">${brandsHtml}</div>
-           <button type="button" class="btn btn-dashed btn-add-brand" style="padding: 6px; font-size: 11px; width:auto; display:inline-block;"><i class="fa-solid fa-plus"></i> Add Brand</button>
-        </div>
-
-        <div class="variant-grid adv-only-field">
-            <div class="form-group" style="margin-bottom:0; position:relative;">
-                <input type="text" class="form-input v-barcode" placeholder=" " value="${Security.escapeHtml(data?.barcode || '')}" style="font-family:'JetBrains Mono'; padding-right:40px;">
-                <button type="button" class="btn-scan-barcode" style="position:absolute; right:8px; top:11px; background:none; border:none; color:var(--primary); font-size:16px; cursor:pointer;"><i class="fa-solid fa-barcode"></i></button>
-                <label class="floating-label"><i class="fa-solid fa-barcode"></i> Barcode</label>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <input type="number" step="0.01" class="form-input v-cost" placeholder=" " value="${data?.costPrice || ''}">
-                <label class="floating-label"><i class="fa-solid fa-tags"></i> Cost Price</label>
-            </div>
-        </div>
-        <div class="form-group adv-only-field" style="margin-bottom:0;">
-            <input type="date" class="form-input v-expiry" placeholder=" " value="${Security.escapeHtml(data?.expiryDate || '')}">
-            <label class="floating-label"><i class="fa-regular fa-calendar-xmark"></i> Expiry Date</label>
-        </div>
-
-        <div class="form-group loose-only-field" style="margin-bottom:0;">
-            <div style="display:flex; gap:8px;">
-                <input type="number" step="0.001" class="form-input v-base-qty" placeholder=" " value="${data?.baseQty || ''}" style="flex:1;">
-                <input type="text" class="form-input v-base-unit" list="unitOptions" placeholder="Unit" value="${Security.escapeHtml(data?.baseUnit || 'pcs')}" style="width: 90px;">
-            </div>
-            <label class="floating-label"><i class="fa-solid fa-scale-balanced"></i> 1 Stock Contains</label>
-        </div>
-
-        <input type="hidden" class="v-id" value="${Security.escapeHtml(data?.id || '')}">
-        <input type="hidden" class="v-added" value="${Security.escapeHtml(data?.dateAdded || '')}">
-    `;
-    container.appendChild(div);
-    updateLiveStockCalc(div);
 }
 
 async function handleSaveProduct(e) {
@@ -580,25 +503,16 @@ async function handleSaveProduct(e) {
         const pTypeEl   = document.getElementById('pPriceType');
         const priceType = pTypeEl ? pTypeEl.value : 'inclusive';
 
-        const advEl = document.getElementById('cfgAdvFields');
-        const looseEl = document.getElementById('cfgLoose');
-        const batchEl = document.getElementById('cfgBatch');
-        
-        const isAdv      = advEl ? advEl.checked : false;
-        const isLooseCfg = looseEl ? looseEl.checked : false;
-        const isBatchCfg = batchEl ? batchEl.checked : false;
-
-        const pLooseEl = document.getElementById('pIsLoose');
-        const isLoose = isLooseCfg ? (pLooseEl ? pLooseEl.checked : false) : false;
+        const looseEl = document.getElementById('pIsLoose');
+        const isLoose = looseEl ? looseEl.checked : false;
         
         const pBatchEl = document.getElementById('pBatchId');
-        const batchId = isBatchCfg ? (pBatchEl ? pBatchEl.value.trim() : "") : "";
+        const batchId = pBatchEl ? pBatchEl.value.trim() : "";
         
         const pReorderEl = document.getElementById('pReorderPoint');
         const reorder = pReorderEl ? pReorderEl.value : '';
         
         const nowIso  = new Date().toISOString();
-
         const productId = currentEditingId || `prod_${Date.now()}`;
         
         const productDoc = {
@@ -608,42 +522,40 @@ async function handleSaveProduct(e) {
             variants: []
         };
 
-        const variantBoxes = document.querySelectorAll('.variant-box');
-        for (let i = 0; i < variantBoxes.length; i++) {
-            const box      = variantBoxes[i];
-            const unit     = box.querySelector('.v-unit').value.trim();
-            const price    = box.querySelector('.v-price').value;
-            const stock    = parseFloat(box.querySelector('.v-add-stock').value) || 0;
-
-            let vId        = box.querySelector('.v-id').value || `var_${Date.now()}_${i}`;
-            let vAdded     = box.querySelector('.v-added').value || nowIso;
+        const typeBoxes = document.querySelectorAll('.type-box');
+        for (let i = 0; i < typeBoxes.length; i++) {
+            const tBox = typeBoxes[i];
+            const typeVal = tBox.querySelector('.v-type-input').value.trim();
+            const brandBoxes = tBox.querySelectorAll('.brand-box');
             
-            let vBarcode   = isAdv ? box.querySelector('.v-barcode').value : "";
-            let vExpiry    = isAdv ? box.querySelector('.v-expiry').value : "";
-            let vCost      = isAdv ? box.querySelector('.v-cost').value : "";
-            let vBaseQty   = isLoose ? box.querySelector('.v-base-qty').value : "";
-            let vBaseUnit  = isLoose ? box.querySelector('.v-base-unit').value : "pcs";
-
-            let vBrands = [];
-            if(isAdv) {
-                const brandRows = box.querySelectorAll('.brand-row');
-                brandRows.forEach(row => {
-                    const bName = row.querySelector('.vb-name').value.trim();
-                    const bStock = parseFloat(row.querySelector('.vb-stock').value) || 0;
-                    if(bName || bStock > 0) vBrands.push({ name: bName, stock: bStock });
+            brandBoxes.forEach((bBox, j) => {
+                const bName = bBox.querySelector('.b-name').value.trim();
+                const bq = parseFloat(bBox.querySelector('.b-base-qty').value) || 1;
+                const bu = bBox.querySelector('.b-base-unit').value.trim() || 'pcs';
+                
+                let formPrice = parseFloat(bBox.querySelector('.b-price').value) || 0;
+                let dbPrice = isLoose ? formPrice * bq : formPrice;
+                
+                const stock = parseFloat(bBox.querySelector('.b-stock').value) || 0;
+                const barcode = bBox.querySelector('.b-barcode')?.value || '';
+                const cost = bBox.querySelector('.b-cost')?.value || '';
+                const expiry = bBox.querySelector('.b-expiry')?.value || '';
+                
+                const vId = bBox.querySelector('.b-id').value || `var_${Date.now()}_${i}_${j}`;
+                const vAdded = bBox.querySelector('.b-added').value || nowIso;
+                
+                // Backwards compatibility label
+                const finalQuantity = bName ? `${typeVal} - ${bName}` : typeVal;
+                
+                productDoc.variants.push({
+                    id: vId, type: typeVal, brandName: bName, quantity: finalQuantity,
+                    price: dbPrice, stock: stock, baseQty: bq, baseUnit: bu,
+                    barcode: barcode, costPrice: cost, expiryDate: expiry, dateAdded: vAdded
                 });
-            }
-
-            productDoc.variants.push({
-                id: vId, quantity: unit, price: parseFloat(price), stock: stock,
-                brands: vBrands, barcode: vBarcode, expiryDate: vExpiry, costPrice: vCost, 
-                baseQty: vBaseQty, baseUnit: vBaseUnit
             });
         }
 
-        if(currentEditingId) {
-            allProducts = allProducts.filter(p => p.id !== currentEditingId);
-        }
+        if(currentEditingId) allProducts = allProducts.filter(p => p.id !== currentEditingId);
         allProducts.push(productDoc);
 
         await dbSave('bharatpos_products', allProducts);
@@ -652,11 +564,11 @@ async function handleSaveProduct(e) {
 
         document.getElementById('productForm').reset();
         document.getElementById('variantEngine').innerHTML = '';
-        addVariantUI();
+        addTypeBoxUI();
         currentEditingId = null;
         currentEditingDate = null;
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        UI.showToast("✅ SKU Saved Successfully");
+        UI.showToast("✅ Item Saved Successfully");
 
         if (user.merchantId && db) {
             try {
@@ -695,7 +607,7 @@ function updateDatalists() {
         if (p.gstRate)  taxes.add(p.gstRate);
         if (p.batchId)  batches.add(p.batchId);
         (p.variants || []).forEach(v => {
-            if(v.brands) v.brands.forEach(b => { if(b.name) brands.add(b.name); });
+            if(v.brandName) brands.add(v.brandName);
         });
     });
 
@@ -780,7 +692,7 @@ function applyFilters() {
     }
 
     if (filterState.brand) {
-        filtered = filtered.filter(p => p.variants.some(v => v.brands && v.brands.some(b => b.name === filterState.brand)));
+        filtered = filtered.filter(p => p.variants.some(v => v.brandName === filterState.brand));
     }
     if (filterState.tax) {
         filtered = filtered.filter(p => p.gstRate == filterState.tax);
@@ -933,15 +845,15 @@ function renderChunk() {
         const isLow    = totalStock <= threshold;
         
         const vCount   = p.variants.length;
-        const basePrice = p.variants[0].price;
-        const tier     = getTier(p.variants[0].id);
-        const formatTotalStock = Formatters.stock(totalStock, p.variants[0].quantity);
-        const isChecked = selectedBulkItems.has(p.id) ? 'checked' : '';
+        
+        // Accurate Price Rendering for Grid
+        const vFirst = p.variants[0];
+        let basePrice = vFirst.price;
+        if(p.isLoose) basePrice = (basePrice / (vFirst.baseQty||1)).toFixed(2);
 
-        let displayBrand = '';
-        if(p.variants[0].brands && p.variants[0].brands.length > 0) {
-            displayBrand = ` • ${Security.escapeHtml(p.variants[0].brands[0].name)}${p.variants[0].brands.length > 1 ? ' (+More)' : ''}`;
-        }
+        const tier     = getTier(vFirst.id);
+        const formatTotalStock = Formatters.stock(totalStock, vFirst.quantity);
+        const isChecked = selectedBulkItems.has(p.id) ? 'checked' : '';
 
         const card = document.createElement('div');
         card.className = 'sku-card';
@@ -957,7 +869,7 @@ function renderChunk() {
                 <div class="sku-cat">${Security.escapeHtml(p.category) || 'General'}</div>
                 <div class="sku-variant-label">
                     <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
-                    ${vCount > 1 ? `${vCount} Variants` : Security.escapeHtml(p.variants[0].quantity)}${displayBrand}
+                    ${vCount > 1 ? `${vCount} Variations` : Security.escapeHtml(vFirst.quantity)}
                 </div>
             </div>
             <div>
@@ -1029,28 +941,26 @@ function openProductDetails(id) {
         vList.innerHTML = base.variants.map(v => {
             let details = [];
             
-            let brandsSummary = '';
-            if(v.brands && v.brands.length > 0) {
-                brandsSummary = `<div style="font-size:10px; color:var(--slate-500); margin-top:4px; font-weight:700;"><i class="fa-solid fa-copyright"></i> ` + v.brands.map(b => `${Security.escapeHtml(b.name)} (${b.stock})`).join(', ') + `</div>`;
-            }
-
             if(v.barcode) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-barcode"></i> ${Security.escapeHtml(v.barcode)}</span>`);
             if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${Security.escapeHtml(v.expiryDate)}</span>`);
             if(v.costPrice) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-tags"></i> Cost: ₹${Security.escapeHtml(v.costPrice)}</span>`);
-            if(base.isLoose && v.baseQty) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-scale-balanced"></i> Base: ${v.baseQty} ${Security.escapeHtml(v.baseUnit)||'pcs'}</span>`);
+            
+            // Highlight "1 Stock Contains" clearly
+            details.push(`<span style="color:var(--primary);"><i class="fa-solid fa-box"></i> 1 Stock = ${v.baseQty || 1} ${Security.escapeHtml(v.baseUnit)||'pcs'}</span>`);
             
             let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--border); font-size:11px; font-weight:700;">${details.join('')}</div>` : '';
+
+            let pLabel = base.isLoose ? `₹${(v.price / (v.baseQty||1)).toFixed(2)} / ${v.baseUnit||'pcs'}` : `₹${v.price}`;
 
             return `
             <div style="background:var(--white);padding:16px;border-radius:12px;border:1.5px solid var(--border);box-shadow:var(--shadow-sm);">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <div style="font-weight:800;font-size:14px;color:var(--text-main); font-family:var(--font-head);">${Security.escapeHtml(v.quantity)}</div>
-                        ${brandsSummary}
                     </div>
                     <div style="text-align:right;">
-                        <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:16px;">₹${v.price}</div>
-                        <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${Formatters.stock(v.stock, v.quantity)}</div>
+                        <div style="color:var(--success);font-weight:800;font-family:'JetBrains Mono';font-size:16px;">${pLabel}</div>
+                        <div style="font-size:11px;color:${v.stock <= threshold ? 'var(--danger)' : 'var(--slate-500)'};font-weight:700;margin-top:4px;">Stock: ${v.stock}</div>
                     </div>
                 </div>
                 ${detailsHtml}
@@ -1080,33 +990,29 @@ function loadProductForEdit(id) {
     const pBat = document.getElementById('pBatchId'); if(pBat) pBat.value = base.batchId || '';
     const pLoo = document.getElementById('pIsLoose'); if(pLoo) pLoo.checked = base.isLoose || false;
 
-    if (base.batchId) { const cb = document.getElementById('cfgBatch'); if(cb) cb.checked = true; }
-    if (base.isLoose) { const cl = document.getElementById('cfgLoose'); if(cl) cl.checked = true; }
-    if (base.variants.some(v => (v.brands && v.brands.length>0) || v.barcode || v.expiryDate || v.costPrice) || base.reorderPoint) {
-        const ca = document.getElementById('cfgAdvFields'); if(ca) ca.checked = true;
-    }
-
-    const ca = document.getElementById('cfgAdvFields');
-    const cb = document.getElementById('cfgBatch');
-    const cl = document.getElementById('cfgLoose');
-    applySettingsUI(ca?ca.checked:false, cb?cb.checked:false, cl?cl.checked:false);
-
-    if (base.hsn || base.gstRate) {
-        const gstContent = document.getElementById('tierGst');
-        if (gstContent && !gstContent.classList.contains('active')) {
-            gstContent.classList.add('active');
-            const gstBtn = document.getElementById('btnToggleGst');
-            if(gstBtn) {
-                gstBtn.style.background  = 'var(--blue-50)';
-                gstBtn.style.borderColor = 'var(--primary)';
-                gstBtn.style.color       = 'var(--primary)';
-            }
-        }
-    }
-
     const eng = document.getElementById('variantEngine');
     if(eng) eng.innerHTML = '';
-    base.variants.forEach(v => addVariantUI(v));
+    
+    // Group flattened DB variants back into hierarchical UI Type Boxes
+    const groups = {};
+    base.variants.forEach(v => {
+        let t = v.type;
+        let b = v.brandName;
+        if (t === undefined) {
+            // Fallback parsing for extremely old legacy variants without type/brandName fields
+            if (v.quantity && v.quantity.includes(' - ')) {
+                const parts = v.quantity.split(' - ');
+                t = parts[0]; b = parts.slice(1).join(' - ');
+            } else {
+                t = v.quantity || ''; b = '';
+            }
+        }
+        if (!groups[t]) groups[t] = [];
+        v.type = t; v.brandName = b;
+        groups[t].push(v);
+    });
+    
+    Object.keys(groups).forEach(typeKey => addTypeBoxUI(typeKey, groups[typeKey]));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if(pName) pName.focus();
@@ -1182,17 +1088,17 @@ function importMasterProduct(p) {
     const pH = document.getElementById('pHSN'); if(pH) pH.value = p.hsn || '';
     const pG = document.getElementById('pGSTRate'); if(pG) pG.value = p.gstRate || '';
     
-    const cl = document.getElementById('cfgLoose');
     const pil = document.getElementById('pIsLoose');
-    if (cl && cl.checked && pil) {
-        pil.checked = p.isLoose || false;
-    }
+    if (pil) pil.checked = p.isLoose || false;
 
-    const firstRow = document.querySelector('.variant-box');
-    if (firstRow) {
-        const vu = firstRow.querySelector('.v-unit'); if(vu && p.quantity) vu.value = p.quantity;
-        const vp = firstRow.querySelector('.v-price'); if(vp && p.price) vp.value = p.price;
-    }
+    const eng = document.getElementById('variantEngine');
+    if (eng) eng.innerHTML = '';
+    
+    addTypeBoxUI(p.quantity || 'General', [{
+        price: p.price || 0,
+        baseQty: 1,
+        baseUnit: 'pcs'
+    }]);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if(pN) pN.focus();
@@ -1224,8 +1130,9 @@ async function handleBulkImport(event) {
                 if (!name) continue;
 
                 const skuId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                const brandStr = String(row['Brand'] || '');
-                const brandsArray = brandStr ? [{ name: brandStr, stock: parseFloat(row['Stock'] || row['Qty'] || 0) }] : [];
+                const typeName = String(row['Type'] || row['Unit'] || 'General');
+                const brandName = String(row['Brand'] || '');
+                const finalQuantity = brandName ? `${typeName} - ${brandName}` : typeName;
 
                 const productDoc = {
                     id: skuId, name: String(name), category: String(row['Category'] || 'General'),
@@ -1234,12 +1141,16 @@ async function handleBulkImport(event) {
                     isLoose: String(row['Loose'] || '').toLowerCase() === 'true', dateAdded: new Date().toISOString(),
                     variants: [{
                         id: `${skuId}_v0`,
-                        quantity: String(row['Type'] || row['Unit'] || '1 pcs'),
+                        type: typeName,
+                        brandName: brandName,
+                        quantity: finalQuantity,
                         price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
                         stock: parseFloat(row['Stock'] || row['Qty'] || 0),
-                        brands: brandsArray, barcode: String(row['Barcode'] || ''),
-                        costPrice: String(row['CostPrice'] || row['Cost'] || ''), expiryDate: String(row['Expiry'] || ''), 
-                        baseQty: String(row['BaseQty'] || ''), baseUnit: String(row['BaseUnit'] || 'pcs')
+                        barcode: String(row['Barcode'] || ''),
+                        costPrice: String(row['CostPrice'] || row['Cost'] || ''), 
+                        expiryDate: String(row['Expiry'] || ''), 
+                        baseQty: String(row['BaseQty'] || '1'), 
+                        baseUnit: String(row['BaseUnit'] || 'pcs')
                     }]
                 };
 
@@ -1281,14 +1192,15 @@ async function pullFreshData() {
         
         fresh = fresh.map(p => {
             if(!p.variants) {
-                const brandsArray = p.brand ? [{ name: p.brand, stock: p.stock || 0 }] : [];
+                const finalQuantity = p.brand ? `${p.quantity || 'General'} - ${p.brand}` : (p.quantity || 'General');
                 return {
                     id: p.id, name: p.name, category: p.category, hsn: p.hsn, gstRate: p.gstRate, priceType: p.priceType,
                     isLoose: p.isLoose, batchId: p.batchId, reorderPoint: p.reorderPoint, dateAdded: p.dateAdded || new Date().toISOString(),
                     variants: [{
-                        id: `${p.id}_v0`, quantity: p.quantity || '1 pcs', price: p.price || 0, stock: p.stock || 0,
-                        brands: brandsArray, barcode: p.barcode || '', expiryDate: p.expiryDate || '', costPrice: p.costPrice || '',
-                        baseQty: p.baseQty || '', baseUnit: p.baseUnit || 'pcs'
+                        id: `${p.id}_v0`, type: p.quantity || 'General', brandName: p.brand || '', quantity: finalQuantity, 
+                        price: p.price || 0, stock: p.stock || 0,
+                        barcode: p.barcode || '', expiryDate: p.expiryDate || '', costPrice: p.costPrice || '',
+                        baseQty: p.baseQty || 1, baseUnit: p.baseUnit || 'pcs'
                     }]
                 };
             }
@@ -1350,43 +1262,40 @@ async function captureAndSendToAI() {
         if (data && data.success && data.product) {
             const p = data.product;
             
-            // 1. Fill Base Info
             const pN = document.getElementById("pName"); if(pN && !pN.value) pN.value = p.name || "";
             const pC = document.getElementById("pCategory"); if(pC && !pC.value) pC.value = p.category || "";
             
-            // 2. Fill GST/Accounting
             const pHsn = document.getElementById("pHSN"); if(pHsn && !pHsn.value) pHsn.value = p.hsn_code || "";
             const pGst = document.getElementById("pGSTRate"); if(pGst && !pGst.value && p.gst_rate !== null) pGst.value = p.gst_rate;
 
-            const firstVariant = document.querySelector('.variant-box');
-            if (firstVariant) {
-                // 3. Fill Variant Basics
-                if (p.price !== null) { const vP = firstVariant.querySelector('.v-price'); if(vP && !vP.value) vP.value = p.price; }
-                if (p.quantity_unit) { const vU = firstVariant.querySelector('.v-unit'); if(vU && !vU.value) vU.value = p.quantity_unit; }
+            const firstTypeBox = document.querySelector('.type-box');
+            if (firstTypeBox) {
+                if (p.quantity_unit) { const vT = firstTypeBox.querySelector('.v-type-input'); if(vT && !vT.value) vT.value = p.quantity_unit; }
                 
-                // 4. Auto-Trigger Advanced Fields if AI found advanced data
-                if (p.barcode || p.expiry_date || p.hsn_code || p.gst_rate || p.brand) {
-                    const advEl = document.getElementById('cfgAdvFields');
-                    if (advEl && !advEl.checked) {
-                        advEl.checked = true;
-                        saveConfig(); // Automatically expands the UI to show these fields!
+                const firstBrandBox = firstTypeBox.querySelector('.brand-box');
+                if(firstBrandBox) {
+                    if (p.price !== null) { const vP = firstBrandBox.querySelector('.b-price'); if(vP && !vP.value) vP.value = p.price; }
+                    
+                    if (p.barcode || p.expiry_date || p.hsn_code || p.gst_rate || p.brand) {
+                        const advEl = document.getElementById('cfgAdvFields');
+                        if (advEl && !advEl.checked) { advEl.checked = true; saveConfig(); }
                     }
-                }
 
-                // 5. Fill Advanced Fields (now that they are guaranteed to be visible)
-                if (p.brand) { const bN = firstVariant.querySelector('.vb-name'); if(bN && !bN.value) bN.value = p.brand; }
-                const bCode = firstVariant.querySelector('.v-barcode');
-                const eDate = firstVariant.querySelector('.v-expiry');
-                if (p.expiry_date && eDate && !eDate.value) eDate.value = p.expiry_date;
-                if (p.barcode && bCode && !bCode.value) bCode.value = p.barcode;
+                    if (p.brand) { 
+                        firstBrandBox.querySelector('.brand-name-group').style.display = 'block';
+                        const bN = firstBrandBox.querySelector('.b-name'); if(bN && !bN.value) bN.value = p.brand; 
+                    }
+                    const bCode = firstBrandBox.querySelector('.b-barcode');
+                    const eDate = firstBrandBox.querySelector('.b-expiry');
+                    if (p.expiry_date && eDate && !eDate.value) eDate.value = p.expiry_date;
+                    if (p.barcode && bCode && !bCode.value) bCode.value = p.barcode;
+                }
             }
             
-            // 6. Expand GST Menu if tax data was found
             if (p.hsn_code || p.gst_rate !== null) {
                 const gstContent = document.getElementById('tierGst');
                 if (gstContent && !gstContent.classList.contains('active')) {
-                    const gstBtn = document.getElementById('btnToggleGst');
-                    if (gstBtn) gstBtn.click();
+                    document.getElementById('btnToggleGst')?.click();
                 }
             }
 
@@ -1488,16 +1397,6 @@ async function submitStockTransfer() {
 
         variant.stock -= qty;
         
-        if(variant.brands && variant.brands.length > 0) {
-            let remaining = qty;
-            for(let b of variant.brands) {
-                if(remaining <= 0) break;
-                let deduct = Math.min(b.stock, remaining);
-                b.stock -= deduct;
-                remaining -= deduct;
-            }
-        }
-
         await dbSave('bharatpos_products', allProducts);
         if(db) await setDoc(doc(db, "shops", user.merchantId, "products", prod.id), prod);
 
@@ -1511,30 +1410,17 @@ async function submitStockTransfer() {
                 
                 if(targetVar) {
                     targetVar.stock = (Number(targetVar.stock) || 0) + qty;
-                    if(targetVar.brands && targetVar.brands.length > 0) {
-                        targetVar.brands[0].stock = (Number(targetVar.brands[0].stock) || 0) + qty;
-                    }
                 } else {
                     let newVar = JSON.parse(JSON.stringify(variant));
                     newVar.stock = qty;
-                    if(newVar.brands && newVar.brands.length > 0) {
-                       newVar.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
-                    }
                     targetProd.variants.push(newVar);
                 }
                 await setDoc(targetRef, targetProd);
             } else {
                 let clonedProd = JSON.parse(JSON.stringify(prod));
                 clonedProd.variants.forEach(v => {
-                    if(v.id === variantId) {
-                        v.stock = qty;
-                        if(v.brands && v.brands.length > 0) {
-                           v.brands.forEach((b, i) => b.stock = i === 0 ? qty : 0);
-                        }
-                    } else {
-                        v.stock = 0;
-                        if(v.brands) v.brands.forEach(b => b.stock = 0);
-                    }
+                    if(v.id === variantId) v.stock = qty;
+                    else v.stock = 0;
                 });
                 await setDoc(targetRef, clonedProd);
             }
@@ -1556,7 +1442,7 @@ async function submitStockTransfer() {
 let targetBarcodeInput = null;
 
 function startBarcodeScan(btn) {
-    targetBarcodeInput = btn.parentElement.querySelector('.v-barcode');
+    targetBarcodeInput = btn.parentElement.querySelector('.b-barcode');
     UI.showModal('barcodeScannerModal');
     
     Quagga.init({
@@ -1590,4 +1476,3 @@ function stopBarcodeScan() {
 
 // KICKSTART
 initProducts();
-
