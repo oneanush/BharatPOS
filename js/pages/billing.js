@@ -139,12 +139,7 @@ window.addCustomService = () => {
     renderCart();
     UI.showToast(name + " added to bill");
     
-    if(window.innerWidth <= 900) {
-        const rightPane = document.getElementById('rightPane');
-        const btnCloseMobile = document.getElementById('btnCloseMobileCart');
-        if(rightPane) rightPane.classList.add('open');
-        if(btnCloseMobile) btnCloseMobile.style.display = 'block';
-    }
+    // NOTE: Removed auto-open logic to keep UI quiet.
 };
 
 // --- EVENT BINDING ---
@@ -540,11 +535,19 @@ function renderProductGrid() {
         if(vCount > 1) badges += `<div class="pc-badge">${vCount} Types</div>`;
         if(p.isLoose) badges += `<div class="pc-badge-loose" style="right:${vCount>1?'55px':'0'};">Loose / Wt</div>`;
         
-        const varPrices = (p.variants||[]).map(v => {
+        // ✨ FIX: Limits the displayed variants on the card to exactly 2 max
+        const maxToShow = 2;
+        const variantsToShow = (p.variants || []).slice(0, maxToShow);
+
+        let varPrices = variantsToShow.map(v => {
             const uPrice = getUnitPrice(p, v);
             const uLabel = getUnitLabel(p, v);
             return `<span class="pc-variant-item">${Security.escapeHtml(v.quantity || v.type)}: ₹${uPrice.toFixed(2)}/${Security.escapeHtml(uLabel)}</span>`;
         }).join('');
+
+        if (vCount > maxToShow) {
+            varPrices += `<span class="pc-variant-item" style="background:transparent; color:var(--text-muted); padding:0; font-size:10px; font-weight:700;">+${vCount - maxToShow} more...</span>`;
+        }
         
         return `
         <div class="prod-card" data-id="${Security.escapeHtml(p.id)}">
@@ -739,7 +742,6 @@ function wizardRenderVariants() {
 }
 
 function wizardSelectVariant(vid) {
-    // 🔥 SAFE STRING MATCHING
     configState.selectedVariant = configState.prod.variants.find(v => String(v.id) === String(vid));
     if(!configState.selectedVariant) {
         UI.showToast("Variant error. Please try again.", true);
@@ -750,15 +752,19 @@ function wizardSelectVariant(vid) {
 
 function checkBrandStep() {
     const v = configState.selectedVariant;
-    if(v.brands && v.brands.length > 0) {
-        wizardRenderBrands();
+    
+    // ✨ FIX: Only displays brands if they actually exist AND aren't totally empty strings
+    const validBrands = (v.brands || []).filter(b => b.name && b.name.trim() !== '');
+    
+    if(validBrands.length > 0) {
+        wizardRenderBrands(validBrands);
     } else {
         configState.selectedBrand = '';
         wizardRenderQty();
     }
 }
 
-function wizardRenderBrands() {
+function wizardRenderBrands(validBrands) {
     configState.step = 'brand';
     const sVar = document.getElementById('stepVariant'); if(sVar) sVar.style.display = 'none';
     const sBrand = document.getElementById('stepBrand'); if(sBrand) sBrand.style.display = 'block';
@@ -771,7 +777,7 @@ function wizardRenderBrands() {
     const grid = document.getElementById('confBrandGrid');
     if(!grid) return;
     
-    grid.innerHTML = v.brands.map(b => {
+    grid.innerHTML = validBrands.map(b => {
         let avail = Number(b.stock) || 0;
         let label = v.baseUnit || 'pcs';
         if (p.isLoose) {
@@ -852,7 +858,8 @@ function wizardBack() {
     const v = configState.selectedVariant;
 
     if(step === 'qty') {
-        if(v.brands && v.brands.length > 0) wizardRenderBrands();
+        const validBrands = (v.brands || []).filter(b => b.name && b.name.trim() !== '');
+        if(validBrands.length > 0) wizardRenderBrands(validBrands);
         else if(p.variants.length > 1) wizardRenderVariants();
     } else if(step === 'brand') {
         wizardRenderVariants();
@@ -923,12 +930,7 @@ function confirmAddToCart() {
     UI.hideModal('addToCartModal');
     renderCart();
     
-    if(window.innerWidth <= 900) {
-        const rightPane = document.getElementById('rightPane');
-        const btnCloseMobile = document.getElementById('btnCloseMobileCart');
-        if(rightPane) rightPane.classList.add('open');
-        if(btnCloseMobile) btnCloseMobile.style.display = 'block';
-    }
+    // NOTE: Removed auto-open logic here to keep UI quiet.
 }
 
 // --- CHECKOUT ---
