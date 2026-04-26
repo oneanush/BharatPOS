@@ -54,6 +54,7 @@ async function loadShopCatalog(shopId) {
 
         prodSnap.forEach(d => {
             const p = d.data();
+            p.id = d.id; // ensure ID is attached
             currentShopProducts.push(p);
             if(p.category) categories.add(p.category);
         });
@@ -146,16 +147,52 @@ function renderCatalogUI(container, shopId, shopName, categories) {
     renderProducts();
 }
 
+// --- NEW: CUSTOM SERVICE HANDLER ---
+window.addCustomService = () => {
+    const serviceName = prompt("Enter the service you need (e.g., Fan Repair, Plumbing, Custom Grocery List):");
+    if(!serviceName || serviceName.trim() === '') return;
+    
+    const serviceId = 'srv_' + Date.now();
+    cart[serviceId] = {
+        prodId: serviceId,
+        variantId: 'custom',
+        name: "Service: " + serviceName,
+        variantName: '',
+        price: 0, 
+        qty: 1,
+        isService: true
+    };
+    
+    if (navigator.vibrate) navigator.vibrate(50);
+    updateCartUI();
+    alert(serviceName + " added to your cart!");
+};
+
 function renderProducts() {
     const grid = document.getElementById('storeProdGrid');
     if(!grid) return;
 
+    // 1. INJECT THE SERVICE CARD EXACTLY LIKE A NORMAL PRODUCT
+    let serviceCardHtml = `
+    <div class="prod-item" style="border: 2px dashed var(--brand-primary); cursor: pointer; background: #eff6ff;" onclick="addCustomService()">
+        <div>
+            <div style="font-size:10px; color:var(--brand-primary); font-weight:800; text-transform:uppercase; margin-bottom:4px;">Custom Request</div>
+            <div style="font-size:13px; font-weight:800; color:var(--text-main); line-height:1.3;">Request a Service</div>
+            <div style="font-size:11px; color:var(--text-sub); font-weight:600; margin-top:4px;">Fan Repair, Plumbing, etc.</div>
+        </div>
+        <div>
+            <div style="font-size:15px; font-weight:800; color:var(--brand-primary); font-family:'JetBrains Mono'; margin-top:8px; text-align:center;"><i class="fa-solid fa-screwdriver-wrench fa-lg"></i></div>
+            <button class="btn-add" style="background:var(--brand-primary); color:white;">Add Request</button>
+        </div>
+    </div>`;
+
     if(filteredProducts.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8; font-weight:600;">No items found.</div>`;
+        grid.innerHTML = serviceCardHtml + `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8; font-weight:600;">No items found.</div>`;
         return;
     }
 
-    grid.innerHTML = filteredProducts.map(p => {
+    // 2. RENDER NORMAL PRODUCTS
+    let productsHtml = filteredProducts.map(p => {
         const v = p.variants[0] || {};
         
         // Exact Unit Price Math for Grid Display
@@ -185,10 +222,14 @@ function renderProducts() {
         </div>`;
     }).join('');
 
+    grid.innerHTML = serviceCardHtml + productsHtml;
+
     // Bind Add to Cart / Open Wizard
     grid.querySelectorAll('.btn-add').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const pid = e.currentTarget.getAttribute('data-pid');
+            if(!pid) return; // Prevent clicking the service card's visual button from triggering this logic
+            
             const prod = currentShopProducts.find(p => p.id === pid);
             if(!prod) return;
 
@@ -344,44 +385,78 @@ function updateCartUI() {
     if(!fab || !txt) return;
 
     let total = 0, items = 0;
+    let hasService = false;
+    
     Object.values(cart).forEach(item => { 
         total += item.price * item.qty; 
         items += item.qty; 
+        if(item.isService) hasService = true;
     });
 
     if(items > 0) {
-        txt.innerText = `${items} Items | ₹${total.toFixed(2)}`;
+        txt.innerText = hasService ? `${items} Items/Services` : `${items} Items | ₹${total.toFixed(2)}`;
         fab.style.display = 'flex';
     } else {
         fab.style.display = 'none';
     }
 }
 
+// --- UPGRADED PLACE ORDER FUNCTION ---
 async function placeOrder(shopId, shopName) {
     if(Object.keys(cart).length === 0) return;
 
     const btn = document.getElementById('btnPlaceOrder');
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`; btn.disabled = true;
 
+    // Detect if this order contains a custom service request
+    const hasService = Object.values(cart).some(i => i.isService);
+    const orderType = hasService ? "Service Request" : "Home Delivery";
+
+    // Grab Live GPS Location
+    let location = null;
+    try {
+        const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:5000}));
+        location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch(e) {
+        console.warn("Location permission denied or timeout");
+    }
+
     try {
         let total = 0;
-        const itemsArr = Object.values(cart).map(i => { total += i.price * i.qty; return i; });
+        
+        // Format items precisely so the merchant's dashboard reads them correctly
+        const itemsArr = Object.values(cart).map(i => { 
+            total += i.price * i.qty; 
+            return {
+                id: i.prodId || i.id,
+                name: i.name + (i.variantName ? ` (${i.variantName})` : ''),
+                price: i.price,
+                qty: i.qty
+            };
+        });
 
         const order = {
             date: new Date().toISOString(),
             customerMobile: userMobile,
             customerName: "Khata App User",
             status: "PENDING",
+            orderType: orderType, // Added!
+            location: location,   // Added!
             totalAmount: total,
-            items: itemsArr
+            items: itemsArr       // Formatted!
         };
 
         await addDoc(collection(db, "shops", shopId, "onlineOrders"), order);
-        alert("Order sent to shop successfully! They will contact you shortly.");
-        cart = {}; updateCartUI();
-        document.getElementById('storeWizardModal').style.display = 'none';
-    } catch(e) {
-        alert("Failed to send order. Check your internet connection.");
+        
+        alert("Request sent successfully! The merchant has received your order and location.");
+        cart = {}; 
+        updateCartUI();
+        const modal = document.getElementById('cartWizModal');
+        if(modal) modal.style.display = 'none';
+        
+    } catch (error) {
+        console.error("Order Error:", error);
+        alert("Failed to send request. Check your internet connection.");
     } finally {
         btn.innerHTML = `Place Order <i class="fa-solid fa-arrow-right"></i>`; btn.disabled = false;
     }
