@@ -441,7 +441,7 @@ async function placeOrder(shopId, shopName) {
             customerName: "Khata App User",
             status: "PENDING",
             orderType: orderType, // Added!
-            location: location,   // Added!
+            location: location,   
             totalAmount: total,
             items: itemsArr       // Formatted!
         };
