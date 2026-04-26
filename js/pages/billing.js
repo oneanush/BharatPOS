@@ -719,12 +719,14 @@ function openAddToCartWizard(prodId) {
     }
     UI.showModal('addToCartModal');
 }
-
 function wizardRenderVariants() {
     configState.step = 'variant';
-    document.getElementById('stepVariant').style.display = 'block';
-    document.getElementById('stepBrand').style.display = 'none';
-    document.getElementById('stepQty').style.display = 'none';
+    
+    // SAFE HTML CHECKS
+    const sVar = document.getElementById('stepVariant'); if(sVar) sVar.style.display = 'block';
+    const sBrand = document.getElementById('stepBrand'); if(sBrand) sBrand.style.display = 'none';
+    const sQty = document.getElementById('stepQty'); if(sQty) sQty.style.display = 'none';
+    
     const b = document.getElementById('btnConfBack'); if(b) b.style.display = 'none';
     const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Type/Size";
 
@@ -744,11 +746,6 @@ function wizardRenderVariants() {
     }).join('');
 }
 
-function wizardSelectVariant(vid) {
-    configState.selectedVariant = configState.prod.variants.find(v => v.id === vid);
-    checkBrandStep();
-}
-
 function checkBrandStep() {
     const v = configState.selectedVariant;
     if(v.brands && v.brands.length > 0) {
@@ -758,12 +755,14 @@ function checkBrandStep() {
         wizardRenderQty();
     }
 }
-
 function wizardRenderBrands() {
     configState.step = 'brand';
-    document.getElementById('stepVariant').style.display = 'none';
-    document.getElementById('stepBrand').style.display = 'block';
-    document.getElementById('stepQty').style.display = 'none';
+    
+    // SAFE HTML CHECKS
+    const sVar = document.getElementById('stepVariant'); if(sVar) sVar.style.display = 'none';
+    const sBrand = document.getElementById('stepBrand'); if(sBrand) sBrand.style.display = 'block';
+    const sQty = document.getElementById('stepQty'); if(sQty) sQty.style.display = 'none';
+
     const b = document.getElementById('btnConfBack'); if(b) b.style.display = configState.prod.variants.length > 1 ? 'block' : 'none';
     const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Brand";
 
@@ -790,12 +789,13 @@ function wizardSelectBrand(bName) {
     configState.selectedBrand = bName;
     wizardRenderQty();
 }
-
 function wizardRenderQty() {
     configState.step = 'qty';
-    document.getElementById('stepVariant').style.display = 'none';
-    document.getElementById('stepBrand').style.display = 'none';
-    document.getElementById('stepQty').style.display = 'block';
+    
+    // SAFE HTML CHECKS
+    const sVar = document.getElementById('stepVariant'); if(sVar) sVar.style.display = 'none';
+    const sBrand = document.getElementById('stepBrand'); if(sBrand) sBrand.style.display = 'none';
+    const sQty = document.getElementById('stepQty'); if(sQty) sQty.style.display = 'block';
     
     const p = configState.prod;
     const v = configState.selectedVariant;
