@@ -78,7 +78,6 @@ async function initProducts() {
         applyFilters(); 
         setupIntersectionObserver();
         
-        // Render 1 Default Type Box
         addTypeBoxUI();
 
         const isGstGlobal = localStorage.getItem('bharatpos_gst_mode') === 'true';
@@ -147,21 +146,15 @@ function bindEvents() {
 
     document.getElementById('btnAddVariant')?.addEventListener('click', () => addTypeBoxUI());
     
-    // UI Interactions inside the new Engine
     document.getElementById('variantEngine')?.addEventListener('click', (e) => {
         const addBrandBtn = e.target.closest('.btn-add-brand');
         if (addBrandBtn) {
             const typeBox = addBrandBtn.closest('.type-box');
             const brandsContainer = typeBox.querySelector('.brands-container');
-            
-            // Show brand name inputs for all boxes inside this Type
             brandsContainer.querySelectorAll('.brand-name-group').forEach(grp => grp.style.display = 'block');
-            
-            // Append new brand box
             brandsContainer.insertAdjacentHTML('beforeend', getBrandBoxHTML(null, true));
             const newBox = brandsContainer.lastElementChild;
             updatePriceLabel(newBox);
-            
             const isAdv = document.getElementById('cfgAdvFields')?.checked;
             if(isAdv) newBox.classList.add('show-adv');
         }
@@ -176,7 +169,6 @@ function bindEvents() {
         if (scanBtn) startBarcodeScan(scanBtn);
     });
 
-    // Dynamic Price Label Update
     document.getElementById('variantEngine')?.addEventListener('input', (e) => {
         if (e.target.classList.contains('b-base-qty') || e.target.classList.contains('b-base-unit')) {
             updatePriceLabel(e.target.closest('.brand-box'));
@@ -465,6 +457,7 @@ function applySettingsUI(isAdv, isBatch) {
     });
 }
 
+// --- NEW GROUPING EXPORT ---
 function handleExportCSV() {
     if(allProducts.length === 0) return UI.showToast("No products to export", true);
     try {
@@ -472,8 +465,9 @@ function handleExportCSV() {
         allProducts.forEach(p => {
             p.variants.forEach(v => {
                 flattened.push({
+                    ProductID: p.id, // Explicitly binds rows together for import
                     Name: p.name, Category: p.category, 
-                    Type: v.type, Brand: v.brandName, 
+                    Type: v.type || '', Brand: v.brandName || '', 
                     Price: v.price, Stock: v.stock,
                     BaseQty: v.baseQty, BaseUnit: v.baseUnit,
                     Barcode: v.barcode, Expiry: v.expiryDate, CostPrice: v.costPrice,
@@ -544,7 +538,6 @@ async function handleSaveProduct(e) {
                 const vId = bBox.querySelector('.b-id').value || `var_${Date.now()}_${i}_${j}`;
                 const vAdded = bBox.querySelector('.b-added').value || nowIso;
                 
-                // Backwards compatibility label
                 const finalQuantity = bName ? `${typeVal} - ${bName}` : typeVal;
                 
                 productDoc.variants.push({
@@ -846,7 +839,6 @@ function renderChunk() {
         
         const vCount   = p.variants.length;
         
-        // Accurate Price Rendering for Grid
         const vFirst = p.variants[0];
         let basePrice = vFirst.price;
         if(p.isLoose) basePrice = (basePrice / (vFirst.baseQty||1)).toFixed(2);
@@ -945,7 +937,6 @@ function openProductDetails(id) {
             if(v.expiryDate) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-calendar-xmark"></i> Exp: ${Security.escapeHtml(v.expiryDate)}</span>`);
             if(v.costPrice) details.push(`<span style="color:var(--slate-500);"><i class="fa-solid fa-tags"></i> Cost: ₹${Security.escapeHtml(v.costPrice)}</span>`);
             
-            // Highlight "1 Stock Contains" clearly
             details.push(`<span style="color:var(--primary);"><i class="fa-solid fa-box"></i> 1 Stock = ${v.baseQty || 1} ${Security.escapeHtml(v.baseUnit)||'pcs'}</span>`);
             
             let detailsHtml = details.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; padding-top:8px; border-top:1.5px dashed var(--border); font-size:11px; font-weight:700;">${details.join('')}</div>` : '';
@@ -993,13 +984,11 @@ function loadProductForEdit(id) {
     const eng = document.getElementById('variantEngine');
     if(eng) eng.innerHTML = '';
     
-    // Group flattened DB variants back into hierarchical UI Type Boxes
     const groups = {};
     base.variants.forEach(v => {
         let t = v.type;
         let b = v.brandName;
         if (t === undefined) {
-            // Fallback parsing for extremely old legacy variants without type/brandName fields
             if (v.quantity && v.quantity.includes(' - ')) {
                 const parts = v.quantity.split(' - ');
                 t = parts[0]; b = parts.slice(1).join(' - ');
@@ -1105,6 +1094,7 @@ function importMasterProduct(p) {
     UI.showToast(`Imported "${p.name}"`);
 }
 
+// --- NEW GROUPING IMPORT ENGINE ---
 async function handleBulkImport(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1125,40 +1115,66 @@ async function handleBulkImport(event) {
             let batch = (user.merchantId && db) ? writeBatch(db) : null;
             let opCount = 0, addedCount = 0;
 
+            const productGroups = {};
+
             for (const row of jsonData) {
                 const name = row['Name'] || row['Product Name'] || row['Item'];
                 if (!name) continue;
 
-                const skuId = `imp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                // Group by ProductID if it exists in Excel, otherwise Name + Category
+                const groupId = row['ProductID'] || `${name}_${row['Category'] || 'General'}`;
+
+                if (!productGroups[groupId]) {
+                    productGroups[groupId] = {
+                        id: row['ProductID'] || `imp_${Date.now()}_${Math.floor(Math.random() * 10000)}`, 
+                        name: String(name), 
+                        category: String(row['Category'] || 'General'),
+                        hsn: String(row['HSN'] || ''), 
+                        gstRate: String(row['GST'] || ''), 
+                        batchId: String(row['BatchID'] || ''),
+                        reorderPoint: String(row['Reorder Point'] || row['Min Stock'] || ''),
+                        isLoose: String(row['Loose'] || '').toLowerCase() === 'true', 
+                        dateAdded: String(row['DateAdded'] || new Date().toISOString()),
+                        variants: []
+                    };
+                }
+
+                const skuId = productGroups[groupId].id;
                 const typeName = String(row['Type'] || row['Unit'] || 'General');
                 const brandName = String(row['Brand'] || '');
                 const finalQuantity = brandName ? `${typeName} - ${brandName}` : typeName;
 
-                const productDoc = {
-                    id: skuId, name: String(name), category: String(row['Category'] || 'General'),
-                    hsn: String(row['HSN'] || ''), gstRate: String(row['GST'] || ''), batchId: '',
-                    reorderPoint: String(row['Reorder Point'] || row['Min Stock'] || ''),
-                    isLoose: String(row['Loose'] || '').toLowerCase() === 'true', dateAdded: new Date().toISOString(),
-                    variants: [{
-                        id: `${skuId}_v0`,
-                        type: typeName,
-                        brandName: brandName,
-                        quantity: finalQuantity,
-                        price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
-                        stock: parseFloat(row['Stock'] || row['Qty'] || 0),
-                        barcode: String(row['Barcode'] || ''),
-                        costPrice: String(row['CostPrice'] || row['Cost'] || ''), 
-                        expiryDate: String(row['Expiry'] || ''), 
-                        baseQty: String(row['BaseQty'] || '1'), 
-                        baseUnit: String(row['BaseUnit'] || 'pcs')
-                    }]
-                };
+                productGroups[groupId].variants.push({
+                    id: `${skuId}_v${productGroups[groupId].variants.length}`,
+                    type: typeName,
+                    brandName: brandName,
+                    quantity: finalQuantity,
+                    price: parseFloat(row['Price'] || row['Sell Price'] || row['Rate'] || 0),
+                    stock: parseFloat(row['Stock'] || row['Qty'] || 0),
+                    barcode: String(row['Barcode'] || ''),
+                    costPrice: String(row['CostPrice'] || row['Cost'] || ''), 
+                    expiryDate: String(row['Expiry'] || ''), 
+                    baseQty: String(row['BaseQty'] || '1'), 
+                    baseUnit: String(row['BaseUnit'] || 'pcs')
+                });
+            }
 
-                allProducts.push(productDoc);
-                if (batch && user.merchantId) { batch.set(doc(db, "shops", user.merchantId, "products", skuId), productDoc); }
+            const groupedProductsList = Object.values(productGroups);
+
+            for (const productDoc of groupedProductsList) {
+                const existingIdx = allProducts.findIndex(p => p.id === productDoc.id);
+                if (existingIdx > -1) {
+                    allProducts[existingIdx] = productDoc; 
+                } else {
+                    allProducts.push(productDoc);
+                }
+
+                if (batch && user.merchantId) { 
+                    batch.set(doc(db, "shops", user.merchantId, "products", productDoc.id), productDoc); 
+                }
                 opCount++; addedCount++;
 
-                if (batch && opCount === 490) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
+                if (batch && opCount >= 490) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
             }
 
             if (batch && opCount > 0 && user.merchantId) await batch.commit();
@@ -1166,13 +1182,15 @@ async function handleBulkImport(event) {
             await dbSave('bharatpos_products', allProducts);
             updateDatalists();
             applyFilters();
-            UI.showToast(`✅ Imported ${addedCount} products successfully!`);
+            UI.showToast(`✅ Processed ${addedCount} products successfully!`);
 
         } catch (error) {
             console.error(error);
             UI.showToast("Import failed. Ensure valid CSV/Excel format.", true);
             applyFilters();
         }
+        
+        event.target.value = '';
     };
     reader.readAsArrayBuffer(file);
 }

@@ -1,7 +1,7 @@
 // File: /sw.js
 
 // Bumped to v1.4 to force your phone to download the new missing JS files!
-const CACHE_NAME = 'bharatpos-v1.7';
+const CACHE_NAME = 'bharatpos-v1.75';
 
 const ASSETS_TO_CACHE = [
   // HTML Pages
