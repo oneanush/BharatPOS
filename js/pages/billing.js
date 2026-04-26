@@ -72,7 +72,7 @@ async function initBilling() {
     }
 }
 
-// --- SIMPLIFIED UTILS (Uses Exact Product Page Fields) ---
+// --- UTILS ---
 function getUnitPrice(prod, variant) {
     if (prod.isLoose) {
         const bq = Number(variant.baseQty) || 1;
@@ -113,7 +113,6 @@ function getProductTotalStockInfo(p) {
     }
 }
 
-// --- CUSTOM SERVICE FEATURE ---
 window.addCustomService = () => {
     const name = prompt("Enter Custom Service / Item Name:");
     if (!name || name.trim() === '') return;
@@ -147,7 +146,6 @@ window.addCustomService = () => {
         if(btnCloseMobile) btnCloseMobile.style.display = 'block';
     }
 };
-
 
 // --- EVENT BINDING ---
 function bindAllEvents() {
@@ -253,10 +251,12 @@ function bindAllEvents() {
 
     document.getElementById('btnCloseConf')?.addEventListener('click', () => { UI.hideModal('addToCartModal'); });
     document.getElementById('btnConfBack')?.addEventListener('click', wizardBack);
+    
     document.getElementById('confVariantGrid')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-step');
         if(btn) wizardSelectVariant(btn.getAttribute('data-vid'));
     });
+    
     document.getElementById('confBrandGrid')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-step');
         if(btn) wizardSelectBrand(btn.getAttribute('data-bname'));
@@ -329,10 +329,8 @@ function bindAllEvents() {
         btn.addEventListener('click', (e) => {
             const mode = e.currentTarget.getAttribute('data-mode');
             currentPaymentMode = mode;
-            
             document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
             e.currentTarget.classList.add('active');
-
             if(mode === 'Partial') { openPartialPayment(); }
         });
     });
@@ -550,16 +548,12 @@ function renderProductGrid() {
         
         return `
         <div class="prod-card" data-id="${Security.escapeHtml(p.id)}">
-            <button class="pc-info-btn">
-                <i class="fa-solid fa-circle-info"></i>
-            </button>
+            <button class="pc-info-btn"><i class="fa-solid fa-circle-info"></i></button>
             ${badges}
             <div class="pc-cat">${Security.escapeHtml(p.category || 'Gen')}</div>
             <div class="pc-name">${Security.escapeHtml(p.name)}</div>
             <div class="pc-variant-prices">${varPrices}</div>
-            <div class="pc-bottom">
-                <span class="pc-stock">${Security.escapeHtml(displayStock)}</span>
-            </div>
+            <div class="pc-bottom"><span class="pc-stock">${Security.escapeHtml(displayStock)}</span></div>
         </div>
         `;
     }).join('');
@@ -719,14 +713,12 @@ function openAddToCartWizard(prodId) {
     }
     UI.showModal('addToCartModal');
 }
+
 function wizardRenderVariants() {
     configState.step = 'variant';
-    
-    // SAFE HTML CHECKS
     const sVar = document.getElementById('stepVariant'); if(sVar) sVar.style.display = 'block';
     const sBrand = document.getElementById('stepBrand'); if(sBrand) sBrand.style.display = 'none';
     const sQty = document.getElementById('stepQty'); if(sQty) sQty.style.display = 'none';
-    
     const b = document.getElementById('btnConfBack'); if(b) b.style.display = 'none';
     const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Type/Size";
 
@@ -736,7 +728,7 @@ function wizardRenderVariants() {
     grid.innerHTML = configState.prod.variants.map(v => {
         const sInfo = getVariantStockInfo(configState.prod, v);
         return `
-        <button class="btn-step" data-vid="${v.id}">
+        <button class="btn-step" data-vid="${Security.escapeHtml(v.id)}">
             <div>
                 <span>${Security.escapeHtml(v.quantity || v.type)}</span>
                 <span class="btn-step-sub">Avail: ${Formatters.stock(sInfo.available, sInfo.label)} ${Security.escapeHtml(sInfo.label)}</span>
@@ -744,6 +736,16 @@ function wizardRenderVariants() {
             <span style="color:var(--success); font-weight:800; font-family:'JetBrains Mono';">₹${getUnitPrice(configState.prod, v).toFixed(2)}/${Security.escapeHtml(getUnitLabel(configState.prod, v))}</span>
         </button>`;
     }).join('');
+}
+
+function wizardSelectVariant(vid) {
+    // 🔥 SAFE STRING MATCHING
+    configState.selectedVariant = configState.prod.variants.find(v => String(v.id) === String(vid));
+    if(!configState.selectedVariant) {
+        UI.showToast("Variant error. Please try again.", true);
+        return;
+    }
+    checkBrandStep();
 }
 
 function checkBrandStep() {
@@ -755,14 +757,12 @@ function checkBrandStep() {
         wizardRenderQty();
     }
 }
+
 function wizardRenderBrands() {
     configState.step = 'brand';
-    
-    // SAFE HTML CHECKS
     const sVar = document.getElementById('stepVariant'); if(sVar) sVar.style.display = 'none';
     const sBrand = document.getElementById('stepBrand'); if(sBrand) sBrand.style.display = 'block';
     const sQty = document.getElementById('stepQty'); if(sQty) sQty.style.display = 'none';
-
     const b = document.getElementById('btnConfBack'); if(b) b.style.display = configState.prod.variants.length > 1 ? 'block' : 'none';
     const s = document.getElementById('confStepTitle'); if(s) s.innerText = "Select Brand";
 
@@ -789,10 +789,9 @@ function wizardSelectBrand(bName) {
     configState.selectedBrand = bName;
     wizardRenderQty();
 }
+
 function wizardRenderQty() {
     configState.step = 'qty';
-    
-    // SAFE HTML CHECKS
     const sVar = document.getElementById('stepVariant'); if(sVar) sVar.style.display = 'none';
     const sBrand = document.getElementById('stepBrand'); if(sBrand) sBrand.style.display = 'none';
     const sQty = document.getElementById('stepQty'); if(sQty) sQty.style.display = 'block';
