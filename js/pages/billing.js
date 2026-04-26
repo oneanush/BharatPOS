@@ -26,10 +26,8 @@ async function initBilling() {
     Navigation.inject('billing');
 
     try {
-        // Fetch cached offline data
         let rawProducts = await dbGet('bharatpos_products', '[]');
         
-        // Legacy Migration Shield
         allProducts = rawProducts.map(p => {
             if (!p.variants || !Array.isArray(p.variants) || p.variants.length === 0) {
                 p.variants = [{
@@ -43,7 +41,6 @@ async function initBilling() {
         customers = await dbGet('bharatpos_customers', '[]');
         heldCarts = await dbGet('bharatpos_held_carts', '[]');
         
-        // Sort by popularity (derived from sales)
         const sales = await dbGet('bharatpos_sales', '[]');
         const freqs = {};
         sales.forEach(s => (s.items||[]).forEach(i => freqs[i.id] = (freqs[i.id]||0) + (i.qty||1)));
@@ -57,7 +54,6 @@ async function initBilling() {
 
         const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
         
-        // Online Orders Background Listener
         if(user.merchantId && db) {
             onSnapshot(collection(db, "shops", user.merchantId, "onlineOrders"), (snap) => {
                 onlineOrders = snap.docs.map(d => ({...d.data(), orderId: d.id}));
@@ -76,26 +72,26 @@ async function initBilling() {
     }
 }
 
-// --- UTILS ---
+// --- SIMPLIFIED UTILS (Uses Exact Product Page Fields) ---
 function getUnitPrice(prod, variant) {
-    if (!prod.isLoose) return Number(variant.price);
-    const baseQty = Number(variant.baseQty) || 1;
-    return Number(variant.price) / baseQty;
+    if (prod.isLoose) {
+        const bq = Number(variant.baseQty) || 1;
+        return Number(variant.price) / bq; 
+    }
+    return Number(variant.price);
 }
 
 function getUnitLabel(prod, variant) {
-    if (!prod.isLoose) return 'unit';
-    return variant.baseUnit || 'unit';
+    return variant.baseUnit || 'pcs';
 }
 
 function getVariantStockInfo(p, v) {
+    let stock = Number(v.stock) || 0;
     if (p.isLoose) {
         const bq = Number(v.baseQty) || 1;
-        const totalBase = (Number(v.stock) || 0) * bq;
-        return { available: totalBase, label: v.baseUnit || 'pcs', isLoose: true };
-    } else {
-        return { available: Number(v.stock) || 0, label: 'units', isLoose: false };
+        stock = stock * bq;
     }
+    return { available: stock, label: v.baseUnit || 'pcs', isLoose: p.isLoose };
 }
 
 function getProductTotalStockInfo(p) {
@@ -104,7 +100,7 @@ function getProductTotalStockInfo(p) {
 
     if (p.isLoose) {
         let totalBase = 0;
-        let unit = variants[0]?.baseUnit || 'units';
+        let unit = variants[0]?.baseUnit || 'pcs';
         variants.forEach(v => {
             const bq = Number(v.baseQty) || 1;
             totalBase += (Number(v.stock) || 0) * bq;
@@ -117,9 +113,44 @@ function getProductTotalStockInfo(p) {
     }
 }
 
+// --- CUSTOM SERVICE FEATURE ---
+window.addCustomService = () => {
+    const name = prompt("Enter Custom Service / Item Name:");
+    if (!name || name.trim() === '') return;
+    
+    const price = prompt("Enter Price (₹):");
+    if (!price || isNaN(price) || Number(price) < 0) return;
+    
+    cart.push({
+        id: 'srv_' + Date.now(),
+        prodId: 'custom',
+        name: name,
+        variant: 'Service',
+        brand: '',
+        qty: 1,
+        unitPrice: Number(price),
+        unitLabel: 'request',
+        total: Number(price),
+        hsn: '',
+        gstRate: 0,
+        priceType: 'inclusive',
+        isService: true
+    });
+    
+    renderCart();
+    UI.showToast(name + " added to bill");
+    
+    if(window.innerWidth <= 900) {
+        const rightPane = document.getElementById('rightPane');
+        const btnCloseMobile = document.getElementById('btnCloseMobileCart');
+        if(rightPane) rightPane.classList.add('open');
+        if(btnCloseMobile) btnCloseMobile.style.display = 'block';
+    }
+};
+
+
 // --- EVENT BINDING ---
 function bindAllEvents() {
-    // Multi-Branch Shop Switcher Binding
     const switcher = document.getElementById('globalShopSwitcher');
     const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
     const storedShopsStr = localStorage.getItem(`bharatpos_shops_${user.mobile || user.phone}`);
@@ -128,11 +159,7 @@ function bindAllEvents() {
             const shops = JSON.parse(storedShopsStr);
             if(shops && shops.length > 1) {
                 switcher.style.display = 'inline-block';
-                switcher.innerHTML = shops.map(s => 
-                    `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>
-                        ${Security.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}
-                    </option>`
-                ).join('');
+                switcher.innerHTML = shops.map(s => `<option value="${s.merchantId}" ${s.merchantId === user.merchantId ? 'selected' : ''}>${Security.escapeHtml(s.shopName)} ${s.isMain ? '⭐' : ''}</option>`).join('');
                 switcher.addEventListener('change', (e) => {
                     if(e.target.value !== user.merchantId) { window.location.reload(); }
                 });
@@ -163,6 +190,9 @@ function bindAllEvents() {
     });
 
     document.getElementById('productGrid')?.addEventListener('click', (e) => {
+        const svcCard = e.target.closest('.service-card-btn');
+        if (svcCard) { window.addCustomService(); return; }
+
         if(e.target.closest('.pc-info-btn')) {
             const card = e.target.closest('.prod-card');
             if(card) openProductInfo(card.getAttribute('data-id'));
@@ -172,7 +202,6 @@ function bindAllEvents() {
         if(card) openAddToCartWizard(card.getAttribute('data-id'));
     });
 
-    // Customer Auto-suggest
     const cName = document.getElementById('custNameInput');
     const cPhone = document.getElementById('custPhoneInput');
     const dName = document.getElementById('custNameDropdown');
@@ -222,7 +251,6 @@ function bindAllEvents() {
         });
     }
 
-    // Wizard Flow Events
     document.getElementById('btnCloseConf')?.addEventListener('click', () => { UI.hideModal('addToCartModal'); });
     document.getElementById('btnConfBack')?.addEventListener('click', wizardBack);
     document.getElementById('confVariantGrid')?.addEventListener('click', (e) => {
@@ -250,7 +278,6 @@ function bindAllEvents() {
     });
     document.getElementById('btnConfirmAddToCart')?.addEventListener('click', confirmAddToCart);
 
-    // Cart Controls
     document.getElementById('cartItemsList')?.addEventListener('click', (e) => {
         const idx = e.target.closest('[data-idx]')?.getAttribute('data-idx');
         if(idx === undefined) return;
@@ -260,6 +287,13 @@ function bindAllEvents() {
             renderCart();
         } else if(e.target.closest('.ci-plus')) {
             const cartItem = cart[idx];
+            if(cartItem.isService) {
+                cartItem.qty += 1;
+                cartItem.total = cartItem.qty * cartItem.unitPrice;
+                renderCart();
+                return;
+            }
+
             const p = allProducts.find(prod => prod.id === cartItem.prodId);
             const v = p.variants.find(vx => vx.id === cartItem.id);
             const stockInfo = getVariantStockInfo(p, v);
@@ -291,7 +325,6 @@ function bindAllEvents() {
 
     document.getElementById('cartDiscountInput')?.addEventListener('input', renderCart);
 
-    // Payment Flow
     document.querySelectorAll('.btn-mode').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const mode = e.currentTarget.getAttribute('data-mode');
@@ -319,7 +352,6 @@ function bindAllEvents() {
         processCheckout(currentPaymentMode, partialSplitData);
     });
     
-    // Partial Math
     document.getElementById('btnClosePartial')?.addEventListener('click', () => UI.hideModal('partialPayModal'));
     const pcCash = document.getElementById('payCash'), pcOnline = document.getElementById('payOnline'), pcUdhaar = document.getElementById('payUdhaar');
     
@@ -370,7 +402,6 @@ function bindAllEvents() {
         UI.showToast("Mix Payment Saved");
     });
 
-    // Held Carts
     document.getElementById('btnHoldCart')?.addEventListener('click', holdCurrentCart);
     document.getElementById('btnViewHeld')?.addEventListener('click', showHeldCarts);
     document.getElementById('btnCloseHeld')?.addEventListener('click', () => UI.hideModal('heldCartsModal'));
@@ -379,14 +410,12 @@ function bindAllEvents() {
         if(idx !== undefined && e.target.tagName === 'BUTTON') restoreHeldCart(idx);
     });
 
-    // Online Orders
     document.getElementById('btnCloseOnline')?.addEventListener('click', () => UI.hideModal('onlineOrdersModal'));
     document.getElementById('onlineOrdersList')?.addEventListener('click', (e) => {
         const id = e.target.closest('[data-oid]')?.getAttribute('data-oid');
         if(id && e.target.tagName === 'BUTTON') loadOnlineOrderToCart(id);
     });
 
-    // Invoice
     document.getElementById('btnCloseInvoice')?.addEventListener('click', () => {
         UI.hideModal('invoiceModal');
         cart = []; currentCustomer = {name:'', phone:''}; 
@@ -406,11 +435,7 @@ function bindAllEvents() {
         const invoiceContent = document.getElementById('invoicePaper');
         html2canvas(invoiceContent, { scale: 2 }).then(canvas => {
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            const pdf = new jspdf.jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [canvas.width * 0.264583, canvas.height * 0.264583]
-            });
+            const pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: [canvas.width * 0.264583, canvas.height * 0.264583] });
             pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width * 0.264583, canvas.height * 0.264583);
             pdf.autoPrint();
             window.open(pdf.output('bloburl'), '_blank');
@@ -433,14 +458,10 @@ function setupMobileCartSwipe() {
     const cartHeader = document.querySelector('.cart-header');
     const dragHandle = document.getElementById('mobileDragHandle');
     
-    if (dragHandle && window.innerWidth <= 900) {
-        dragHandle.style.display = 'block';
-    }
-
+    if (dragHandle && window.innerWidth <= 900) { dragHandle.style.display = 'block'; }
     if (!rightPane || !cartHeader) return;
 
-    let startY = 0;
-    let currentY = 0;
+    let startY = 0; let currentY = 0;
     
     cartHeader.addEventListener('touchstart', (e) => {
         if(window.innerWidth > 900) return;
@@ -500,12 +521,20 @@ function renderProductGrid() {
     const grid = document.getElementById('productGrid');
     if(!grid) return;
 
+    const serviceCardHtml = `
+    <div class="prod-card service-card-btn" style="border: 2px dashed var(--primary); background: #eff6ff;">
+        <div class="pc-cat" style="color:var(--primary);">Custom Request</div>
+        <div class="pc-name" style="color:var(--primary); font-size:16px;">Add Service / Item</div>
+        <div style="font-size:32px; text-align:center; color:var(--primary); margin:10px 0;"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+    </div>
+    `;
+
     if(filtered.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">No products found.</div>`;
+        grid.innerHTML = serviceCardHtml + `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">No products found.</div>`;
         return;
     }
 
-    grid.innerHTML = filtered.map(p => {
+    const productsHtml = filtered.map(p => {
         const vCount = (p.variants||[]).length;
         const displayStock = getProductTotalStockInfo(p);
         
@@ -516,7 +545,7 @@ function renderProductGrid() {
         const varPrices = (p.variants||[]).map(v => {
             const uPrice = getUnitPrice(p, v);
             const uLabel = getUnitLabel(p, v);
-            return `<span class="pc-variant-item">${Security.escapeHtml(v.quantity)}: ₹${uPrice.toFixed(2)}/${Security.escapeHtml(uLabel)}</span>`;
+            return `<span class="pc-variant-item">${Security.escapeHtml(v.quantity || v.type)}: ₹${uPrice.toFixed(2)}/${Security.escapeHtml(uLabel)}</span>`;
         }).join('');
         
         return `
@@ -534,6 +563,8 @@ function renderProductGrid() {
         </div>
         `;
     }).join('');
+
+    grid.innerHTML = serviceCardHtml + productsHtml;
 }
 
 function renderCart() {
@@ -584,11 +615,16 @@ function renderCart() {
             subtotal += amt;
         }
         
+        const isService = item.isService;
+        const metaText = isService 
+            ? `₹${item.unitPrice.toFixed(2)}` 
+            : `${Security.escapeHtml(item.variant)} ${item.brand ? `• ${Security.escapeHtml(item.brand)}` : ''} @ ₹${item.unitPrice.toFixed(2)}/${Security.escapeHtml(item.unitLabel)}`;
+
         return `
         <div class="cart-item">
             <div class="ci-details">
                 <div class="ci-name">${Security.escapeHtml(item.name)}</div>
-                <div class="ci-meta">${Security.escapeHtml(item.variant)} ${item.brand ? `• ${Security.escapeHtml(item.brand)}` : ''} @ ₹${item.unitPrice.toFixed(2)}/${Security.escapeHtml(item.unitLabel)}</div>
+                <div class="ci-meta">${metaText}</div>
                 <div class="ci-controls">
                     <button class="ci-btn ci-minus" data-idx="${idx}">-</button>
                     <span class="ci-qty">${item.qty} ${item.unitLabel==='unit'?'':Security.escapeHtml(item.unitLabel)}</span>
@@ -652,7 +688,7 @@ function openProductInfo(prodId) {
             <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px; box-shadow:var(--shadow-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
-                        <span style="font-weight:700; color:var(--text-main); font-size:13px;">${Security.escapeHtml(v.quantity)}</span>
+                        <span style="font-weight:700; color:var(--text-main); font-size:13px;">${Security.escapeHtml(v.quantity || v.type)}</span>
                         <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">₹${uPrice.toFixed(2)} per ${Security.escapeHtml(uLabel)}</div>
                         ${brandsStr}
                     </div>
@@ -700,7 +736,7 @@ function wizardRenderVariants() {
         return `
         <button class="btn-step" data-vid="${v.id}">
             <div>
-                <span>${Security.escapeHtml(v.quantity)}</span>
+                <span>${Security.escapeHtml(v.quantity || v.type)}</span>
                 <span class="btn-step-sub">Avail: ${Formatters.stock(sInfo.available, sInfo.label)} ${Security.escapeHtml(sInfo.label)}</span>
             </div>
             <span style="color:var(--success); font-weight:800; font-family:'JetBrains Mono';">₹${getUnitPrice(configState.prod, v).toFixed(2)}/${Security.escapeHtml(getUnitLabel(configState.prod, v))}</span>
@@ -738,10 +774,9 @@ function wizardRenderBrands() {
     
     grid.innerHTML = v.brands.map(b => {
         let avail = Number(b.stock) || 0;
-        let label = 'units';
+        let label = v.baseUnit || 'pcs';
         if (p.isLoose) {
             avail = avail * (Number(v.baseQty) || 1);
-            label = v.baseUnit || 'pcs';
         }
         return `
         <button class="btn-step" data-bname="${Security.escapeHtml(b.name)}">
@@ -859,7 +894,7 @@ function confirmAddToCart() {
         }
     }
 
-    const existingIdx = cart.findIndex(i => i.prodId === p.id && i.variant === v.quantity && i.brand === brandStr);
+    const existingIdx = cart.findIndex(i => i.prodId === p.id && i.variant === (v.quantity || v.type) && i.brand === brandStr);
     const existingQty = existingIdx >= 0 ? cart[existingIdx].qty : 0;
     
     if (existingQty + qty > maxAvail) {
@@ -874,7 +909,7 @@ function confirmAddToCart() {
             id: v.id,
             prodId: p.id,
             name: p.name,
-            variant: v.quantity,
+            variant: v.quantity || v.type,
             brand: brandStr,
             qty: qty,
             unitPrice: uPrice,
@@ -941,9 +976,8 @@ async function processCheckout(method, split = null) {
             split: { cash: cashAmt, online: onlineAmt, udhaar: udhaarAmt }
         };
 
-        const uniqueProdIds = [...new Set(cart.map(item => item.prodId))];
+        const uniqueProdIds = [...new Set(cart.map(item => item.prodId))].filter(id => id !== 'custom');
 
-        // Atomic Transaction
         if (db && navigator.onLine) {
             await runTransaction(db, async (transaction) => {
                 let pSnaps = {};
@@ -1004,7 +1038,6 @@ async function processCheckout(method, split = null) {
             });
         }
 
-        // Cache Locally
         await dbSave('bharatpos_products', allProducts);
         await dbSave('bharatpos_customers', customers);
         
@@ -1012,7 +1045,6 @@ async function processCheckout(method, split = null) {
         sales.push(saleDoc);
         await dbSave('bharatpos_sales', sales);
 
-        // Update Enterprise Caches for Dashboard Sync
         const eSales = await dbGet('bharatpos_enterprise_sales', 'null');
         if(eSales !== null) {
             saleDoc._branchId = user.merchantId; 
@@ -1053,16 +1085,18 @@ function generateInvoice(sale) {
         if(hasGst) {
             let base = amt; let tax = 0;
             if(i.gstRate > 0) {
-                if(i.priceType === 'inclusive') { base = amt / (1 + (i.gstRate/100)); tax = amt - base; }
-                else { tax = amt * (i.gstRate/100); base = amt; }
+                if(i.priceType === 'exclusive') { tax = amt * (i.gstRate/100); base = amt; }
+                else { base = amt / (1 + (i.gstRate/100)); tax = amt - base; }
             }
             totalTax += tax; subtotal += base;
             taxHtml = `<td class="inv-center">${i.gstRate}%</td>`;
         } else { subtotal += amt; }
 
+        const itemSubtext = i.isService ? '' : `${Security.escapeHtml(i.variant)} ${i.brand?`(${Security.escapeHtml(i.brand)})`:''}`;
+
         rows += `
         <tr>
-            <td>${Security.escapeHtml(i.name)} <div style="font-size:10px; color:#555;">${Security.escapeHtml(i.variant)} ${i.brand?`(${Security.escapeHtml(i.brand)})`:''}</div></td>
+            <td>${Security.escapeHtml(i.name)} <div style="font-size:10px; color:#555;">${itemSubtext}</div></td>
             <td class="inv-center">${i.qty}${i.unitLabel==='unit'?'':Security.escapeHtml(i.unitLabel)}</td>
             <td class="inv-center">${i.unitPrice.toFixed(2)}</td>
             ${taxHtml}
