@@ -3,6 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  
+  <script>
+    (function() {
+        try {
+            const user = JSON.parse(localStorage.getItem('bharatpos_user') || '{}');
+            if (!user || (!user.merchantId && !user.phone && !user.mobile)) {
+                window.location.replace('login.html'); 
+            }
+        } catch(e) {
+            window.location.replace('login.html');
+        }
+    })();
+  </script>
+  
+  
   <title>Bill Banao - BharatPOS</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
